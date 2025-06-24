@@ -1,0 +1,61 @@
+{
+  "title": "Quản lý Người dùng",
+  "subtitle": "Quản lý thông tin thành viên, đoàn viên và hội viên",
+  "titles": {
+    "create": "Thêm người dùng mới", 
+    "edit": "Chỉnh sửa thông tin người dùng",
+    "view": "Thông tin chi tiết người dùng",
+    "delete": "Xóa người dùng"
+  },
+  "fields": {
+    "code": "Mã số sinh viên/cán bộ",
+    "familyName": "Họ và tên lót", 
+    "givenName": "Tên",
+    "fullName": "Họ và tên",
+    "password": "Mật khẩu",
+    "userType": "Loại người dùng",
+    "membershipStatus": "Trạng thái thành viên",
+    "managementDepartment": "Đơn vị quản lý",
+    "trainingDepartment": "Đơn vị đào tạo",
+    "class": "Lớp",
+    "info": "Thông tin",
+    "contact": "Liên hệ",
+    "type": "Loại"
+  },
+  "placeholders": {
+    "code": "Ví dụ: 2024001, CB001",
+    "familyName": "Ví dụ: Nguyễn Văn",
+    "givenName": "Ví dụ: An",
+    "email": "example@hcmut.edu.vn",
+    "phone": "0901234567",
+    "password": "Để trống nếu sử dụng đăng nhập Google",
+    "newPassword": "Nhập mật khẩu mới",
+    "noChangePassword": "Để trống nếu không thay đổi",
+    "search": "Tìm kiếm theo tên, email, mã số..."
+  },
+  "types": {
+    "student": "Sinh viên",
+    "staff": "Cán bộ",
+    "all": "Tất cả loại"
+  },
+  "membershipStatus": {
+    "none": "Chưa tham gia",
+    "doan_vien": "Đoàn viên",
+    "hoi_vien": "Hội viên",
+    "both": "Đoàn viên & Hội viên",
+    "all": "Tất cả trạng thái"
+  },
+  "messages": {
+    "noUsers": "Không tìm thấy người dùng nào",
+    "deleteWarningMessage": "Việc xóa người dùng sẽ xóa tất cả dữ liệu liên quan bao gồm thành viên tổ chức, lịch sử hoạt động, v.v.",
+    "duplicateCode": "Mã số sinh viên/cán bộ đã tồn tại"
+  },
+  "labels": {
+    "requiredMark": "*",
+    "optional": "(tùy chọn)",
+    "passwordOptional": "Mật khẩu (tùy chọn)",
+    "newPassword": "Mật khẩu mới (để trống nếu không thay đổi)",
+    "deleteTitle": "Xác nhận xóa",
+    "organizationalInfo": "Thông tin tổ chức"
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "appName": "Hệ thống Đoàn Hội Sinh viên",
+  "navigation": {
+    "dashboard": "Trang chủ",
+    "users": "Người dùng", 
+    "organizations": "Tổ chức",
+    "departments": "Đơn vị",
+    "classes": "Lớp học"
+  },
+  "actions": {
+    "create": "Tạo mới",
+    "add": "Thêm",
+    "edit": "Chỉnh sửa", 
+    "update": "Cập nhật",
+    "delete": "Xóa",
+    "view": "Xem",
+    "viewDetails": "Xem chi tiết",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "close": "Đóng",
+    "confirm": "Xác nhận",
+    "submit": "Gửi",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "clear": "Xóa",
+    "refresh": "Làm mới",
+    "retry": "Thử lại",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "previous": "Trước",
+    "select": "Chọn"
+  },
+  "states": {
+    "loading": "Đang tải...",
+    "saving": "Đang lưu...",
+    "creating": "Đang tạo...",
+    "updating": "Đang cập nhật...",
+    "deleting": "Đang xóa...",
+    "processing": "Đang xử lý..."
+  },
+  "messages": {
+    "success": {
+      "create": "Tạo thành công",
+      "update": "Cập nhật thành công", 
+      "delete": "Xóa thành công",
+      "save": "Lưu thành công"
+    },
+    "error": {
+      "create": "Có lỗi xảy ra khi tạo",
+      "update": "Có lỗi xảy ra khi cập nhật",
+      "delete": "Có lỗi xảy ra khi xóa",
+      "load": "Có lỗi xảy ra khi tải dữ liệu",
+      "network": "Lỗi kết nối mạng",
+      "unknown": "Đã có lỗi xảy ra"
+    },
+    "confirm": {
+      "delete": "Bạn có chắc chắn muốn xóa không?",
+      "deleteWarning": "Hành động này không thể hoàn tác."
+    },
+    "empty": {
+      "noData": "Không có dữ liệu",
+      "noResults": "Không tìm thấy kết quả nào"
+    },
+    "more": "thêm"
+  },
+  "pagination": {
+    "showing": "Hiển thị {{start}} - {{end}} của {{total}} kết quả",
+    "previous": "Trước",
+    "next": "Tiếp theo", 
+    "page": "Trang {{current}} / {{total}}",
+    "itemsPerPage": "{{count}} mục/trang"
+  },
+  "validation": {
+    "required": "{{field}} là bắt buộc",
+    "minLength": "{{field}} phải có ít nhất {{min}} ký tự",
+    "maxLength": "{{field}} không được vượt quá {{max}} ký tự",
+    "email": "Email không hợp lệ",
+    "phone": "Số điện thoại không hợp lệ",
+    "duplicate": "{{field}} đã tồn tại"
+  },
+  "fields": {
+    "status": "Trạng thái",
+    "createdAt": "Ngày tạo",
+    "updatedAt": "Cập nhật lần cuối",
+    "actions": "Thao tác"
+  },
+  "status": {
+    "active": "Hoạt động",
+    "inactive": "Không hoạt động",
+    "all": "Tất cả"
+  },
+  "footer": {
+    "copyright": "ĐHBK TPHCM - 2025"
+  }
+}

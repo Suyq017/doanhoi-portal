@@ -1,0 +1,31 @@
+{
+  "title": "Class Management",
+  "subtitle": "Manage class information and students",
+  "titles": {
+    "create": "Add New Class",
+    "edit": "Edit Class Information",
+    "view": "Class Details",
+    "delete": "Delete Class"
+  },
+  "fields": {
+    "info": "Class Information",
+    "name": "Class Name",
+    "year": "Academic Year",
+    "studentCount": "Student Count",
+    "department": "Department"
+  },
+  "placeholders": {
+    "search": "Search classes...",
+    "name": "e.g. Software Engineering K19",
+    "year": "e.g. 2024"
+  },
+  "labels": {
+    "classInfo": "Class Information",
+    "studentList": "Student List"
+  },
+  "messages": {
+    "cannotDeleteWithStudents": "Cannot delete class with students. Please move students first.",
+    "hasStudents": "This class has students",
+    "moveStudentsFirst": "Need to move {{count}} students to other classes before deletion."
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "title": "Dashboard",
+  "welcome": "Welcome to Youth Union & Student Association System",
+  "stats": {
+    "totalUsers": "Total Users",
+    "totalOrganizations": "Total Organizations",
+    "youthMembers": "Youth Union Members",
+    "associationMembers": "Student Association Members",
+    "students": "Students",
+    "staff": "Staff"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "addUser": "Add New User",
+    "createOrganization": "Create New Organization",
+    "viewReports": "View Reports"
+  },
+  "recentActivity": {
+    "title": "Recent Activity",
+    "noActivity": "No recent activity"
+  }
+}

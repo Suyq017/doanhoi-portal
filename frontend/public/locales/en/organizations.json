@@ -1,0 +1,26 @@
+{
+  "title": "Organization Management",
+  "subtitle": "Manage Youth Union, Student Association and Club structures",
+  "createOrganization": "Create Organization",
+  "addOrganization": "Add Organization",
+  "editOrganization": "Edit Organization",
+  "deleteOrganization": "Delete Organization",
+  "organizationInfo": "Organization Information",
+  "stats": {
+    "totalOrganizations": "Total Organizations",
+    "youthUnions": "Youth Union Branches",
+    "studentAssociations": "Student Association Branches",
+    "clubs": "Clubs"
+  },
+  "types": {
+    "youth_union": "Youth Union",
+    "student_association": "Student Association",
+    "club": "Club"
+  },
+  "levels": {
+    "school": "School Level",
+    "faculty": "Faculty Level",
+    "department": "Department Level",
+    "class": "Class Level"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "appName": "Youth Union & Student Association System",
+  "navigation": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "organizations": "Organizations",
+    "departments": "Departments"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Information",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "add": "Add",
+    "create": "Create",
+    "update": "Update",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "submit": "Submit",
+    "actions": "Actions",
+    "showing": "Showing",
+    "to": "to",
+    "of": "of",
+    "results": "results",
+    "page": "Page",
+    "tryAgain": "Try Again",
+    "saving": "Saving...",
+    "deleting": "Deleting..."
+  },
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View Details",
+    "add": "Add New",
+    "create": "Create New",
+    "update": "Update",
+    "confirm": "Confirm",
+    "close": "Close"
+  },
+  "messages": {
+    "loading": "Loading data...",
+    "noData": "No data available",
+    "error": "An error occurred",
+    "success": "Success",
+    "confirmDelete": "Are you sure you want to delete?",
+    "deleteWarning": "This action cannot be undone.",
+    "saveSuccess": "Saved successfully",
+    "deleteSuccess": "Deleted successfully",
+    "updateSuccess": "Updated successfully"
+  },
+  "retry": "Retry",
+  "footer": {
+    "copyright": "HCMUT - 2025"
+  }
+}

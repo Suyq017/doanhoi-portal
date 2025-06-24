@@ -1,0 +1,33 @@
+{
+  "title": "Department Management",
+  "subtitle": "Manage information of departments, faculties and units within university",
+  "titles": {
+    "create": "Add New Department",
+    "edit": "Edit Department Information",
+    "view": "Department Details",
+    "delete": "Delete Department"
+  },
+  "fields": {
+    "name": "Department Name",
+    "code": "Department Code",
+    "description": "Description",
+    "managementUsers": "Management Users",
+    "trainingUsers": "Training Users",
+    "isActive": "Active"
+  },
+  "placeholders": {
+    "name": "e.g.: Faculty of Computer Science",
+    "code": "e.g.: CSE, EE, ME",
+    "description": "Description about the department...",
+    "search": "Search by name, department code..."
+  },
+  "messages": {
+    "noDepartments": "No departments found",
+    "cannotDeleteWithUsers": "Cannot delete department with associated users"
+  },
+  "stats": {
+    "total": "{{count}} departments",
+    "active": "{{count}} active",
+    "inactive": "{{count}} inactive"
+  }
+}

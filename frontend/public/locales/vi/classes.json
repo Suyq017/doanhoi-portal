@@ -1,0 +1,31 @@
+{
+  "title": "Quản lý Lớp học",
+  "subtitle": "Quản lý thông tin lớp học và sinh viên",
+  "titles": {
+    "create": "Thêm lớp học mới",
+    "edit": "Chỉnh sửa thông tin lớp học",
+    "view": "Thông tin chi tiết lớp học",
+    "delete": "Xóa lớp học"
+  },
+  "fields": {
+    "info": "Thông tin lớp",
+    "name": "Tên lớp",
+    "year": "Năm học",
+    "studentCount": "Số sinh viên",
+    "department": "Đơn vị"
+  },
+  "placeholders": {
+    "search": "Tìm kiếm lớp học...",
+    "name": "Ví dụ: Kỹ thuật phần mềm K19",
+    "year": "Ví dụ: 2024"
+  },
+  "labels": {
+    "classInfo": "Thông tin lớp học",
+    "studentList": "Danh sách sinh viên"
+  },
+  "messages": {
+    "cannotDeleteWithStudents": "Không thể xóa lớp học có sinh viên. Vui lòng chuyển sinh viên trước.",
+    "hasStudents": "Lớp học này có sinh viên",
+    "moveStudentsFirst": "Cần chuyển {{count}} sinh viên sang lớp khác trước khi xóa."
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "title": "Bảng điều khiển",
+  "welcome": "Chào mừng đến với Hệ thống Đoàn Hội Sinh viên",
+  "stats": {
+    "totalUsers": "Tổng số người dùng",
+    "totalOrganizations": "Tổng số tổ chức",
+    "youthMembers": "Đoàn viên",
+    "associationMembers": "Hội viên",
+    "students": "Sinh viên",
+    "staff": "Cán bộ"
+  },
+  "quickActions": {
+    "title": "Thao tác nhanh",
+    "addUser": "Thêm người dùng mới",
+    "createOrganization": "Tạo tổ chức mới",
+    "viewReports": "Xem báo cáo"
+  },
+  "recentActivity": {
+    "title": "Hoạt động gần đây",
+    "noActivity": "Chưa có hoạt động nào"
+  }
+}

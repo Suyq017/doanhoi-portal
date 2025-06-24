@@ -1,0 +1,95 @@
+{
+  "appName": "Youth Union & Student Association System",
+  "navigation": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "organizations": "Organizations",
+    "departments": "Departments",
+    "classes": "Classes"
+  },
+  "actions": {
+    "create": "Create",
+    "add": "Add",
+    "edit": "Edit", 
+    "update": "Update",
+    "delete": "Delete",
+    "view": "View",
+    "viewDetails": "View Details",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "select": "Select"
+  },
+  "states": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "creating": "Creating...",
+    "updating": "Updating...",
+    "deleting": "Deleting...",
+    "processing": "Processing..."
+  },
+  "messages": {
+    "success": {
+      "create": "Created successfully",
+      "update": "Updated successfully", 
+      "delete": "Deleted successfully",
+      "save": "Saved successfully"
+    },
+    "error": {
+      "create": "Error occurred while creating",
+      "update": "Error occurred while updating",
+      "delete": "Error occurred while deleting",
+      "load": "Error occurred while loading data",
+      "network": "Network connection error",
+      "unknown": "An error occurred"
+    },
+    "confirm": {
+      "delete": "Are you sure you want to delete?",
+      "deleteWarning": "This action cannot be undone."
+    },
+    "empty": {
+      "noData": "No data available",
+      "noResults": "No results found"
+    },
+    "more": "more"
+  },
+  "pagination": {
+    "showing": "Showing {{start}} - {{end}} of {{total}} results",
+    "previous": "Previous",
+    "next": "Next", 
+    "page": "Page {{current}} / {{total}}",
+    "itemsPerPage": "{{count}} items/page"
+  },
+  "validation": {
+    "required": "{{field}} is required",
+    "minLength": "{{field}} must be at least {{min}} characters",
+    "maxLength": "{{field}} must not exceed {{max}} characters",
+    "email": "Invalid email format",
+    "phone": "Invalid phone number",
+    "duplicate": "{{field}} already exists"
+  },
+  "fields": {
+    "status": "Status",
+    "createdAt": "Created At",
+    "updatedAt": "Last Updated",
+    "actions": "Actions"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "all": "All"
+  },
+  "footer": {
+    "copyright": "HCMUT - 2025"
+  }
+}

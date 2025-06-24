@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: doanhoi-postgres
+    environment:
+      POSTGRES_DB: doanhoi
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "9000:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - doanhoi-network
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: doanhoi-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@doanhoi.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "9001:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - doanhoi-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  doanhoi-network:
+    driver: bridge

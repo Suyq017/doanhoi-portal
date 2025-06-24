@@ -1,0 +1,33 @@
+{
+  "title": "Quản lý Đơn vị",
+  "subtitle": "Quản lý thông tin các đơn vị, phòng ban trong trường",
+  "titles": {
+    "create": "Thêm đơn vị mới",
+    "edit": "Chỉnh sửa thông tin đơn vị",
+    "view": "Thông tin chi tiết đơn vị",
+    "delete": "Xóa đơn vị"
+  },
+  "fields": {
+    "name": "Tên đơn vị",
+    "code": "Mã đơn vị", 
+    "description": "Mô tả",
+    "managementUsers": "Người dùng quản lý",
+    "trainingUsers": "Người dùng đào tạo",
+    "isActive": "Hoạt động"
+  },
+  "placeholders": {
+    "name": "Ví dụ: Khoa Khoa học máy tính",
+    "code": "Ví dụ: CSE, EE, ME", 
+    "description": "Mô tả về đơn vị...",
+    "search": "Tìm kiếm theo tên, mã đơn vị..."
+  },
+  "messages": {
+    "noDepartments": "Không tìm thấy đơn vị nào",
+    "cannotDeleteWithUsers": "Không thể xóa đơn vị có người dùng liên kết"
+  },
+  "stats": {
+    "total": "{{count}} đơn vị",
+    "active": "{{count}} hoạt động", 
+    "inactive": "{{count}} không hoạt động"
+  }
+}
