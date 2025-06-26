@@ -4,6 +4,7 @@
     "dashboard": "Dashboard",
     "users": "Users",
     "organizations": "Organizations",
+    "dataManagement": "Data Management",
     "departments": "Departments",
     "classes": "Classes"
   },
@@ -82,12 +83,67 @@
     "status": "Status",
     "createdAt": "Created At",
     "updatedAt": "Last Updated",
-    "actions": "Actions"
+    "actions": "Actions",
+    "row": "Row"
   },
   "status": {
     "active": "Active",
     "inactive": "Inactive",
     "all": "All"
+  },
+  "import": {
+    "downloadTemplate": "Download Template",
+    "templateDescription": "Download Excel template to fill data in correct format",
+    "dropFile": "Drag and drop file here",
+    "dropFileNow": "Drop file to upload",
+    "selectFile": "Select file from computer",
+    "supportedFormats": "Supported formats",
+    "maxFileSize": "Maximum size",
+    "processing": "Processing file...",
+    "totalRecords": "Total records",
+    "validRecords": "Valid records",
+    "errors": "Errors",
+    "warnings": "Warnings",
+    "showOnlyErrors": "Show only errors",
+    "showAll": "Show all",
+    "showLess": "Show less",
+    "showingRows": "Showing {{count}} / {{total}} rows",
+    "validationErrors": "Error list",
+    "andMoreErrors": "and {{count}} more errors...",
+    "andMoreWarnings": "and {{count}} more warnings...",
+    "options": "Import options",
+    "skipErrorRows": "Skip error rows",
+    "skipErrorRowsDescription": "Only import valid rows, skip rows with errors",
+    "updateExisting": "Update existing data",
+    "updateExistingDescription": "Update information if already exists, instead of skipping",
+    "dryRun": "Validation mode (no actual import)",
+    "dryRunDescription": "Only validate data without performing actual import",
+    "validate": "Validate", 
+    "startImport": "Start Import",
+    "importing": "Importing data...",
+    "validating": "Validating data...",
+    "pleaseWait": "Please wait a moment...",
+    "importComplete": "Import process completed",
+    "dryRunComplete": "Validation process completed",
+    "successTitle": "Import successful!",
+    "partialSuccessTitle": "Partial import success",
+    "failureTitle": "Import failed",
+    "importAgain": "Import again",
+    "total": "Total",
+    "successful": "Successful",
+    "failed": "Failed",
+    "skipped": "Skipped",
+    "steps": {
+      "upload": "Upload",
+      "preview": "Preview",
+      "importing": "Import",
+      "result": "Result"
+    },
+    "errors": {
+      "invalidFileType": "File format not supported",
+      "fileTooLarge": "File too large",
+      "parseFile": "Cannot read file. Please check file format."
+    }
   },
   "footer": {
     "copyright": "HCMUT - 2025"

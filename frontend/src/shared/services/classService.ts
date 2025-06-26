@@ -56,7 +56,18 @@ class ClassService {
         throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return response.json();
+      // Check if response has content to parse as JSON
+      const contentType = response.headers.get('content-type');
+      const contentLength = response.headers.get('content-length');
+      
+      // If no content-type header with JSON or content-length is 0, return undefined
+      if (!contentType?.includes('application/json') || contentLength === '0') {
+        return undefined as T;
+      }
+
+      // Try to parse JSON, return undefined if empty response
+      const text = await response.text();
+      return text ? JSON.parse(text) : undefined as T;
     } catch (error) {
       console.error('API request failed:', error);
       throw error;

@@ -4,6 +4,7 @@
     "dashboard": "Trang chủ",
     "users": "Người dùng", 
     "organizations": "Tổ chức",
+    "dataManagement": "Danh mục dữ liệu",
     "departments": "Đơn vị",
     "classes": "Lớp học"
   },
@@ -82,12 +83,67 @@
     "status": "Trạng thái",
     "createdAt": "Ngày tạo",
     "updatedAt": "Cập nhật lần cuối",
-    "actions": "Thao tác"
+    "actions": "Thao tác",
+    "row": "Dòng"
   },
   "status": {
     "active": "Hoạt động",
     "inactive": "Không hoạt động",
     "all": "Tất cả"
+  },
+  "import": {
+    "downloadTemplate": "Tải file mẫu",
+    "templateDescription": "Tải file Excel mẫu để điền dữ liệu theo đúng định dạng",
+    "dropFile": "Kéo thả file vào đây",
+    "dropFileNow": "Thả file để tải lên",
+    "selectFile": "Chọn file từ máy tính",
+    "supportedFormats": "Định dạng hỗ trợ",
+    "maxFileSize": "Kích thước tối đa",
+    "processing": "Đang xử lý file...",
+    "totalRecords": "Tổng số bản ghi",
+    "validRecords": "Bản ghi hợp lệ",
+    "errors": "Lỗi",
+    "warnings": "Cảnh báo",
+    "showOnlyErrors": "Chỉ hiển thị lỗi",
+    "showAll": "Hiển thị tất cả",
+    "showLess": "Thu gọn",
+    "showingRows": "Hiển thị {{count}} / {{total}} dòng",
+    "validationErrors": "Danh sách lỗi",
+    "andMoreErrors": "và {{count}} lỗi khác...",
+    "andMoreWarnings": "và {{count}} cảnh báo khác...",
+    "options": "Tùy chọn import",
+    "skipErrorRows": "Bỏ qua các dòng có lỗi",
+    "skipErrorRowsDescription": "Chỉ import những dòng hợp lệ, bỏ qua các dòng có lỗi",
+    "updateExisting": "Cập nhật dữ liệu trùng lặp",
+    "updateExistingDescription": "Cập nhật thông tin nếu đã tồn tại, thay vì bỏ qua",
+    "dryRun": "Chế độ kiểm tra (không import thực tế)",
+    "dryRunDescription": "Chỉ kiểm tra tính hợp lệ mà không thực hiện import",
+    "validate": "Kiểm tra",
+    "startImport": "Bắt đầu import",
+    "importing": "Đang import dữ liệu...",
+    "validating": "Đang kiểm tra dữ liệu...",
+    "pleaseWait": "Vui lòng đợi trong giây lát...",
+    "importComplete": "Quá trình import đã hoàn tất",
+    "dryRunComplete": "Quá trình kiểm tra đã hoàn tất",
+    "successTitle": "Import thành công!",
+    "partialSuccessTitle": "Import một phần thành công",
+    "failureTitle": "Import thất bại",
+    "importAgain": "Import lại",
+    "total": "Tổng",
+    "successful": "Thành công",
+    "failed": "Thất bại",
+    "skipped": "Bỏ qua",
+    "steps": {
+      "upload": "Tải file",
+      "preview": "Xem trước",
+      "importing": "Import",
+      "result": "Kết quả"
+    },
+    "errors": {
+      "invalidFileType": "Định dạng file không được hỗ trợ",
+      "fileTooLarge": "File quá lớn",
+      "parseFile": "Không thể đọc được file. Vui lòng kiểm tra định dạng file."
+    }
   },
   "footer": {
     "copyright": "ĐHBK TPHCM - 2025"

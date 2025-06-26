@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Filter, Edit, Trash2, Eye } from "lucide-react";
+import { Search, Plus, Filter, Edit, Trash2, Eye, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   departmentService,
@@ -10,6 +10,8 @@ import {
   useToast,
   Select,
   SelectOption,
+  ImportModal,
+  ImportModalConfig,
 } from "../../shared";
 import CreateDepartmentModal from "./components/CreateDepartmentModal";
 import ViewDepartmentModal from "./components/ViewDepartmentModal";
@@ -30,6 +32,7 @@ const Departments: React.FC = () => {
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreatingDepartment, setIsCreatingDepartment] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Toast
   const { toasts, hideToast, showSuccess, showError } = useToast();
@@ -48,6 +51,32 @@ const Departments: React.FC = () => {
     { value: "true", label: t('common:status.active') },
     { value: "false", label: t('common:status.inactive') },
   ];
+
+  // Import configuration
+  const importConfig: ImportModalConfig<any> = {
+    templateUrl: 'http://localhost:9200/departments/template',
+    templateFileName: t('departments:import.templateFile'),
+    acceptedFileTypes: ['.xlsx', '.xls', '.csv'],
+    maxFileSize: 5 * 1024 * 1024, // 5MB
+    parseFile: departmentService.parseFile.bind(departmentService),
+    validateData: departmentService.validateData.bind(departmentService),
+    importData: departmentService.importData.bind(departmentService),
+    columns: [
+      { key: 'name', label: t('departments:fields.name'), required: true, type: 'text' },
+      { key: 'code', label: t('departments:fields.code'), required: false, type: 'text' },
+      { key: 'description', label: t('departments:fields.description'), required: false, type: 'text' },
+      { key: 'isActive', label: t('departments:fields.isActive'), required: false, type: 'boolean' },
+    ],
+    entityName: 'departments',
+    onSuccess: () => {
+      loadDepartments();
+      setIsImportModalOpen(false);
+    },
+    onError: (error) => {
+      console.error('Import error:', error);
+      showError(t('departments:import.error'));
+    }
+  };
 
   const loadDepartments = async () => {
     try {
@@ -241,13 +270,22 @@ const Departments: React.FC = () => {
             {t('departments:subtitle')}
           </p>
         </div>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-doan-500 text-white rounded-md hover:bg-doan-600 transition-colors"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          {t('common:actions.create')}
-        </button>
+        <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-2">
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+          >
+            <Upload className="w-5 h-5 mr-2" />
+            {t('departments:actions.importFile')}
+          </button>
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 bg-doan-500 text-white rounded-md hover:bg-doan-600 transition-colors"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            {t('departments:actions.createSingle')}
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -458,6 +496,13 @@ const Departments: React.FC = () => {
           />
         </>
       )}
+
+      {/* Import Modal */}
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        config={importConfig}
+      />
 
       {/* Toast Notifications */}
       {toasts.map((toast) => (
