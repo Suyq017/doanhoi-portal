@@ -55,12 +55,12 @@ const ImportModal = <T extends Record<string, any>>({
   const isValidFile = (file: File): boolean => {
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!config.acceptedFileTypes.includes(fileExtension)) {
-      alert(t('import.errors.invalidFileType'));
+      alert(t('errors.invalidFileType'));
       return false;
     }
     
     if (file.size > config.maxFileSize) {
-      alert(t('import.errors.fileTooLarge'));
+      alert(t('errors.fileTooLarge'));
       return false;
     }
     
@@ -87,7 +87,7 @@ const ImportModal = <T extends Record<string, any>>({
       }));
     } catch (error) {
       console.error('File processing error:', error);
-      alert(t('import.errors.parseFile'));
+      alert(t('errors.parseFile'));
       setState(prev => ({ ...prev, loading: false }));
     }
   };
@@ -161,7 +161,7 @@ const ImportModal = <T extends Record<string, any>>({
   // Utility functions
   const renderCellValue = (value: any, type: string): React.ReactNode => {
     if (value === null || value === undefined || value === '') {
-      return <span className="text-gray-400 italic">-</span>;
+      return <span className="italic text-gray-400">-</span>;
     }
 
     switch (type) {
@@ -200,14 +200,14 @@ const ImportModal = <T extends Record<string, any>>({
   const renderUploadStep = () => (
     <div className="space-y-6">
       {/* Instructions */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+      <div className="p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
         <div className="flex items-start space-x-3">
           <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
           <div>
-            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+            <h4 className="mb-2 font-medium text-blue-900 dark:text-blue-100">
               {t(`${config.entityName}:import.instructions`)}
             </h4>
-            <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
+            <ol className="space-y-1 text-sm text-blue-800 list-decimal list-inside dark:text-blue-200">
               <li>
                 {t(`${config.entityName}:import.step1`).includes(t(`${config.entityName}:import.templateLinkText`)) ? (
                   <>
@@ -215,7 +215,7 @@ const ImportModal = <T extends Record<string, any>>({
                     <a 
                       href={config.templateUrl}
                       download={config.templateFileName}
-                      className="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 underline font-medium"
+                      className="font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
                     >
                       {t(`${config.entityName}:import.templateLinkText`)}
                     </a>
@@ -247,11 +247,11 @@ const ImportModal = <T extends Record<string, any>>({
           state.dragActive ? 'text-doan-500' : 'text-gray-400'
         }`} />
         
-        <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        <p className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
           {state.dragActive ? t('import.dropFileNow') : t('import.dropFile')}
         </p>
         
-        <p className="text-gray-500 dark:text-gray-400 mb-4">
+        <p className="mb-4 text-gray-500 dark:text-gray-400">
           {config.acceptedFileTypes.includes('.xlsx') && config.acceptedFileTypes.length === 1 
             ? t(`${config.entityName}:import.onlyExcelAllowed`)
             : `${t('import.supportedFormats')}: ${config.acceptedFileTypes.join(', ')}`
@@ -271,7 +271,7 @@ const ImportModal = <T extends Record<string, any>>({
         <button 
           onClick={() => fileInputRef.current?.click()}
           disabled={state.loading}
-          className="inline-flex items-center px-6 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center px-6 py-3 font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {state.loading ? (
             <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -293,8 +293,8 @@ const ImportModal = <T extends Record<string, any>>({
     return (
       <div className="space-y-6">
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="p-4 text-center rounded-lg bg-gray-50 dark:bg-gray-800">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {summary.total}
             </div>
@@ -303,7 +303,7 @@ const ImportModal = <T extends Record<string, any>>({
             </div>
           </div>
           
-          <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+          <div className="p-4 text-center rounded-lg bg-green-50 dark:bg-green-900/20">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {summary.valid}
             </div>
@@ -312,16 +312,16 @@ const ImportModal = <T extends Record<string, any>>({
             </div>
           </div>
           
-          <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+          <div className="p-4 text-center rounded-lg bg-red-50 dark:bg-red-900/20">
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {state.importData.errors.length}
             </div>
             <div className="text-sm text-red-600 dark:text-red-400">
-              {t('import.errors')}
+              {t('import.error')}
             </div>
           </div>
           
-          <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+          <div className="p-4 text-center rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
               {state.importData.warnings.length}
             </div>
@@ -348,7 +348,7 @@ const ImportModal = <T extends Record<string, any>>({
             
             <button
               onClick={() => setShowAllRows(!showAllRows)}
-              className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-700 transition-colors bg-gray-100 rounded-md dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               {showAllRows ? t('import.showLess') : t('import.showAll')}
               {!showAllRows && ` (${Math.min(config.previewRowCount || 10, state.importData.data.length)}/${state.importData.data.length})`}
@@ -364,25 +364,25 @@ const ImportModal = <T extends Record<string, any>>({
         </div>
 
         {/* Preview Table */}
-        <div className="border rounded-lg overflow-hidden">
-          <div className="max-h-96 overflow-auto">
+        <div className="overflow-hidden border rounded-lg">
+          <div className="overflow-auto max-h-96">
             <table className="min-w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
+              <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                     {t('common:fields.row')}
                   </th>
                   {config.columns.map(col => (
                     <th 
                       key={col.key} 
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                      className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400"
                       style={col.width ? { width: col.width } : {}}
                     >
                       {col.label}
-                      {col.required && <span className="text-red-500 ml-1">*</span>}
+                      {col.required && <span className="ml-1 text-red-500">*</span>}
                     </th>
                   ))}
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-400">
                     {t('common:fields.status')}
                   </th>
                 </tr>
@@ -397,7 +397,7 @@ const ImportModal = <T extends Record<string, any>>({
                         : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
                     }`}
                   >
-                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 font-mono">
+                    <td className="px-4 py-3 font-mono text-sm text-gray-500 dark:text-gray-400">
                       {item._rowIndex + 1}
                     </td>
                     {config.columns.map(col => (
@@ -433,24 +433,24 @@ const ImportModal = <T extends Record<string, any>>({
 
         {/* Error Details */}
         {state.importData.errors.length > 0 && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <h5 className="font-medium text-red-800 dark:text-red-200 mb-3 flex items-center">
+          <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+            <h5 className="flex items-center mb-3 font-medium text-red-800 dark:text-red-200">
               <AlertTriangle className="w-4 h-4 mr-2" />
               {t('import.validationErrors')} ({state.importData.errors.length})
             </h5>
-            <div className="max-h-32 overflow-auto">
-              <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
+            <div className="overflow-auto max-h-32">
+              <ul className="space-y-1 text-sm text-red-700 dark:text-red-300">
                 {state.importData.errors.slice(0, 10).map((error, index) => (
                   <li key={index} className="flex items-start">
                     <span className="font-mono text-xs bg-red-100 dark:bg-red-900/30 px-1 rounded mr-2 mt-0.5">
                       {error.row}
                     </span>
-                    <span className="font-medium mr-2">{error.column}:</span>
+                    <span className="mr-2 font-medium">{error.column}:</span>
                     <span>{error.message}</span>
                   </li>
                 ))}
                 {state.importData.errors.length > 10 && (
-                  <li className="text-red-600 dark:text-red-400 italic">
+                  <li className="italic text-red-600 dark:text-red-400">
                     {t('import.andMoreErrors', { count: state.importData.errors.length - 10 })}
                   </li>
                 )}
@@ -460,8 +460,8 @@ const ImportModal = <T extends Record<string, any>>({
         )}
 
         {/* Import Options */}
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+        <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+          <h4 className="mb-3 font-medium text-gray-900 dark:text-white">
             {t('import.options')}
           </h4>
           <div className="space-y-3">
@@ -479,7 +479,7 @@ const ImportModal = <T extends Record<string, any>>({
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {t('import.skipErrorRows')}
                 </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {t('import.skipErrorRowsDescription')}
                 </p>
               </div>
@@ -499,7 +499,7 @@ const ImportModal = <T extends Record<string, any>>({
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {t('import.updateExisting')}
                 </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {t('import.updateExistingDescription')}
                 </p>
               </div>
@@ -519,7 +519,7 @@ const ImportModal = <T extends Record<string, any>>({
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {t('import.dryRun')}
                 </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {t('import.dryRunDescription')}
                 </p>
               </div>
@@ -531,16 +531,16 @@ const ImportModal = <T extends Record<string, any>>({
   };
 
   const renderImportingStep = () => (
-    <div className="text-center py-12">
-      <RefreshCw className="w-16 h-16 text-doan-500 animate-spin mx-auto mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+    <div className="py-12 text-center">
+      <RefreshCw className="w-16 h-16 mx-auto mb-4 text-doan-500 animate-spin" />
+      <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
         {state.options.dryRun ? t('import.validating') : t('import.importing')}
       </h3>
-      <p className="text-gray-500 dark:text-gray-400 mb-4">
+      <p className="mb-4 text-gray-500 dark:text-gray-400">
         {t('import.pleaseWait')}
       </p>
-      <div className="max-w-md mx-auto bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-        <div className="bg-doan-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+      <div className="h-2 max-w-md mx-auto bg-gray-200 rounded-full dark:bg-gray-700">
+        <div className="h-2 rounded-full bg-doan-500 animate-pulse" style={{ width: '60%' }}></div>
       </div>
     </div>
   );
@@ -553,7 +553,7 @@ const ImportModal = <T extends Record<string, any>>({
     const isPartialSuccess = success > 0 && failed > 0;
 
     return (
-      <div className="text-center py-8">
+      <div className="py-8 text-center">
         <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
           isSuccess 
             ? 'bg-green-100 dark:bg-green-900/20' 
@@ -585,7 +585,7 @@ const ImportModal = <T extends Record<string, any>>({
           }
         </h3>
 
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="mb-6 text-gray-600 dark:text-gray-400">
           {state.options.dryRun 
             ? t('import.dryRunComplete') 
             : t('import.importComplete')
@@ -593,20 +593,20 @@ const ImportModal = <T extends Record<string, any>>({
         </p>
 
         {/* Results Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+        <div className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
+          <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{total}</div>
             <div className="text-sm text-gray-500 dark:text-gray-400">{t('import.total')}</div>
           </div>
-          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+          <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">{success}</div>
             <div className="text-sm text-green-600 dark:text-green-400">{t('import.successful')}</div>
           </div>
-          <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+          <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20">
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">{failed}</div>
             <div className="text-sm text-red-600 dark:text-red-400">{t('import.failed')}</div>
           </div>
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
+          <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{skipped}</div>
             <div className="text-sm text-yellow-600 dark:text-yellow-400">{t('import.skipped')}</div>
           </div>
@@ -614,13 +614,13 @@ const ImportModal = <T extends Record<string, any>>({
 
         {/* Error/Warning Details */}
         {(state.importResult.errors.length > 0 || state.importResult.warnings.length > 0) && (
-          <div className="text-left space-y-4">
+          <div className="space-y-4 text-left">
             {state.importResult.errors.length > 0 && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <h5 className="font-medium text-red-800 dark:text-red-200 mb-2">
-                  {t('import.errors')} ({state.importResult.errors.length})
+              <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+                <h5 className="mb-2 font-medium text-red-800 dark:text-red-200">
+                  {t('import.error')} ({state.importResult.errors.length})
                 </h5>
-                <ul className="text-sm text-red-700 dark:text-red-300 space-y-1 max-h-32 overflow-auto">
+                <ul className="space-y-1 overflow-auto text-sm text-red-700 dark:text-red-300 max-h-32">
                   {state.importResult.errors.slice(0, 5).map((error, index) => (
                     <li key={index}>• {error}</li>
                   ))}
@@ -634,11 +634,11 @@ const ImportModal = <T extends Record<string, any>>({
             )}
 
             {state.importResult.warnings.length > 0 && (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                <h5 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+              <div className="p-4 border border-yellow-200 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
+                <h5 className="mb-2 font-medium text-yellow-800 dark:text-yellow-200">
                   {t('import.warnings')} ({state.importResult.warnings.length})
                 </h5>
-                <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1 max-h-32 overflow-auto">
+                <ul className="space-y-1 overflow-auto text-sm text-yellow-700 dark:text-yellow-300 max-h-32">
                   {state.importResult.warnings.slice(0, 5).map((warning, index) => (
                     <li key={index}>• {warning}</li>
                   ))}
@@ -684,7 +684,7 @@ const ImportModal = <T extends Record<string, any>>({
           </div>
 
           {/* Progress Steps */}
-          <div className="flex items-center justify-center space-x-4 mb-8">
+          <div className="flex items-center justify-center mb-8 space-x-4">
             {(['upload', 'preview', 'importing', 'result'] as ImportStep[]).map((stepName, index) => {
               const stepIndex = ['upload', 'preview', 'importing', 'result'].indexOf(state.step);
               const isActive = stepName === state.step;
@@ -747,14 +747,14 @@ const ImportModal = <T extends Record<string, any>>({
                 <>
                   <button
                     onClick={() => setState(prev => ({ ...prev, step: 'upload' }))}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     {t('common:actions.back')}
                   </button>
                   <button
                     onClick={handleImport}
                     disabled={!state.importData?.isValid && !state.options.skipErrors}
-                    className="px-4 py-2 bg-doan-500 text-white rounded-md hover:bg-doan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {state.options.dryRun ? t('import.validate') : t('import.startImport')}
                   </button>
@@ -764,7 +764,7 @@ const ImportModal = <T extends Record<string, any>>({
               {(state.step === 'upload' || state.step === 'result') && (
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   {state.step === 'result' ? t('common:actions.close') : t('common:actions.cancel')}
                 </button>

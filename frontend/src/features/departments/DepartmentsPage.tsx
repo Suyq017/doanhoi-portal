@@ -94,7 +94,7 @@ const Departments: React.FC = () => {
     },
     onError: (error) => {
       console.error('Import error:', error);
-      showError(t('departments:import.error'));
+      showError(t('departments:import.importError'));
     }
   };
 

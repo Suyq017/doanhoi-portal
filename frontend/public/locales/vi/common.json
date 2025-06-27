@@ -102,7 +102,7 @@
     "processing": "Đang xử lý file...",
     "totalRecords": "Tổng số bản ghi",
     "validRecords": "Bản ghi hợp lệ",
-    "errors": "Lỗi",
+    "error": "Lỗi",
     "warnings": "Cảnh báo",
     "showOnlyErrors": "Chỉ hiển thị lỗi",
     "showAll": "Hiển thị tất cả",
