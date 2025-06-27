@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Filter, Edit, Trash2, Eye, Upload } from "lucide-react";
+import { Search, Filter, Edit, Trash2, Eye, UserPlus, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   departmentService,
@@ -12,6 +12,8 @@ import {
   SelectOption,
   ImportModal,
   ImportModalConfig,
+  AddDropdownButton,
+  DropdownOption,
 } from "../../shared";
 import CreateDepartmentModal from "./components/CreateDepartmentModal";
 import ViewDepartmentModal from "./components/ViewDepartmentModal";
@@ -52,11 +54,29 @@ const Departments: React.FC = () => {
     { value: "false", label: t('common:status.inactive') },
   ];
 
+  // Dropdown options for add button
+  const addDropdownOptions: DropdownOption[] = [
+    {
+      key: 'single',
+      label: t('departments:addButton.single'),
+      icon: <UserPlus className="w-4 h-4" />,
+      description: 'Tạo đơn vị mới bằng form',
+      onClick: () => setIsCreateModalOpen(true)
+    },
+    {
+      key: 'fromFile',
+      label: t('departments:addButton.fromFile'), 
+      icon: <Upload className="w-4 h-4" />,
+      description: 'Import nhiều đơn vị từ file Excel',
+      onClick: () => setIsImportModalOpen(true)
+    }
+  ];
+
   // Import configuration
   const importConfig: ImportModalConfig<any> = {
-    templateUrl: 'http://localhost:9200/departments/template',
+    templateUrl: `${import.meta.env.VITE_BACKEND_API_URL}/departments/template`,
     templateFileName: t('departments:import.templateFile'),
-    acceptedFileTypes: ['.xlsx', '.xls', '.csv'],
+    acceptedFileTypes: ['.xlsx'],
     maxFileSize: 5 * 1024 * 1024, // 5MB
     parseFile: departmentService.parseFile.bind(departmentService),
     validateData: departmentService.validateData.bind(departmentService),
@@ -219,7 +239,7 @@ const Departments: React.FC = () => {
         </div>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-doan-600 mx-auto"></div>
+            <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
               {t('common:states.loading')}
             </p>
@@ -244,11 +264,11 @@ const Departments: React.FC = () => {
         </div>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="text-red-500 text-xl mb-4">⚠️</div>
+            <div className="mb-4 text-xl text-red-500">⚠️</div>
             <p className="text-red-600 dark:text-red-400">{error}</p>
             <button
               onClick={loadDepartments}
-              className="mt-4 px-4 py-2 bg-doan-600 text-white rounded-lg hover:bg-doan-700"
+              className="px-4 py-2 mt-4 text-white rounded-lg bg-doan-600 hover:bg-doan-700"
             >
               {t('common:actions.retry')}
             </button>
@@ -270,36 +290,27 @@ const Departments: React.FC = () => {
             {t('departments:subtitle')}
           </p>
         </div>
-        <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-2">
-          <button
-            onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-          >
-            <Upload className="w-5 h-5 mr-2" />
-            {t('departments:actions.importFile')}
-          </button>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-doan-500 text-white rounded-md hover:bg-doan-600 transition-colors"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            {t('departments:actions.createSingle')}
-          </button>
+        <div className="mt-4 sm:mt-0">
+          <AddDropdownButton 
+            label={t('departments:addButton.dropdown')}
+            options={addDropdownOptions}
+            loading={isCreatingDepartment}
+          />
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
             <input
               type="text"
               placeholder={t('departments:placeholders.search')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
 
@@ -318,7 +329,7 @@ const Departments: React.FC = () => {
 
           {/* Filter Button */}
           <div>
-            <button className="w-full flex items-center justify-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+            <button className="flex items-center justify-center w-full px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-md dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
               <Filter className="w-5 h-5 mr-2" />
               {t('common:actions.filter')}
             </button>
@@ -327,39 +338,39 @@ const Departments: React.FC = () => {
       </div>
 
       {/* Departments Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full table-auto">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('departments:fields.name')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('departments:fields.code')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('departments:fields.description')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('common:fields.status')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('common:fields.actions')}
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {filteredDepartments.map((department) => (
                   <tr key={department.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-medium text-gray-900 dark:text-white">{department.name}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 text-gray-500 whitespace-nowrap dark:text-gray-400">
                       {department.code || '-'}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                      <div className="max-w-xs text-gray-500 truncate dark:text-gray-400">
                         {department.description || '-'}
                       </div>
                     </td>
@@ -374,7 +385,7 @@ const Departments: React.FC = () => {
                         {department.isActive ? t('common:status.active') : t('common:status.inactive')}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => handleViewDepartment(department)}
@@ -406,7 +417,7 @@ const Departments: React.FC = () => {
         </div>
 
         {filteredDepartments.length === 0 && (
-          <div className="text-center py-12">
+          <div className="py-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">
               {t('common:messages.empty.noResults')}
             </div>
@@ -417,7 +428,7 @@ const Departments: React.FC = () => {
 
       {/* Pagination */}
       {total > limit && (
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div className="flex items-center justify-between px-6 py-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
           <div className="text-sm text-gray-500 dark:text-gray-400">
             {t('common:pagination.showing', {
               start: (currentPage - 1) * limit + 1,
@@ -429,7 +440,7 @@ const Departments: React.FC = () => {
             <button
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('common:pagination.previous')}
             </button>
@@ -446,7 +457,7 @@ const Departments: React.FC = () => {
                 )
               }
               disabled={currentPage >= Math.ceil(total / limit)}
-              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('common:pagination.next')}
             </button>

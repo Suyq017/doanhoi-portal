@@ -3,4 +3,6 @@ export { default as Toast } from './Toast';
 export { default as Select } from './Select';
 export { default as LanguageSwitcher } from './LanguageSwitcher';
 export { default as ImportModal } from './ImportModal';
+export { default as AddDropdownButton } from './AddDropdownButton';
 export type { SelectOption } from './Select';
+export type { DropdownOption } from './AddDropdownButton';

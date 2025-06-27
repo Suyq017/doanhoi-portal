@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { 
   Upload, 
-  Download, 
   CheckCircle, 
   XCircle, 
   AlertTriangle, 
@@ -209,30 +208,28 @@ const ImportModal = <T extends Record<string, any>>({
               {t(`${config.entityName}:import.instructions`)}
             </h4>
             <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
-              <li>{t(`${config.entityName}:import.step1`)}</li>
+              <li>
+                {t(`${config.entityName}:import.step1`).includes(t(`${config.entityName}:import.templateLinkText`)) ? (
+                  <>
+                    {t(`${config.entityName}:import.step1`).split(t(`${config.entityName}:import.templateLinkText`))[0]}
+                    <a 
+                      href={config.templateUrl}
+                      download={config.templateFileName}
+                      className="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 underline font-medium"
+                    >
+                      {t(`${config.entityName}:import.templateLinkText`)}
+                    </a>
+                    {t(`${config.entityName}:import.step1`).split(t(`${config.entityName}:import.templateLinkText`))[1]}
+                  </>
+                ) : (
+                  t(`${config.entityName}:import.step1`)
+                )}
+              </li>
               <li>{t(`${config.entityName}:import.step2`)}</li>
               <li>{t(`${config.entityName}:import.step3`)}</li>
             </ol>
           </div>
         </div>
-      </div>
-
-      {/* Template Download */}
-      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-        <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-          {t('import.downloadTemplate')}
-        </h4>
-        <a 
-          href={config.templateUrl}
-          download={config.templateFileName}
-          className="inline-flex items-center px-4 py-2 bg-doan-500 text-white rounded-md hover:bg-doan-600 transition-colors"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          {config.templateFileName}
-        </a>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-          {t('import.templateDescription')}
-        </p>
       </div>
 
       {/* File Upload Zone */}
@@ -255,7 +252,10 @@ const ImportModal = <T extends Record<string, any>>({
         </p>
         
         <p className="text-gray-500 dark:text-gray-400 mb-4">
-          {t('import.supportedFormats')}: {config.acceptedFileTypes.join(', ')}
+          {config.acceptedFileTypes.includes('.xlsx') && config.acceptedFileTypes.length === 1 
+            ? t(`${config.entityName}:import.onlyExcelAllowed`)
+            : `${t('import.supportedFormats')}: ${config.acceptedFileTypes.join(', ')}`
+          }
           <br />
           {t('import.maxFileSize')}: {(config.maxFileSize / (1024 * 1024)).toFixed(1)}MB
         </p>
