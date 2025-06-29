@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Building, Users, Plus, ChevronRight, ChevronDown, Edit, Trash2, UserPlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Organization {
   id: string;
@@ -12,6 +13,7 @@ interface Organization {
 }
 
 const Organizations: React.FC = () => {
+  const { t } = useTranslation(['organizations', 'common']);
   const [organizations, setOrganizations] = useState<Organization[]>([
     {
       id: '1',
@@ -81,17 +83,7 @@ const Organizations: React.FC = () => {
   ]);
 
   const getOrgTypeText = (type: string) => {
-    const typeMap: { [key: string]: string } = {
-      'doan_truong': 'Đoàn Trường',
-      'doan_co_so': 'Đoàn Cơ sở',
-      'chi_doan': 'Chi Đoàn',
-      'hoi_sinh_vien_truong': 'Hội SV Trường',
-      'lien_chi_hoi': 'Liên Chi Hội',
-      'chi_hoi': 'Chi Hội',
-      'clb_truong': 'CLB Trường',
-      'clb_khoa': 'CLB Khoa'
-    };
-    return typeMap[type] || type;
+    return t(`organizations:types.${type}`, { defaultValue: type });
   };
 
   const getOrgTypeColor = (type: string) => {
@@ -195,15 +187,15 @@ const Organizations: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Quản lý Tổ chức
+            {t('organizations:title')}
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Quản lý cấu trúc tổ chức Đoàn, Hội và CLB
+            {t('organizations:subtitle')}
           </p>
         </div>
         <button className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-doan-500 text-white rounded-md hover:bg-doan-600 transition-colors">
           <Plus className="w-5 h-5 mr-2" />
-          Tạo tổ chức
+          {t('organizations:actions.create')}
         </button>
       </div>
 
@@ -216,7 +208,7 @@ const Organizations: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Tổ chức Đoàn
+                {t('organizations:stats.doanOrgs')}
               </p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                 12
@@ -232,7 +224,7 @@ const Organizations: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Tổ chức Hội
+                {t('organizations:stats.hoiOrgs')}
               </p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                 18
@@ -248,7 +240,7 @@ const Organizations: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Câu lạc bộ
+                {t('organizations:stats.clubs')}
               </p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                 15
@@ -264,7 +256,7 @@ const Organizations: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Tổng thành viên
+                {t('organizations:stats.totalMembers')}
               </p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                 1,534
@@ -278,7 +270,7 @@ const Organizations: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-            Cây tổ chức
+            {t('organizations:labels.orgTree')}
           </h3>
         </div>
         

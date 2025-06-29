@@ -1,26 +1,64 @@
 {
   "title": "Quản lý Tổ chức",
+  "titlePhonetic": "Tổ chức",
   "subtitle": "Quản lý cấu trúc tổ chức Đoàn, Hội và CLB",
   "createOrganization": "Tạo tổ chức",
   "addOrganization": "Thêm tổ chức",
   "editOrganization": "Chỉnh sửa tổ chức",
   "deleteOrganization": "Xóa tổ chức",
   "organizationInfo": "Thông tin tổ chức",
+  "organizationTree": "Cây tổ chức",
   "stats": {
     "totalOrganizations": "Tổng số tổ chức",
     "youthUnions": "Chi đoàn",
     "studentAssociations": "Chi hội",
-    "clubs": "Câu lạc bộ"
+    "clubs": "Câu lạc bộ",
+    "totalMembers": "Tổng thành viên",
+    "youthUnionOrgs": "Tổ chức Đoàn",
+    "studentAssocOrgs": "Tổ chức Hội",
+    "doanOrgs": "Tổ chức Đoàn",
+    "hoiOrgs": "Tổ chức Hội"
   },
   "types": {
     "youth_union": "Đoàn Thanh niên",
     "student_association": "Hội Sinh viên",
-    "club": "Câu lạc bộ"
+    "club": "Câu lạc bộ",
+    "doan_truong": "Đoàn Trường",
+    "doan_co_so": "Đoàn Cơ sở",
+    "chi_doan": "Chi Đoàn",
+    "hoi_sinh_vien_truong": "Hội SV Trường",
+    "lien_chi_hoi": "Liên Chi Hội",
+    "chi_hoi": "Chi Hội",
+    "clb_truong": "CLB Trường",
+    "clb_khoa": "CLB Khoa"
   },
   "levels": {
     "school": "Cấp trường",
     "faculty": "Cấp khoa",
     "department": "Cấp bộ môn",
     "class": "Cấp lớp"
+  },
+  "fields": {
+    "name": "Tên tổ chức",
+    "type": "Loại tổ chức",
+    "parentOrganization": "Tổ chức cha",
+    "memberCount": "Số thành viên"
+  },
+  "actions": {
+    "addMember": "Thêm thành viên",
+    "editOrganization": "Chỉnh sửa tổ chức",
+    "deleteOrganization": "Xóa tổ chức",
+    "viewDetails": "Xem chi tiết",
+    "expand": "Mở rộng",
+    "collapse": "Thu gọn",
+    "create": "Tạo tổ chức"
+  },
+  "labels": {
+    "orgTree": "Cây tổ chức"
+  },
+  "colors": {
+    "youthUnion": "Màu sắc tổ chức Đoàn",
+    "studentAssoc": "Màu sắc tổ chức Hội",
+    "club": "Màu sắc câu lạc bộ"
   }
 }

@@ -84,7 +84,12 @@
     "createdAt": "Created At",
     "updatedAt": "Last Updated",
     "actions": "Actions",
-    "row": "Row"
+    "row": "Row",
+    "name": "Name",
+    "code": "Code", 
+    "description": "Description",
+    "email": "Email",
+    "phone": "Phone Number"
   },
   "status": {
     "active": "Active",
@@ -102,7 +107,7 @@
     "processing": "Processing file...",
     "totalRecords": "Total records",
     "validRecords": "Valid records",
-    "errors": "Errors",
+    "error": "Errors",
     "warnings": "Warnings",
     "showOnlyErrors": "Show only errors",
     "showAll": "Show all",

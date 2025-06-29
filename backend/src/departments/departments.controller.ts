@@ -33,7 +33,9 @@ export class DepartmentsController {
   @ApiResponse({ status: 200, description: 'File mẫu Excel' })
   async downloadTemplate(@Res() res: Response) {
     // Create Excel template data
+    // Create Excel template data
     const templateData = [
+      ['Tên đơn vị', 'Mã đơn vị', 'Mô tả', 'Trạng thái (true/false)'],
       ['Tên đơn vị', 'Mã đơn vị', 'Mô tả', 'Trạng thái (true/false)'],
       ['Khoa Khoa học máy tính', 'CSE', 'Khoa đào tạo về khoa học máy tính', 'true'],
       ['Khoa Điện tử', 'EE', 'Khoa đào tạo về điện tử', 'true']

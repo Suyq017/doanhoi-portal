@@ -41,6 +41,9 @@ export interface ClassQueryParams {
 }
 
 class ClassService {
+  parseFile: any;
+  validateData: any;
+  importData: any;
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {

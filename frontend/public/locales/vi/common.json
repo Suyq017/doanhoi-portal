@@ -84,7 +84,12 @@
     "createdAt": "Ngày tạo",
     "updatedAt": "Cập nhật lần cuối",
     "actions": "Thao tác",
-    "row": "Dòng"
+    "row": "Dòng",
+    "name": "Tên",
+    "code": "Mã",
+    "description": "Mô tả",
+    "email": "Email",
+    "phone": "Số điện thoại"
   },
   "status": {
     "active": "Hoạt động",

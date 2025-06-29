@@ -46,6 +46,6 @@
     "onlyExcelAllowed": "Chỉ chấp nhận file Excel (.xlsx)",
     "success": "Import thành công {{count}} đơn vị",
     "partialSuccess": "Import thành công {{success}}/{{total}} đơn vị",
-    "error": "Có lỗi xảy ra trong quá trình import"
+    "importError": "Có lỗi xảy ra trong quá trình import"
   }
 }

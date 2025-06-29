@@ -1,10 +1,12 @@
 import React from 'react';
 import { BarChart3, Users, Building } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const Dashboard: React.FC = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const stats = [
     {
-      name: 'Tổng số thành viên',
+      name: t('dashboard:stats.totalMembers'),
       value: '1,234',
       change: '+12%',
       changeType: 'increase',
@@ -12,7 +14,7 @@ const Dashboard: React.FC = () => {
       color: 'bg-doan-500',
     },
     {
-      name: 'Đoàn viên',
+      name: t('dashboard:stats.doanMembers'),
       value: '856',
       change: '+8%',
       changeType: 'increase',
@@ -20,7 +22,7 @@ const Dashboard: React.FC = () => {
       color: 'bg-doan-500',
     },
     {
-      name: 'Hội viên',
+      name: t('dashboard:stats.hoiMembers'),
       value: '678',
       change: '+15%',
       changeType: 'increase',
@@ -28,7 +30,7 @@ const Dashboard: React.FC = () => {
       color: 'bg-hsv-500',
     },
     {
-      name: 'Tổ chức',
+      name: t('dashboard:stats.organizations'),
       value: '45',
       change: '+3%',
       changeType: 'increase',
@@ -42,10 +44,10 @@ const Dashboard: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Trang chủ
+          {t('dashboard:title')}
         </h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Tổng quan hệ thống quản lý Đoàn Thanh niên và Hội Sinh viên
+          {t('dashboard:subtitle')}
         </p>
       </div>
 
@@ -90,25 +92,25 @@ const Dashboard: React.FC = () => {
         {/* Recent Activities */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Hoạt động gần đây
+            {t('dashboard:activities.title')}
           </h3>
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-doan-500 rounded-full"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Thêm 15 thành viên mới vào Chi đoàn Khoa CNTT
+                {t('dashboard:activities.added15Members')}
               </p>
             </div>
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-hsv-500 rounded-full"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Cập nhật thông tin CLB Tin học
+                {t('dashboard:activities.updatedClub')}
               </p>
             </div>
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Tạo mới Liên chi hội Khoa Cơ khí
+                {t('dashboard:activities.createdBranch')}
               </p>
             </div>
           </div>
@@ -117,24 +119,24 @@ const Dashboard: React.FC = () => {
         {/* Quick Actions */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Thao tác nhanh
+            {t('dashboard:actions.title')}
           </h3>
           <div className="space-y-3">
             <button className="w-full flex items-center justify-between p-3 text-left rounded-md border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                Thêm người dùng mới
+                {t('dashboard:actions.addUser')}
               </span>
               <Users className="w-4 h-4 text-gray-400" />
             </button>
             <button className="w-full flex items-center justify-between p-3 text-left rounded-md border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                Tạo tổ chức mới
+                {t('dashboard:actions.createOrg')}
               </span>
               <Building className="w-4 h-4 text-gray-400" />
             </button>
             <button className="w-full flex items-center justify-between p-3 text-left rounded-md border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                Xem báo cáo
+                {t('dashboard:actions.viewReports')}
               </span>
               <BarChart3 className="w-4 h-4 text-gray-400" />
             </button>

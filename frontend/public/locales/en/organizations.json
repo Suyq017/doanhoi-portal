@@ -1,26 +1,64 @@
 {
   "title": "Organization Management",
+  "titlePhonetic": "Organizations",
   "subtitle": "Manage Youth Union, Student Association and Club structures",
   "createOrganization": "Create Organization",
   "addOrganization": "Add Organization",
-  "editOrganization": "Edit Organization",
+  "editOrganization": "Edit Organization", 
   "deleteOrganization": "Delete Organization",
   "organizationInfo": "Organization Information",
+  "organizationTree": "Organization Tree",
   "stats": {
     "totalOrganizations": "Total Organizations",
-    "youthUnions": "Youth Union Branches",
-    "studentAssociations": "Student Association Branches",
-    "clubs": "Clubs"
+    "youthUnions": "Youth Unions",
+    "studentAssociations": "Student Associations",
+    "clubs": "Clubs",
+    "totalMembers": "Total Members",
+    "youthUnionOrgs": "Youth Union Organizations",
+    "studentAssocOrgs": "Student Association Organizations",
+    "doanOrgs": "Youth Union Organizations",
+    "hoiOrgs": "Student Association Organizations"
   },
   "types": {
     "youth_union": "Youth Union",
-    "student_association": "Student Association",
-    "club": "Club"
+    "student_association": "Student Association", 
+    "club": "Club",
+    "doan_truong": "School Youth Union",
+    "doan_co_so": "Faculty Youth Union",
+    "chi_doan": "Youth Union Branch",
+    "hoi_sinh_vien_truong": "School Student Association",
+    "lien_chi_hoi": "Student Sub-Association",
+    "chi_hoi": "Student Association Branch",
+    "clb_truong": "School Club",
+    "clb_khoa": "Faculty Club"
   },
   "levels": {
     "school": "School Level",
-    "faculty": "Faculty Level",
+    "faculty": "Faculty Level", 
     "department": "Department Level",
     "class": "Class Level"
+  },
+  "fields": {
+    "name": "Organization Name",
+    "type": "Organization Type",
+    "parentOrganization": "Parent Organization",
+    "memberCount": "Member Count"
+  },
+  "actions": {
+    "addMember": "Add Member",
+    "editOrganization": "Edit Organization",
+    "deleteOrganization": "Delete Organization",
+    "viewDetails": "View Details",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "create": "Create Organization"
+  },
+  "labels": {
+    "orgTree": "Organization Tree"
+  },
+  "colors": {
+    "youthUnion": "Youth Union color scheme",
+    "studentAssoc": "Student Association color scheme",
+    "club": "Club color scheme"
   }
 }

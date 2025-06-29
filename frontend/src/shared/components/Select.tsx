@@ -19,7 +19,7 @@ const Select: React.FC<SelectProps> = ({
   options,
   value,
   onChange,
-  placeholder = "Chọn...",
+  placeholder = "Select...",
   className = "",
   disabled = false
 }) => {

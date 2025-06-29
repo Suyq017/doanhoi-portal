@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Filter, Eye, Edit, Trash2, Users } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Edit, Trash2, Users, Upload } from 'lucide-react';
 import { 
   Class, 
   ClassQueryParams, 
@@ -10,6 +10,10 @@ import {
   useToast,
   Select,
   SelectOption,
+  AddDropdownButton,
+  DropdownOption,
+  ImportModal,
+  ImportModalConfig,
 } from '../../shared';
 import CreateClassModal from './components/CreateClassModal';
 import EditClassModal from './components/EditClassModal';
@@ -43,6 +47,7 @@ const ClassesPage: React.FC = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Select options
   const yearOptions: SelectOption[] = [
@@ -65,6 +70,24 @@ const ClassesPage: React.FC = () => {
     { value: '', label: `${t('common:fields.status')} - ${t('common:status.all')}` },
     { value: 'true', label: t('common:status.active') },
     { value: 'false', label: t('common:status.inactive') },
+  ];
+
+  const addDropdownOptions: DropdownOption[] = [
+    {
+      key: 'single',
+      label: t('classes:addButton.single', { defaultValue: t('common:actions.create') }),
+      icon: <Plus className="w-4 h-4" />,
+      description: t('classes:addButton.singleDesc', { defaultValue: 'Tạo lớp mới bằng form' }),
+      onClick: () => setShowCreateModal(true)
+    },
+    // Import classes from Excel option:
+    {
+      key: 'fromFile',
+      label: t('classes:addButton.fromFile', { defaultValue: 'Import từ file Excel' }),
+      icon: <Upload className="w-4 h-4" />,
+      description: t('classes:addButton.fromFileDesc', { defaultValue: 'Import nhiều lớp từ file Excel' }),
+      onClick: () => {/* setShowImportModal(true) */}
+    }
   ];
 
   // Load data
@@ -254,13 +277,13 @@ const ClassesPage: React.FC = () => {
             {t('classes:subtitle')}
           </p>
         </div>
-        <button
-          onClick={handleCreate}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-doan-500 text-white rounded-md hover:bg-doan-600 transition-colors"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          {t('common:actions.create')}
-        </button>
+        <div className="mt-4 sm:mt-0">
+          <AddDropdownButton
+            label={t('classes:addButton.dropdown', { defaultValue: t('common:actions.create') })}
+            options={addDropdownOptions}
+            loading={false}
+          />
+        </div>
       </div>
 
       {/* Filters */}

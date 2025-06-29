@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Filter, Edit, Trash2, Eye } from "lucide-react";
+import { Search, Filter, Edit, Trash2, Eye, Plus, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   userService,
@@ -10,6 +10,8 @@ import {
   useToast,
   Select,
   SelectOption,
+  AddDropdownButton,
+  DropdownOption,
 } from "../../shared";
 import CreateUserModal from "./components/CreateUserModal";
 import ViewUserModal from "./components/ViewUserModal";
@@ -265,6 +267,24 @@ const Users: React.FC = () => {
     );
   }
 
+  const addDropdownOptions: DropdownOption[] = [
+    {
+      key: 'single',
+      label: t('users:addButton.single', { defaultValue: t('common:actions.create') }),
+      icon: <Plus className="w-4 h-4" />,
+      description: t('users:addButton.singleDesc', { defaultValue: 'Tạo người dùng mới bằng form' }),
+      onClick: () => setIsCreateModalOpen(true)
+    },
+    // Import users from Excel option:
+    {
+      key: 'fromFile',
+      label: t('users:addButton.fromFile', { defaultValue: 'Import từ file Excel' }),
+      icon: <Upload className="w-4 h-4" />,
+      description: t('users:addButton.fromFileDesc', { defaultValue: 'Import nhiều người dùng từ file Excel' }),
+      onClick: () => {/* setIsImportModalOpen(true) */}
+    }
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -277,13 +297,13 @@ const Users: React.FC = () => {
             {t('users:subtitle')}
           </p>
         </div>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-doan-500 text-white rounded-md hover:bg-doan-600 transition-colors"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          {t('common:actions.create')}
-        </button>
+        <div className="mt-4 sm:mt-0">
+          <AddDropdownButton
+            label={t('users:addButton.dropdown', { defaultValue: t('common:actions.create') })}
+            options={addDropdownOptions}
+            loading={isCreatingUser}
+          />
+        </div>
       </div>
 
       {/* Filters */}
