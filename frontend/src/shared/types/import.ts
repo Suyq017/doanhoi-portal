@@ -43,6 +43,39 @@ export interface ImportOptions {
   batchSize?: number;
 }
 
+// Server-side import types
+export interface ServerImportSession {
+  sessionId: string;
+  fileName: string;
+  totalRows: number;
+  message: string;
+}
+
+export interface ServerValidationResult {
+  sessionId: string;
+  isValid: boolean;
+  summary: {
+    total: number;
+    valid: number;
+    invalid: number;
+    duplicates: number;
+    conflicts: number;
+  };
+  errors: ValidationError[];
+  warnings: ValidationError[];
+  previewData: any[];
+}
+
+export interface ServerImportResult {
+  sessionId: string;
+  success: boolean;
+  importedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  errors: string[];
+  message: string;
+}
+
 export interface ImportColumn {
   key: string;
   label: string;
@@ -54,6 +87,7 @@ export interface ImportColumn {
   width?: string;
 }
 
+// Enhanced config interface supporting both client-side and server-side processing
 export interface ImportModalConfig<T> {
   // Template & File handling
   templateUrl: string;
@@ -61,10 +95,19 @@ export interface ImportModalConfig<T> {
   acceptedFileTypes: string[];
   maxFileSize: number;
   
-  // Data processing functions
-  parseFile: (file: File) => Promise<T[]>;
-  validateData: (data: T[]) => Promise<ValidationResult<T>>;
-  importData: (data: T[], options?: ImportOptions) => Promise<ImportResult>;
+  // Processing mode: 'client' for legacy, 'server' for new implementation
+  processingMode: 'client' | 'server';
+  
+  // Client-side data processing functions (legacy)
+  parseFile?: (file: File) => Promise<T[]>;
+  validateData?: (data: T[]) => Promise<ValidationResult<T>>;
+  importData?: (data: T[], options?: ImportOptions) => Promise<ImportResult>;
+  
+  // Server-side data processing functions (new)
+  uploadFile?: (file: File) => Promise<ServerImportSession>;
+  validateServerData?: (sessionId: string) => Promise<ServerValidationResult>;
+  executeServerImport?: (sessionId: string, options?: { skipConflicts?: boolean }) => Promise<ServerImportResult>;
+  getImportStatus?: (sessionId: string) => Promise<any>;
   
   // UI Configuration
   columns: ImportColumn[];
@@ -73,9 +116,9 @@ export interface ImportModalConfig<T> {
   allowPartialImport?: boolean;
   
   // Optional callbacks
-  onSuccess?: (result: ImportResult) => void;
+  onSuccess?: (result: ImportResult | ServerImportResult) => void;
   onError?: (error: Error) => void;
-  onValidationComplete?: (result: ValidationResult<T>) => void;
+  onValidationComplete?: (result: ValidationResult<T> | ServerValidationResult) => void;
 }
 
 export type ImportStep = 'upload' | 'preview' | 'importing' | 'result';
@@ -85,6 +128,12 @@ export interface ImportState<T> {
   selectedFile: File | null;
   importData: ValidationResult<T> | null;
   importResult: ImportResult | null;
+  
+  // Server-side state
+  serverSession: ServerImportSession | null;
+  serverValidation: ServerValidationResult | null;
+  serverResult: ServerImportResult | null;
+  
   options: ImportOptions;
   loading: boolean;
   dragActive: boolean;

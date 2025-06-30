@@ -33,7 +33,9 @@
   "addButton": {
     "dropdown": "Add Department",
     "single": "Add Single Department",
-    "fromFile": "Add from File"
+    "fromFile": "Add from File",
+    "singleDescription": "Create new department using form",
+    "fromFileDescription": "Import multiple departments from Excel file"
   },
   "import": {
     "title": "Import Department List",
@@ -46,6 +48,15 @@
     "onlyExcelAllowed": "Only Excel files (.xlsx) are accepted",
     "success": "Successfully imported {{count}} departments",
     "partialSuccess": "Successfully imported {{success}}/{{total}} departments",
-    "importError": "An error occurred during import process"
+    "importError": "An error occurred during import process",
+    "importSuccess": "Data imported successfully",
+    "uploadSuccess": "File uploaded successfully. Found {{count}} data rows",
+    "validationError": "Data is invalid",
+    "validationSuccess": "Data is valid, ready to import",
+    "serverError": "Server error during processing",
+    "sessionExpired": "Session expired, please upload file again",
+    "conflictsFound": "Data conflicts detected",
+    "duplicatesFound": "Duplicate data detected",
+    "skipConflicts": "Skip conflicts"
   }
 }

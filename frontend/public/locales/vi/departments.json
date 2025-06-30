@@ -33,7 +33,9 @@
   "addButton": {
     "dropdown": "Thêm đơn vị",
     "single": "Thêm từng đơn vị",
-    "fromFile": "Thêm từ file"
+    "fromFile": "Thêm từ file",
+    "singleDescription": "Tạo đơn vị mới bằng form",
+    "fromFileDescription": "Import nhiều đơn vị từ file Excel"
   },
   "import": {
     "title": "Import danh sách đơn vị",
@@ -46,6 +48,15 @@
     "onlyExcelAllowed": "Chỉ chấp nhận file Excel (.xlsx)",
     "success": "Import thành công {{count}} đơn vị",
     "partialSuccess": "Import thành công {{success}}/{{total}} đơn vị",
-    "importError": "Có lỗi xảy ra trong quá trình import"
+    "importError": "Có lỗi xảy ra trong quá trình import",
+    "importSuccess": "Import dữ liệu thành công",
+    "uploadSuccess": "Tải file thành công. Tìm thấy {{count}} dòng dữ liệu",
+    "validationError": "Dữ liệu không hợp lệ",
+    "validationSuccess": "Dữ liệu hợp lệ, sẵn sàng import",
+    "serverError": "Lỗi máy chủ trong quá trình xử lý",
+    "sessionExpired": "Phiên làm việc đã hết hạn, vui lòng tải file lại",
+    "conflictsFound": "Phát hiện xung đột dữ liệu",
+    "duplicatesFound": "Phát hiện dữ liệu trùng lặp",
+    "skipConflicts": "Bỏ qua xung đột"
   }
 }

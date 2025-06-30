@@ -38,6 +38,10 @@ const ImportModal = <T extends Record<string, any>>({
     selectedFile: null,
     importData: null,
     importResult: null,
+    // Server-side state
+    serverSession: null,
+    serverValidation: null,
+    serverResult: null,
     options: {
       skipErrors: true,
       updateExisting: false,
@@ -67,24 +71,54 @@ const ImportModal = <T extends Record<string, any>>({
     return true;
   };
 
-  // File handling
+  // File handling - supports both client and server processing
   const handleFileSelect = async (file: File) => {
     if (!isValidFile(file)) return;
     
     setState(prev => ({ ...prev, selectedFile: file, loading: true }));
     
     try {
-      const parsedData = await config.parseFile(file);
-      const validationResult = await config.validateData(parsedData);
-      
-      config.onValidationComplete?.(validationResult);
-      
-      setState(prev => ({
-        ...prev,
-        importData: validationResult,
-        step: 'preview',
-        loading: false
-      }));
+      if (config.processingMode === 'server') {
+        // Server-side processing
+        if (!config.uploadFile) {
+          throw new Error('uploadFile function not provided for server mode');
+        }
+        
+        const serverSession = await config.uploadFile(file);
+        
+        // Automatically validate after upload
+        if (!config.validateServerData) {
+          throw new Error('validateServerData function not provided for server mode');
+        }
+        
+        const validationResult = await config.validateServerData(serverSession.sessionId);
+        config.onValidationComplete?.(validationResult);
+        
+        setState(prev => ({
+          ...prev,
+          serverSession,
+          serverValidation: validationResult,
+          step: 'preview',
+          loading: false
+        }));
+      } else {
+        // Client-side processing (legacy)
+        if (!config.parseFile || !config.validateData) {
+          throw new Error('parseFile and validateData functions required for client mode');
+        }
+        
+        const parsedData = await config.parseFile(file);
+        const validationResult = await config.validateData(parsedData);
+        
+        config.onValidationComplete?.(validationResult);
+        
+        setState(prev => ({
+          ...prev,
+          importData: validationResult,
+          step: 'preview',
+          loading: false
+        }));
+      }
     } catch (error) {
       console.error('File processing error:', error);
       alert(t('errors.parseFile'));
@@ -112,24 +146,50 @@ const ImportModal = <T extends Record<string, any>>({
     setState(prev => ({ ...prev, dragActive: false }));
   };
 
-  // Import process
+  // Import process - supports both client and server processing
   const handleImport = async () => {
-    if (!state.importData) return;
-    
     setState(prev => ({ ...prev, step: 'importing', loading: true }));
     
     try {
-      const result = await config.importData(state.importData.data, state.options);
-      
-      setState(prev => ({
-        ...prev,
-        importResult: result,
-        step: 'result',
-        loading: false
-      }));
-      
-      if (result.failed === 0) {
-        config.onSuccess?.(result);
+      if (config.processingMode === 'server') {
+        // Server-side import
+        if (!state.serverSession || !config.executeServerImport) {
+          throw new Error('Server session or executeServerImport function not available');
+        }
+        
+        const result = await config.executeServerImport(
+          state.serverSession.sessionId,
+          { skipConflicts: state.options.skipErrors }
+        );
+        
+        setState(prev => ({
+          ...prev,
+          serverResult: result,
+          step: 'result',
+          loading: false
+        }));
+        
+        if (result.success) {
+          config.onSuccess?.(result);
+        }
+      } else {
+        // Client-side import (legacy)
+        if (!state.importData || !config.importData) {
+          throw new Error('Import data or importData function not available');
+        }
+        
+        const result = await config.importData(state.importData.data, state.options);
+        
+        setState(prev => ({
+          ...prev,
+          importResult: result,
+          step: 'result',
+          loading: false
+        }));
+        
+        if (result.failed === 0) {
+          config.onSuccess?.(result);
+        }
       }
     } catch (error) {
       console.error('Import error:', error);
@@ -145,6 +205,10 @@ const ImportModal = <T extends Record<string, any>>({
       selectedFile: null,
       importData: null,
       importResult: null,
+      // Server-side state
+      serverSession: null,
+      serverValidation: null,
+      serverResult: null,
       options: {
         skipErrors: true,
         updateExisting: false,
@@ -181,6 +245,22 @@ const ImportModal = <T extends Record<string, any>>({
   };
 
   const getDisplayRows = () => {
+    // For server-side processing, we use previewData directly
+    if (config.processingMode === 'server' && state.serverValidation) {
+      let rows = state.serverValidation.previewData || [];
+      
+      if (showOnlyErrors) {
+        rows = rows.filter(row => row.hasErrors);
+      }
+      
+      if (!showAllRows) {
+        rows = rows.slice(0, config.previewRowCount || 10);
+      }
+      
+      return rows;
+    }
+    
+    // For client-side processing (legacy)
     if (!state.importData) return [];
     
     let rows = state.importData.data;
@@ -285,10 +365,31 @@ const ImportModal = <T extends Record<string, any>>({
   );
 
   const renderPreviewStep = () => {
-    if (!state.importData) return null;
+    // Support both client-side and server-side processing
+    const validationData = config.processingMode === 'server' 
+      ? state.serverValidation 
+      : state.importData;
+    
+    if (!validationData) return null;
 
-    const displayRows = getDisplayRows();
-    const { summary } = state.importData;
+    // Adapt data structure for display - server response has different format
+    let displayRows, summary, errors, warnings;
+    
+    if (config.processingMode === 'server' && state.serverValidation) {
+      // Server-side data structure
+      displayRows = state.serverValidation.previewData || [];
+      summary = state.serverValidation.summary;
+      errors = state.serverValidation.errors || [];
+      warnings = state.serverValidation.warnings || [];
+    } else if (state.importData) {
+      // Client-side data structure
+      displayRows = getDisplayRows();
+      summary = state.importData.summary;
+      errors = state.importData.errors;
+      warnings = state.importData.warnings;
+    } else {
+      return null;
+    }
 
     return (
       <div className="space-y-6">
@@ -314,7 +415,7 @@ const ImportModal = <T extends Record<string, any>>({
           
           <div className="p-4 text-center rounded-lg bg-red-50 dark:bg-red-900/20">
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {state.importData.errors.length}
+              {errors.length}
             </div>
             <div className="text-sm text-red-600 dark:text-red-400">
               {t('import.error')}
@@ -323,7 +424,7 @@ const ImportModal = <T extends Record<string, any>>({
           
           <div className="p-4 text-center rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {state.importData.warnings.length}
+              {warnings.length}
             </div>
             <div className="text-sm text-yellow-600 dark:text-yellow-400">
               {t('import.warnings')}
@@ -351,7 +452,9 @@ const ImportModal = <T extends Record<string, any>>({
               className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-700 transition-colors bg-gray-100 rounded-md dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               {showAllRows ? t('import.showLess') : t('import.showAll')}
-              {!showAllRows && ` (${Math.min(config.previewRowCount || 10, state.importData.data.length)}/${state.importData.data.length})`}
+              {!showAllRows && config.processingMode === 'client' && state.importData && 
+                ` (${Math.min(config.previewRowCount || 10, state.importData.data.length)}/${state.importData.data.length})`
+              }
             </button>
           </div>
           
@@ -388,59 +491,72 @@ const ImportModal = <T extends Record<string, any>>({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {displayRows.map((item, index) => (
-                  <tr 
-                    key={index} 
-                    className={`transition-colors ${
-                      item._hasError 
-                        ? 'bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20' 
-                        : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    <td className="px-4 py-3 font-mono text-sm text-gray-500 dark:text-gray-400">
-                      {item._rowIndex + 1}
-                    </td>
-                    {config.columns.map(col => (
-                      <td key={col.key} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                        {renderCellValue(item[col.key], col.type)}
+                {displayRows.map((item, index) => {
+                  // Handle different data structures between client and server mode
+                  const hasErrors = config.processingMode === 'server' 
+                    ? item.hasErrors 
+                    : item._hasError;
+                  const hasWarnings = config.processingMode === 'server' 
+                    ? item.hasWarnings 
+                    : item._warnings?.length > 0;
+                  const rowNumber = config.processingMode === 'server' 
+                    ? item.row 
+                    : item._rowIndex + 1;
+                  
+                  return (
+                    <tr 
+                      key={index} 
+                      className={`transition-colors ${
+                        hasErrors 
+                          ? 'bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20' 
+                          : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      <td className="px-4 py-3 font-mono text-sm text-gray-500 dark:text-gray-400">
+                        {rowNumber}
                       </td>
-                    ))}
-                    <td className="px-4 py-3 text-center">
-                      {item._hasError ? (
-                        <div className="flex items-center justify-center">
-                          <AlertTriangle 
-                            className="w-4 h-4 text-red-500" 
-                          />
-                        </div>
-                      ) : item._warnings.length > 0 ? (
-                        <div className="flex items-center justify-center">
-                          <AlertCircle 
-                            className="w-4 h-4 text-yellow-500" 
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      {config.columns.map(col => (
+                        <td key={col.key} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                          {renderCellValue(item[col.key], col.type)}
+                        </td>
+                      ))}
+                      <td className="px-4 py-3 text-center">
+                        {hasErrors ? (
+                          <div className="flex items-center justify-center">
+                            <AlertTriangle 
+                              className="w-4 h-4 text-red-500" 
+                            />
+                          </div>
+                        ) : hasWarnings ? (
+                          <div className="flex items-center justify-center">
+                            <AlertCircle 
+                              className="w-4 h-4 text-yellow-500" 
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center">
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
 
         {/* Error Details */}
-        {state.importData.errors.length > 0 && (
+        {errors.length > 0 && (
           <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/20 dark:border-red-800">
             <h5 className="flex items-center mb-3 font-medium text-red-800 dark:text-red-200">
               <AlertTriangle className="w-4 h-4 mr-2" />
-              {t('import.validationErrors')} ({state.importData.errors.length})
+              {t('import.validationErrors')} ({errors.length})
             </h5>
             <div className="overflow-auto max-h-32">
               <ul className="space-y-1 text-sm text-red-700 dark:text-red-300">
-                {state.importData.errors.slice(0, 10).map((error, index) => (
+                {errors.slice(0, 10).map((error, index) => (
                   <li key={index} className="flex items-start">
                     <span className="font-mono text-xs bg-red-100 dark:bg-red-900/30 px-1 rounded mr-2 mt-0.5">
                       {error.row}
@@ -449,9 +565,9 @@ const ImportModal = <T extends Record<string, any>>({
                     <span>{error.message}</span>
                   </li>
                 ))}
-                {state.importData.errors.length > 10 && (
+                {errors.length > 10 && (
                   <li className="italic text-red-600 dark:text-red-400">
-                    {t('import.andMoreErrors', { count: state.importData.errors.length - 10 })}
+                    {t('import.andMoreErrors', { count: errors.length - 10 })}
                   </li>
                 )}
               </ul>
@@ -546,11 +662,36 @@ const ImportModal = <T extends Record<string, any>>({
   );
 
   const renderResultStep = () => {
-    if (!state.importResult) return null;
+    // Support both client-side and server-side results
+    const result = config.processingMode === 'server' ? state.serverResult : state.importResult;
+    if (!result) return null;
 
-    const { total, success, failed, skipped } = state.importResult;
-    const isSuccess = failed === 0;
-    const isPartialSuccess = success > 0 && failed > 0;
+    // Adapt data structure for display
+    let total: number, success: number, failed: number, skipped: number, isSuccess: boolean, isPartialSuccess: boolean;
+    let errors: string[], warnings: string[];
+    
+    if (config.processingMode === 'server' && state.serverResult) {
+      // Server-side result structure
+      total = state.serverResult.importedCount + state.serverResult.skippedCount + state.serverResult.failedCount;
+      success = state.serverResult.importedCount;
+      failed = state.serverResult.failedCount;
+      skipped = state.serverResult.skippedCount;
+      errors = state.serverResult.errors || [];
+      warnings = []; // Server result doesn't have warnings field
+    } else if (state.importResult) {
+      // Client-side result structure
+      total = state.importResult.total;
+      success = state.importResult.success;
+      failed = state.importResult.failed;
+      skipped = state.importResult.skipped;
+      errors = state.importResult.errors || [];
+      warnings = state.importResult.warnings || [];
+    } else {
+      return null;
+    }
+
+    isSuccess = failed === 0;
+    isPartialSuccess = success > 0 && failed > 0;
 
     return (
       <div className="py-8 text-center">
@@ -613,38 +754,38 @@ const ImportModal = <T extends Record<string, any>>({
         </div>
 
         {/* Error/Warning Details */}
-        {(state.importResult.errors.length > 0 || state.importResult.warnings.length > 0) && (
+        {(errors.length > 0 || warnings.length > 0) && (
           <div className="space-y-4 text-left">
-            {state.importResult.errors.length > 0 && (
+            {errors.length > 0 && (
               <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/20 dark:border-red-800">
                 <h5 className="mb-2 font-medium text-red-800 dark:text-red-200">
-                  {t('import.error')} ({state.importResult.errors.length})
+                  {t('import.error')} ({errors.length})
                 </h5>
                 <ul className="space-y-1 overflow-auto text-sm text-red-700 dark:text-red-300 max-h-32">
-                  {state.importResult.errors.slice(0, 5).map((error, index) => (
+                  {errors.slice(0, 5).map((error, index) => (
                     <li key={index}>• {error}</li>
                   ))}
-                  {state.importResult.errors.length > 5 && (
+                  {errors.length > 5 && (
                     <li className="italic">
-                      {t('import.andMoreErrors', { count: state.importResult.errors.length - 5 })}
+                      {t('import.andMoreErrors', { count: errors.length - 5 })}
                     </li>
                   )}
                 </ul>
               </div>
             )}
 
-            {state.importResult.warnings.length > 0 && (
+            {warnings.length > 0 && (
               <div className="p-4 border border-yellow-200 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
                 <h5 className="mb-2 font-medium text-yellow-800 dark:text-yellow-200">
-                  {t('import.warnings')} ({state.importResult.warnings.length})
+                  {t('import.warnings')} ({warnings.length})
                 </h5>
                 <ul className="space-y-1 overflow-auto text-sm text-yellow-700 dark:text-yellow-300 max-h-32">
-                  {state.importResult.warnings.slice(0, 5).map((warning, index) => (
+                  {warnings.slice(0, 5).map((warning, index) => (
                     <li key={index}>• {warning}</li>
                   ))}
-                  {state.importResult.warnings.length > 5 && (
+                  {warnings.length > 5 && (
                     <li className="italic">
-                      {t('import.andMoreWarnings', { count: state.importResult.warnings.length - 5 })}
+                      {t('import.andMoreWarnings', { count: warnings.length - 5 })}
                     </li>
                   )}
                 </ul>
@@ -753,7 +894,11 @@ const ImportModal = <T extends Record<string, any>>({
                   </button>
                   <button
                     onClick={handleImport}
-                    disabled={!state.importData?.isValid && !state.options.skipErrors}
+                    disabled={
+                      config.processingMode === 'server' 
+                        ? !state.serverValidation?.isValid && !state.options.skipErrors
+                        : !state.importData?.isValid && !state.options.skipErrors
+                    }
                     className="px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {state.options.dryRun ? t('import.validate') : t('import.startImport')}

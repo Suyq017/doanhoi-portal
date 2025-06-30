@@ -2,8 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, UseInter
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import * as XLSX from 'xlsx';
 import { DepartmentsService } from './departments.service';
+import { ImportService } from './services/import.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { QueryDepartmentDto } from './dto/query-department.dto';
@@ -11,7 +11,10 @@ import { QueryDepartmentDto } from './dto/query-department.dto';
 @ApiTags('departments')
 @Controller('departments')
 export class DepartmentsController {
-  constructor(private readonly departmentsService: DepartmentsService) {}
+  constructor(
+    private readonly departmentsService: DepartmentsService,
+    private readonly importService: ImportService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Tạo đơn vị mới' })
@@ -32,39 +35,11 @@ export class DepartmentsController {
   @ApiOperation({ summary: 'Tải file mẫu import đơn vị' })
   @ApiResponse({ status: 200, description: 'File mẫu Excel' })
   async downloadTemplate(@Res() res: Response) {
-    // Create Excel template data
-    // Create Excel template data
-    const templateData = [
-      ['Tên đơn vị', 'Mã đơn vị', 'Mô tả', 'Trạng thái (true/false)'],
-      ['Tên đơn vị', 'Mã đơn vị', 'Mô tả', 'Trạng thái (true/false)'],
-      ['Khoa Khoa học máy tính', 'CSE', 'Khoa đào tạo về khoa học máy tính', 'true'],
-      ['Khoa Điện tử', 'EE', 'Khoa đào tạo về điện tử', 'true']
-    ];
-
-    // Create a new workbook and worksheet
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.aoa_to_sheet(templateData);
-
-    // Set column widths
-    worksheet['!cols'] = [
-      { width: 30 }, // Tên đơn vị
-      { width: 15 }, // Mã đơn vị
-      { width: 40 }, // Mô tả
-      { width: 20 }  // Trạng thái
-    ];
-
-    // Add the worksheet to the workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Departments');
-
-    // Generate Excel file buffer
-    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
-    // Set response headers
+    const templateBuffer = await this.importService.generateTemplate();
+    
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="departments_template.xlsx"');
-    
-    // Send the Excel file
-    res.send(excelBuffer);
+    res.send(templateBuffer);
   }
 
   @Get(':id')
@@ -92,26 +67,42 @@ export class DepartmentsController {
     return this.departmentsService.remove(id);
   }
 
-  @Post('import')
-  @ApiOperation({ summary: 'Import danh sách đơn vị từ file' })
-  @ApiResponse({ status: 200, description: 'Kết quả import' })
+  // Import endpoints
+  @Post('import/upload')
+  @ApiOperation({ summary: 'Upload file Excel để import đơn vị' })
+  @ApiResponse({ status: 200, description: 'File được upload và parse thành công' })
+  @ApiResponse({ status: 400, description: 'File không hợp lệ hoặc lỗi parse' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
-  async importDepartments(
-    @UploadedFile() file: any,
-    @Body() body: any
+  async uploadImportFile(@UploadedFile() file: Express.Multer.File) {
+    return this.importService.uploadFile(file);
+  }
+
+  @Get('import/:sessionId/validate')
+  @ApiOperation({ summary: 'Validate dữ liệu import' })
+  @ApiResponse({ status: 200, description: 'Kết quả validation' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async validateImportData(@Param('sessionId') sessionId: string) {
+    return this.importService.validateData(sessionId);
+  }
+
+  @Post('import/:sessionId/execute')
+  @ApiOperation({ summary: 'Thực hiện import dữ liệu' })
+  @ApiResponse({ status: 200, description: 'Kết quả import' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu chưa được validate hoặc lỗi import' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async executeImport(
+    @Param('sessionId') sessionId: string,
+    @Body() options?: { skipConflicts?: boolean }
   ) {
-    // For demonstration, return a mock successful response
-    return {
-      total: 10,
-      success: 8,
-      failed: 2,
-      skipped: 0,
-      errors: [
-        'Row 3: Department name is required',
-        'Row 7: Invalid department code format'
-      ],
-      warnings: []
-    };
+    return this.importService.executeImport(sessionId, options);
+  }
+
+  @Get('import/:sessionId/status')
+  @ApiOperation({ summary: 'Lấy trạng thái import session' })
+  @ApiResponse({ status: 200, description: 'Thông tin session' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async getImportStatus(@Param('sessionId') sessionId: string) {
+    return this.importService.getSessionStatus(sessionId);
   }
 }

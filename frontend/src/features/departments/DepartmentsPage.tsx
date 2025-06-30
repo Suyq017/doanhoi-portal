@@ -60,37 +60,47 @@ const Departments: React.FC = () => {
       key: 'single',
       label: t('departments:addButton.single'),
       icon: <UserPlus className="w-4 h-4" />,
-      description: 'Tạo đơn vị mới bằng form',
+      description: t('departments:addButton.singleDescription'),
       onClick: () => setIsCreateModalOpen(true)
     },
     {
       key: 'fromFile',
       label: t('departments:addButton.fromFile'), 
       icon: <Upload className="w-4 h-4" />,
-      description: 'Import nhiều đơn vị từ file Excel',
+      description: t('departments:addButton.fromFileDescription'),
       onClick: () => setIsImportModalOpen(true)
     }
   ];
 
-  // Import configuration
+  // Import configuration - Updated for server-side processing
   const importConfig: ImportModalConfig<any> = {
     templateUrl: `${import.meta.env.VITE_BACKEND_API_URL}/departments/template`,
     templateFileName: t('departments:import.templateFile'),
-    acceptedFileTypes: ['.xlsx'],
+    acceptedFileTypes: ['.xlsx', '.xls'],
     maxFileSize: 5 * 1024 * 1024, // 5MB
+    
+    // Use server-side processing
+    processingMode: 'server',
+    uploadFile: departmentService.uploadImportFile.bind(departmentService),
+    validateServerData: departmentService.validateImportData.bind(departmentService),
+    executeServerImport: departmentService.executeImport.bind(departmentService),
+    getImportStatus: departmentService.getImportStatus.bind(departmentService),
+    
+    // Keep legacy functions for backward compatibility
     parseFile: departmentService.parseFile.bind(departmentService),
     validateData: departmentService.validateData.bind(departmentService),
     importData: departmentService.importData.bind(departmentService),
+    
     columns: [
       { key: 'name', label: t('departments:fields.name'), required: true, type: 'text' },
       { key: 'code', label: t('departments:fields.code'), required: false, type: 'text' },
       { key: 'description', label: t('departments:fields.description'), required: false, type: 'text' },
-      { key: 'isActive', label: t('departments:fields.isActive'), required: false, type: 'boolean' },
     ],
     entityName: 'departments',
     onSuccess: () => {
       loadDepartments();
       setIsImportModalOpen(false);
+      showSuccess(t('departments:import.importSuccess'));
     },
     onError: (error) => {
       console.error('Import error:', error);

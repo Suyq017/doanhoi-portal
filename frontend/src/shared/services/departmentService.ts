@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:9200';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
 import { ValidationResult, ImportResult, ImportOptions } from '../types/import';
 
@@ -40,6 +40,58 @@ export interface DepartmentImportData {
   code?: string;
   description?: string;
   isActive?: boolean;
+}
+
+// New types for server-side import
+export interface ImportUploadResponse {
+  sessionId: string;
+  fileName: string;
+  totalRows: number;
+  message: string;
+}
+
+export interface ImportValidationResponse {
+  sessionId: string;
+  isValid: boolean;
+  summary: {
+    total: number;
+    valid: number;
+    invalid: number;
+    duplicates: number;
+    conflicts: number;
+  };
+  errors: Array<{
+    row: number;
+    column: string;
+    message: string;
+    severity: 'error' | 'warning';
+  }>;
+  warnings: Array<{
+    row: number;
+    column: string;
+    message: string;
+    severity: 'error' | 'warning';
+  }>;
+  previewData: Array<{
+    row: number;
+    name: string;
+    code?: string;
+    description?: string;
+    hasErrors: boolean;
+    hasWarnings: boolean;
+    errors: any[];
+    warnings: any[];
+  }>;
+}
+
+export interface ImportExecuteResponse {
+  sessionId: string;
+  success: boolean;
+  importedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  errors: string[];
+  message: string;
 }
 
 class DepartmentService {
@@ -112,18 +164,51 @@ class DepartmentService {
     });
   }
 
-  // Import functionality
+  // Import functionality - Updated for server-side processing
   async getTemplate(): Promise<string> {
     return `${API_BASE_URL}/departments/template`;
   }
 
+  async uploadImportFile(file: File): Promise<ImportUploadResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/departments/import/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Upload failed');
+    }
+
+    return response.json();
+  }
+
+  async validateImportData(sessionId: string): Promise<ImportValidationResponse> {
+    return this.request<ImportValidationResponse>(`/departments/import/${sessionId}/validate`);
+  }
+
+  async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponse> {
+    return this.request<ImportExecuteResponse>(`/departments/import/${sessionId}/execute`, {
+      method: 'POST',
+      body: JSON.stringify(options || {}),
+    });
+  }
+
+  async getImportStatus(sessionId: string): Promise<any> {
+    return this.request(`/departments/import/${sessionId}/status`);
+  }
+
+  // Legacy methods for backward compatibility
   async parseFile(file: File): Promise<DepartmentImportData[]> {
+    // This method is now deprecated in favor of server-side parsing
+    // Keep for backward compatibility but recommend using uploadImportFile
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          // For CSV files, you might parse differently
-          // For now, we'll simulate parsing
           const mockData: DepartmentImportData[] = [
             { name: 'Sample Department', code: 'SAMPLE', description: 'Sample description', isActive: true }
           ];
@@ -138,6 +223,8 @@ class DepartmentService {
   }
 
   async validateData(data: DepartmentImportData[]): Promise<ValidationResult<DepartmentImportData>> {
+    // This method is now deprecated in favor of server-side validation
+    // Keep for backward compatibility
     const validatedData = data.map((item, index) => {
       const errors: any[] = [];
       const warnings: any[] = [];
@@ -189,6 +276,8 @@ class DepartmentService {
     data: DepartmentImportData[],
     options: ImportOptions = { skipErrors: true, updateExisting: false }
   ): Promise<ImportResult> {
+    // This method is now deprecated in favor of server-side import workflow
+    // Keep for backward compatibility
     try {
       const response = await this.request<ImportResult>('/departments/import', {
         method: 'POST',
@@ -196,7 +285,6 @@ class DepartmentService {
       });
       return response;
     } catch (error) {
-      // Mock response for demonstration
       return {
         total: data.length,
         success: data.length,
