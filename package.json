@@ -18,7 +18,8 @@
     "dev:full": "npm run docker:up && npm run dev"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "typeorm-uml": "^1.6.5"
   },
   "workspaces": [
     "backend",

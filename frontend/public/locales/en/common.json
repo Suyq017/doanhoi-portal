@@ -11,7 +11,7 @@
   "actions": {
     "create": "Create",
     "add": "Add",
-    "edit": "Edit", 
+    "edit": "Edit",
     "update": "Update",
     "delete": "Delete",
     "view": "View",
@@ -42,9 +42,10 @@
   "messages": {
     "success": {
       "create": "Created successfully",
-      "update": "Updated successfully", 
+      "update": "Updated successfully",
       "delete": "Deleted successfully",
-      "save": "Saved successfully"
+      "save": "Saved successfully",
+      "add": "Added successfully"
     },
     "error": {
       "create": "Error occurred while creating",
@@ -67,7 +68,7 @@
   "pagination": {
     "showing": "Showing {{start}} - {{end}} of {{total}} results",
     "previous": "Previous",
-    "next": "Next", 
+    "next": "Next",
     "page": "Page {{current}} / {{total}}",
     "itemsPerPage": "{{count}} items/page"
   },
@@ -86,7 +87,7 @@
     "actions": "Actions",
     "row": "Row",
     "name": "Name",
-    "code": "Code", 
+    "code": "Code",
     "description": "Description",
     "email": "Email",
     "phone": "Phone Number"
@@ -123,7 +124,7 @@
     "updateExistingDescription": "Update information if already exists, instead of skipping",
     "dryRun": "Validation mode (no actual import)",
     "dryRunDescription": "Only validate data without performing actual import",
-    "validate": "Validate", 
+    "validate": "Validate",
     "startImport": "Start Import",
     "importing": "Importing data...",
     "validating": "Validating data...",

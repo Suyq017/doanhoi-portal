@@ -2,7 +2,7 @@
   "appName": "Hệ thống Đoàn Hội Sinh viên",
   "navigation": {
     "dashboard": "Trang chủ",
-    "users": "Người dùng", 
+    "users": "Người dùng",
     "organizations": "Tổ chức",
     "dataManagement": "Danh mục dữ liệu",
     "departments": "Đơn vị",
@@ -11,7 +11,7 @@
   "actions": {
     "create": "Tạo mới",
     "add": "Thêm",
-    "edit": "Chỉnh sửa", 
+    "edit": "Chỉnh sửa",
     "update": "Cập nhật",
     "delete": "Xóa",
     "view": "Xem",
@@ -42,9 +42,10 @@
   "messages": {
     "success": {
       "create": "Tạo thành công",
-      "update": "Cập nhật thành công", 
+      "update": "Cập nhật thành công",
       "delete": "Xóa thành công",
-      "save": "Lưu thành công"
+      "save": "Lưu thành công",
+      "add": "Thêm thành công"
     },
     "error": {
       "create": "Có lỗi xảy ra khi tạo",
@@ -67,7 +68,7 @@
   "pagination": {
     "showing": "Hiển thị {{start}} - {{end}} của {{total}} kết quả",
     "previous": "Trước",
-    "next": "Tiếp theo", 
+    "next": "Tiếp theo",
     "page": "Trang {{current}} / {{total}}",
     "itemsPerPage": "{{count}} mục/trang"
   },

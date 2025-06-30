@@ -36,4 +36,4 @@ import { ClassesModule } from './classes/classes.module';
     ClassesModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

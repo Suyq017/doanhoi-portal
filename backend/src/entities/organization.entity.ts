@@ -6,12 +6,12 @@ export enum OrganizationType {
   DOAN_TRUONG = 'doan_truong',
   DOAN_CO_SO = 'doan_co_so',
   CHI_DOAN = 'chi_doan',
-  
+
   // Hội system
   HOI_SINH_VIEN_TRUONG = 'hoi_sinh_vien_truong',
   LIEN_CHI_HOI = 'lien_chi_hoi',
   CHI_HOI = 'chi_hoi',
-  
+
   // Câu lạc bộ
   CLB_TRUONG = 'clb_truong',
   CLB_KHOA = 'clb_khoa',
@@ -37,6 +37,18 @@ export class Organization {
 
   @Column({ nullable: true })
   code: string; // Mã tổ chức
+
+  // Getter method to generate slug from name
+  get slug(): string {
+    return this.name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics (Vietnamese accent marks)
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '') // Remove special chars
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/--+/g, '-') // Replace multiple hyphens with single hyphen
+      .replace(/^-+|-+$/g, ''); // Remove leading and trailing hyphens
+  }
 
   @TreeParent()
   parent: Organization;

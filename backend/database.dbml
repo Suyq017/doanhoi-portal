@@ -1,0 +1,117 @@
+Enum "organizations_type_enum" {
+  "doan_truong"
+  "doan_co_so"
+  "chi_doan"
+  "hoi_sinh_vien_truong"
+  "lien_chi_hoi"
+  "chi_hoi"
+  "clb_truong"
+  "clb_khoa"
+}
+
+Enum "user_organizations_role_enum" {
+  "member"
+  "admin"
+  "super_admin"
+}
+
+Enum "users_membershipstatus_enum" {
+  "doan_vien"
+  "hoi_vien"
+  "both"
+  "none"
+}
+
+Enum "users_usertype_enum" {
+  "student"
+  "staff"
+}
+
+Table "departments" {
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
+  "name" varchar [not null]
+  "code" varchar
+  "description" varchar
+  "isActive" bool [not null, default: true]
+  "createdAt" timestamp [not null, default: `now()`]
+  "updatedAt" timestamp [not null, default: `now()`]
+}
+
+Table "classes" {
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
+  "name" varchar [not null]
+  "year" int4
+  "departmentId" uuid
+  "isActive" bool [not null, default: true]
+  "createdAt" timestamp [not null, default: `now()`]
+  "updatedAt" timestamp [not null, default: `now()`]
+}
+
+Table "users" {
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
+  "code" varchar [unique, not null]
+  "familyName" varchar [not null]
+  "givenName" varchar [not null]
+  "email" varchar [unique, not null]
+  "phone" varchar [not null]
+  "password" varchar
+  "googleId" varchar
+  "userType" users_usertype_enum [not null, default: 'student']
+  "membershipStatus" users_membershipstatus_enum [not null, default: 'none']
+  "createdAt" timestamp [not null, default: `now()`]
+  "updatedAt" timestamp [not null, default: `now()`]
+  "managementDepartmentId" uuid
+  "trainingDepartmentId" uuid
+  "classId" uuid
+}
+
+Table "user_organizations" {
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
+  "userId" uuid [not null]
+  "organizationId" uuid [not null]
+  "role" user_organizations_role_enum [not null, default: 'member']
+  "isActive" bool [not null, default: true]
+  "joinedAt" timestamp [not null, default: `now()`]
+  "updatedAt" timestamp [not null, default: `now()`]
+}
+
+Table "organizations" {
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
+  "name" varchar [not null]
+  "description" varchar
+  "type" organizations_type_enum [not null]
+  "code" varchar
+  "isActive" bool [not null, default: true]
+  "createdAt" timestamp [not null, default: `now()`]
+  "updatedAt" timestamp [not null, default: `now()`]
+  "parentId" uuid
+}
+
+Table "organizations_closure" {
+  "id_ancestor" uuid [not null]
+  "id_descendant" uuid [not null]
+
+  Indexes {
+    (id_ancestor, id_descendant) [type: btree, name: "PK_5eac0652945ed6ffbec83414215"]
+    id_ancestor [type: btree, name: "IDX_2fa2dfc7daa3b6730231351107"]
+    id_descendant [type: btree, name: "IDX_58bbb42b8f3a85417296bc398e"]
+  }
+}
+
+Ref "FK_5948da2aa7097447ce4a2250087":"departments"."id" < "classes"."departmentId"
+
+Ref "FK_b9e8b8e8d88eed668c3e6e69d3c":"organizations"."id" < "organizations"."parentId"
+
+Ref "FK_2fa2dfc7daa3b67302313511078":"organizations"."id" < "organizations_closure"."id_ancestor" [delete: cascade]
+
+Ref "FK_58bbb42b8f3a85417296bc398ed":"organizations"."id" < "organizations_closure"."id_descendant" [delete: cascade]
+
+Ref "FK_11d4cd5202bd8914464f4bec379":"users"."id" < "user_organizations"."userId" [delete: cascade]
+
+Ref "FK_71997faba4726730e91d514138e":"organizations"."id" < "user_organizations"."organizationId" [delete: cascade]
+
+Ref "FK_1632e044475bf96c3f4cc109490":"departments"."id" < "users"."trainingDepartmentId"
+
+Ref "FK_19d3b765976c09da3446b717fc8":"departments"."id" < "users"."managementDepartmentId"
+
+Ref "FK_d0fed6c2fc25ef43c2f29f5b192":"classes"."id" < "users"."classId"
