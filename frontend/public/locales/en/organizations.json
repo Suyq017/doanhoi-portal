@@ -1,12 +1,40 @@
 {
   "title": "Organization Management",
   "subtitle": "Manage Youth Union, Student Association and Club structures",
+  "titles": {
+    "create": "Create New Organization",
+    "edit": "Edit Organization Information",
+    "view": "Organization Details",
+    "delete": "Delete Organization"
+  },
+  "fields": {
+    "code": "Organization Code",
+    "name": "Organization Name",
+    "type": "Organization Type",
+    "level": "Organization Level",
+    "parent": "Parent Organization",
+    "description": "Description",
+    "membersCount": "Number of Members"
+  },
   "createOrganization": "Create Organization",
   "addOrganization": "Add Organization",
   "editOrganization": "Edit Organization",
   "deleteOrganization": "Delete Organization",
   "organizationInfo": "Organization Information",
+  "tree": {
+    "treeOrganization": "Organization Tree",
+    "addMember": "Add Member",
+    "addMemberTo": "Add Member To"
+  },
+  "messages": {
+    "hasChildren": "This organization has child levels",
+    "removeChildrenFirst": "Please remove child levels before deleting this organization"
+  },
   "stats": {
+    "doan_organizations": "Youth Union Organizations",
+    "hoi_organizations": "Student Association Organizations",
+    "clb_organizations": "Clubs",
+    "total_members": "Total Members",
     "totalOrganizations": "Total Organizations",
     "youthUnions": "Youth Union Branches",
     "studentAssociations": "Student Association Branches",
@@ -15,7 +43,23 @@
   "types": {
     "youth_union": "Youth Union",
     "student_association": "Student Association",
-    "club": "Club"
+    "club": "Club",
+    "group": {
+      "doan": "Youth Union",
+      "hoi": "Student Association",
+      "clb": "Club"
+    },
+    "doan_truong": "University Youth Union",
+    "doan_co_so": "Basic Youth Union",
+    "chi_doan": "Youth Union Branch",
+    "hoi_sinh_vien_truong": "University Student Association",
+    "lien_chi_hoi": "Student Association Group",
+    "chi_hoi": "Student Association Branch",
+    "clb_truong": "University Club",
+    "clb_khoa": "Faculty Club"
+  },
+  "placeholders": {
+    "selectType": "Select Organization Type"
   },
   "levels": {
     "school": "School Level",

@@ -2,14 +2,14 @@
   "title": "User Management",
   "subtitle": "Manage members, youth union members and student association members information",
   "titles": {
-    "create": "Add New User", 
+    "create": "Add New User",
     "edit": "Edit User Information",
     "view": "User Details",
     "delete": "Delete User"
   },
   "fields": {
     "code": "Student/Staff ID",
-    "familyName": "Family Name", 
+    "familyName": "Family Name",
     "givenName": "Given Name",
     "fullName": "Full Name",
     "password": "Password",
@@ -48,7 +48,8 @@
   "messages": {
     "noUsers": "No users found",
     "deleteWarningMessage": "Deleting this user will remove all related data including organization memberships, activity history, etc.",
-    "duplicateCode": "Student/Staff ID already exists"
+    "duplicateCode": "Student/Staff ID already exists",
+    "userAlreadyExists": "User already exists in the system"
   },
   "labels": {
     "requiredMark": "*",

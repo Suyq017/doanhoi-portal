@@ -2,14 +2,14 @@
   "title": "Quản lý Người dùng",
   "subtitle": "Quản lý thông tin thành viên, đoàn viên và hội viên",
   "titles": {
-    "create": "Thêm người dùng mới", 
+    "create": "Thêm người dùng mới",
     "edit": "Chỉnh sửa thông tin người dùng",
     "view": "Thông tin chi tiết người dùng",
     "delete": "Xóa người dùng"
   },
   "fields": {
     "code": "Mã số sinh viên/cán bộ",
-    "familyName": "Họ và tên lót", 
+    "familyName": "Họ và tên lót",
     "givenName": "Tên",
     "fullName": "Họ và tên",
     "password": "Mật khẩu",
@@ -48,7 +48,8 @@
   "messages": {
     "noUsers": "Không tìm thấy người dùng nào",
     "deleteWarningMessage": "Việc xóa người dùng sẽ xóa tất cả dữ liệu liên quan bao gồm thành viên tổ chức, lịch sử hoạt động, v.v.",
-    "duplicateCode": "Mã số sinh viên/cán bộ đã tồn tại"
+    "duplicateCode": "Mã số sinh viên/cán bộ đã tồn tại",
+    "userAlreadyExists": "Người dùng đã tồn tại trong hệ thống"
   },
   "labels": {
     "requiredMark": "*",

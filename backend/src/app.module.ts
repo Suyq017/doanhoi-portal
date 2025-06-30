@@ -18,7 +18,7 @@ import { ClassesModule } from './classes/classes.module';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get('DB_PORT', 5432),
+        port: configService.get('DB_PORT', 9000),
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'password'),
         database: configService.get('DB_NAME', 'doanhoi'),
@@ -36,4 +36,4 @@ import { ClassesModule } from './classes/classes.module';
     ClassesModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

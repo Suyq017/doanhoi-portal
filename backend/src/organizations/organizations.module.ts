@@ -11,4 +11,4 @@ import { UserOrganization } from '../entities/user-organization.entity';
   providers: [OrganizationsService],
   exports: [OrganizationsService],
 })
-export class OrganizationsModule {}
+export class OrganizationsModule { }

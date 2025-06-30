@@ -9,3 +9,6 @@ export * from './services';
 
 // Types
 export * from './types';
+
+// Utils
+export * from '../features/organizations/utils/organizationUtils';
