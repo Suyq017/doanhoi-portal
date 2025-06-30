@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, UseInter
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
+import * as XLSX from 'xlsx';
 import { DepartmentsService } from './departments.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
@@ -31,20 +32,39 @@ export class DepartmentsController {
   @ApiOperation({ summary: 'Tải file mẫu import đơn vị' })
   @ApiResponse({ status: 200, description: 'File mẫu Excel' })
   async downloadTemplate(@Res() res: Response) {
-    // Create a simple Excel template
+    // Create Excel template data
+    // Create Excel template data
     const templateData = [
-      ['Tên đơn vị*', 'Mã đơn vị', 'Mô tả', 'Trạng thái (true/false)'],
+      ['Tên đơn vị', 'Mã đơn vị', 'Mô tả', 'Trạng thái (true/false)'],
+      ['Tên đơn vị', 'Mã đơn vị', 'Mô tả', 'Trạng thái (true/false)'],
       ['Khoa Khoa học máy tính', 'CSE', 'Khoa đào tạo về khoa học máy tính', 'true'],
       ['Khoa Điện tử', 'EE', 'Khoa đào tạo về điện tử', 'true']
     ];
 
-    // In a real implementation, you would use a library like xlsx to create the Excel file
-    // For now, we'll send a CSV format
-    const csvContent = templateData.map(row => row.join(',')).join('\n');
+    // Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+
+    // Set column widths
+    worksheet['!cols'] = [
+      { width: 30 }, // Tên đơn vị
+      { width: 15 }, // Mã đơn vị
+      { width: 40 }, // Mô tả
+      { width: 20 }  // Trạng thái
+    ];
+
+    // Add the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Departments');
+
+    // Generate Excel file buffer
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Set response headers
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="departments_template.xlsx"');
     
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="departments_template.csv"');
-    res.send(csvContent);
+    // Send the Excel file
+    res.send(excelBuffer);
   }
 
   @Get(':id')

@@ -1,5 +1,7 @@
 {
   "title": "Dashboard",
+  "titlePhonetic": "Homepage",
+  "subtitle": "Youth Union & Student Association Management System Overview",
   "welcome": "Welcome to Youth Union & Student Association System",
   "stats": {
     "totalUsers": "Total Users",
@@ -7,16 +9,46 @@
     "youthMembers": "Youth Union Members",
     "associationMembers": "Student Association Members",
     "students": "Students",
-    "staff": "Staff"
+    "staff": "Staff",
+    "totalMembers": "Total Members",
+    "youthUnionMembers": "Youth Union Members",
+    "studentAssocMembers": "Student Association Members",
+    "organizations": "Organizations",
+    "doanMembers": "Youth Union Members",
+    "hoiMembers": "Student Association Members",
+    "percentageChange": "{{change}} from last month"
   },
   "quickActions": {
     "title": "Quick Actions",
     "addUser": "Add New User",
     "createOrganization": "Create New Organization",
-    "viewReports": "View Reports"
+    "viewReports": "View Reports",
+    "addNewUser": "Add new user",
+    "createNewOrganization": "Create new organization"
   },
   "recentActivity": {
     "title": "Recent Activity",
-    "noActivity": "No recent activity"
+    "noActivity": "No recent activity",
+    "addedMembers": "Added {{count}} new members to {{organization}}",
+    "updatedOrganization": "Updated {{organization}} information", 
+    "createdOrganization": "Created new {{organization}}",
+    "addedMembersToUnit": "Added {{count}} new members to {{unit}}",
+    "updatedClubInfo": "Updated {{club}} information",
+    "createdNewUnit": "Created new {{unit}}"
+  },
+  "activities": {
+    "title": "Recent Activities",
+    "added15Members": "Added 15 new members to CSE Faculty Youth Union Branch",
+    "updatedClub": "Updated IT Club information",
+    "createdBranch": "Created new Mechanical Engineering Faculty Sub-Association",
+    "addedMembersToCSE": "Added 15 new members to CSE Faculty Youth Union Branch",
+    "updatedITClub": "Updated IT Club information",
+    "createdMEUnit": "Created new Mechanical Engineering Faculty Sub-Association"
+  },
+  "actions": {
+    "title": "Quick Actions",
+    "addUser": "Add New User",
+    "createOrg": "Create New Organization",
+    "viewReports": "View Reports"
   }
 }

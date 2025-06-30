@@ -1,5 +1,7 @@
 {
   "title": "Bảng điều khiển",
+  "titlePhonetic": "Trang chủ",
+  "subtitle": "Tổng quan hệ thống quản lý Đoàn Thanh niên và Hội Sinh viên",
   "welcome": "Chào mừng đến với Hệ thống Đoàn Hội Sinh viên",
   "stats": {
     "totalUsers": "Tổng số người dùng",
@@ -7,16 +9,46 @@
     "youthMembers": "Đoàn viên",
     "associationMembers": "Hội viên",
     "students": "Sinh viên",
-    "staff": "Cán bộ"
+    "staff": "Cán bộ",
+    "totalMembers": "Tổng số thành viên",
+    "youthUnionMembers": "Đoàn viên",
+    "studentAssocMembers": "Hội viên",
+    "organizations": "Tổ chức",
+    "doanMembers": "Đoàn viên",
+    "hoiMembers": "Hội viên",
+    "percentageChange": "{{change}} so với tháng trước"
   },
   "quickActions": {
     "title": "Thao tác nhanh",
     "addUser": "Thêm người dùng mới",
     "createOrganization": "Tạo tổ chức mới",
-    "viewReports": "Xem báo cáo"
+    "viewReports": "Xem báo cáo",
+    "addNewUser": "Thêm người dùng mới",
+    "createNewOrganization": "Tạo tổ chức mới"
   },
   "recentActivity": {
     "title": "Hoạt động gần đây",
-    "noActivity": "Chưa có hoạt động nào"
+    "noActivity": "Chưa có hoạt động nào",
+    "addedMembers": "Thêm {{count}} thành viên mới vào {{organization}}",
+    "updatedOrganization": "Cập nhật thông tin {{organization}}",
+    "createdOrganization": "Tạo mới {{organization}}",
+    "addedMembersToUnit": "Thêm {{count}} thành viên mới vào {{unit}}",
+    "updatedClubInfo": "Cập nhật thông tin {{club}}",
+    "createdNewUnit": "Tạo mới {{unit}}"
+  },
+  "activities": {
+    "title": "Hoạt động gần đây",
+    "added15Members": "Thêm 15 thành viên mới vào Chi đoàn Khoa CNTT",
+    "updatedClub": "Cập nhật thông tin CLB Tin học",
+    "createdBranch": "Tạo mới Liên chi hội Khoa Cơ khí",
+    "addedMembersToCSE": "Thêm 15 thành viên mới vào Chi đoàn Khoa CNTT",
+    "updatedITClub": "Cập nhật thông tin CLB Tin học",
+    "createdMEUnit": "Tạo mới Liên chi hội Khoa Cơ khí"
+  },
+  "actions": {
+    "title": "Thao tác nhanh",
+    "addUser": "Thêm người dùng mới",
+    "createOrg": "Tạo tổ chức mới",
+    "viewReports": "Xem báo cáo"
   }
 }

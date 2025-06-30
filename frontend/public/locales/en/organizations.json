@@ -1,5 +1,6 @@
 {
   "title": "Organization Management",
+  "titlePhonetic": "Organizations",
   "subtitle": "Manage Youth Union, Student Association and Club structures",
   "titles": {
     "create": "Create New Organization",
@@ -36,9 +37,14 @@
     "clb_organizations": "Clubs",
     "total_members": "Total Members",
     "totalOrganizations": "Total Organizations",
-    "youthUnions": "Youth Union Branches",
-    "studentAssociations": "Student Association Branches",
-    "clubs": "Clubs"
+    "youthUnions": "Youth Unions",
+    "studentAssociations": "Student Associations",
+    "clubs": "Clubs",
+    "totalMembers": "Total Members",
+    "youthUnionOrgs": "Youth Union Organizations",
+    "studentAssocOrgs": "Student Association Organizations",
+    "doanOrgs": "Youth Union Organizations",
+    "hoiOrgs": "Student Association Organizations"
   },
   "types": {
     "youth_union": "Youth Union",
@@ -50,7 +56,7 @@
       "clb": "Club"
     },
     "doan_truong": "University Youth Union",
-    "doan_co_so": "Basic Youth Union",
+    "doan_co_so": "Faculty Youth Union",
     "chi_doan": "Youth Union Branch",
     "hoi_sinh_vien_truong": "University Student Association",
     "lien_chi_hoi": "Student Association Group",

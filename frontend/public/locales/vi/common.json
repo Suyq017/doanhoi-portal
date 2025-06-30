@@ -85,7 +85,12 @@
     "createdAt": "Ngày tạo",
     "updatedAt": "Cập nhật lần cuối",
     "actions": "Thao tác",
-    "row": "Dòng"
+    "row": "Dòng",
+    "name": "Tên",
+    "code": "Mã",
+    "description": "Mô tả",
+    "email": "Email",
+    "phone": "Số điện thoại"
   },
   "status": {
     "active": "Hoạt động",
@@ -103,6 +108,7 @@
     "processing": "Đang xử lý file...",
     "totalRecords": "Tổng số bản ghi",
     "validRecords": "Bản ghi hợp lệ",
+    "error": "Lỗi",
     "warnings": "Cảnh báo",
     "showOnlyErrors": "Chỉ hiển thị lỗi",
     "showAll": "Hiển thị tất cả",

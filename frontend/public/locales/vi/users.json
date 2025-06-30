@@ -20,7 +20,8 @@
     "class": "Lớp",
     "info": "Thông tin",
     "contact": "Liên hệ",
-    "type": "Loại"
+    "type": "Loại",
+    "created": "Ngày tạo"
   },
   "placeholders": {
     "code": "Ví dụ: 2024001, CB001",
@@ -58,5 +59,25 @@
     "newPassword": "Mật khẩu mới (để trống nếu không thay đổi)",
     "deleteTitle": "Xác nhận xóa",
     "organizationalInfo": "Thông tin tổ chức"
+  },
+  "actions": {
+    "view": "Xem chi tiết",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa"
+  },
+  "addButton": {
+    "dropdown": "Thêm người dùng",
+    "single": "Thêm một người dùng", 
+    "singleDesc": "Tạo người dùng mới bằng form",
+    "fromFile": "Import từ file Excel",
+    "fromFileDesc": "Import nhiều người dùng từ file Excel"
+  },
+  "import": {
+    "instructions": "Hướng dẫn nhập dữ liệu",
+    "step1": "Tải template nhập người dùng từ liên kết này.",
+    "step2": "Điền thông tin người dùng theo định dạng của template.",
+    "step3": "Tải file đã hoàn thành lên khu vực tải file bên dưới.",
+    "templateLinkText": "template nhập người dùng",
+    "onlyExcelAllowed": "Chỉ cho phép file Excel (.xlsx, .xls)"
   }
 }

@@ -30,19 +30,22 @@
     "active": "{{count}} hoạt động", 
     "inactive": "{{count}} không hoạt động"
   },
-  "actions": {
-    "createSingle": "Thêm từng đơn vị",
-    "importFile": "Import từ file"
+  "addButton": {
+    "dropdown": "Thêm đơn vị",
+    "single": "Thêm từng đơn vị",
+    "fromFile": "Thêm từ file"
   },
   "import": {
     "title": "Import danh sách đơn vị",
     "instructions": "Hướng dẫn import dữ liệu đơn vị",
-    "step1": "Tải file mẫu Excel và điền đầy đủ thông tin các đơn vị",
+    "step1": "Tải file mẫu Excel tại đây và điền đầy đủ thông tin các đơn vị",
     "step2": "Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi",
     "step3": "Tải file lên để tiến hành import vào hệ thống",
     "templateFile": "departments_template.xlsx",
+    "templateLinkText": "tại đây",
+    "onlyExcelAllowed": "Chỉ chấp nhận file Excel (.xlsx)",
     "success": "Import thành công {{count}} đơn vị",
     "partialSuccess": "Import thành công {{success}}/{{total}} đơn vị",
-    "error": "Có lỗi xảy ra trong quá trình import"
+    "importError": "Có lỗi xảy ra trong quá trình import"
   }
 }

@@ -30,19 +30,22 @@
     "active": "{{count}} active",
     "inactive": "{{count}} inactive"
   },
-  "actions": {
-    "createSingle": "Add Single Department",
-    "importFile": "Import from File"
+  "addButton": {
+    "dropdown": "Add Department",
+    "single": "Add Single Department",
+    "fromFile": "Add from File"
   },
   "import": {
     "title": "Import Department List",
     "instructions": "Department Data Import Guide",
-    "step1": "Download Excel template and fill in department information",
+    "step1": "Download Excel template here and fill in department information",
     "step2": "Check data format and ensure no errors",
     "step3": "Upload file to import into the system",
     "templateFile": "departments_template.xlsx",
+    "templateLinkText": "here",
+    "onlyExcelAllowed": "Only Excel files (.xlsx) are accepted",
     "success": "Successfully imported {{count}} departments",
     "partialSuccess": "Successfully imported {{success}}/{{total}} departments",
-    "error": "An error occurred during import process"
+    "importError": "An error occurred during import process"
   }
 }

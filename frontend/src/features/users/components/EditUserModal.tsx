@@ -159,7 +159,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Mã số */}
+          {/* User Code */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('users:fields.code')} *
@@ -184,7 +184,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             )}
           </div>
 
-          {/* Họ và tên */}
+          {/* Name Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -260,7 +260,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             )}
           </div>
 
-          {/* Số điện thoại */}
+          {/* Phone Number */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('common:fields.phone')} *
@@ -285,7 +285,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             )}
           </div>
 
-          {/* Mật khẩu */}
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('users:labels.newPassword')}
@@ -301,7 +301,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             />
           </div>
 
-          {/* Loại người dùng và trạng thái */}
+          {/* User Type and Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

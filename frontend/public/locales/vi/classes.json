@@ -12,7 +12,8 @@
     "name": "Tên lớp",
     "year": "Năm học",
     "studentCount": "Số sinh viên",
-    "department": "Đơn vị"
+    "department": "Đơn vị",
+    "isActive": "Hoạt động"
   },
   "placeholders": {
     "search": "Tìm kiếm lớp học...",
@@ -27,5 +28,21 @@
     "cannotDeleteWithStudents": "Không thể xóa lớp học có sinh viên. Vui lòng chuyển sinh viên trước.",
     "hasStudents": "Lớp học này có sinh viên",
     "moveStudentsFirst": "Cần chuyển {{count}} sinh viên sang lớp khác trước khi xóa."
+  },
+  "addButton": {
+    "dropdown": "Thêm lớp học",
+    "single": "Thêm một lớp học",
+    "singleDesc": "Tạo lớp mới bằng form",
+    "fromFile": "Nhập từ Excel",
+    "fromFileDesc": "Import nhiều lớp từ file Excel"
+  },
+  "import": {
+    "importError": "Có lỗi xảy ra trong quá trình nhập dữ liệu",
+    "instructions": "Hướng dẫn nhập dữ liệu",
+    "step1": "Tải template nhập lớp học từ liên kết này.",
+    "step2": "Điền thông tin lớp học theo định dạng của template.",
+    "step3": "Tải file đã hoàn thành lên khu vực tải file bên dưới.",
+    "templateLinkText": "template nhập lớp học",
+    "onlyExcelAllowed": "Chỉ cho phép file Excel (.xlsx, .xls)"
   }
 }
