@@ -40,10 +40,48 @@ export interface ClassQueryParams {
   isActive?: boolean;
 }
 
+export interface ClassImportData {
+  name: string;
+  code?: string;
+  year?: number;
+  departmentCode?: string;
+  isActive?: boolean;
+}
+
+// New types for server-side import
+export interface ImportUploadResponse {
+  sessionId: string;
+  fileName: string;
+  totalRows: number;
+  message: string;
+}
+
+export interface ImportValidationResponse {
+  sessionId: string;
+  isValid: boolean;
+  summary: {
+    total: number;
+    valid: number;
+    invalid: number;
+    duplicates: number;
+    conflicts: number;
+  };
+  errors: any[];
+  warnings: any[];
+  previewData: any[];
+}
+
+export interface ImportExecuteResponse {
+  sessionId: string;
+  success: boolean;
+  importedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  errors: string[];
+  message: string;
+}
+
 class ClassService {
-  parseFile: any;
-  validateData: any;
-  importData: any;
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -115,6 +153,59 @@ class ClassService {
     await this.request(`/classes/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // Import functionality - Server-side processing
+  async getTemplate(): Promise<string> {
+    return `${API_BASE_URL}/classes/template`;
+  }
+
+  async uploadImportFile(file: File): Promise<ImportUploadResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/classes/import/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Upload failed');
+    }
+
+    return response.json();
+  }
+
+  async validateImportData(sessionId: string): Promise<ImportValidationResponse> {
+    return this.request<ImportValidationResponse>(`/classes/import/${sessionId}/validate`);
+  }
+
+  async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponse> {
+    return this.request<ImportExecuteResponse>(`/classes/import/${sessionId}/execute`, {
+      method: 'POST',
+      body: JSON.stringify(options || {}),
+    });
+  }
+
+  async getImportStatus(sessionId: string): Promise<any> {
+    return this.request(`/classes/import/${sessionId}/status`);
+  }
+
+  // Legacy methods for backward compatibility (empty implementations)
+  async parseFile(_file: File): Promise<ClassImportData[]> {
+    // Deprecated - use server-side processing instead
+    return [];
+  }
+
+  async validateData(_data: ClassImportData[]): Promise<any> {
+    // Deprecated - use server-side processing instead
+    return { isValid: true, data: [], errors: [], warnings: [] };
+  }
+
+  async importData(_data: ClassImportData[], _options: any = {}): Promise<any> {
+    // Deprecated - use server-side processing instead
+    return { total: 0, success: 0, failed: 0, skipped: 0, errors: [], warnings: [] };
   }
 }
 

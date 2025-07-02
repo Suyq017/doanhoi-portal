@@ -12,6 +12,7 @@ import {
   SelectOption,
   AddDropdownButton,
   DropdownOption,
+  ImportModal,
 } from "../../shared";
 import CreateUserModal from "./components/CreateUserModal";
 import ViewUserModal from "./components/ViewUserModal";
@@ -33,6 +34,7 @@ const Users: React.FC = () => {
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Toast
   const { toasts, hideToast, showSuccess, showError } = useToast();
@@ -281,9 +283,110 @@ const Users: React.FC = () => {
       label: t('users:addButton.fromFile', { defaultValue: 'Import từ file Excel' }),
       icon: <Upload className="w-4 h-4" />,
       description: t('users:addButton.fromFileDesc', { defaultValue: 'Import nhiều người dùng từ file Excel' }),
-      onClick: () => {/* setIsImportModalOpen(true) */}
+      onClick: () => setIsImportModalOpen(true)
     }
   ];
+
+  // Import configuration
+  const importConfig = {
+    templateUrl: userService.getTemplate(),
+    templateFileName: 'users_import_template.xlsx',
+    acceptedFileTypes: ['.xlsx', '.xls'],
+    maxFileSize: 5 * 1024 * 1024, // 5MB
+    processingMode: 'server' as const,
+    columns: [
+      { key: 'familyName', label: 'Family Name', required: true, type: 'text' as const },
+      { key: 'givenName', label: 'Given Name', required: true, type: 'text' as const },
+      { key: 'email', label: 'Email', required: true, type: 'email' as const },
+      { key: 'code', label: 'Code', required: true, type: 'text' as const },
+      { key: 'password', label: 'Password', required: false, type: 'text' as const },
+      { key: 'phone', label: 'Phone', required: false, type: 'text' as const },
+      { key: 'className', label: 'Class Name', required: false, type: 'text' as const },
+      { key: 'managementDepartmentCode', label: 'Management Department Code', required: false, type: 'text' as const },
+      { key: 'trainingDepartmentCode', label: 'Training Department Code', required: false, type: 'text' as const },
+      { key: 'organizationCodes', label: 'Organization Codes', required: false, type: 'text' as const },
+      { key: 'userType', label: 'User Type', required: false, type: 'select' as const, selectOptions: [
+        { value: 'student', label: 'Student' },
+        { value: 'staff', label: 'Staff' }
+      ]},
+      { key: 'membershipStatus', label: 'Membership Status', required: false, type: 'select' as const, selectOptions: [
+        { value: 'doan_vien', label: 'Đoàn viên' },
+        { value: 'hoi_vien', label: 'Hội viên' },
+        { value: 'both', label: 'Cả hai' },
+        { value: 'none', label: 'Không' }
+      ]},
+      { key: 'isActive', label: 'Is Active', required: false, type: 'boolean' as const }
+    ],
+    uploadFile: async (file: File) => {
+      console.log('Uploading file:', file.name, file.size);
+      const result = await userService.uploadImportFile(file);
+      console.log('Upload result:', result);
+      return {
+        sessionId: result.sessionId,
+        fileName: result.fileName,
+        totalRows: result.totalRows,
+        message: result.message,
+      };
+    },
+    validateServerData: async (sessionId: string) => {
+      console.log('Validating session:', sessionId);
+      const result = await userService.validateImportData(sessionId);
+      console.log('Validation result:', result);
+      
+      // Map validation results to the format expected by the ImportModal
+      const mappedPreviewData = result.validationResults?.map(item => ({
+        // Base data from the resolved data
+        ...item.data,
+        // Special fields for UI display
+        _rowIndex: item.rowIndex,
+        _hasError: !item.validation.isValid,
+        _errors: item._errors || [],
+        _warnings: item._warnings || []
+      })) || [];
+
+      return {
+        sessionId: result.sessionId,
+        isValid: result.isValid,
+        summary: {
+          total: result.summary.total,
+          valid: result.summary.valid,
+          invalid: result.summary.invalid,
+          duplicates: result.summary.duplicates || 0,
+          conflicts: result.summary.conflicts || 0
+        },
+        errors: result.errors || [],
+        warnings: result.warnings || [],
+        previewData: mappedPreviewData
+      };
+    },
+    executeServerImport: async (sessionId: string, options?: any) => {
+      console.log('Executing import for session:', sessionId, 'with options:', options);
+      const result = await userService.executeImport(sessionId, options);
+      console.log('Import result:', result);
+      // Transform to match ServerImportResult interface
+      return {
+        sessionId: result.sessionId,
+        success: result.success,
+        importedCount: result.importedCount,
+        skippedCount: result.skippedCount,
+        failedCount: result.failedCount,
+        errors: result.errors || [],
+        message: result.message
+      };
+    },
+    getImportStatus: async (sessionId: string) => {
+      return await userService.getImportStatus(sessionId);
+    },
+    entityName: 'users',
+    onSuccess: () => {
+      loadUsers();
+      setIsImportModalOpen(false);
+      showSuccess(t('users:import.success', { defaultValue: 'Import thành công!' }));
+    },
+    onError: (error: Error) => {
+      showError(error.message || t('users:import.error', { defaultValue: 'Import thất bại!' }));
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -530,6 +633,13 @@ const Users: React.FC = () => {
         onConfirm={confirmDeleteUser}
         user={selectedUser}
         loading={isDeletingUser}
+      />
+
+      {/* Import Modal */}
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        config={importConfig}
       />
 
       {/* Toast Notifications */}

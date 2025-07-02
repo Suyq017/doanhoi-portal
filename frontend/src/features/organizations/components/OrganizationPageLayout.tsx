@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { OrganizationStats as StatsType } from '../../../shared/types/organization';
 import OrganizationStats from './OrganizationStats';
-import { Toast } from '../../../shared';
+import { Toast, AddDropdownButton, DropdownOption } from '../../../shared';
 
 interface OrganizationPageLayoutProps {
     title: string;
@@ -15,6 +15,10 @@ interface OrganizationPageLayoutProps {
     onRetry?: () => Promise<void>;
     showCreateButton?: boolean;
     onCreateClick?: () => void;
+    // Dropdown button support
+    showDropdownButton?: boolean;
+    dropdownOptions?: DropdownOption[];
+    dropdownLabel?: string;
     toasts?: Array<{
         id: string;
         type: 'success' | 'error' | 'info';
@@ -32,8 +36,11 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
     loading = false,
     error = null,
     onRetry,
-    showCreateButton = true,
+    showCreateButton = false,
     onCreateClick,
+    showDropdownButton = false,
+    dropdownOptions = [],
+    dropdownLabel,
     toasts = [],
     onCloseToast
 }) => {
@@ -109,12 +116,22 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
                 </div>
                 {showCreateButton && (
                     <button
-                        className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-doan-500 text-white rounded-md hover:bg-doan-600 transition-colors"
+                        className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-doan-600 text-white rounded-md hover:bg-doan-700 focus:outline-none focus:ring-2 focus:ring-doan-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={onCreateClick}
+                        disabled={loading}
                     >
-                        <Plus className="w-5 h-5 mr-2" />
-                        {t('organizations:createOrganization')}
+                        <Plus className="w-4 h-4 mr-2" />
+                        {t('organizations:actions.add_organization')}
                     </button>
+                )}
+                {showDropdownButton && dropdownOptions && dropdownOptions.length > 0 && (
+                    <div className="mt-4 sm:mt-0">
+                        <AddDropdownButton
+                            label={dropdownLabel || t('organizations:addButton.dropdown')}
+                            options={dropdownOptions}
+                            loading={loading}
+                        />
+                    </div>
                 )}
             </div>
 

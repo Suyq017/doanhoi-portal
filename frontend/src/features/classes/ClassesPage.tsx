@@ -86,9 +86,47 @@ const ClassesPage: React.FC = () => {
       label: t('classes:addButton.fromFile', { defaultValue: 'Import từ file Excel' }),
       icon: <Upload className="w-4 h-4" />,
       description: t('classes:addButton.fromFileDesc', { defaultValue: 'Import nhiều lớp từ file Excel' }),
-      onClick: () => {/* setShowImportModal(true) */}
+      onClick: () => setIsImportModalOpen(true)
     }
   ];
+
+  // Import configuration - Server-side processing
+  const importConfig: ImportModalConfig<any> = {
+    templateUrl: `${import.meta.env.VITE_BACKEND_API_URL}/classes/template`,
+    templateFileName: t('classes:import.templateFile', { defaultValue: 'classes_template.xlsx' }),
+    acceptedFileTypes: ['.xlsx', '.xls'],
+    maxFileSize: 5 * 1024 * 1024, // 5MB
+    
+    // Use server-side processing
+    processingMode: 'server',
+    uploadFile: classService.uploadImportFile.bind(classService),
+    validateServerData: classService.validateImportData.bind(classService),
+    executeServerImport: classService.executeImport.bind(classService),
+    getImportStatus: classService.getImportStatus.bind(classService),
+    
+    // Keep legacy functions for backward compatibility
+    parseFile: classService.parseFile.bind(classService),
+    validateData: classService.validateData.bind(classService),
+    importData: classService.importData.bind(classService),
+    
+    columns: [
+      { key: 'name', label: t('classes:fields.name'), required: true, type: 'text' },
+      { key: 'code', label: t('classes:fields.code'), required: false, type: 'text' },
+      { key: 'year', label: t('classes:fields.year'), required: false, type: 'number' },
+      { key: 'departmentCode', label: t('classes:fields.departmentCode'), required: false, type: 'text' },
+      { key: 'isActive', label: t('common:fields.status'), required: false, type: 'boolean' },
+    ],
+    entityName: 'classes',
+    onSuccess: () => {
+      loadClasses();
+      setIsImportModalOpen(false);
+      showSuccess(t('classes:import.importSuccess', { defaultValue: 'Import lớp học thành công!' }));
+    },
+    onError: (error) => {
+      console.error('Import error:', error);
+      showError(t('classes:import.importError', { defaultValue: 'Có lỗi xảy ra khi import lớp học' }));
+    }
+  };
 
   // Load data
   useEffect(() => {
@@ -143,10 +181,6 @@ const ClassesPage: React.FC = () => {
   };
 
   // Event handlers
-  const handleCreate = () => {
-    setShowCreateModal(true);
-  };
-
   const handleEdit = (classItem: Class) => {
     setSelectedClass(classItem);
     setShowEditModal(true);
@@ -515,6 +549,15 @@ const ClassesPage: React.FC = () => {
           classData={selectedClass}
           onClose={handleCloseModals}
           onSuccess={handleDeleteSuccess}
+        />
+      )}
+
+      {/* Import Modal */}
+      {isImportModalOpen && (
+        <ImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          config={importConfig}
         />
       )}
 

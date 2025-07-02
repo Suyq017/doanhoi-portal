@@ -1,5 +1,52 @@
 const API_BASE_URL = 'http://localhost:9200';
 
+// Import types
+export interface ImportUploadResponse {
+  sessionId: string;
+  fileName: string;
+  totalRows: number;
+  message: string;
+}
+
+export interface ImportValidationResponse {
+  sessionId: string;
+  isValid: boolean;
+  summary: {
+    total: number;
+    valid: number;
+    invalid: number;
+    duplicates: number;
+    conflicts: number;
+  };
+  errors: any[];
+  warnings: any[];
+  validationResults: any[];
+  canProceed: boolean;
+}
+
+export interface ImportExecuteResponse {
+  sessionId: string;
+  success: boolean;
+  message: string;
+  importedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  errors: string[];
+}
+
+export interface ImportSession {
+  id: string;
+  fileName: string;
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  status: 'pending' | 'validated' | 'importing' | 'completed' | 'failed';
+  createdAt: string;
+  completedAt?: string;
+  errorMessage?: string;
+  results?: any;
+}
+
 export interface User {
   id: string;
   code: string;
@@ -116,6 +163,43 @@ class UserService {
     await this.request(`/users/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // Import functionality - Server-side processing
+  getTemplate(): string {
+    return `${API_BASE_URL}/users/template`;
+  }
+
+  async uploadImportFile(file: File): Promise<ImportUploadResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/users/import/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(error.message || 'Upload failed');
+    }
+
+    return response.json();
+  }
+
+  async validateImportData(sessionId: string): Promise<ImportValidationResponse> {
+    return this.request<ImportValidationResponse>(`/users/import/${sessionId}/validate`);
+  }
+
+  async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponse> {
+    return this.request<ImportExecuteResponse>(`/users/import/${sessionId}/execute`, {
+      method: 'POST',
+      body: JSON.stringify(options || {}),
+    });
+  }
+
+  async getImportStatus(sessionId: string): Promise<ImportSession> {
+    return this.request<ImportSession>(`/users/import/${sessionId}/status`);
   }
 }
 

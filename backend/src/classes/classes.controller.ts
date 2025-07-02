@@ -1,6 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { ClassesService } from './classes.service';
+import { ImportService } from './services/import.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { QueryClassDto } from './dto/query-class.dto';
@@ -8,7 +11,10 @@ import { QueryClassDto } from './dto/query-class.dto';
 @ApiTags('classes')
 @Controller('classes')
 export class ClassesController {
-  constructor(private readonly classesService: ClassesService) {}
+  constructor(
+    private readonly classesService: ClassesService,
+    private readonly importService: ImportService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Tạo lớp học mới' })
@@ -23,6 +29,17 @@ export class ClassesController {
   @ApiResponse({ status: 200, description: 'Danh sách lớp học' })
   findAll(@Query() query: QueryClassDto) {
     return this.classesService.findAll(query);
+  }
+
+  @Get('template')
+  @ApiOperation({ summary: 'Tải file mẫu import lớp học' })
+  @ApiResponse({ status: 200, description: 'File mẫu Excel' })
+  async downloadTemplate(@Res() res: Response) {
+    const templateBuffer = await this.importService.generateTemplate();
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="classes_template.xlsx"');
+    res.send(templateBuffer);
   }
 
   @Get(':id')
@@ -48,5 +65,44 @@ export class ClassesController {
   @ApiResponse({ status: 400, description: 'Không thể xóa lớp học có sinh viên' })
   remove(@Param('id') id: string) {
     return this.classesService.remove(id);
+  }
+
+  // Import endpoints
+  @Post('import/upload')
+  @ApiOperation({ summary: 'Upload file Excel để import lớp học' })
+  @ApiResponse({ status: 200, description: 'File được upload và parse thành công' })
+  @ApiResponse({ status: 400, description: 'File không hợp lệ hoặc lỗi parse' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImportFile(@UploadedFile() file: Express.Multer.File) {
+    return this.importService.uploadFile(file);
+  }
+
+  @Get('import/:sessionId/validate')
+  @ApiOperation({ summary: 'Validate dữ liệu import' })
+  @ApiResponse({ status: 200, description: 'Kết quả validation' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async validateImportData(@Param('sessionId') sessionId: string) {
+    return this.importService.validateData(sessionId);
+  }
+
+  @Post('import/:sessionId/execute')
+  @ApiOperation({ summary: 'Thực hiện import dữ liệu' })
+  @ApiResponse({ status: 200, description: 'Kết quả import' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu chưa được validate hoặc lỗi import' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async executeImport(
+    @Param('sessionId') sessionId: string,
+    @Body() options?: { skipConflicts?: boolean }
+  ) {
+    return this.importService.executeImport(sessionId, options);
+  }
+
+  @Get('import/:sessionId/status')
+  @ApiOperation({ summary: 'Lấy trạng thái import session' })
+  @ApiResponse({ status: 200, description: 'Trạng thái session' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async getImportStatus(@Param('sessionId') sessionId: string) {
+    return this.importService.getSessionStatus(sessionId);
   }
 }

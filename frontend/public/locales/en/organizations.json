@@ -18,10 +18,39 @@
     "membersCount": "Number of Members"
   },
   "createOrganization": "Create Organization",
-  "addOrganization": "Add Organization",
+  "addOrganization": "Add Organization", 
   "editOrganization": "Edit Organization",
   "deleteOrganization": "Delete Organization",
   "organizationInfo": "Organization Information",
+  "actions": {
+    "add_organization": "Add Organization"
+  },
+  "addButton": {
+    "dropdown": "Add New",
+    "manual": "Add Manually", 
+    "manualDesc": "Create new organization/member using form",
+    "fromFile": "Add from Excel File",
+    "fromFileDesc": "Import multiple members from Excel file",
+    "addMember": "Add Member",
+    "addMemberDesc": "Add new member to organization",
+    "addOrganization": "Add Organization",
+    "addOrganizationDesc": "Create new sub-organization"
+  },
+  "import": {
+    "instructions": "Organization Data Import Guide",
+    "step1": "Download the Excel template file here and fill in all member information",
+    "step2": "Check data format and ensure there are no errors",
+    "step3": "Upload the file to proceed with importing into the system",
+    "templateLinkText": "here",
+    "level2": {
+      "title": "Import Organization Members",
+      "description": "Import members with student code and class/unit code"
+    },
+    "level3": {
+      "title": "Import Branch/Chapter Members", 
+      "description": "Import members with student code only"
+    }
+  },
   "tree": {
     "treeOrganization": "Organization Tree",
     "addMember": "Add Member",

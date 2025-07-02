@@ -1,14 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
+import { ImportService } from './services/import.service';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly importService: ImportService
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Tạo người dùng mới' })
@@ -23,6 +29,17 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Danh sách người dùng' })
   findAll(@Query() query: QueryUserDto) {
     return this.usersService.findAll(query);
+  }
+
+  @Get('template')
+  @ApiOperation({ summary: 'Download template Excel để import users' })
+  @ApiResponse({ status: 200, description: 'File template Excel' })
+  async downloadTemplate(@Res() res: Response) {
+    const buffer = await this.importService.generateTemplate();
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="users_import_template.xlsx"');
+    res.send(buffer);
   }
 
   @Get(':id')
@@ -47,5 +64,43 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng' })
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+
+  // Import endpoints
+  @Post('import/upload')
+  @ApiOperation({ summary: 'Upload file Excel để import users' })
+  @ApiResponse({ status: 200, description: 'File đã được upload thành công' })
+  @ApiResponse({ status: 400, description: 'File không hợp lệ' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImportFile(@UploadedFile() file: Express.Multer.File) {
+    return this.importService.uploadFile(file);
+  }
+
+  @Get('import/:sessionId/validate')
+  @ApiOperation({ summary: 'Validate dữ liệu import' })
+  @ApiResponse({ status: 200, description: 'Kết quả validation' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async validateImportData(@Param('sessionId') sessionId: string) {
+    return this.importService.validateData(sessionId);
+  }
+
+  @Post('import/:sessionId/execute')
+  @ApiOperation({ summary: 'Thực hiện import dữ liệu' })
+  @ApiResponse({ status: 200, description: 'Import thành công' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu chưa được validate hoặc có lỗi' })
+  async executeImport(
+    @Param('sessionId') sessionId: string,
+    @Body() options?: { skipConflicts?: boolean }
+  ) {
+    return this.importService.executeImport(sessionId, options);
+  }
+
+  @Get('import/:sessionId/status')
+  @ApiOperation({ summary: 'Lấy trạng thái import session' })
+  @ApiResponse({ status: 200, description: 'Trạng thái session' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async getImportStatus(@Param('sessionId') sessionId: string) {
+    return this.importService.getSessionStatus(sessionId);
   }
 }

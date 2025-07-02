@@ -5,11 +5,23 @@ import { UsersService } from './users.service';
 import { User } from '../entities/user.entity';
 import { Department } from '../entities/department.entity';
 import { Class } from '../entities/class.entity';
+import { Organization } from '../entities/organization.entity';
+import { UserOrganization } from '../entities/user-organization.entity';
+import { ExcelParserService } from './services/excel-parser.service';
+import { ImportValidationService } from './services/import-validation.service';
+import { ImportSessionService } from './services/import-session.service';
+import { ImportService } from './services/import.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Department, Class])],
+  imports: [TypeOrmModule.forFeature([User, Department, Class, Organization, UserOrganization])],
   controllers: [UsersController],
-  providers: [UsersService],
+  providers: [
+    UsersService,
+    ExcelParserService,
+    ImportValidationService,
+    ImportSessionService,
+    ImportService
+  ],
   exports: [UsersService],
 })
 export class UsersModule {}

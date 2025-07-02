@@ -1,6 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile, Res, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiConsumes } from '@nestjs/swagger';
+import { Response } from 'express';
 import { OrganizationsService } from './organizations.service';
+import { OrganizationImportService } from './services/import.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { OrganizationType } from '../entities/organization.entity';
@@ -9,7 +12,10 @@ import { UserRole } from '../entities/user-organization.entity';
 @ApiTags('organizations')
 @Controller('organizations')
 export class OrganizationsController {
-    constructor(private readonly organizationsService: OrganizationsService) { }
+    constructor(
+        private readonly organizationsService: OrganizationsService,
+        private readonly importService: OrganizationImportService
+    ) { }
 
     @Post()
     @ApiOperation({ summary: 'Tạo tổ chức mới' })
@@ -141,6 +147,71 @@ export class OrganizationsController {
         @Param('code_user') userCode: string
     ) {
         return this.organizationsService.addMemberBySimpleCode(orgCode, userCode);
+    }
+
+    // Import Members Endpoints
+    @Post(':id/members/import/upload')
+    @ApiOperation({ summary: 'Upload file Excel để import thành viên' })
+    @ApiConsumes('multipart/form-data')
+    @ApiParam({ name: 'id', description: 'ID của tổ chức' })
+    @ApiResponse({ status: 200, description: 'File đã được upload và xử lý thành công' })
+    @ApiResponse({ status: 400, description: 'File không hợp lệ' })
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadImportFile(
+        @Param('id') organizationId: string,
+        @UploadedFile() file: Express.Multer.File,
+        @Query('level') level: string = '3'
+    ) {
+        const levelNum = parseInt(level);
+        if (![2, 3].includes(levelNum)) {
+            throw new BadRequestException('Level phải là 2 hoặc 3');
+        }
+        return this.importService.uploadFile(file, organizationId, levelNum);
+    }
+
+    @Get('import/:sessionId/validate')
+    @ApiOperation({ summary: 'Validate dữ liệu import' })
+    @ApiResponse({ status: 200, description: 'Kết quả validation' })
+    @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+    async validateImportData(@Param('sessionId') sessionId: string) {
+        return this.importService.validateData(sessionId);
+    }
+
+    @Post('import/:sessionId/execute')
+    @ApiOperation({ summary: 'Thực hiện import thành viên' })
+    @ApiResponse({ status: 200, description: 'Kết quả import' })
+    @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+    async executeImport(
+        @Param('sessionId') sessionId: string,
+        @Body() options?: { skipConflicts?: boolean }
+    ) {
+        return this.importService.executeImport(sessionId, options);
+    }
+
+    @Get('import/:sessionId/status')
+    @ApiOperation({ summary: 'Lấy trạng thái import session' })
+    @ApiResponse({ status: 200, description: 'Thông tin session' })
+    @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+    async getImportStatus(@Param('sessionId') sessionId: string) {
+        return this.importService.getSessionStatus(sessionId);
+    }
+
+    @Get('members/import/template/:level')
+    @ApiOperation({ summary: 'Tải file mẫu Excel cho import' })
+    @ApiParam({ name: 'level', description: 'Cấp độ tổ chức (2 hoặc 3)' })
+    @ApiResponse({ status: 200, description: 'File mẫu Excel' })
+    async downloadTemplate(@Param('level') level: string, @Res() res: Response) {
+        const levelNum = parseInt(level);
+        if (![2, 3].includes(levelNum)) {
+            throw new BadRequestException('Level phải là 2 hoặc 3');
+        }
+        
+        const templateBuffer = this.importService.generateTemplate(levelNum);
+        const filename = `organization_level${levelNum}_template.xlsx`;
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(templateBuffer);
     }
 
 }

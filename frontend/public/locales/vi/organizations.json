@@ -18,10 +18,39 @@
     "membersCount": "Số lượng thành viên"
   },
   "createOrganization": "Tạo tổ chức",
-  "addOrganization": "Thêm tổ chức",
+  "addOrganization": "Thêm tổ chức", 
   "editOrganization": "Chỉnh sửa tổ chức",
   "deleteOrganization": "Xóa tổ chức",
   "organizationInfo": "Thông tin tổ chức",
+  "actions": {
+    "add_organization": "Thêm tổ chức"
+  },
+  "addButton": {
+    "dropdown": "Thêm mới",
+    "manual": "Thêm thủ công", 
+    "manualDesc": "Tạo tổ chức/thành viên mới bằng form",
+    "fromFile": "Thêm từ file Excel",
+    "fromFileDesc": "Import nhiều thành viên từ file Excel",
+    "addMember": "Thêm thành viên",
+    "addMemberDesc": "Thêm thành viên mới vào tổ chức",
+    "addOrganization": "Thêm tổ chức",
+    "addOrganizationDesc": "Tạo tổ chức con mới"
+  },
+  "import": {
+    "instructions": "Hướng dẫn import dữ liệu tổ chức",
+    "step1": "Tải file mẫu Excel tại đây và điền đầy đủ thông tin thành viên",
+    "step2": "Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi",
+    "step3": "Tải file lên để tiến hành import vào hệ thống",
+    "templateLinkText": "tại đây",
+    "level2": {
+      "title": "Import thành viên tổ chức",
+      "description": "Import thành viên với mã số sinh viên và mã lớp/đơn vị"
+    },
+    "level3": {
+      "title": "Import thành viên chi đoàn/chi hội", 
+      "description": "Import thành viên với mã số sinh viên"
+    }
+  },
   "tree": {
     "treeOrganization": "Cây tổ chức",
     "addMember": "Thêm thành viên",
