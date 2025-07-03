@@ -73,6 +73,7 @@
     "fromFileDesc": "Import multiple users from Excel file"
   },
   "import": {
+    "title": "Import Users List",
     "instructions": "Import Instructions",
     "step1": "Download the user import template from this link.",
     "step2": "Fill in user information according to the template format.",

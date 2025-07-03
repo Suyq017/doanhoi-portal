@@ -20,7 +20,7 @@ export interface ImportValidationResponse {
   };
   errors: any[];
   warnings: any[];
-  validationResults: any[];
+  previewData: any[]; // Changed from validationResults to previewData
   canProceed: boolean;
 }
 

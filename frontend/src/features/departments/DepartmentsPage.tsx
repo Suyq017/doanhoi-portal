@@ -11,10 +11,11 @@ import {
   Select,
   SelectOption,
   ImportModal,
-  ImportModalConfig,
   AddDropdownButton,
   DropdownOption,
+  useImportConfig,
 } from "../../shared";
+import { departmentColumns } from "../../shared/utils/importColumns";
 import CreateDepartmentModal from "./components/CreateDepartmentModal";
 import ViewDepartmentModal from "./components/ViewDepartmentModal";
 import EditDepartmentModal from "./components/EditDepartmentModal";
@@ -34,10 +35,35 @@ const Departments: React.FC = () => {
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreatingDepartment, setIsCreatingDepartment] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Toast
   const { toasts, hideToast, showSuccess, showError } = useToast();
+
+  // Import configuration using custom hook
+  const { 
+    importConfig, 
+    isImportModalOpen, 
+    openImportModal, 
+    closeImportModal 
+  } = useImportConfig({
+    entityName: 'departments',
+    entityService: {
+      getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL}/departments/template`,
+      uploadImportFile: departmentService.uploadImportFile.bind(departmentService),
+      validateImportData: departmentService.validateImportData.bind(departmentService),
+      executeImport: departmentService.executeImport.bind(departmentService),
+      getImportStatus: departmentService.getImportStatus.bind(departmentService),
+    },
+    columns: departmentColumns(t),
+    onSuccess: () => {
+      loadDepartments();
+      showSuccess(t('departments:import.importSuccess'));
+    },
+    onError: (error: Error) => {
+      console.error('Import error:', error);
+      showError(t('departments:import.importError'));
+    }
+  });
 
   // Department action states
   const [selectedDepartment, setSelectedDepartment] = useState<ApiDepartment | null>(null);
@@ -68,45 +94,9 @@ const Departments: React.FC = () => {
       label: t('departments:addButton.fromFile'), 
       icon: <Upload className="w-4 h-4" />,
       description: t('departments:addButton.fromFileDescription'),
-      onClick: () => setIsImportModalOpen(true)
+      onClick: openImportModal
     }
   ];
-
-  // Import configuration - Updated for server-side processing
-  const importConfig: ImportModalConfig<any> = {
-    templateUrl: `${import.meta.env.VITE_BACKEND_API_URL}/departments/template`,
-    templateFileName: t('departments:import.templateFile'),
-    acceptedFileTypes: ['.xlsx', '.xls'],
-    maxFileSize: 5 * 1024 * 1024, // 5MB
-    
-    // Use server-side processing
-    processingMode: 'server',
-    uploadFile: departmentService.uploadImportFile.bind(departmentService),
-    validateServerData: departmentService.validateImportData.bind(departmentService),
-    executeServerImport: departmentService.executeImport.bind(departmentService),
-    getImportStatus: departmentService.getImportStatus.bind(departmentService),
-    
-    // Keep legacy functions for backward compatibility
-    parseFile: departmentService.parseFile.bind(departmentService),
-    validateData: departmentService.validateData.bind(departmentService),
-    importData: departmentService.importData.bind(departmentService),
-    
-    columns: [
-      { key: 'name', label: t('departments:fields.name'), required: true, type: 'text' },
-      { key: 'code', label: t('departments:fields.code'), required: false, type: 'text' },
-      { key: 'description', label: t('departments:fields.description'), required: false, type: 'text' },
-    ],
-    entityName: 'departments',
-    onSuccess: () => {
-      loadDepartments();
-      setIsImportModalOpen(false);
-      showSuccess(t('departments:import.importSuccess'));
-    },
-    onError: (error) => {
-      console.error('Import error:', error);
-      showError(t('departments:import.importError'));
-    }
-  };
 
   const loadDepartments = async () => {
     try {
@@ -521,7 +511,7 @@ const Departments: React.FC = () => {
       {/* Import Modal */}
       <ImportModal
         isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
+        onClose={closeImportModal}
         config={importConfig}
       />
 

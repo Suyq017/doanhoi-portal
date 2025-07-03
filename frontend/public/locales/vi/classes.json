@@ -33,10 +33,11 @@
     "dropdown": "Thêm lớp học",
     "single": "Thêm một lớp học",
     "singleDesc": "Tạo lớp mới bằng form",
-    "fromFile": "Nhập từ Excel",
-    "fromFileDesc": "Import nhiều lớp từ file Excel"
+    "fromFile": "Thêm từ file",
+    "fromFileDesc": "Thêm nhiều lớp từ file Excel"
   },
   "import": {
+    "title": "Nhập danh sách lớp học",
     "importError": "Có lỗi xảy ra trong quá trình nhập dữ liệu",
     "instructions": "Hướng dẫn nhập dữ liệu",
     "step1": "Tải template nhập lớp học từ liên kết này.",
