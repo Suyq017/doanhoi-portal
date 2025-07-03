@@ -9,8 +9,10 @@ import {
 } from '../../../shared';
 import { Upload } from 'lucide-react';
 import CreateOrganizationModal, { CreateOrganizationData } from '../components/CreateOrganizationModal';
+import { organizationService } from '../../../shared/services/organizationService';
 
 interface OrganizationPageLayoutProps {
+    organizations?: any[];
     title: string;
     subtitle?: string;
     stats: StatsType;
@@ -30,10 +32,15 @@ interface OrganizationPageLayoutProps {
         duration?: number;
     }>;
     onCloseToast?: (id: string) => void;
+    level: number;
+    onRefreshData?: () => void;
+    onShowSuccess?: (message: string) => void;
+    onShowError?: (message: string) => void;
+    type?: string;
 }
 
-
 const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
+    organizations,
     title,
     subtitle,
     stats,
@@ -45,7 +52,12 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
     showDropdownButton = false,
     dropdownLabel,
     toasts = [],
-    onCloseToast
+    onCloseToast,
+    level,
+    onRefreshData,
+    onShowSuccess,
+    onShowError,
+    type
 }) => {
     const { t, i18n } = useTranslation(['organizations', 'common']);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -53,25 +65,46 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
     const handleCloseCreateModal = () => {
         setIsCreateModalOpen(false);
     };
-    const handleCreateOrganization = async (data: CreateOrganizationData) => {
-        console.log('Creating organization with data:', data);
-        // if (!onCreateOrganization) {
-        //     console.warn('onCreateOrganization callback not provided');
-        //     return;
-        // }
 
-        // try {
-        //     setIsCreating(true);
-        //     await onCreateOrganization(data);
-        //     setIsCreateModalOpen(false);
-        //     onShowSuccess?.(t('organizations:create.success', { defaultValue: 'Tạo tổ chức thành công!' }));
-        // } catch (error) {
-        //     console.error('Error creating organization:', error);
-        //     const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra';
-        //     onShowError?.(t('organizations:create.error', { defaultValue: errorMessage }));
-        // } finally {
-        //     setIsCreating(false);
-        // }
+    const handleCreateOrganization = async (data: CreateOrganizationData) => {
+        try {
+            if (organizations?.length === 1) {
+                data.parentId = organizations[0].id;
+            } else {
+                let parentOrg;
+                if (data.type === 'clb_khoa' || data.type === 'clb_truong' || data.type === 'lien_chi_hoi') {
+                    parentOrg = organizations?.find(org => org.type === 'hoi_sinh_vien_truong');
+                    data.parentId = parentOrg?.id || '';
+                } else {
+                    parentOrg = organizations?.find(org => org.type === 'doan_truong');
+                    data.parentId = parentOrg?.id || '';
+                }
+            }
+
+
+            const newOrganization = await organizationService.createOrganization(data);
+            setIsCreateModalOpen(false);
+
+            if (onRefreshData) {
+                await onRefreshData();
+            }
+
+            // Hiển thị thông báo thành công
+            if (onShowSuccess) {
+                onShowSuccess(t('organizations:create.success', {
+                    defaultValue: 'Tạo tổ chức thành công!'
+                }));
+            }
+
+        } catch (error) {
+            console.error('Error creating organization:', error);
+
+            // Hiển thị lỗi cho user
+            const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi tạo tổ chức';
+            alert(errorMessage); // Hoặc hiển thị toast
+        }
+
+
     };
 
 
@@ -92,6 +125,10 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
             onClick: () => setIsImportModalOpen(true)
         }
     ];
+
+    const filteredDropdownOptions = (type === 'clb_khoa' || type === 'clb_truong' || level === 3)
+        ? addDropdownOptions.filter(opt => opt.key === 'fromFile')
+        : addDropdownOptions;
 
     if (loading) {
         return (
@@ -165,7 +202,7 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
                     <div className="mt-4 sm:mt-0">
                         <AddDropdownButton
                             label={dropdownLabel || t('organizations:addButton.dropdown')}
-                            options={addDropdownOptions}
+                            options={filteredDropdownOptions}
                             loading={loading}
                         />
                     </div>
@@ -190,7 +227,8 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
                     onClose={() => setIsCreateModalOpen(false)}
                     onSave={handleCreateOrganization}
                     // loading={isCreating}
-                    level={1}
+                    level={level}
+                    type={type}
                 />
             )}
 

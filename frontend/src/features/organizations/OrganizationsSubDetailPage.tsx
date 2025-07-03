@@ -12,7 +12,7 @@ const OrganizationsSubDetailPage: React.FC = () => {
     const { t } = useTranslation(['organizations', 'common']);
     const { type, code } = useParams<{ type: string; code: string }>();
     const importConfig = createOrganizationImportConfig(3);
-
+    const level = 3;
     const {
         organizations,
         stats,
@@ -102,6 +102,7 @@ const OrganizationsSubDetailPage: React.FC = () => {
                 }))
             }
             onCloseToast={hideToast}
+            level={level}
         >
 
             <OrganizationTreeContainer

@@ -11,7 +11,7 @@ const Organizations: React.FC = () => {
   const { t } = useTranslation(['organizations', 'common']);
 
   const importConfig = createOrganizationImportConfig(2);
-
+  const level = 2;
 
   const {
     organizations,
@@ -55,9 +55,9 @@ const Organizations: React.FC = () => {
     handleOrganizationDeleted,
     handleDeleteError
   ]);
-
   return (
     <OrganizationPageLayout
+      organizations={organizations}
       title={getPageTitle()}
       subtitle={t('organizations:subtitle')}
       stats={stats}
@@ -74,6 +74,10 @@ const Organizations: React.FC = () => {
         }))
       }
       onCloseToast={hideToast}
+      level={level}
+      onRefreshData={fetchData}
+      onShowSuccess={handleMemberAdded}
+      onShowError={handleMemberAddError}
     >
       <OrganizationTreeContainer
         isEmpty={organizations.length === 0}

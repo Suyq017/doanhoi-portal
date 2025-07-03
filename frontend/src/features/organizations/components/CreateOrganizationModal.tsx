@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,6 +9,7 @@ interface CreateOrganizationModalProps {
   loading?: boolean;
   parentId?: string;
   level?: number;
+  type?: string;
 }
 
 export interface CreateOrganizationData {
@@ -25,10 +26,11 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
   onSave,
   loading = false,
   parentId,
-  level = 1
+  level = 1,
+  type
 }) => {
   const { t } = useTranslation(['organizations', 'common']);
-  
+
   const [formData, setFormData] = useState<CreateOrganizationData>({
     name: '',
     code: '',
@@ -38,7 +40,13 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
+  useEffect(() => {
+    if (type === 'doan_co_so') {
+      setFormData(prev => ({ ...prev, type: 'chi_doan' }));
+    } else if (type === 'lien_chi_hoi') {
+      setFormData(prev => ({ ...prev, type: 'chi_hoi' }));
+    }
+  }, []);
   if (!isOpen) return null;
 
   const handleInputChange = (field: keyof CreateOrganizationData, value: string) => {
@@ -69,7 +77,7 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     try {
@@ -103,7 +111,8 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
         return [
           { value: 'doan_co_so', label: t('organizations:types.doan_co_so') },
           { value: 'lien_chi_hoi', label: t('organizations:types.lien_chi_hoi') },
-          { value: 'clb_truong', label: t('organizations:types.clb_truong') }
+          { value: 'clb_truong', label: t('organizations:types.clb_truong') },
+          { value: 'clb_khoa', label: t('organizations:types.clb_khoa') }
         ];
       case 3:
         return [
@@ -140,9 +149,8 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.name ? 'border-red-500' : 'border-gray-300'
+                }`}
               placeholder={t('organizations:fields.name')}
             />
             {errors.name && (
@@ -159,9 +167,8 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
               type="text"
               value={formData.code}
               onChange={(e) => handleInputChange('code', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                errors.code ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.code ? 'border-red-500' : 'border-gray-300'
+                }`}
               placeholder={t('organizations:fields.code')}
             />
             {errors.code && (
@@ -177,16 +184,25 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
             <select
               value={formData.type}
               onChange={(e) => handleInputChange('type', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                errors.type ? 'border-red-500' : 'border-gray-300'
-              }`}
+              disabled={type === 'doan_co_so' || type === 'lien_chi_hoi'}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.type ? 'border-red-500' : 'border-gray-300'}`}
             >
-              <option value="">{t('organizations:placeholders.selectType')}</option>
-              {getOrganizationTypeOptions().map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+              {type === 'doan_co_so' || type === 'lien_chi_hoi' ? (
+                <option value={formData.type}>
+                  {
+                    formData.type
+                  }
                 </option>
-              ))}
+              ) : (
+                <>
+                  <option value="">{t('organizations:placeholders.selectType')}</option>
+                  {getOrganizationTypeOptions().map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </>
+              )}
             </select>
             {errors.type && (
               <p className="text-red-500 text-sm mt-1">{errors.type}</p>

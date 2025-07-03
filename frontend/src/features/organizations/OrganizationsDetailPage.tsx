@@ -12,6 +12,7 @@ const OrganizationsDetailPage: React.FC = () => {
   const { t } = useTranslation(['organizations', 'common']);
   const { type, code } = useParams<{ type: string; code: string }>();
   const importConfig = createOrganizationImportConfig(2);
+  const level = 2;
 
   const {
     organizations,
@@ -64,9 +65,9 @@ const OrganizationsDetailPage: React.FC = () => {
   ]);
 
 
-  console.log('OrganizationsDetailPage', organizations, type, code);
   return (
     <OrganizationPageLayout
+      organizations={organizations}
       title={getPageTitle()}
       subtitle={t('organizations:subtitle')}
       stats={stats}
@@ -84,6 +85,10 @@ const OrganizationsDetailPage: React.FC = () => {
         }))
       }
       onCloseToast={hideToast}
+      level={level}
+      type={type}
+      onRefreshData={fetchData}
+      onShowSuccess={handleMemberAdded}
     >
       <OrganizationTreeContainer
         isEmpty={organizations.length === 0}

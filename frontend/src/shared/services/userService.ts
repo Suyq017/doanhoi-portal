@@ -179,8 +179,6 @@ class UserService {
       body: formData,
     });
 
-    console.log('Upload response:', response);
-
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Upload failed' }));
       throw new Error(error.message || 'Upload failed');
