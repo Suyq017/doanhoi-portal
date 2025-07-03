@@ -73,11 +73,12 @@
     "fromFileDesc": "Import multiple users from Excel file"
   },
   "import": {
+    "title": "Import Users List",
     "instructions": "Import Instructions",
-    "step1": "Download the user import template from this link.",
-    "step2": "Fill in user information according to the template format.",
-    "step3": "Upload the completed file using the upload area below.",
-    "templateLinkText": "user import template",
+    "step1": "Download Excel template here and fill in user information",
+    "step2": "Check data format and ensure no errors",
+    "step3": "Upload file to import into the system",
+    "templateLinkText": "here",
     "onlyExcelAllowed": "Only Excel files (.xlsx, .xls) are allowed"
   }
 }

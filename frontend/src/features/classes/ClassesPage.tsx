@@ -13,8 +13,9 @@ import {
   AddDropdownButton,
   DropdownOption,
   ImportModal,
-  ImportModalConfig,
+  useImportConfig,
 } from '../../shared';
+import { classColumns } from '../../shared/utils/importColumns';
 import CreateClassModal from './components/CreateClassModal';
 import EditClassModal from './components/EditClassModal';
 import ViewClassModal from './components/ViewClassModal';
@@ -47,7 +48,33 @@ const ClassesPage: React.FC = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  // Import configuration using custom hook
+  const { 
+    importConfig, 
+    isImportModalOpen, 
+    openImportModal, 
+    closeImportModal 
+  } = useImportConfig({
+    entityName: 'classes',
+    entityService: {
+      getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL}/classes/template`,
+      uploadImportFile: classService.uploadImportFile.bind(classService),
+      validateImportData: classService.validateImportData.bind(classService),
+      executeImport: classService.executeImport.bind(classService),
+      getImportStatus: classService.getImportStatus.bind(classService),
+    },
+    columns: classColumns(t),
+    templateFileName: t('classes:import.templateFile', { defaultValue: 'classes_template.xlsx' }),
+    onSuccess: () => {
+      loadClasses();
+      showSuccess(t('classes:import.importSuccess', { defaultValue: 'Import lớp học thành công!' }));
+    },
+    onError: (error: Error) => {
+      console.error('Import error:', error);
+      showError(t('classes:import.importError', { defaultValue: 'Có lỗi xảy ra khi import lớp học' }));
+    }
+  });
 
   // Select options
   const yearOptions: SelectOption[] = [
@@ -86,47 +113,9 @@ const ClassesPage: React.FC = () => {
       label: t('classes:addButton.fromFile', { defaultValue: 'Import từ file Excel' }),
       icon: <Upload className="w-4 h-4" />,
       description: t('classes:addButton.fromFileDesc', { defaultValue: 'Import nhiều lớp từ file Excel' }),
-      onClick: () => setIsImportModalOpen(true)
+      onClick: openImportModal
     }
   ];
-
-  // Import configuration - Server-side processing
-  const importConfig: ImportModalConfig<any> = {
-    templateUrl: `${import.meta.env.VITE_BACKEND_API_URL}/classes/template`,
-    templateFileName: t('classes:import.templateFile', { defaultValue: 'classes_template.xlsx' }),
-    acceptedFileTypes: ['.xlsx', '.xls'],
-    maxFileSize: 5 * 1024 * 1024, // 5MB
-    
-    // Use server-side processing
-    processingMode: 'server',
-    uploadFile: classService.uploadImportFile.bind(classService),
-    validateServerData: classService.validateImportData.bind(classService),
-    executeServerImport: classService.executeImport.bind(classService),
-    getImportStatus: classService.getImportStatus.bind(classService),
-    
-    // Keep legacy functions for backward compatibility
-    parseFile: classService.parseFile.bind(classService),
-    validateData: classService.validateData.bind(classService),
-    importData: classService.importData.bind(classService),
-    
-    columns: [
-      { key: 'name', label: t('classes:fields.name'), required: true, type: 'text' },
-      { key: 'code', label: t('classes:fields.code'), required: false, type: 'text' },
-      { key: 'year', label: t('classes:fields.year'), required: false, type: 'number' },
-      { key: 'departmentCode', label: t('classes:fields.departmentCode'), required: false, type: 'text' },
-      { key: 'isActive', label: t('common:fields.status'), required: false, type: 'boolean' },
-    ],
-    entityName: 'classes',
-    onSuccess: () => {
-      loadClasses();
-      setIsImportModalOpen(false);
-      showSuccess(t('classes:import.importSuccess', { defaultValue: 'Import lớp học thành công!' }));
-    },
-    onError: (error) => {
-      console.error('Import error:', error);
-      showError(t('classes:import.importError', { defaultValue: 'Có lỗi xảy ra khi import lớp học' }));
-    }
-  };
 
   // Load data
   useEffect(() => {
@@ -260,7 +249,7 @@ const ClassesPage: React.FC = () => {
         </div>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-doan-600 mx-auto"></div>
+            <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
               {t('common:states.loading')}
             </p>
@@ -285,11 +274,11 @@ const ClassesPage: React.FC = () => {
         </div>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="text-red-500 text-xl mb-4">⚠️</div>
+            <div className="mb-4 text-xl text-red-500">⚠️</div>
             <p className="text-red-600 dark:text-red-400">{error}</p>
             <button
               onClick={loadClasses}
-              className="mt-4 px-4 py-2 bg-doan-600 text-white rounded-lg hover:bg-doan-700"
+              className="px-4 py-2 mt-4 text-white rounded-lg bg-doan-600 hover:bg-doan-700"
             >
               {t('common:actions.retry')}
             </button>
@@ -321,17 +310,17 @@ const ClassesPage: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
             <input
               type="text"
               placeholder={t('classes:placeholders.search')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
 
@@ -369,7 +358,7 @@ const ClassesPage: React.FC = () => {
           <div>
             <button
               onClick={handleClearFilters}
-              className="w-full flex items-center justify-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="flex items-center justify-center w-full px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-md dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             >
               <Filter className="w-5 h-5 mr-2" />
               {t('common:actions.filter')}
@@ -379,32 +368,32 @@ const ClassesPage: React.FC = () => {
       </div>
 
       {/* Classes Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full table-auto">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('classes:fields.info')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('classes:fields.year')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('classes:fields.department')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('classes:fields.studentCount')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('common:fields.status')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('common:fields.actions')}
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {classes.map((classItem) => (
                 <tr key={classItem.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -437,7 +426,7 @@ const ClassesPage: React.FC = () => {
                       {classItem.isActive ? t('common:status.active') : t('common:status.inactive')}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => handleView(classItem)}
@@ -470,7 +459,7 @@ const ClassesPage: React.FC = () => {
 
         {/* Empty State */}
         {classes.length === 0 && (
-          <div className="text-center py-12">
+          <div className="py-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">
               {t('common:messages.empty.noResults')}
             </div>
@@ -480,7 +469,7 @@ const ClassesPage: React.FC = () => {
 
       {/* Pagination */}
       {total > limit && (
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div className="flex items-center justify-between px-6 py-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
           <div className="text-sm text-gray-500 dark:text-gray-400">
             {t('common:pagination.showing', {
               start: (currentPage - 1) * limit + 1,
@@ -492,7 +481,7 @@ const ClassesPage: React.FC = () => {
             <button
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('common:pagination.previous')}
             </button>
@@ -509,7 +498,7 @@ const ClassesPage: React.FC = () => {
                 )
               }
               disabled={currentPage >= Math.ceil(total / limit)}
-              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('common:pagination.next')}
             </button>
@@ -556,7 +545,7 @@ const ClassesPage: React.FC = () => {
       {isImportModalOpen && (
         <ImportModal
           isOpen={isImportModalOpen}
-          onClose={() => setIsImportModalOpen(false)}
+          onClose={closeImportModal}
           config={importConfig}
         />
       )}
