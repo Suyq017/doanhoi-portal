@@ -14,7 +14,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly importService: ImportService
-  ) {}
+  ) { }
 
   @Post()
   @ApiOperation({ summary: 'Tạo người dùng mới' })
@@ -36,7 +36,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'File template Excel' })
   async downloadTemplate(@Res() res: Response) {
     const buffer = await this.importService.generateTemplate();
-    
+
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="users_import_template.xlsx"');
     res.send(buffer);
@@ -67,15 +67,15 @@ export class UsersController {
   }
 
   // Import endpoints
-  @Post('import/upload')
-  @ApiOperation({ summary: 'Upload file Excel để import users' })
-  @ApiResponse({ status: 200, description: 'File đã được upload thành công' })
-  @ApiResponse({ status: 400, description: 'File không hợp lệ' })
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadImportFile(@UploadedFile() file: Express.Multer.File) {
-    return this.importService.uploadFile(file);
-  }
+  // @Post('import/upload')
+  // @ApiOperation({ summary: 'Upload file Excel để import users' })
+  // @ApiResponse({ status: 200, description: 'File đã được upload thành công' })
+  // @ApiResponse({ status: 400, description: 'File không hợp lệ' })
+  // @ApiConsumes('multipart/form-data')
+  // @UseInterceptors(FileInterceptor('file'))
+  // async uploadImportFile(@UploadedFile() file: Express.Multer.File) {
+  //   return this.importService.uploadFile(file);
+  // }
 
   @Get('import/:sessionId/validate')
   @ApiOperation({ summary: 'Validate dữ liệu import' })

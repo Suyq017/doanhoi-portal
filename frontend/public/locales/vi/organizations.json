@@ -18,7 +18,6 @@
     "membersCount": "Số lượng thành viên"
   },
   "createOrganization": "Tạo tổ chức",
-  "addOrganization": "Thêm tổ chức", 
   "editOrganization": "Chỉnh sửa tổ chức",
   "deleteOrganization": "Xóa tổ chức",
   "organizationInfo": "Thông tin tổ chức",
@@ -27,8 +26,8 @@
   },
   "addButton": {
     "dropdown": "Thêm mới",
-    "manual": "Thêm thủ công", 
-    "manualDesc": "Tạo tổ chức/thành viên mới bằng form",
+    "manual": "Thêm thủ công",
+    "manualDesc": "Tạo tổ chức mới bằng form",
     "fromFile": "Thêm từ file Excel",
     "fromFileDesc": "Import nhiều thành viên từ file Excel",
     "addMember": "Thêm thành viên",
@@ -47,7 +46,7 @@
       "description": "Import thành viên với mã số sinh viên và mã lớp/đơn vị"
     },
     "level3": {
-      "title": "Import thành viên chi đoàn/chi hội", 
+      "title": "Import thành viên chi đoàn/chi hội",
       "description": "Import thành viên với mã số sinh viên"
     }
   },
@@ -94,7 +93,10 @@
     "clb_khoa": "CLB cấp khoa"
   },
   "placeholders": {
-    "selectType": "Chọn loại tổ chức"
+    "selectType": "Chọn loại tổ chức",
+    "name": "Ví dụ: Đoàn Cơ Sở Khoa KHMT",
+    "code": "Ví dụ: CSE, EE, ME",
+    "description": "Ví dụ: Đoàn Co sở Khoa Khoa học máy tính, chuyên về công nghệ thông tin và phát triển phần mềm"
   },
   "levels": {
     "school": "Cấp trường",

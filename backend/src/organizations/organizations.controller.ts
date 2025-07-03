@@ -196,7 +196,7 @@ export class OrganizationsController {
         return this.importService.getSessionStatus(sessionId);
     }
 
-    @Get('members/import/template/:level')
+    @Get('/template/:level')
     @ApiOperation({ summary: 'Tải file mẫu Excel cho import' })
     @ApiParam({ name: 'level', description: 'Cấp độ tổ chức (2 hoặc 3)' })
     @ApiResponse({ status: 200, description: 'File mẫu Excel' })
@@ -205,10 +205,10 @@ export class OrganizationsController {
         if (![2, 3].includes(levelNum)) {
             throw new BadRequestException('Level phải là 2 hoặc 3');
         }
-        
-        const templateBuffer = this.importService.generateTemplate(levelNum);
-        const filename = `organization_level${levelNum}_template.xlsx`;
-        
+
+        const templateBuffer = await this.importService.generateTemplate(levelNum);
+        const filename = `organizationsss_level${levelNum}_template.xlsx`;
+
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.send(templateBuffer);

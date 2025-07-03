@@ -1,14 +1,25 @@
-const API_BASE_URL = 'http://localhost:9200';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
 import {
   Organization,
   CreateOrganizationRequest,
   UpdateOrganizationRequest,
   UserOrganization,
-  OrganizationStats
+  OrganizationStats,
 } from '../types/organization';
 
+import {
+  ImportValidationResult,
+  ImportExecutionResult,
+} from '../types/import';
+
+export interface OrganizationImportData {
+  studentCode: string;
+  classOrUnitCode?: string;
+}
+
 class OrganizationService {
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -139,6 +150,99 @@ class OrganizationService {
       body: JSON.stringify({ userCode }),
     });
   }
+  async uploadImportFile(file: File, organizationId: string, level: number = 3): Promise<{
+    sessionId: string;
+    previewData: OrganizationImportData[];
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`/organizations/${organizationId}/members/import/upload?level=${level}`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to upload file');
+    }
+
+    return response.json();
+  }
+
+  async validateImportData(sessionId: string): Promise<ImportValidationResult[]> {
+    const response = await fetch(`/organizations/import/${sessionId}/validate`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to validate data');
+    }
+
+    return response.json();
+  }
+
+  async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecutionResult> {
+    const response = await fetch(`/organizations/import/${sessionId}/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options || {})
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to execute import');
+    }
+
+    return response.json();
+  }
+
+  async getImportStatus(sessionId: string): Promise<{
+    sessionId: string;
+    status: 'processing' | 'completed' | 'failed';
+    total: number;
+    processed: number;
+    errors?: any[];
+  }> {
+    const response = await fetch(`/organizations/import/${sessionId}/status`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to get import status');
+    }
+
+    return response.json();
+  }
+
+  async downloadTemplate(level: number = 3): Promise<Blob> {
+    const response = await fetch(`/organizations/members/import/template/${level}`);
+
+    if (!response.ok) {
+      throw new Error('Failed to download template');
+    }
+
+    return response.blob();
+  }
+  getTemplate(organizationId: string): string {
+    return `${API_BASE_URL}/organizations/template/${organizationId}`;
+
+  }
+  // Legacy methods for backward compatibility (có thể bỏ nếu không cần)
+  async parseFile(file: File): Promise<OrganizationImportData[]> {
+    // This is just a placeholder - actual parsing should be done server-side
+    return [];
+  }
+
+  async validateData(data: OrganizationImportData[]): Promise<ImportValidationResult[]> {
+    // This is just a placeholder - actual validation should be done server-side
+    return [];
+  }
+
+  async importData(data: OrganizationImportData[]): Promise<ImportExecutionResult> {
+    // This is just a placeholder - actual import should be done server-side
+    return { total: 0, successful: 0, failed: 0, errors: [] };
+  }
+
+
 }
 
 export const organizationService = new OrganizationService();

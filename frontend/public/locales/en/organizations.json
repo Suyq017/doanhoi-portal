@@ -18,7 +18,7 @@
     "membersCount": "Number of Members"
   },
   "createOrganization": "Create Organization",
-  "addOrganization": "Add Organization", 
+  "addOrganization": "Add Organization",
   "editOrganization": "Edit Organization",
   "deleteOrganization": "Delete Organization",
   "organizationInfo": "Organization Information",
@@ -27,14 +27,18 @@
   },
   "addButton": {
     "dropdown": "Add New",
-    "manual": "Add Manually", 
-    "manualDesc": "Create new organization/member using form",
+    "manual": "Add Manually",
+    "manualDesc": "Create new organization using form",
     "fromFile": "Add from Excel File",
     "fromFileDesc": "Import multiple members from Excel file",
     "addMember": "Add Member",
     "addMemberDesc": "Add new member to organization",
     "addOrganization": "Add Organization",
     "addOrganizationDesc": "Create new sub-organization"
+  },
+  "description": {
+    "addOrganization": "Add New Organization Manually",
+    "addOrganizationByForm": "Add New Organization Using Form"
   },
   "import": {
     "instructions": "Organization Data Import Guide",
@@ -47,7 +51,7 @@
       "description": "Import members with student code and class/unit code"
     },
     "level3": {
-      "title": "Import Branch/Chapter Members", 
+      "title": "Import Branch/Chapter Members",
       "description": "Import members with student code only"
     }
   },
@@ -94,7 +98,10 @@
     "clb_khoa": "Faculty Club"
   },
   "placeholders": {
-    "selectType": "Select Organization Type"
+    "selectType": "Select Organization Type",
+    "name": "Ví dụ: Đoàn Cơ Sở Khoa KHMT",
+    "code": "Ví dụ: CSE, EE, ME",
+    "description": "Ví dụ: Đoàn Co sở Khoa Khoa học máy tính, chuyên về công nghệ thông tin và phát triển phần mềm"
   },
   "levels": {
     "school": "School Level",

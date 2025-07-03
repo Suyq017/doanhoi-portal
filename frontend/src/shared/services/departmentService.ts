@@ -21,7 +21,7 @@ export interface CreateDepartmentRequest {
   isActive?: boolean;
 }
 
-export interface UpdateDepartmentRequest extends Partial<CreateDepartmentRequest> {}
+export interface UpdateDepartmentRequest extends Partial<CreateDepartmentRequest> { }
 
 export interface DepartmentsResponse {
   departments: Department[];
@@ -43,14 +43,14 @@ export interface DepartmentImportData {
 }
 
 // New types for server-side import
-export interface ImportUploadResponse {
+export interface ImportUploadResponseDepartment {
   sessionId: string;
   fileName: string;
   totalRows: number;
   message: string;
 }
 
-export interface ImportValidationResponse {
+export interface ImportValidationResponseDepartment {
   sessionId: string;
   isValid: boolean;
   summary: {
@@ -84,7 +84,7 @@ export interface ImportValidationResponse {
   }>;
 }
 
-export interface ImportExecuteResponse {
+export interface ImportExecuteResponseDepartment {
   sessionId: string;
   success: boolean;
   importedCount: number;
@@ -128,7 +128,7 @@ class DepartmentService {
 
   async getDepartments(params: DepartmentQueryParams = {}): Promise<DepartmentsResponse> {
     const searchParams = new URLSearchParams();
-    
+
     if (params.page) searchParams.append('page', params.page.toString());
     if (params.limit) searchParams.append('limit', params.limit.toString());
     if (params.search) searchParams.append('search', params.search);
@@ -136,7 +136,7 @@ class DepartmentService {
 
     const query = searchParams.toString();
     const endpoint = query ? `/departments?${query}` : '/departments';
-    
+
     return this.request<DepartmentsResponse>(endpoint);
   }
 
@@ -169,7 +169,7 @@ class DepartmentService {
     return `${API_BASE_URL}/departments/template`;
   }
 
-  async uploadImportFile(file: File): Promise<ImportUploadResponse> {
+  async uploadImportFile(file: File): Promise<ImportUploadResponseDepartment> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -186,12 +186,12 @@ class DepartmentService {
     return response.json();
   }
 
-  async validateImportData(sessionId: string): Promise<ImportValidationResponse> {
-    return this.request<ImportValidationResponse>(`/departments/import/${sessionId}/validate`);
+  async validateImportData(sessionId: string): Promise<ImportValidationResponseDepartment> {
+    return this.request<ImportValidationResponseDepartment>(`/departments/import/${sessionId}/validate`);
   }
 
-  async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponse> {
-    return this.request<ImportExecuteResponse>(`/departments/import/${sessionId}/execute`, {
+  async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponseDepartment> {
+    return this.request<ImportExecuteResponseDepartment>(`/departments/import/${sessionId}/execute`, {
       method: 'POST',
       body: JSON.stringify(options || {}),
     });
@@ -228,7 +228,7 @@ class DepartmentService {
     const validatedData = data.map((item, index) => {
       const errors: any[] = [];
       const warnings: any[] = [];
-      
+
       if (!item.name || item.name.trim() === '') {
         errors.push({
           row: index + 1,
@@ -237,7 +237,7 @@ class DepartmentService {
           severity: 'error' as const
         });
       }
-      
+
       if (item.code && item.code.length > 10) {
         warnings.push({
           row: index + 1,

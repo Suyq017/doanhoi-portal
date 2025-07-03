@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:9200';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
 export interface Class {
   id: string;
@@ -24,7 +24,7 @@ export interface CreateClassRequest {
   isActive?: boolean;
 }
 
-export interface UpdateClassRequest extends Partial<CreateClassRequest> {}
+export interface UpdateClassRequest extends Partial<CreateClassRequest> { }
 
 export interface ClassesResponse {
   classes: Class[];
@@ -49,14 +49,14 @@ export interface ClassImportData {
 }
 
 // New types for server-side import
-export interface ImportUploadResponse {
+export interface ImportUploadResponseClass {
   sessionId: string;
   fileName: string;
   totalRows: number;
   message: string;
 }
 
-export interface ImportValidationResponse {
+export interface ImportValidationResponseClass {
   sessionId: string;
   isValid: boolean;
   summary: {
@@ -71,7 +71,7 @@ export interface ImportValidationResponse {
   previewData: any[];
 }
 
-export interface ImportExecuteResponse {
+export interface ImportExecuteResponseClass {
   sessionId: string;
   success: boolean;
   importedCount: number;
@@ -100,7 +100,7 @@ class ClassService {
       // Check if response has content to parse as JSON
       const contentType = response.headers.get('content-type');
       const contentLength = response.headers.get('content-length');
-      
+
       // If no content-type header with JSON or content-length is 0, return undefined
       if (!contentType?.includes('application/json') || contentLength === '0') {
         return undefined as T;
@@ -117,7 +117,7 @@ class ClassService {
 
   async getClasses(params?: ClassQueryParams): Promise<ClassesResponse> {
     const searchParams = new URLSearchParams();
-    
+
     if (params?.page) searchParams.append('page', params.page.toString());
     if (params?.limit) searchParams.append('limit', params.limit.toString());
     if (params?.search) searchParams.append('search', params.search);
@@ -127,7 +127,7 @@ class ClassService {
 
     const queryString = searchParams.toString();
     const endpoint = `/classes${queryString ? `?${queryString}` : ''}`;
-    
+
     return this.request<ClassesResponse>(endpoint);
   }
 
@@ -160,7 +160,7 @@ class ClassService {
     return `${API_BASE_URL}/classes/template`;
   }
 
-  async uploadImportFile(file: File): Promise<ImportUploadResponse> {
+  async uploadImportFile(file: File): Promise<ImportUploadResponseClass> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -177,12 +177,12 @@ class ClassService {
     return response.json();
   }
 
-  async validateImportData(sessionId: string): Promise<ImportValidationResponse> {
-    return this.request<ImportValidationResponse>(`/classes/import/${sessionId}/validate`);
+  async validateImportData(sessionId: string): Promise<ImportValidationResponseClass> {
+    return this.request<ImportValidationResponseClass>(`/classes/import/${sessionId}/validate`);
   }
 
-  async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponse> {
-    return this.request<ImportExecuteResponse>(`/classes/import/${sessionId}/execute`, {
+  async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponseClass> {
+    return this.request<ImportExecuteResponseClass>(`/classes/import/${sessionId}/execute`, {
       method: 'POST',
       body: JSON.stringify(options || {}),
     });

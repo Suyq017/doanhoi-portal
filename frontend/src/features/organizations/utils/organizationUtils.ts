@@ -1,6 +1,5 @@
-/**
- * Utility functions for handling organization type/code paths
- */
+import { ImportModalConfig } from '../../../shared';
+import { organizationService } from '../../../shared/services';
 import { Organization } from '../../../shared/types/organization';
 
 export const toggleExpanded = (id: string, orgs: Organization[]): Organization[] => {
@@ -78,4 +77,44 @@ export const getOrgTypeColor = (type: string): string => {
         return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-300 dark:border-green-700';
     }
     return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600';
+};
+
+export const createOrganizationImportConfig = (level: 2 | 3): ImportModalConfig<any> => {
+    return {
+        templateUrl: organizationService.getTemplate(`${level}`),
+        templateFileName: `organization_level${level}_template.xlsx`,
+        acceptedFileTypes: ['.xlsx', '.xls'],
+        maxFileSize: 5 * 1024 * 1024, // 5MB
+
+        // Use server-side processing
+        processingMode: 'server',
+        uploadFile: async (file: File) => {
+            const result = await organizationService.uploadImportFile(file, /* organizationId */ '', level);
+            // Add missing properties to match ServerImportSession
+            return {
+                sessionId: result.sessionId,
+                previewData: result.previewData,
+                fileName: file.name,
+                totalRows: result.previewData?.length ?? 0,
+                message: '',
+            };
+        },
+
+        // Columns khác nhau theo level
+        columns: level === 2 ? [
+            { key: 'studentCode', label: 'Mã số sinh viên', required: true, type: 'text' as const },
+            { key: 'classOrUnitCode', label: 'Mã lớp/đơn vị', required: true, type: 'text' as const }
+        ] : [
+            { key: 'studentCode', label: 'Mã số sinh viên', required: true, type: 'text' as const }
+        ],
+
+        entityName: 'organizations',
+        onSuccess: () => {
+            // Có thể truyền callback từ ngoài vào nếu cần
+            console.log('Import success');
+        },
+        onError: (error) => {
+            console.error('Import error:', error);
+        }
+    };
 };

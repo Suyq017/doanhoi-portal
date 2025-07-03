@@ -22,8 +22,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const toggleMenu = (menuKey: string) => {
-    setExpandedMenus(prev => 
-      prev.includes(menuKey) 
+    setExpandedMenus(prev =>
+      prev.includes(menuKey)
         ? prev.filter(key => key !== menuKey)
         : [...prev, menuKey]
     );
@@ -33,8 +33,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: t('navigation.dashboard'), href: '/', icon: Home },
     { name: t('navigation.users'), href: '/users', icon: Users },
     { name: t('navigation.organizations'), href: '/organizations', icon: Building },
-    { 
-      name: t('navigation.dataManagement'), 
+    {
+      name: t('navigation.dataManagement'),
       key: 'dataManagement',
       icon: Database,
       children: [
@@ -44,7 +44,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + '/');
   const isParentActive = (children: any[]) => children.some(child => child.href && isActive(child.href));
 
   return (
@@ -69,22 +70,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <nav className="flex-1 p-4 space-y-2">
             {navigation.map((item) => {
               const Icon = item.icon;
-              
+
               // If item has children (is a parent menu)
               if ('children' in item && item.children) {
                 const isExpanded = expandedMenus.includes(item.key!);
                 const hasActiveChild = isParentActive(item.children);
-                
+
                 return (
                   <div key={item.key}>
                     {/* Parent menu item */}
                     <button
                       onClick={() => toggleMenu(item.key!)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                        hasActiveChild
-                          ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-l-2 border-doan-500'
-                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                      }`}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${hasActiveChild
+                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-l-2 border-doan-500'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
                     >
                       <div className="flex items-center">
                         <Icon className="w-5 h-5 mr-3" />
@@ -96,7 +96,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <ChevronRight className="w-4 h-4" />
                       )}
                     </button>
-                    
+
                     {/* Child menu items */}
                     {isExpanded && (
                       <div className="ml-8 mt-2 space-y-1">
@@ -106,11 +106,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             <Link
                               key={child.name}
                               to={child.href}
-                              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                                isActive(child.href)
-                                  ? 'bg-doan-500 text-white'
-                                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                              }`}
+                              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(child.href)
+                                ? 'bg-doan-500 text-white'
+                                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                }`}
                             >
                               <ChildIcon className="w-4 h-4 mr-3" />
                               {child.name}
@@ -122,17 +121,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </div>
                 );
               }
-              
+
               // Regular menu item
               return (
                 <Link
                   key={item.name}
                   to={item.href!}
-                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive(item.href!)
-                      ? 'bg-doan-500 text-white'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
+                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(item.href!)
+                    ? 'bg-doan-500 text-white'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
                 >
                   <Icon className="w-5 h-5 mr-3" />
                   {item.name}

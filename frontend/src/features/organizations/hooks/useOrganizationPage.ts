@@ -102,9 +102,10 @@ export const useOrganizationPage = (options: UseOrganizationPageOptions = {}) =>
     }, [showError]);
 
     // Get page title based on context
-    const getPageTitle = useCallback(() => {
+    const getPageTitle = useCallback((customName?: string) => {
         if (isSubDetailPage) {
-            return `${t('organizations:title')} / ${organizations[0]?.parent?.name || ''} / ${organizations[0]?.name || ''}`;
+
+            return `${t('organizations:title')} / ${organizations[0]?.name || ''} / ${customName}`;
         } else if (isDetailPage) {
             return `${t('organizations:title')} / ${organizations[0]?.name || ''}`;
         }

@@ -1,9 +1,14 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { OrganizationStats as StatsType } from '../../../shared/types/organization';
 import OrganizationStats from './OrganizationStats';
-import { Toast, AddDropdownButton, DropdownOption } from '../../../shared';
+import {
+    Toast, AddDropdownButton, DropdownOption, ImportModal, ImportModalConfig,
+
+} from '../../../shared';
+import { Upload } from 'lucide-react';
+import CreateOrganizationModal, { CreateOrganizationData } from '../components/CreateOrganizationModal';
 
 interface OrganizationPageLayoutProps {
     title: string;
@@ -13,8 +18,7 @@ interface OrganizationPageLayoutProps {
     loading?: boolean;
     error?: string | null;
     onRetry?: () => Promise<void>;
-    showCreateButton?: boolean;
-    onCreateClick?: () => void;
+    importConfig?: ImportModalConfig<any>;
     // Dropdown button support
     showDropdownButton?: boolean;
     dropdownOptions?: DropdownOption[];
@@ -28,6 +32,7 @@ interface OrganizationPageLayoutProps {
     onCloseToast?: (id: string) => void;
 }
 
+
 const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
     title,
     subtitle,
@@ -36,15 +41,57 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
     loading = false,
     error = null,
     onRetry,
-    showCreateButton = false,
-    onCreateClick,
+    importConfig,
     showDropdownButton = false,
-    dropdownOptions = [],
     dropdownLabel,
     toasts = [],
     onCloseToast
 }) => {
     const { t, i18n } = useTranslation(['organizations', 'common']);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const handleCloseCreateModal = () => {
+        setIsCreateModalOpen(false);
+    };
+    const handleCreateOrganization = async (data: CreateOrganizationData) => {
+        console.log('Creating organization with data:', data);
+        // if (!onCreateOrganization) {
+        //     console.warn('onCreateOrganization callback not provided');
+        //     return;
+        // }
+
+        // try {
+        //     setIsCreating(true);
+        //     await onCreateOrganization(data);
+        //     setIsCreateModalOpen(false);
+        //     onShowSuccess?.(t('organizations:create.success', { defaultValue: 'Tạo tổ chức thành công!' }));
+        // } catch (error) {
+        //     console.error('Error creating organization:', error);
+        //     const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra';
+        //     onShowError?.(t('organizations:create.error', { defaultValue: errorMessage }));
+        // } finally {
+        //     setIsCreating(false);
+        // }
+    };
+
+
+    const addDropdownOptions: DropdownOption[] = [
+        {
+            key: 'single',
+            label: t('organizations:addButton.manual'),
+            icon: <Plus className="w-4 h-4" />,
+            description: t('organizations:addButton.manualDesc'),
+            onClick: () => setIsCreateModalOpen(true)
+        },
+        // Import classes from Excel option:
+        {
+            key: 'fromFile',
+            label: t('organizations:addButton.fromFile'),
+            icon: <Upload className="w-4 h-4" />,
+            description: t('organizations:addButton.fromFileDesc'),
+            onClick: () => setIsImportModalOpen(true)
+        }
+    ];
 
     if (loading) {
         return (
@@ -114,21 +161,11 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
                         {subtitle || t('organizations:subtitle')}
                     </p>
                 </div>
-                {showCreateButton && (
-                    <button
-                        className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-doan-600 text-white rounded-md hover:bg-doan-700 focus:outline-none focus:ring-2 focus:ring-doan-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={onCreateClick}
-                        disabled={loading}
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        {t('organizations:actions.add_organization')}
-                    </button>
-                )}
-                {showDropdownButton && dropdownOptions && dropdownOptions.length > 0 && (
+                {showDropdownButton && (
                     <div className="mt-4 sm:mt-0">
                         <AddDropdownButton
                             label={dropdownLabel || t('organizations:addButton.dropdown')}
-                            options={dropdownOptions}
+                            options={addDropdownOptions}
                             loading={loading}
                         />
                     </div>
@@ -143,8 +180,27 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
                 totalMembers={stats.totalMembers}
             />
 
+
             {/* Main Content */}
             {children}
+
+            {isCreateModalOpen && (
+                <CreateOrganizationModal
+                    isOpen={isCreateModalOpen}
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onSave={handleCreateOrganization}
+                    // loading={isCreating}
+                    level={1}
+                />
+            )}
+
+            {isImportModalOpen && importConfig && (
+                <ImportModal
+                    isOpen={isImportModalOpen}
+                    onClose={() => setIsImportModalOpen(false)}
+                    config={importConfig}
+                />
+            )}
 
             {/* Toasts */}
             {toasts && onCloseToast && toasts.map((toast) => (

@@ -40,13 +40,15 @@ export interface Organization {
     description?: string;
     memberCount?: number;
     parentId?: string;
-    children?: Organization[];
     isExpanded?: boolean;
     code?: string;
     parent?: {
         name: string;
         id: string;
     };
+    children?: Organization[];
+
+
     createdAt: string;
     updatedAt: string;
 }

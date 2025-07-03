@@ -6,9 +6,9 @@ export interface ValidationError {
 }
 
 export interface ValidationResult<T> {
-  data: (T & { 
-    _rowIndex: number; 
-    _hasError: boolean; 
+  data: (T & {
+    _rowIndex: number;
+    _hasError: boolean;
     _errors: ValidationError[];
     _warnings: ValidationError[];
   })[];
@@ -94,27 +94,27 @@ export interface ImportModalConfig<T> {
   templateFileName: string;
   acceptedFileTypes: string[];
   maxFileSize: number;
-  
+
   // Processing mode: 'client' for legacy, 'server' for new implementation
   processingMode: 'client' | 'server';
-  
+
   // Client-side data processing functions (legacy)
   parseFile?: (file: File) => Promise<T[]>;
   validateData?: (data: T[]) => Promise<ValidationResult<T>>;
   importData?: (data: T[], options?: ImportOptions) => Promise<ImportResult>;
-  
+
   // Server-side data processing functions (new)
   uploadFile?: (file: File) => Promise<ServerImportSession>;
   validateServerData?: (sessionId: string) => Promise<ServerValidationResult>;
   executeServerImport?: (sessionId: string, options?: { skipConflicts?: boolean }) => Promise<ServerImportResult>;
   getImportStatus?: (sessionId: string) => Promise<any>;
-  
+
   // UI Configuration
   columns: ImportColumn[];
   entityName: string; // Used for i18n keys like 'departments', 'users', 'classes'
   previewRowCount?: number;
   allowPartialImport?: boolean;
-  
+
   // Optional callbacks
   onSuccess?: (result: ImportResult | ServerImportResult) => void;
   onError?: (error: Error) => void;
@@ -128,13 +128,56 @@ export interface ImportState<T> {
   selectedFile: File | null;
   importData: ValidationResult<T> | null;
   importResult: ImportResult | null;
-  
+
   // Server-side state
   serverSession: ServerImportSession | null;
   serverValidation: ServerValidationResult | null;
   serverResult: ServerImportResult | null;
-  
+
   options: ImportOptions;
   loading: boolean;
   dragActive: boolean;
+}
+
+
+export interface ImportValidationResult {
+  isValid: boolean;
+  rowIndex: number;
+  data: Record<string, any>;
+  errors: Array<{
+    field: string;
+    message: string;
+    code?: string;
+  }>;
+  warnings?: Array<{
+    field: string;
+    message: string;
+    code?: string;
+  }>;
+}
+
+export interface ImportExecutionResult {
+  total: number;
+  successful: number;
+  failed: number;
+  skipped?: number;
+  errors: Array<{
+    rowIndex: number;
+    data: Record<string, any>;
+    error: string;
+    field?: string;
+  }>;
+  warnings?: Array<{
+    rowIndex: number;
+    data: Record<string, any>;
+    message: string;
+    field?: string;
+  }>;
+  summary?: {
+    totalProcessed: number;
+    successfulImports: number;
+    failedImports: number;
+    duplicatesSkipped?: number;
+    invalidDataSkipped?: number;
+  };
 }

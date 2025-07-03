@@ -1,16 +1,17 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Organization } from '../../shared/types/organization';
 import OrganizationTreeItem from './components/OrganizationTreeItem';
 import OrganizationTreeContainer from './components/OrganizationTreeContainer';
 import OrganizationPageLayout from './components/OrganizationPageLayout';
-import CreateOrganizationModal, { CreateOrganizationData } from './components/CreateOrganizationModal';
 import { useOrganizationPage } from './hooks/useOrganizationPage';
+import { createOrganizationImportConfig } from './utils/organizationUtils';
 
 const Organizations: React.FC = () => {
   const { t } = useTranslation(['organizations', 'common']);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
+
+  const importConfig = createOrganizationImportConfig(2);
+
 
   const {
     organizations,
@@ -55,22 +56,6 @@ const Organizations: React.FC = () => {
     handleDeleteError
   ]);
 
-  const handleCreateOrganization = async (data: CreateOrganizationData) => {
-    setIsCreating(true);
-    try {
-      // TODO: Call API to create organization
-      console.log('Creating organization:', data);
-      
-      // Placeholder for API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Refresh data after creation
-      await fetchData();
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
   return (
     <OrganizationPageLayout
       title={getPageTitle()}
@@ -79,8 +64,8 @@ const Organizations: React.FC = () => {
       loading={loading}
       error={error}
       onRetry={fetchData}
-      showCreateButton={true}
-      onCreateClick={() => setIsCreateModalOpen(true)}
+      showDropdownButton={true}
+      importConfig={importConfig}
       toasts={toasts
         .filter(toast => toast.type === 'error' || toast.type === 'success' || toast.type === 'info')
         .map(({ type, ...rest }) => ({
@@ -96,14 +81,6 @@ const Organizations: React.FC = () => {
         {organizations.map(org => renderOrganization(org))}
       </OrganizationTreeContainer>
 
-      {/* Create Organization Modal */}
-      <CreateOrganizationModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSave={handleCreateOrganization}
-        loading={isCreating}
-        level={1}
-      />
     </OrganizationPageLayout>
   );
 };

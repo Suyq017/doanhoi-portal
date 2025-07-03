@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:9200';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
 export interface DashboardStats {
   totalUsers: number;
@@ -57,7 +57,7 @@ class DashboardService {
     // Count different types of users
     const allUsersResponse = await this.request<{ users: any[], total: number }>('/users?limit=10000');
     const users = allUsersResponse.users;
-    
+
     const doanVienCount = users.filter(u => u.membershipStatus === 'doan_vien' || u.membershipStatus === 'both').length;
     const hoiVienCount = users.filter(u => u.membershipStatus === 'hoi_vien' || u.membershipStatus === 'both').length;
 
@@ -75,22 +75,22 @@ class DashboardService {
 
   async getOrganizationStats(): Promise<OrganizationStats> {
     const organizations = await this.request<any[]>('/organizations');
-    
-    const doanOrganizations = organizations.filter(org => 
+
+    const doanOrganizations = organizations.filter(org =>
       org.type.includes('doan')
     ).length;
-    
-    const hoiOrganizations = organizations.filter(org => 
+
+    const hoiOrganizations = organizations.filter(org =>
       org.type.includes('hoi')
     ).length;
-    
-    const clubOrganizations = organizations.filter(org => 
+
+    const clubOrganizations = organizations.filter(org =>
       org.type.includes('clb')
     ).length;
 
     // Get total members from all user-organization relationships
     const allUsersResponse = await this.request<{ users: any[], total: number }>('/users?limit=10000');
-    
+
     return {
       doanOrganizations,
       hoiOrganizations,
