@@ -8,12 +8,14 @@
     "delete": "Xóa lớp học"
   },
   "fields": {
+    "code": "Mã lớp học",
+    "departmentCode": "Mã đơn vị",
     "info": "Thông tin lớp",
     "name": "Tên lớp",
     "year": "Năm học",
     "studentCount": "Số sinh viên",
     "department": "Đơn vị",
-    "isActive": "Hoạt động"
+    "isActive": "Trạng thái hoạt động"
   },
   "placeholders": {
     "search": "Tìm kiếm lớp học...",
@@ -40,10 +42,10 @@
     "title": "Nhập danh sách lớp học",
     "importError": "Có lỗi xảy ra trong quá trình nhập dữ liệu",
     "instructions": "Hướng dẫn nhập dữ liệu",
-    "step1": "Tải template nhập lớp học từ liên kết này.",
-    "step2": "Điền thông tin lớp học theo định dạng của template.",
-    "step3": "Tải file đã hoàn thành lên khu vực tải file bên dưới.",
-    "templateLinkText": "template nhập lớp học",
+    "step1": "Tải file mẫu Excel tại đây và điền đầy đủ thông tin các lớp học",
+    "step2": "Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi",
+    "step3": "Tải file lên để tiến hành thêm vào hệ thống",
+    "templateLinkText": "tại đây",
     "onlyExcelAllowed": "Chỉ cho phép file Excel (.xlsx, .xls)"
   }
 }

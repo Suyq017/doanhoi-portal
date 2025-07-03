@@ -238,7 +238,7 @@ const ImportModal = <T extends Record<string, any>>({
       case 'date':
         return new Date(value).toLocaleDateString();
       case 'number':
-        return typeof value === 'number' ? value.toLocaleString() : value;
+        return typeof value === 'number' ? value.toLocaleString('en-US', { useGrouping: false }) : value;
       default:
         return String(value);
     }

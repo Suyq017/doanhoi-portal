@@ -8,6 +8,13 @@
     "delete": "Xóa người dùng"
   },
   "fields": {
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "className": "Tên lớp",
+    "managementDepartmentCode": "Mã đơn vị quản lý",
+    "trainingDepartmentCode": "Mã đơn vị đào tạo",
+    "organizationCodes": "Mã tổ chức",
+    "isActive": "Trạng thái hoạt động",
     "code": "Mã số sinh viên/cán bộ",
     "familyName": "Họ và tên lót",
     "givenName": "Tên",
@@ -75,10 +82,10 @@
   "import": {
     "title": "Nhập danh sách người dùng",
     "instructions": "Hướng dẫn nhập dữ liệu",
-    "step1": "Tải template nhập người dùng từ liên kết này.",
-    "step2": "Điền thông tin người dùng theo định dạng của template.",
-    "step3": "Tải file đã hoàn thành lên khu vực tải file bên dưới.",
-    "templateLinkText": "template nhập người dùng",
+    "step1": "Tải file mẫu Excel tại đây và điền đầy đủ thông tin các người dùng",
+    "step2": "Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi",
+    "step3": "Tải file lên để tiến hành thêm vào hệ thống",
+    "templateLinkText": "tại đây",
     "onlyExcelAllowed": "Chỉ cho phép file Excel (.xlsx, .xls)"
   }
 }

@@ -39,10 +39,10 @@
   },
   "import": {
     "title": "Nhập danh sách đơn vị",
-    "instructions": "Hướng dẫn import dữ liệu đơn vị",
+    "instructions": "Hướng dẫn thêm dữ liệu đơn vị",
     "step1": "Tải file mẫu Excel tại đây và điền đầy đủ thông tin các đơn vị",
     "step2": "Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi",
-    "step3": "Tải file lên để tiến hành import vào hệ thống",
+    "step3": "Tải file lên để tiến hành thêm vào hệ thống",
     "templateFile": "departments_template.xlsx",
     "templateLinkText": "tại đây",
     "onlyExcelAllowed": "Chỉ chấp nhận file Excel (.xlsx)",
