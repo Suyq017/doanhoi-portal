@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:9200';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
 // Import types
 export interface ImportUploadResponse {
@@ -79,7 +79,7 @@ export interface CreateUserRequest {
   classId?: string;
 }
 
-export interface UpdateUserRequest extends Partial<CreateUserRequest> {}
+export interface UpdateUserRequest extends Partial<CreateUserRequest> { }
 
 export interface UsersResponse {
   users: User[];
@@ -128,7 +128,7 @@ class UserService {
 
   async getUsers(params: UserQueryParams = {}): Promise<UsersResponse> {
     const searchParams = new URLSearchParams();
-    
+
     if (params.page) searchParams.append('page', params.page.toString());
     if (params.limit) searchParams.append('limit', params.limit.toString());
     if (params.search) searchParams.append('search', params.search);
@@ -137,7 +137,7 @@ class UserService {
 
     const query = searchParams.toString();
     const endpoint = query ? `/users?${query}` : '/users';
-    
+
     return this.request<UsersResponse>(endpoint);
   }
 
@@ -178,6 +178,8 @@ class UserService {
       method: 'POST',
       body: formData,
     });
+
+    console.log('Upload response:', response);
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Upload failed' }));

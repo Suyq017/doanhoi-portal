@@ -66,16 +66,16 @@ export class UsersController {
     return this.usersService.remove(id);
   }
 
-  // Import endpoints
-  // @Post('import/upload')
-  // @ApiOperation({ summary: 'Upload file Excel để import users' })
-  // @ApiResponse({ status: 200, description: 'File đã được upload thành công' })
-  // @ApiResponse({ status: 400, description: 'File không hợp lệ' })
-  // @ApiConsumes('multipart/form-data')
-  // @UseInterceptors(FileInterceptor('file'))
-  // async uploadImportFile(@UploadedFile() file: Express.Multer.File) {
-  //   return this.importService.uploadFile(file);
-  // }
+
+  @Post('import/upload')
+  @ApiOperation({ summary: 'Upload file Excel để import users' })
+  @ApiResponse({ status: 200, description: 'File đã được upload thành công' })
+  @ApiResponse({ status: 400, description: 'File không hợp lệ' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImportFile(@UploadedFile() file: Express.Multer.File) {
+    return this.importService.uploadFile(file);
+  }
 
   @Get('import/:sessionId/validate')
   @ApiOperation({ summary: 'Validate dữ liệu import' })
