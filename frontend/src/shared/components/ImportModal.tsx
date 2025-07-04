@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { 
-  Upload, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
+import {
+  Upload,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
   AlertCircle,
   FileText,
   Eye,
@@ -11,9 +11,9 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { 
-  ImportModalConfig, 
-  ImportState, 
+import {
+  ImportModalConfig,
+  ImportState,
   ImportStep
 } from '../types/import';
 
@@ -62,38 +62,38 @@ const ImportModal = <T extends Record<string, any>>({
       alert(t('errors.invalidFileType'));
       return false;
     }
-    
+
     if (file.size > config.maxFileSize) {
       alert(t('errors.fileTooLarge'));
       return false;
     }
-    
+
     return true;
   };
 
   // File handling - supports both client and server processing
   const handleFileSelect = async (file: File) => {
     if (!isValidFile(file)) return;
-    
+
     setState(prev => ({ ...prev, selectedFile: file, loading: true }));
-    
+
     try {
       if (config.processingMode === 'server') {
         // Server-side processing
         if (!config.uploadFile) {
           throw new Error('uploadFile function not provided for server mode');
         }
-        
+
         const serverSession = await config.uploadFile(file);
-        
+
         // Automatically validate after upload
         if (!config.validateServerData) {
           throw new Error('validateServerData function not provided for server mode');
         }
-        
+
         const validationResult = await config.validateServerData(serverSession.sessionId);
         config.onValidationComplete?.(validationResult);
-        
+
         setState(prev => ({
           ...prev,
           serverSession,
@@ -106,12 +106,12 @@ const ImportModal = <T extends Record<string, any>>({
         if (!config.parseFile || !config.validateData) {
           throw new Error('parseFile and validateData functions required for client mode');
         }
-        
+
         const parsedData = await config.parseFile(file);
         const validationResult = await config.validateData(parsedData);
-        
+
         config.onValidationComplete?.(validationResult);
-        
+
         setState(prev => ({
           ...prev,
           importData: validationResult,
@@ -129,7 +129,7 @@ const ImportModal = <T extends Record<string, any>>({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setState(prev => ({ ...prev, dragActive: false }));
-    
+
     const file = e.dataTransfer.files[0];
     if (file) {
       handleFileSelect(file);
@@ -149,26 +149,26 @@ const ImportModal = <T extends Record<string, any>>({
   // Import process - supports both client and server processing
   const handleImport = async () => {
     setState(prev => ({ ...prev, step: 'importing', loading: true }));
-    
+
     try {
       if (config.processingMode === 'server') {
         // Server-side import
         if (!state.serverSession || !config.executeServerImport) {
           throw new Error('Server session or executeServerImport function not available');
         }
-        
+
         const result = await config.executeServerImport(
           state.serverSession.sessionId,
           { skipConflicts: state.options.skipErrors }
         );
-        
+
         setState(prev => ({
           ...prev,
           serverResult: result,
           step: 'result',
           loading: false
         }));
-        
+
         if (result.success) {
           config.onSuccess?.(result);
         }
@@ -177,16 +177,16 @@ const ImportModal = <T extends Record<string, any>>({
         if (!state.importData || !config.importData) {
           throw new Error('Import data or importData function not available');
         }
-        
+
         const result = await config.importData(state.importData.data, state.options);
-        
+
         setState(prev => ({
           ...prev,
           importResult: result,
           step: 'result',
           loading: false
         }));
-        
+
         if (result.failed === 0) {
           config.onSuccess?.(result);
         }
@@ -248,31 +248,31 @@ const ImportModal = <T extends Record<string, any>>({
     // For server-side processing, we use previewData directly
     if (config.processingMode === 'server' && state.serverValidation) {
       let rows = state.serverValidation.previewData || [];
-      
+
       if (showOnlyErrors) {
         rows = rows.filter(row => row.hasErrors);
       }
-      
+
       if (!showAllRows) {
         rows = rows.slice(0, config.previewRowCount || 10);
       }
-      
+
       return rows;
     }
-    
+
     // For client-side processing (legacy)
     if (!state.importData) return [];
-    
+
     let rows = state.importData.data;
-    
+
     if (showOnlyErrors) {
       rows = rows.filter(row => row._hasError);
     }
-    
+
     if (!showAllRows) {
       rows = rows.slice(0, config.previewRowCount || 10);
     }
-    
+
     return rows;
   };
 
@@ -292,7 +292,7 @@ const ImportModal = <T extends Record<string, any>>({
                 {t(`${config.entityName}:import.step1`).includes(t(`${config.entityName}:import.templateLinkText`)) ? (
                   <>
                     {t(`${config.entityName}:import.step1`).split(t(`${config.entityName}:import.templateLinkText`))[0]}
-                    <a 
+                    <a
                       href={config.templateUrl}
                       download={config.templateFileName}
                       className="font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
@@ -313,33 +313,31 @@ const ImportModal = <T extends Record<string, any>>({
       </div>
 
       {/* File Upload Zone */}
-      <div 
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
-          state.dragActive 
-            ? 'border-doan-400 bg-doan-50 dark:bg-doan-900/20 scale-105' 
-            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-        }`}
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${state.dragActive
+          ? 'border-doan-400 bg-doan-50 dark:bg-doan-900/20 scale-105'
+          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+          }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
-        <Upload className={`mx-auto h-12 w-12 mb-4 transition-colors ${
-          state.dragActive ? 'text-doan-500' : 'text-gray-400'
-        }`} />
-        
+        <Upload className={`mx-auto h-12 w-12 mb-4 transition-colors ${state.dragActive ? 'text-doan-500' : 'text-gray-400'
+          }`} />
+
         <p className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
           {state.dragActive ? t('import.dropFileNow') : t('import.dropFile')}
         </p>
-        
+
         <p className="mb-4 text-gray-500 dark:text-gray-400">
-          {config.acceptedFileTypes.includes('.xlsx') && config.acceptedFileTypes.length === 1 
+          {config.acceptedFileTypes.includes('.xlsx') && config.acceptedFileTypes.length === 1
             ? t(`${config.entityName}:import.onlyExcelAllowed`)
             : `${t('import.supportedFormats')}: ${config.acceptedFileTypes.join(', ')}`
           }
           <br />
           {t('import.maxFileSize')}: {(config.maxFileSize / (1024 * 1024)).toFixed(1)}MB
         </p>
-        
+
         <input
           type="file"
           accept={config.acceptedFileTypes.join(',')}
@@ -347,8 +345,8 @@ const ImportModal = <T extends Record<string, any>>({
           className="hidden"
           ref={fileInputRef}
         />
-        
-        <button 
+
+        <button
           onClick={() => fileInputRef.current?.click()}
           disabled={state.loading}
           className="inline-flex items-center px-6 py-3 font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -366,15 +364,15 @@ const ImportModal = <T extends Record<string, any>>({
 
   const renderPreviewStep = () => {
     // Support both client-side and server-side processing
-    const validationData = config.processingMode === 'server' 
-      ? state.serverValidation 
+    const validationData = config.processingMode === 'server'
+      ? state.serverValidation
       : state.importData;
-    
+
     if (!validationData) return null;
 
     // Adapt data structure for display - server response has different format
     let displayRows, summary, errors, warnings;
-    
+
     if (config.processingMode === 'server' && state.serverValidation) {
       // Server-side data structure
       displayRows = state.serverValidation.previewData || [];
@@ -403,7 +401,7 @@ const ImportModal = <T extends Record<string, any>>({
               {t('import.totalRecords')}
             </div>
           </div>
-          
+
           <div className="p-4 text-center rounded-lg bg-green-50 dark:bg-green-900/20">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {summary.valid}
@@ -412,7 +410,7 @@ const ImportModal = <T extends Record<string, any>>({
               {t('import.validRecords')}
             </div>
           </div>
-          
+
           <div className="p-4 text-center rounded-lg bg-red-50 dark:bg-red-900/20">
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {errors.length}
@@ -421,7 +419,7 @@ const ImportModal = <T extends Record<string, any>>({
               {t('import.error')}
             </div>
           </div>
-          
+
           <div className="p-4 text-center rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
               {warnings.length}
@@ -437,31 +435,30 @@ const ImportModal = <T extends Record<string, any>>({
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setShowOnlyErrors(!showOnlyErrors)}
-              className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                showOnlyErrors
-                  ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-              }`}
+              className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${showOnlyErrors
+                ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                }`}
             >
               {showOnlyErrors ? <Eye className="w-4 h-4 mr-1" /> : <EyeOff className="w-4 h-4 mr-1" />}
               {t('import.showOnlyErrors')}
             </button>
-            
+
             <button
               onClick={() => setShowAllRows(!showAllRows)}
               className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-700 transition-colors bg-gray-100 rounded-md dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               {showAllRows ? t('import.showLess') : t('import.showAll')}
-              {!showAllRows && config.processingMode === 'client' && state.importData && 
+              {!showAllRows && config.processingMode === 'client' && state.importData &&
                 ` (${Math.min(config.previewRowCount || 10, state.importData.data.length)}/${state.importData.data.length})`
               }
             </button>
           </div>
-          
+
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            {t('import.showingRows', { 
-              count: displayRows.length, 
-              total: showOnlyErrors ? summary.invalid : summary.total 
+            {t('import.showingRows', {
+              count: displayRows.length,
+              total: showOnlyErrors ? summary.invalid : summary.total
             })}
           </div>
         </div>
@@ -476,8 +473,8 @@ const ImportModal = <T extends Record<string, any>>({
                     {t('common:fields.row')}
                   </th>
                   {config.columns.map(col => (
-                    <th 
-                      key={col.key} 
+                    <th
+                      key={col.key}
                       className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400"
                       style={col.width ? { width: col.width } : {}}
                     >
@@ -493,24 +490,23 @@ const ImportModal = <T extends Record<string, any>>({
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {displayRows.map((item, index) => {
                   // Handle different data structures between client and server mode
-                  const hasErrors = config.processingMode === 'server' 
-                    ? item.hasErrors 
+                  const hasErrors = config.processingMode === 'server'
+                    ? item.hasErrors
                     : item._hasError;
-                  const hasWarnings = config.processingMode === 'server' 
-                    ? item.hasWarnings 
+                  const hasWarnings = config.processingMode === 'server'
+                    ? item.hasWarnings
                     : item._warnings?.length > 0;
-                  const rowNumber = config.processingMode === 'server' 
-                    ? item.row 
+                  const rowNumber = config.processingMode === 'server'
+                    ? item.row
                     : item._rowIndex + 1;
-                  
+
                   return (
-                    <tr 
-                      key={index} 
-                      className={`transition-colors ${
-                        hasErrors 
-                          ? 'bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20' 
-                          : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }`}
+                    <tr
+                      key={index}
+                      className={`transition-colors ${hasErrors
+                        ? 'bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20'
+                        : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
                     >
                       <td className="px-4 py-3 font-mono text-sm text-gray-500 dark:text-gray-400">
                         {rowNumber}
@@ -523,14 +519,14 @@ const ImportModal = <T extends Record<string, any>>({
                       <td className="px-4 py-3 text-center">
                         {hasErrors ? (
                           <div className="flex items-center justify-center">
-                            <AlertTriangle 
-                              className="w-4 h-4 text-red-500" 
+                            <AlertTriangle
+                              className="w-4 h-4 text-red-500"
                             />
                           </div>
                         ) : hasWarnings ? (
                           <div className="flex items-center justify-center">
-                            <AlertCircle 
-                              className="w-4 h-4 text-yellow-500" 
+                            <AlertCircle
+                              className="w-4 h-4 text-yellow-500"
                             />
                           </div>
                         ) : (
@@ -600,7 +596,7 @@ const ImportModal = <T extends Record<string, any>>({
                 </p>
               </div>
             </label>
-            
+
             <label className="flex items-start">
               <input
                 type="checkbox"
@@ -620,7 +616,7 @@ const ImportModal = <T extends Record<string, any>>({
                 </p>
               </div>
             </label>
-            
+
             <label className="flex items-start">
               <input
                 type="checkbox"
@@ -669,7 +665,7 @@ const ImportModal = <T extends Record<string, any>>({
     // Adapt data structure for display
     let total: number, success: number, failed: number, skipped: number, isSuccess: boolean, isPartialSuccess: boolean;
     let errors: string[], warnings: string[];
-    
+
     if (config.processingMode === 'server' && state.serverResult) {
       // Server-side result structure
       total = state.serverResult.importedCount + state.serverResult.skippedCount + state.serverResult.failedCount;
@@ -695,13 +691,12 @@ const ImportModal = <T extends Record<string, any>>({
 
     return (
       <div className="py-8 text-center">
-        <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-          isSuccess 
-            ? 'bg-green-100 dark:bg-green-900/20' 
-            : isPartialSuccess 
-            ? 'bg-yellow-100 dark:bg-yellow-900/20' 
+        <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isSuccess
+          ? 'bg-green-100 dark:bg-green-900/20'
+          : isPartialSuccess
+            ? 'bg-yellow-100 dark:bg-yellow-900/20'
             : 'bg-red-100 dark:bg-red-900/20'
-        }`}>
+          }`}>
           {isSuccess ? (
             <CheckCircle className="w-8 h-8 text-green-500" />
           ) : isPartialSuccess ? (
@@ -711,24 +706,23 @@ const ImportModal = <T extends Record<string, any>>({
           )}
         </div>
 
-        <h3 className={`text-xl font-medium mb-2 ${
-          isSuccess 
-            ? 'text-green-600 dark:text-green-400' 
-            : isPartialSuccess 
-            ? 'text-yellow-600 dark:text-yellow-400' 
+        <h3 className={`text-xl font-medium mb-2 ${isSuccess
+          ? 'text-green-600 dark:text-green-400'
+          : isPartialSuccess
+            ? 'text-yellow-600 dark:text-yellow-400'
             : 'text-red-600 dark:text-red-400'
-        }`}>
-          {isSuccess 
-            ? t('import.successTitle') 
-            : isPartialSuccess 
-            ? t('import.partialSuccessTitle') 
-            : t('import.failureTitle')
+          }`}>
+          {isSuccess
+            ? t('import.successTitle')
+            : isPartialSuccess
+              ? t('import.partialSuccessTitle')
+              : t('import.failureTitle')
           }
         </h3>
 
         <p className="mb-6 text-gray-600 dark:text-gray-400">
-          {state.options.dryRun 
-            ? t('import.dryRunComplete') 
+          {state.options.dryRun
+            ? t('import.dryRunComplete')
             : t('import.importComplete')
           }
         </p>
@@ -804,7 +798,7 @@ const ImportModal = <T extends Record<string, any>>({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
-        <div 
+        <div
           className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-80"
           onClick={onClose}
         />
@@ -830,31 +824,28 @@ const ImportModal = <T extends Record<string, any>>({
               const stepIndex = ['upload', 'preview', 'importing', 'result'].indexOf(state.step);
               const isActive = stepName === state.step;
               const isCompleted = index < stepIndex;
-              
+
               return (
                 <React.Fragment key={stepName}>
                   <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                      isActive 
-                        ? 'bg-doan-500 text-white' 
-                        : isCompleted 
-                        ? 'bg-green-500 text-white' 
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${isActive
+                      ? 'bg-doan-500 text-white'
+                      : isCompleted
+                        ? 'bg-green-500 text-white'
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                    }`}>
+                      }`}>
                       {isCompleted ? <CheckCircle className="w-4 h-4" /> : index + 1}
                     </div>
-                    <span className={`text-xs mt-1 ${
-                      isActive 
-                        ? 'text-doan-600 dark:text-doan-400 font-medium' 
-                        : 'text-gray-500 dark:text-gray-400'
-                    }`}>
+                    <span className={`text-xs mt-1 ${isActive
+                      ? 'text-doan-600 dark:text-doan-400 font-medium'
+                      : 'text-gray-500 dark:text-gray-400'
+                      }`}>
                       {t(`import.steps.${stepName}`)}
                     </span>
                   </div>
                   {index < 3 && (
-                    <div className={`w-8 h-0.5 transition-colors ${
-                      isCompleted ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
-                    }`} />
+                    <div className={`w-8 h-0.5 transition-colors ${isCompleted ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                      }`} />
                   )}
                 </React.Fragment>
               );
@@ -882,7 +873,7 @@ const ImportModal = <T extends Record<string, any>>({
                 </button>
               )}
             </div>
-            
+
             <div className="flex space-x-3">
               {state.step === 'preview' && (
                 <>
@@ -895,7 +886,7 @@ const ImportModal = <T extends Record<string, any>>({
                   <button
                     onClick={handleImport}
                     disabled={
-                      config.processingMode === 'server' 
+                      config.processingMode === 'server'
                         ? !state.serverValidation?.isValid && !state.options.skipErrors
                         : !state.importData?.isValid && !state.options.skipErrors
                     }
@@ -905,7 +896,7 @@ const ImportModal = <T extends Record<string, any>>({
                   </button>
                 </>
               )}
-              
+
               {(state.step === 'upload' || state.step === 'result') && (
                 <button
                   onClick={onClose}

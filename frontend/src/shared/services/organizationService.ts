@@ -150,67 +150,49 @@ class OrganizationService {
       body: JSON.stringify({ userCode }),
     });
   }
-  async uploadImportFile(file: File, organizationId: string, level: number = 3): Promise<{
+  async uploadImportFile(file: File, organizationId?: string, level: number = 3): Promise<{
     sessionId: string;
-    previewData: OrganizationImportData[];
+    previewData: any[];
+    fileName: string;
+    totalRows: number;
+    message: string;
   }> {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`/organizations/${organizationId}/members/import/upload?level=${level}`, {
+    const response = await fetch(`${API_BASE_URL}/organizations/${organizationId || ''}/members/import/upload?level=${level}`, {
       method: 'POST',
       body: formData
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to upload file');
+      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(error.message || 'Upload failed');
     }
 
-    return response.json();
+    const result = await response.json();
+    return {
+      sessionId: result.sessionId,
+      previewData: result.previewData,
+      fileName: file.name,
+      totalRows: result.previewData?.length ?? 0,
+      message: result.message || 'Upload successful',
+    };
   }
 
-  async validateImportData(sessionId: string): Promise<ImportValidationResult[]> {
-    const response = await fetch(`/organizations/import/${sessionId}/validate`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to validate data');
-    }
-
-    return response.json();
+  async validateImportData(sessionId: string): Promise<any> {
+    return this.request(`/organizations/import/${sessionId}/validate`);
   }
 
-  async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecutionResult> {
-    const response = await fetch(`/organizations/import/${sessionId}/execute`, {
+  async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<any> {
+    return this.request(`/organizations/import/${sessionId}/execute`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(options || {})
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to execute import');
-    }
-
-    return response.json();
   }
 
-  async getImportStatus(sessionId: string): Promise<{
-    sessionId: string;
-    status: 'processing' | 'completed' | 'failed';
-    total: number;
-    processed: number;
-    errors?: any[];
-  }> {
-    const response = await fetch(`/organizations/import/${sessionId}/status`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to get import status');
-    }
-
-    return response.json();
+  async getImportStatus(sessionId: string): Promise<any> {
+    return this.request(`/organizations/import/${sessionId}/status`);
   }
 
   async downloadTemplate(level: number = 3): Promise<Blob> {
@@ -222,9 +204,8 @@ class OrganizationService {
 
     return response.blob();
   }
-  getTemplate(organizationId: string): string {
-    return `${API_BASE_URL}/organizations/template/${organizationId}`;
-
+  getTemplateByLevel(level: number): string {
+    return `${API_BASE_URL}/organizations/template/${level}`;
   }
   // Legacy methods for backward compatibility (có thể bỏ nếu không cần)
   async parseFile(file: File): Promise<OrganizationImportData[]> {

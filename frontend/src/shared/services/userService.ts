@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+import { User } from '../../shared';
 
 // Import types
 export interface ImportUploadResponse {
@@ -47,23 +48,6 @@ export interface ImportSession {
   results?: any;
 }
 
-export interface User {
-  id: string;
-  code: string;
-  familyName: string;
-  givenName: string;
-  email: string;
-  phone: string;
-  password?: string;
-  googleId?: string;
-  userType: 'student' | 'staff';
-  membershipStatus: 'doan_vien' | 'hoi_vien' | 'both' | 'none';
-  createdAt: string;
-  updatedAt: string;
-  managementDepartment?: any;
-  trainingDepartment?: any;
-  class?: any;
-}
 
 export interface CreateUserRequest {
   code: string;
@@ -95,6 +79,14 @@ export interface UserQueryParams {
 }
 
 class UserService {
+  constructor() {
+    // Bind methods to preserve 'this' context
+    this.validateImportData = this.validateImportData.bind(this);
+    this.executeImport = this.executeImport.bind(this);
+    this.getImportStatus = this.getImportStatus.bind(this);
+    this.uploadImportFile = this.uploadImportFile.bind(this);
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}

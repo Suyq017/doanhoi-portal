@@ -27,15 +27,8 @@ export interface OrganizationValidationResult {
     total: number;
     valid: number;
     invalid: number;
-    duplicates: number;
     conflicts: number;
   };
-}
-
-export interface OrganizationDuplicateInfo {
-  rows: number[];
-  data: OrganizationMemberImportData;
-  type: 'internal' | 'external';
 }
 
 export interface OrganizationConflictInfo {
@@ -54,10 +47,10 @@ export class OrganizationImportValidationService {
     private userOrganizationsRepository: Repository<UserOrganization>,
     @InjectRepository(Organization)
     private organizationsRepository: Repository<Organization>,
-  ) {}
+  ) { }
 
   async validateOrganizationMemberData(
-    data: OrganizationMemberImportData[], 
+    data: OrganizationMemberImportData[],
     organizationId: string,
     level: number
   ): Promise<OrganizationValidationResult> {
@@ -65,12 +58,10 @@ export class OrganizationImportValidationService {
       isValid: true,
       data: [],
       errors: [],
-      warnings: [],
-      summary: {
+      warnings: [], summary: {
         total: data.length,
         valid: 0,
         invalid: 0,
-        duplicates: 0,
         conflicts: 0
       }
     };
@@ -121,21 +112,16 @@ export class OrganizationImportValidationService {
         validationResult.isValid = false;
       } else {
         validationResult.summary.valid++;
-      }
-
-      // Collect all errors and warnings
+      }      // Collect all errors and warnings
       validationResult.errors.push(...validatedRow._errors);
       validationResult.warnings.push(...validatedRow._warnings);
     }
-
-    // Check for internal duplicates
-    this.checkInternalDuplicates(validationResult);
 
     return validationResult;
   }
 
   private async validateStudentCode(
-    row: OrganizationMemberImportDataWithValidation, 
+    row: OrganizationMemberImportDataWithValidation,
     rowNumber: number
   ): Promise<void> {
     if (!row.studentCode || row.studentCode.trim() === '') {
@@ -235,35 +221,6 @@ export class OrganizationImportValidationService {
         message: `Error checking membership: ${error.message}`,
         severity: 'error'
       });
-    }
-  }
-
-  private checkInternalDuplicates(validationResult: OrganizationValidationResult): void {
-    const studentCodeMap = new Map<string, number[]>();
-
-    // Group by student code
-    validationResult.data.forEach((row, index) => {
-      if (row.studentCode) {
-        const existing = studentCodeMap.get(row.studentCode) || [];
-        existing.push(index);
-        studentCodeMap.set(row.studentCode, existing);
-      }
-    });
-
-    // Mark duplicates
-    for (const [studentCode, indices] of studentCodeMap.entries()) {
-      if (indices.length > 1) {
-        validationResult.summary.duplicates++;
-        
-        indices.forEach(index => {
-          validationResult.data[index]._warnings.push({
-            row: index + 2, // Excel row number
-            column: 'studentCode',
-            message: `Duplicate student code: ${studentCode} (appears in rows ${indices.map(i => i + 2).join(', ')})`,
-            severity: 'warning'
-          });
-        });
-      }
     }
   }
 }

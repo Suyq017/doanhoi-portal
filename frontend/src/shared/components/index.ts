@@ -6,3 +6,7 @@ export { default as ImportModal } from './ImportModal';
 export { default as AddDropdownButton } from './AddDropdownButton';
 export type { SelectOption } from './Select';
 export type { DropdownOption } from './AddDropdownButton';
+export * from './UserTable';
+export * from './UserTable';
+export * from './UserTable';
+export * from './UserTable';

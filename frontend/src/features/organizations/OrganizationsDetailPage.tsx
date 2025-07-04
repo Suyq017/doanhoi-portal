@@ -11,7 +11,7 @@ import { useOrganizationPage } from './hooks/useOrganizationPage';
 const OrganizationsDetailPage: React.FC = () => {
   const { t } = useTranslation(['organizations', 'common']);
   const { type, code } = useParams<{ type: string; code: string }>();
-  const importConfig = createOrganizationImportConfig(2);
+
   const level = 2;
 
   const {
@@ -34,7 +34,7 @@ const OrganizationsDetailPage: React.FC = () => {
     code,
     isDetailPage: true
   });
-
+  const importConfig = createOrganizationImportConfig(2, organizations[0]?.id);
   const renderOrganization = useCallback((org: Organization, level: number = 0) => {
     return (
       <OrganizationTreeItem
