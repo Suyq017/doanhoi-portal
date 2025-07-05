@@ -103,10 +103,16 @@ class OrganizationService {
       body: JSON.stringify({ role }),
     });
   }
-
   async removeUserFromOrganization(organizationId: string, userId: string): Promise<void> {
     await this.request(`/organizations/${organizationId}/members/${userId}`, {
       method: 'DELETE',
+    });
+  }
+
+  async removeUsersFromOrganization(organizationId: string, userIds: string[]): Promise<void> {
+    await this.request(`/organizations/${organizationId}/members/bulk-remove`, {
+      method: 'DELETE',
+      body: JSON.stringify({ userIds }),
     });
   }
 

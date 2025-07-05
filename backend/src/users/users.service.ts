@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { User, UserType, MembershipStatus } from '../entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -12,7 +12,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     // Check if user with email or code already exists
@@ -39,7 +39,7 @@ export class UsersService {
 
   async findAll(query: QueryUserDto): Promise<{ users: User[], total: number }> {
     const { page = 1, limit = 10, search, userType, membershipStatus } = query;
-    
+
     const queryBuilder = this.usersRepository.createQueryBuilder('user')
       .leftJoinAndSelect('user.managementDepartment', 'managementDepartment')
       .leftJoinAndSelect('user.trainingDepartment', 'trainingDepartment')
@@ -68,7 +68,7 @@ export class UsersService {
     queryBuilder.skip(offset).take(limit);
 
     const [users, total] = await queryBuilder.getManyAndCount();
-    
+
     return { users, total };
   }
 
@@ -110,10 +110,28 @@ export class UsersService {
     Object.assign(user, updateUserDto);
     return this.usersRepository.save(user);
   }
-
   async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
     await this.usersRepository.remove(user);
+  }
+  async removeMultiple(ids: string[]): Promise<void> {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException('No user IDs provided');
+    }
+
+    // Validate that all users exist
+    const users = await this.usersRepository.find({
+      where: { id: In(ids) }
+    });
+
+    if (users.length !== ids.length) {
+      const foundIds = users.map(user => user.id);
+      const notFoundIds = ids.filter(id => !foundIds.includes(id));
+      throw new NotFoundException(`Users not found: ${notFoundIds.join(', ')}`);
+    }
+
+    // Remove all users
+    await this.usersRepository.remove(users);
   }
 
   async validatePassword(user: User, password: string): Promise<boolean> {

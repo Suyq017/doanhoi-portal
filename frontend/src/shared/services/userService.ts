@@ -79,14 +79,6 @@ export interface UserQueryParams {
 }
 
 class UserService {
-  constructor() {
-    // Bind methods to preserve 'this' context
-    this.validateImportData = this.validateImportData.bind(this);
-    this.executeImport = this.executeImport.bind(this);
-    this.getImportStatus = this.getImportStatus.bind(this);
-    this.uploadImportFile = this.uploadImportFile.bind(this);
-  }
-
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -150,10 +142,16 @@ class UserService {
       body: JSON.stringify(userData),
     });
   }
-
   async deleteUser(id: string): Promise<void> {
     await this.request(`/users/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  async deleteUsers(ids: string[]): Promise<void> {
+    await this.request('/users/bulk-delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ ids }),
     });
   }
 

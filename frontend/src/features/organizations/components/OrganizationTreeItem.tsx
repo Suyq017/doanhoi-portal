@@ -137,9 +137,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
 
         // Mặc định
         return `/organizations/${type}/${code}`;
-    };
-
-    const shouldShowDetailLink = () => {
+    }; const shouldShowDetailLink = () => {
         if (level === 1 && !isInSubDetailPage) {
             return true;
         }
@@ -147,6 +145,17 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
             return true;
         }
         return false;
+    };
+
+    // Create path to organization members page
+    const createMembersPath = (type: string, code?: string) => {
+        if (!code) return '#';
+        return `/organizations/${type}/${code}/members`;
+    };
+
+    // Determine if Users icon should be clickable (when no detail link is shown)
+    const shouldMakeUsersClickable = () => {
+        return !shouldShowDetailLink() && org.code; // Only if no eye icon and has code
     };
 
     return (
@@ -191,20 +200,32 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
                     </div>
                 </div>
 
-                <div className="flex items-center space-x-4">
-                    {shouldShowDetailLink() && (
+                <div className="flex items-center space-x-4">                    {shouldShowDetailLink() && (
+                    <Link
+                        to={createDetailPath(org.type, org.code)}
+                        className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                        aria-label={t('common:actions.view_details')}
+                    >
+                        <Eye className="w-4 h-4" />
+                    </Link>
+                )}
+
+                    {/* Users count - clickable if no detail link, otherwise static */}
+                    {shouldMakeUsersClickable() ? (
                         <Link
-                            to={createDetailPath(org.type, org.code)}
-                            className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                            aria-label={t('common:actions.view_details')}
+                            to={createMembersPath(org.type, org.code)}
+                            className="flex items-center text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded transition-colors"
+                            aria-label={t('organizations:actions.view_members', { defaultValue: 'Xem danh sách thành viên' })}
                         >
-                            <Eye className="w-4 h-4" />
+                            <Users className="w-4 h-4 mr-1" />
+                            {getStatCount()}
                         </Link>
+                    ) : (
+                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                            <Users className="w-4 h-4 mr-1" />
+                            {getStatCount()}
+                        </div>
                     )}
-                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                        <Users className="w-4 h-4 mr-1" />
-                        {getStatCount()}
-                    </div>
 
                     <div className="flex items-center space-x-2">
                         <button

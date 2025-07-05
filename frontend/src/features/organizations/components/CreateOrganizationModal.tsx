@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -30,23 +31,60 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
   type
 }) => {
   const { t } = useTranslation(['organizations', 'common']);
-
   const [formData, setFormData] = useState<CreateOrganizationData>({
     name: '',
     code: '',
     type: '',
     description: '',
     parentId
-  });
+  }); const [errors, setErrors] = useState<Record<string, string>>({});
+  const [namePlaceholder, setNamePlaceholder] = useState<string>('');
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const getOrganizationTypeOptions = () => {
+    // Nếu type là lien_chi_hoi, chỉ cho phép tạo chi_hoi và clb_khoa
+    if (type === 'lien_chi_hoi') {
+      return [
+        { value: 'chi_hoi', label: t('organizations:types.chi_hoi') },
+        { value: 'clb_khoa', label: t('organizations:types.clb_khoa') }
+      ];
+    }
+
+    switch (level) {
+      case 2:
+        return [
+          { value: 'doan_co_so', label: t('organizations:types.doan_co_so') },
+          { value: 'lien_chi_hoi', label: t('organizations:types.lien_chi_hoi') },
+          { value: 'clb_truong', label: t('organizations:types.clb_truong') },
+
+        ];
+      case 3:
+        return [
+          { value: 'chi_doan', label: t('organizations:types.chi_doan') },
+          { value: 'chi_hoi', label: t('organizations:types.chi_hoi') },
+          { value: 'clb_khoa', label: t('organizations:types.clb_khoa') }
+        ];
+      default:
+        return [];
+    }
+  };
+
   useEffect(() => {
     if (type === 'doan_co_so') {
       setFormData(prev => ({ ...prev, type: 'chi_doan' }));
-    } else if (type === 'lien_chi_hoi') {
-      setFormData(prev => ({ ...prev, type: 'chi_hoi' }));
     }
-  }, []);
+    // Không set default type cho lien_chi_hoi vì user sẽ chọn từ options
+  }, [type]);
+
+  // Generate name suggestion when type and code are filled but name is empty
+  useEffect(() => {
+    if (formData.type && formData.code && !formData.name.trim()) {
+      const typeLabel = getOrganizationTypeOptions().find(opt => opt.value === formData.type)?.label || formData.type;
+      const suggestion = `${typeLabel} ${formData.code}`;
+      setNamePlaceholder(suggestion);
+    } else {
+      setNamePlaceholder('');
+    }
+  }, [formData.type, formData.code, formData.name]);
   if (!isOpen) return null;
 
   const handleInputChange = (field: keyof CreateOrganizationData, value: string) => {
@@ -100,33 +138,9 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
     onClose();
   };
 
-  const getOrganizationTypeOptions = () => {
-    switch (level) {
-      case 1:
-        return [
-          { value: 'doan_truong', label: t('organizations:types.doan_truong') },
-          { value: 'hoi_sinh_vien_truong', label: t('organizations:types.hoi_sinh_vien_truong') }
-        ];
-      case 2:
-        return [
-          { value: 'doan_co_so', label: t('organizations:types.doan_co_so') },
-          { value: 'lien_chi_hoi', label: t('organizations:types.lien_chi_hoi') },
-          { value: 'clb_truong', label: t('organizations:types.clb_truong') },
-          { value: 'clb_khoa', label: t('organizations:types.clb_khoa') }
-        ];
-      case 3:
-        return [
-          { value: 'chi_doan', label: t('organizations:types.chi_doan') },
-          { value: 'chi_hoi', label: t('organizations:types.chi_hoi') }
-        ];
-      default:
-        return [];
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4 relative z-[10000]">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {t('organizations:titles.create')}
@@ -137,24 +151,35 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
           >
             <X className="w-6 h-6" />
           </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Organization Name */}
+        </div>        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Organization Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('organizations:fields.name')} *
+              {t('organizations:fields.type')} *
             </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
-              placeholder={t('organizations:fields.name')}
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+            <select
+              value={formData.type}
+              onChange={(e) => handleInputChange('type', e.target.value)}
+              disabled={type === 'doan_co_so'}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.type ? 'border-red-500' : 'border-gray-300'}`}
+            >
+              {type === 'doan_co_so' ? (
+                <option value={formData.type}>
+                  {t('organizations:types.chi_doan')}
+                </option>
+              ) : (
+                <>
+                  <option value="">{t('organizations:placeholders.selectType')}</option>
+                  {getOrganizationTypeOptions().map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </>
+              )}
+            </select>
+            {errors.type && (
+              <p className="text-red-500 text-sm mt-1">{errors.type}</p>
             )}
           </div>
 
@@ -176,36 +201,42 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
             )}
           </div>
 
-          {/* Organization Type */}
+          {/* Organization Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('organizations:fields.type')} *
-            </label>
-            <select
-              value={formData.type}
-              onChange={(e) => handleInputChange('type', e.target.value)}
-              disabled={type === 'doan_co_so' || type === 'lien_chi_hoi'}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.type ? 'border-red-500' : 'border-gray-300'}`}
-            >
-              {type === 'doan_co_so' || type === 'lien_chi_hoi' ? (
-                <option value={formData.type}>
-                  {
-                    formData.type
-                  }
-                </option>
-              ) : (
-                <>
-                  <option value="">{t('organizations:placeholders.selectType')}</option>
-                  {getOrganizationTypeOptions().map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </>
-              )}
-            </select>
-            {errors.type && (
-              <p className="text-red-500 text-sm mt-1">{errors.type}</p>
+              {t('organizations:fields.name')} *
+            </label>            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              onFocus={(e) => {
+                // Nếu input đang trống và có gợi ý, hiển thị tooltip hoặc hint
+                if (!formData.name.trim() && namePlaceholder) {
+                  e.target.style.borderColor = '#0ea5e9';
+                }
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '';
+              }}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${errors.name ? 'border-red-500' : 'border-gray-300'
+                }`}
+              placeholder={namePlaceholder || t('organizations:fields.name')}
+            />
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+            )}            {namePlaceholder && !formData.name.trim() && (
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  💡 Gợi ý: "{namePlaceholder}"
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleInputChange('name', namePlaceholder)}
+                  className="text-xs text-doan-600 hover:text-doan-700 dark:text-doan-400 dark:hover:text-doan-300 underline"
+                >
+                  Sử dụng gợi ý
+                </button>
+              </div>
             )}
           </div>
 
@@ -249,10 +280,10 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
                 </>
               )}
             </button>
-          </div>
-        </form>
+          </div>        </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

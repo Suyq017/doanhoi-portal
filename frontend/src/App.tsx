@@ -8,6 +8,7 @@ import { OrganizationsPage } from './features/organizations';
 import { DepartmentsPage } from './features/departments';
 import { OrganizationsDetailPage } from './features/organizations';
 import { OrganizationsSubDetailPage } from './features/organizations';
+import { OrganizationMembersPage } from './features/organizations';
 import { ClassesPage } from './features/classes';
 import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
@@ -23,10 +24,11 @@ function App() {
             <OrganizationStatsProvider>
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
-                <Route path="/users" element={<UsersPage />} />
-                <Route path="/organizations" element={<OrganizationsPage />} />
+                <Route path="/users" element={<UsersPage />} />                <Route path="/organizations" element={<OrganizationsPage />} />
                 <Route path="/organizations/:type/:code" element={<OrganizationsDetailPage />} />
+                <Route path="/organizations/:type/:code/members" element={<OrganizationMembersPage />} />
                 <Route path="/organizations/:parentType/:parentCode/:type/:code" element={<OrganizationsSubDetailPage />} />
+                <Route path="/organizations/:parentType/:parentCode/:type/:code/members" element={<OrganizationMembersPage />} />
                 <Route path="/departments" element={<DepartmentsPage />} />
                 <Route path="/classes" element={<ClassesPage />} />
               </Routes>

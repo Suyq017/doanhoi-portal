@@ -9,21 +9,22 @@ import {
   useUserList,
   UserTableWithFilter,
   useToast,
+  useUserManagement,
 } from "../../shared";
+import { userService } from "../../shared/services/userService";
 import CreateUserModal from "./components/CreateUserModal";
 import ViewUserModal from "./components/ViewUserModal";
 import EditUserModal from "./components/EditUserModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import { useUserImportConfig } from "./hooks/useUserImportConfig";
-import { useUserModals } from "./hooks/useUserModals";
-import { useUserActions } from "./hooks/useUserActions";
 
 const Users: React.FC = () => {
   const { t } = useTranslation(['users', 'common']);
+
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError } = useToast();
 
-  // Custom hooks for user management
+  // User list management
   const userListHook = useUserList({
     initialLimit: 10,
     autoLoad: true,
@@ -45,36 +46,51 @@ const Users: React.FC = () => {
     setFilterStatus,
     setCurrentPage,
     refreshUsers,
-    isCreating,
-    isUpdating,
-    isDeleting,
   } = userListHook;
+  // User management (modals + actions) - ✅ Using shared hook
+  const userManagement = useUserManagement({
+    showSuccess,
+    showError,
+    onRefreshData: refreshUsers,
+    createUser: userService.createUser.bind(userService),
+    updateUser: userService.updateUser.bind(userService),
+    deleteUser: userService.deleteUser.bind(userService),
+  });
 
-  // Modal management
-  const modalsHook = useUserModals();
   const {
     selectedUser,
     isCreateModalOpen,
     isViewModalOpen,
     isEditModalOpen,
     isDeleteModalOpen,
+    isCreating,
+    isUpdating,
+    isDeleting,
     openCreateModal,
     closeModal,
-  } = modalsHook;
-  // User actions
-  const {
-    handleCreateUser,
     handleViewUser,
     handleEditUser,
-    handleUpdateUser,
     handleDeleteUser,
+    handleCreateUser,
+    handleUpdateUser,
     confirmDeleteUser,
-  } = useUserActions({
-    userListHook,
-    modalsHook,
-    showSuccess,
-    showError
-  });
+  } = userManagement;
+
+  // Bulk delete functionality
+  const handleBulkDelete = async (userIds: string[]) => {
+    try {
+      await userService.deleteUsers(userIds);
+      showSuccess(t('users:messages.bulkDeleteSuccess', {
+        count: userIds.length,
+        defaultValue: `Đã xóa ${userIds.length} người dùng thành công`
+      }));
+      refreshUsers();
+    } catch (error) {
+      showError(t('users:messages.bulkDeleteError', {
+        defaultValue: 'Có lỗi xảy ra khi xóa người dùng'
+      }));
+    }
+  };
 
   // Import configuration
   const {
@@ -83,6 +99,7 @@ const Users: React.FC = () => {
     openImportModal,
     closeImportModal
   } = useUserImportConfig({ onRefreshData: refreshUsers });
+
   const addDropdownOptions: DropdownOption[] = [
     {
       key: 'single',
@@ -140,12 +157,14 @@ const Users: React.FC = () => {
           total,
           limit,
           onPageChange: setCurrentPage,
-        }}
-        tableProps={{
+        }} tableProps={{
           onUserView: handleViewUser,
           onUserEdit: handleEditUser,
           onUserDelete: handleDeleteUser,
-        }} onRetry={refreshUsers}
+          onBulkDelete: handleBulkDelete,
+          showSelection: true,
+        }}
+        onRetry={refreshUsers}
       />
 
       {/* Modals */}

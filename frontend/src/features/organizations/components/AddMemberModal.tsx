@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X, User, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { organizationService } from '../../../shared/services/organizationService';
+import { userService } from '../../../shared/services/userService';
+import { User as UserType } from '../../../shared/types/user';
 
 
 interface AddMemberModalProps {
@@ -26,9 +28,93 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     const { t } = useTranslation(['organizations', 'common', 'users']);
     const [userCode, setUserCode] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null); const [searchResults, setSearchResults] = useState<UserType[]>([]);
+    const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+    const inputRef = useRef<HTMLInputElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);    // Update dropdown position when showing
+    const updateDropdownPosition = useCallback(() => {
+        if (inputRef.current) {
+            const rect = inputRef.current.getBoundingClientRect();
+            setDropdownPosition({
+                top: rect.bottom + window.scrollY + 4,
+                left: rect.left + window.scrollX,
+                width: rect.width
+            });
+        }
+    }, []);
 
-    const validateForm = (): boolean => {
+    // Debounced search function
+    const searchUsers = useCallback(async (searchTerm: string) => {
+        if (searchTerm.length < 2) {
+            setSearchResults([]);
+            setShowDropdown(false);
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            const response = await userService.getUsers({
+                search: searchTerm,
+                limit: 10
+            });
+            setSearchResults(response.users);
+            updateDropdownPosition();
+            setShowDropdown(true);
+        } catch (err) {
+            console.error('Error searching users:', err);
+            setSearchResults([]);
+        } finally {
+            setIsSearching(false);
+        }
+    }, [updateDropdownPosition]);
+
+    // Debounce search
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (userCode && !selectedUser) {
+                searchUsers(userCode);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [userCode, selectedUser, searchUsers]);    // Handle click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node) &&
+                inputRef.current &&
+                !inputRef.current.contains(event.target as Node)
+            ) {
+                setShowDropdown(false);
+            }
+        };
+
+        const handleResize = () => {
+            if (showDropdown) {
+                updateDropdownPosition();
+            }
+        };
+
+        const handleScroll = () => {
+            if (showDropdown) {
+                updateDropdownPosition();
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('scroll', handleScroll);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [showDropdown, updateDropdownPosition]); const validateForm = (): boolean => {
         if (!userCode.trim()) {
             const errorMsg = t('common:validation.required', { field: t('users:fields.code') });
             setError(errorMsg);
@@ -36,6 +122,24 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             return false;
         }
         return true;
+    };
+
+    const handleUserSelect = (user: UserType) => {
+        setUserCode(user.code);
+        setSelectedUser(user);
+        setShowDropdown(false);
+        setError(null);
+    };
+
+    const handleInputChange = (value: string) => {
+        setUserCode(value);
+        setSelectedUser(null);
+        if (error) setError(null);
+
+        if (value.length < 2) {
+            setSearchResults([]);
+            setShowDropdown(false);
+        }
     };
 
 
@@ -81,10 +185,11 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleClose = () => {
+    }; const handleClose = () => {
         setUserCode('');
+        setSelectedUser(null);
+        setSearchResults([]);
+        setShowDropdown(false);
         setError(null);
         onClose();
     };
@@ -103,7 +208,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             style={{ margin: 0, top: 0, left: 0, right: 0, bottom: 0 }}
             onClick={handleOverlayClick}
         >
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -126,27 +231,106 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                             {t('organizations:tree.addMemberTo')} :  {organizationName}
                         </p>
 
-                    </div>
-
-                    {/* User Code */}
-                    <div>
+                    </div>                    {/* User Code with Autocomplete */}
+                    <div className="relative">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             {t('users:fields.code')} *
                         </label>
-                        <input
-                            type="text"
-                            value={userCode}
-                            onChange={(e) => {
-                                setUserCode(e.target.value);
-                                if (error) setError(null);
-                            }}
-                            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${error
-                                ? 'border-red-500 dark:border-red-500'
-                                : 'border-gray-300 dark:border-gray-600'
-                                }`}
-                            placeholder={t('users:placeholders.code')}
-                            disabled={loading}
-                        />
+                        <div className="relative">
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={userCode}
+                                onChange={(e) => handleInputChange(e.target.value)} onFocus={() => {
+                                    if (searchResults.length > 0) {
+                                        updateDropdownPosition();
+                                        setShowDropdown(true);
+                                    }
+                                }}
+                                className={`w-full px-3 py-2 pr-10 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${error
+                                    ? 'border-red-500 dark:border-red-500'
+                                    : 'border-gray-300 dark:border-gray-600'
+                                    }`}
+                                placeholder={t('users:placeholders.code')}
+                                disabled={loading}
+                                autoComplete="off"
+                            />
+                            {/* Loading indicator */}
+                            {isSearching && (
+                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-doan-500"></div>
+                                </div>
+                            )}
+                            {/* Selected user indicator */}
+                            {selectedUser && (
+                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                    <Check className="w-4 h-4 text-green-500" />
+                                </div>
+                            )}
+                        </div>                        {/* Dropdown with search results */}
+                        {showDropdown && searchResults.length > 0 && createPortal(
+                            <div
+                                ref={dropdownRef}
+                                className="fixed z-[10000] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto"
+                                style={{
+                                    top: dropdownPosition.top,
+                                    left: dropdownPosition.left,
+                                    width: dropdownPosition.width
+                                }}
+                            >
+                                {searchResults.map((user) => (
+                                    <div
+                                        key={user.id}
+                                        onClick={() => handleUserSelect(user)}
+                                        className="px-3 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors"
+                                    >                                        <div className="flex items-start space-x-3">
+                                            <User className="w-5 h-5 text-gray-400 mt-0.5" /><div className="flex-1">
+                                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                                    {user.code} - {user.givenName} {user.familyName}
+                                                </div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-2 mt-1">
+                                                    <span>{user.userType === 'student' ? 'Sinh viên' : 'Cán bộ'}</span>
+                                                    <span>•</span>
+                                                    <span>
+                                                        {user.membershipStatus === 'doan_vien' && 'Đoàn viên'}
+                                                        {user.membershipStatus === 'hoi_vien' && 'Hội viên'}
+                                                        {user.membershipStatus === 'both' && 'Đoàn viên & Hội viên'}
+                                                        {user.membershipStatus === 'none' && 'Chưa tham gia'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>,
+                            document.body
+                        )}{/* Selected user info */}
+                        {selectedUser && (
+                            <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                                <div className="flex items-start space-x-2">
+                                    <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                                    <div className="flex-1">
+                                        <div className="text-sm font-medium text-green-800 dark:text-green-200">
+                                            {selectedUser.givenName} {selectedUser.familyName}
+                                        </div>
+                                        <div className="text-xs text-green-600 dark:text-green-300 mt-1 space-y-1">
+                                            <div>Mã số: {selectedUser.code}</div>
+                                            <div className="flex items-center space-x-2">
+                                                <span>{selectedUser.userType === 'student' ? 'Sinh viên' : 'Cán bộ'}</span>
+                                                <span>•</span>
+                                                <span>
+                                                    {selectedUser.membershipStatus === 'doan_vien' && 'Đoàn viên'}
+                                                    {selectedUser.membershipStatus === 'hoi_vien' && 'Hội viên'}
+                                                    {selectedUser.membershipStatus === 'both' && 'Đoàn viên & Hội viên'}
+                                                    {selectedUser.membershipStatus === 'none' && 'Chưa tham gia'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {error && (
                             <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                                 {error}

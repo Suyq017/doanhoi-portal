@@ -6,6 +6,7 @@ import { OrganizationsService } from './organizations.service';
 import { OrganizationImportService } from './services/import.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { BulkRemoveMembersDto } from './dto/bulk-remove-members.dto';
 import { OrganizationType } from '../entities/organization.entity';
 import { UserRole } from '../entities/user-organization.entity';
 
@@ -94,9 +95,7 @@ export class OrganizationsController {
     @ApiResponse({ status: 200, description: 'Tổ chức đã được xóa' })
     remove(@Param('id') id: string) {
         return this.organizationsService.remove(id);
-    }
-
-    @Post(':id/members/:userId')
+    } @Post(':id/members/:userId')
     @ApiOperation({ summary: 'Thêm thành viên vào tổ chức' })
     @ApiResponse({ status: 201, description: 'Thành viên đã được thêm' })
     addMember(
@@ -105,6 +104,26 @@ export class OrganizationsController {
         @Body('role') role: UserRole = UserRole.MEMBER
     ) {
         return this.organizationsService.addMember(id, userId, role);
+    } @Delete(':id/members/bulk-remove')
+    @ApiOperation({ summary: 'Loại bỏ nhiều thành viên khỏi tổ chức cùng lúc' })
+    @ApiResponse({ status: 200, description: 'Các thành viên đã được loại bỏ thành công' })
+    @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
+    @ApiResponse({ status: 404, description: 'Tổ chức hoặc một số thành viên không tồn tại' })
+    async bulkRemoveMembers(
+        @Param('id') organizationId: string,
+        @Body() bulkRemoveMembersDto: BulkRemoveMembersDto
+    ) {
+        try {
+            console.log('Controller bulkRemoveMembers called:', { organizationId, dto: bulkRemoveMembersDto });
+            await this.organizationsService.bulkRemoveMembers(organizationId, bulkRemoveMembersDto.userIds);
+            return {
+                message: `Đã loại bỏ thành công ${bulkRemoveMembersDto.userIds.length} thành viên khỏi tổ chức`,
+                removedCount: bulkRemoveMembersDto.userIds.length
+            };
+        } catch (error) {
+            console.error('Error in bulkRemoveMembers controller:', error);
+            throw error;
+        }
     }
 
     @Delete(':id/members/:userId')

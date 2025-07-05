@@ -6,6 +6,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
+import { BulkDeleteUserDto } from './dto/bulk-delete-user.dto';
 import { ImportService } from './services/import.service';
 
 @ApiTags('users')
@@ -30,7 +31,6 @@ export class UsersController {
   findAll(@Query() query: QueryUserDto) {
     return this.usersService.findAll(query);
   }
-
   @Get('template')
   @ApiOperation({ summary: 'Download template Excel để import users' })
   @ApiResponse({ status: 200, description: 'File template Excel' })
@@ -40,6 +40,19 @@ export class UsersController {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="users_import_template.xlsx"');
     res.send(buffer);
+  }
+
+  @Delete('bulk-delete')
+  @ApiOperation({ summary: 'Xóa nhiều người dùng cùng lúc' })
+  @ApiResponse({ status: 200, description: 'Các người dùng đã được xóa thành công' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
+  @ApiResponse({ status: 404, description: 'Một hoặc nhiều người dùng không tồn tại' })
+  async bulkDelete(@Body() bulkDeleteUserDto: BulkDeleteUserDto) {
+    await this.usersService.removeMultiple(bulkDeleteUserDto.ids);
+    return {
+      message: `Đã xóa thành công ${bulkDeleteUserDto.ids.length} người dùng`,
+      deletedCount: bulkDeleteUserDto.ids.length
+    };
   }
 
   @Get(':id')

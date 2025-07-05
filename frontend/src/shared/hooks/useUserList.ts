@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { userService, UserQueryParams, CreateUserRequest, UpdateUserRequest } from '../services';
+import { userService } from '../services';
+import { UserQueryParams, CreateUserRequest, UpdateUserRequest } from '../types/user'
 import { User } from '../types/user';
 import { useTranslation } from 'react-i18next';
 

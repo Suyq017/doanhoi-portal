@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, TreeRepository, Like } from 'typeorm';
+import { Repository, TreeRepository, Like, In } from 'typeorm';
 import { Organization, OrganizationType } from '../entities/organization.entity';
 import { UserOrganization, UserRole } from '../entities/user-organization.entity';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
@@ -186,17 +186,51 @@ export class OrganizationsService {
 
     return this.userOrganizationsRepository.save(membership);
   }
-
   async removeMember(organizationId: string, userId: string): Promise<void> {
     const membership = await this.userOrganizationsRepository.findOne({
       where: { organizationId, userId }
     });
 
-    if (!membership) {
-      throw new NotFoundException('Membership not found');
+    if (membership) {
+      await this.userOrganizationsRepository.remove(membership);
     }
 
-    await this.userOrganizationsRepository.remove(membership);
+    const children = await this.organizationsRepository.find({
+      where: { parent: { id: organizationId } }
+    });
+
+    for (const child of children) {
+      await this.removeMember(child.id, userId);
+    }
+  }
+  async bulkRemoveMembers(organizationId: string, userIds: string[]): Promise<void> {
+
+    if (!userIds || userIds.length === 0) {
+      throw new BadRequestException('No user IDs provided');
+    }
+
+    // Check if organization exists
+    const organization = await this.findOne(organizationId);
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    // Find all memberships
+    const memberships = await this.userOrganizationsRepository.find({
+      where: {
+        organizationId,
+        userId: In(userIds)
+      }
+    });
+
+    if (memberships.length !== userIds.length) {
+      const foundUserIds = memberships.map(m => m.userId);
+      const notFoundUserIds = userIds.filter(id => !foundUserIds.includes(id));
+      throw new NotFoundException(`Memberships not found for users: ${notFoundUserIds.join(', ')}`);
+    }
+
+    // Remove all memberships
+    await this.userOrganizationsRepository.remove(memberships);
   }
 
   async getMembers(organizationId: string): Promise<UserOrganization[]> {

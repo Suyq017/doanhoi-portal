@@ -6,3 +6,4 @@ export type {
   ImportServiceInterface
 } from './useImportConfig';
 export * from './useUserList';
+export * from './useUserManagement';

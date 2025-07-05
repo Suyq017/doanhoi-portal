@@ -198,6 +198,33 @@ export const createOrganizationImportConfig = (level: any, organizationId?: stri
     };
 };
 
+export const isLeafOrganization = (org: Organization): boolean => {
+    // Check if organization has no children
+    return !org.children || org.children.length === 0;
+};
+
+
+export const shouldShowUserList = (organizations: Organization[], level: number): boolean => {
+    if (organizations.length === 0) return false;
+
+    // For level 3 (chi đoàn, chi hội), always show user list if no children
+    if (level >= 3) {
+        return organizations.every(org => isLeafOrganization(org));
+    }
+
+    // For level 2 (DetailPage), show user list if the main organization has no children
+    if (level === 2) {
+        return organizations.length === 1 && isLeafOrganization(organizations[0]);
+    }
+
+    // For other levels, only show if explicitly no children
+    return organizations.every(org => isLeafOrganization(org));
+};
+
+export const getDisplayOrganization = (organizations: Organization[]): Organization | null => {
+    return organizations.length === 1 ? organizations[0] : null;
+};
+
 // export const useOrganizationImportConfig = ({
 //     level,
 //     organizationId = '',

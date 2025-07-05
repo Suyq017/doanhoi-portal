@@ -57,7 +57,8 @@
   },
   "messages": {
     "hasChildren": "Tổ chức này có cấp con",
-    "removeChildrenFirst": "Vui lòng xóa các cấp con trước khi xóa tổ chức này"
+    "removeChildrenFirst": "Vui lòng xóa các cấp con trước khi xóa tổ chức này",
+    "createSuccess": "Tạo tổ chức mới thành công"
   },
   "stats": {
     "doan_organizations": "Tổ chức Đoàn",
@@ -73,6 +74,13 @@
     "studentAssocOrgs": "Tổ chức Hội",
     "doanOrgs": "Tổ chức Đoàn",
     "hoiOrgs": "Tổ chức Hội"
+  },
+  "memberStats": {
+    "doanVien": "Đoàn viên",
+    "hoiVien": "Hội viên",
+    "bothMember": "Đoàn viên & Hội viên",
+    "nonMember": "Chưa tham gia",
+    "totalMembers": "Tổng thành viên"
   },
   "types": {
     "youth_union": "Đoàn Thanh niên",
@@ -103,5 +111,11 @@
     "faculty": "Cấp khoa",
     "department": "Cấp bộ môn",
     "class": "Cấp lớp"
+  },
+  "members": {
+    "title": "Danh sách thành viên",
+    "subtitle": "Quản lý thành viên trong tổ chức",
+    "members": "Thành viên",
+    "noMembers": "Không có thành viên"
   }
 }

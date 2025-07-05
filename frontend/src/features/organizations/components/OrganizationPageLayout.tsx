@@ -7,15 +7,18 @@ import {
     Toast, AddDropdownButton, DropdownOption, ImportModal, ImportModalConfig,
 
 } from '../../../shared';
+import MemberStats, { MemberStatsProps } from './MemberStats';
 import { Upload } from 'lucide-react';
 import CreateOrganizationModal, { CreateOrganizationData } from '../components/CreateOrganizationModal';
 import { organizationService } from '../../../shared/services/organizationService';
 
 interface OrganizationPageLayoutProps {
     organizations?: any[];
-    title: string;
+    title: string | ReactNode;
     subtitle?: string;
     stats: StatsType;
+    memberStats?: MemberStatsProps;
+    showMemberStats?: boolean;
     children: ReactNode;
     loading?: boolean;
     error?: string | null;
@@ -44,6 +47,8 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
     title,
     subtitle,
     stats,
+    memberStats,
+    showMemberStats = false,
     children,
     loading = false,
     error = null,
@@ -56,14 +61,36 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
     level,
     onRefreshData,
     onShowSuccess,
-    onShowError,
     type
 }) => {
     const { t, i18n } = useTranslation(['organizations', 'common']);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const handleCloseCreateModal = () => {
-        setIsCreateModalOpen(false);
+
+    const renderStats = () => {
+        if (showMemberStats && memberStats) {
+            return (
+                <MemberStats
+                    doanVienCount={memberStats.doanVienCount}
+                    hoiVienCount={memberStats.hoiVienCount}
+                    bothMemberCount={memberStats.bothMemberCount}
+                    nonMemberCount={memberStats.nonMemberCount}
+                    totalMembers={memberStats.totalMembers}
+                    loading={memberStats.loading}
+                />
+            );
+        }        // Default organization stats
+        const currentOrgType = organizations?.length === 1 ? organizations[0].type : type;
+        return (
+            <OrganizationStats
+                doanCount={stats.doanStats.total}
+                hoiCount={stats.hoiStats.total}
+                clbCount={stats.clbStats.total}
+                totalMembers={stats.totalMembers}
+                loading={loading}
+                type={currentOrgType}
+            />
+        );
     };
 
     const handleCreateOrganization = async (data: CreateOrganizationData) => {
@@ -79,10 +106,7 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
                     parentOrg = organizations?.find(org => org.type === 'doan_truong');
                     data.parentId = parentOrg?.id || '';
                 }
-            }
-
-
-            const newOrganization = await organizationService.createOrganization(data);
+            } await organizationService.createOrganization(data);
             setIsCreateModalOpen(false);
 
             if (onRefreshData) {
@@ -209,13 +233,7 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
                 )}
             </div>
 
-            {/* Stats */}
-            <OrganizationStats
-                doanCount={stats.doanStats.total}
-                hoiCount={stats.hoiStats.total}
-                clbCount={stats.clbStats.total}
-                totalMembers={stats.totalMembers}
-            />
+            {renderStats()}
 
 
             {/* Main Content */}

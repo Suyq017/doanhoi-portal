@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Trash2, X } from 'lucide-react';
 import { User } from '../../../shared';
 import { UserActionButtons } from '../UserActions/UserActionButtons';
 
@@ -9,7 +10,10 @@ export interface UserTableProps {
     onUserView?: (user: User) => void;
     onUserEdit?: (user: User) => void;
     onUserDelete?: (user: User) => void;
+    onBulkDelete?: (userIds: string[]) => void;
+    onBulkDeleteRequest?: (userIds: string[]) => void;
     showActions?: boolean;
+    showSelection?: boolean;
     actionConfig?: {
         showView?: boolean;
         showEdit?: boolean;
@@ -17,6 +21,12 @@ export interface UserTableProps {
     };
     emptyMessage?: string;
     className?: string;
+    // Expose method to reset selection
+    onSelectionReset?: () => void;
+}
+
+export interface UserTableRef {
+    resetSelection: () => void;
 }
 
 export const UserTable: React.FC<UserTableProps> = ({
@@ -25,12 +35,55 @@ export const UserTable: React.FC<UserTableProps> = ({
     onUserView,
     onUserEdit,
     onUserDelete,
+    onBulkDelete,
+    onBulkDeleteRequest,
     showActions = true,
+    showSelection = false,
     actionConfig = { showView: true, showEdit: true, showDelete: true },
     emptyMessage,
     className = '',
 }) => {
     const { t } = useTranslation(['users', 'common']);
+
+    // State for multi-selection
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+
+    // Helper functions for selection
+    const isAllSelected = selectedUserIds.length > 0 && selectedUserIds.length === users.length;
+    const isSomeSelected = selectedUserIds.length > 0;
+
+    const handleSelectAll = useCallback(() => {
+        if (isAllSelected) {
+            setSelectedUserIds([]);
+        } else {
+            setSelectedUserIds(users.map(user => user.id));
+        }
+    }, [isAllSelected, users]);
+
+    const handleSelectUser = useCallback((userId: string) => {
+        setSelectedUserIds(prev => {
+            if (prev.includes(userId)) {
+                return prev.filter(id => id !== userId);
+            } else {
+                return [...prev, userId];
+            }
+        });
+    }, []);
+    const handleBulkDelete = useCallback(() => {
+        if (selectedUserIds.length > 0) {
+            if (onBulkDeleteRequest) {
+                onBulkDeleteRequest(selectedUserIds);
+            } else if (onBulkDelete) {
+                onBulkDelete(selectedUserIds);
+                setSelectedUserIds([]);
+            }
+        }
+    }, [onBulkDelete, onBulkDeleteRequest, selectedUserIds]);
+
+    // Reset selection when users change
+    useEffect(() => {
+        setSelectedUserIds([]);
+    }, [users]);
 
     const getUserTypeText = (type: string) => {
         return type === 'student' ? t('users:types.student') : t('users:types.staff');
@@ -79,14 +132,48 @@ export const UserTable: React.FC<UserTableProps> = ({
                 </div>
             </div>
         );
-    }
-
-    return (
+    } return (
         <div className={`overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 ${className}`}>
+            {/* Bulk Actions Toolbar */}
+            {showSelection && isSomeSelected && (
+                <div className="flex items-center justify-between px-6 py-3 bg-blue-50 border-b border-gray-200 dark:bg-blue-900/20 dark:border-gray-700">
+                    <div className="flex items-center space-x-3">
+                        <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                            {t('common:actions.select')} ({selectedUserIds.length})
+                        </span>
+                        <button
+                            onClick={() => setSelectedUserIds([])}
+                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <button
+                            onClick={handleBulkDelete}
+                            className="flex items-center px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 border border-red-300 rounded-md hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/40"
+                        >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            {t('common:actions.delete')} ({selectedUserIds.length})
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="overflow-x-auto">
                 <table className="w-full table-auto">
                     <thead className="bg-gray-50 dark:bg-gray-900">
                         <tr>
+                            {showSelection && (
+                                <th className="px-6 py-3 text-left">
+                                    <input
+                                        type="checkbox"
+                                        checked={isAllSelected}
+                                        onChange={handleSelectAll}
+                                        className="w-4 h-4 text-doan-600 border-gray-300 rounded focus:ring-doan-500 dark:border-gray-600 dark:bg-gray-700"
+                                    />
+                                </th>
+                            )}
                             <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                                 {t('users:fields.info')}
                             </th>
@@ -113,8 +200,21 @@ export const UserTable: React.FC<UserTableProps> = ({
                         {users.map((user) => (
                             <tr
                                 key={user.id}
-                                className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                                className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${showSelection && selectedUserIds.includes(user.id)
+                                    ? 'bg-blue-50 dark:bg-blue-900/20'
+                                    : ''
+                                    }`}
                             >
+                                {showSelection && (
+                                    <td className="px-6 py-4">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedUserIds.includes(user.id)}
+                                            onChange={() => handleSelectUser(user.id)}
+                                            className="w-4 h-4 text-doan-600 border-gray-300 rounded focus:ring-doan-500 dark:border-gray-600 dark:bg-gray-700"
+                                        />
+                                    </td>
+                                )}
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div>
                                         <div className="text-sm font-medium text-gray-900 dark:text-white">

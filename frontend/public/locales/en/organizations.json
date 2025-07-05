@@ -62,7 +62,8 @@
   },
   "messages": {
     "hasChildren": "This organization has child levels",
-    "removeChildrenFirst": "Please remove child levels before deleting this organization"
+    "removeChildrenFirst": "Please remove child levels before deleting this organization",
+    "createSuccess": "Organization created successfully"
   },
   "stats": {
     "doan_organizations": "Youth Union Organizations",
@@ -78,6 +79,13 @@
     "studentAssocOrgs": "Student Association Organizations",
     "doanOrgs": "Youth Union Organizations",
     "hoiOrgs": "Student Association Organizations"
+  },
+  "memberStats": {
+    "doanVien": "Youth Union Member",
+    "hoiVien": "Student Association Member",
+    "bothMember": "Both Members",
+    "nonMember": "Not Joined",
+    "totalMembers": "Total Members"
   },
   "types": {
     "youth_union": "Youth Union",
@@ -108,5 +116,11 @@
     "faculty": "Faculty Level",
     "department": "Department Level",
     "class": "Class Level"
+  },
+  "members": {
+    "title": "Member List",
+    "subtitle": "Manage members in the organization",
+    "members": "Members",
+    "noMembers": "No members found"
   }
 }

@@ -11,9 +11,7 @@ const Organizations: React.FC = () => {
   const { t } = useTranslation(['organizations', 'common']);
 
   const importConfig = createOrganizationImportConfig(2);
-  const level = 2;
-
-  const {
+  const level = 2; const {
     organizations,
     stats,
     loading,
@@ -25,11 +23,22 @@ const Organizations: React.FC = () => {
     handleOrganizationUpdated,
     handleOrganizationDeleted,
     handleDeleteError,
+    handleOrganizationCreated,
+    handleOrganizationCreateError,
     toasts,
     hideToast,
     getPageTitle
-  } = useOrganizationPage();
+  } = useOrganizationPage();  // ✅ Organization creation success handler
+  const handleOrganizationCreatedWrapper = useCallback(async () => {
+    // Use the hook's function which shows toast AND refreshes data
+    await handleOrganizationCreated();
+  }, [handleOrganizationCreated]);
 
+  // ✅ Organization creation error handler  
+  const handleOrganizationCreateErrorWrapper = useCallback((error: string) => {
+    // Use the hook's function which shows toast
+    handleOrganizationCreateError(error);
+  }, [handleOrganizationCreateError]);
   const renderOrganization = useCallback((org: Organization, level: number = 0) => {
     return (
       <OrganizationTreeItem
@@ -38,8 +47,7 @@ const Organizations: React.FC = () => {
         level={level}
         stats={stats}
         onToggleExpand={toggleOrgExpanded}
-        renderChildren={renderOrganization}
-        onMemberAdded={handleMemberAdded}
+        renderChildren={renderOrganization} onMemberAdded={handleMemberAdded}
         onOrganizationUpdated={handleOrganizationUpdated}
         onMemberAddError={handleMemberAddError}
         onOrganizationDeleted={handleOrganizationDeleted}
@@ -73,18 +81,18 @@ const Organizations: React.FC = () => {
           type: type as 'error' | 'success' | 'info'
         }))
       }
-      onCloseToast={hideToast}
-      level={level}
-      onRefreshData={fetchData}
-      onShowSuccess={handleMemberAdded}
-      onShowError={handleMemberAddError}
+      onCloseToast={hideToast} level={level}
+      // ✅ Fix callbacks cho organization creation
+      onRefreshData={handleOrganizationCreatedWrapper}
+      onShowSuccess={handleOrganizationCreatedWrapper}
+      onShowError={handleOrganizationCreateErrorWrapper}
     >
       <OrganizationTreeContainer
+        key={`org-tree-${organizations.length}-${stats.totalMembers}`}
         isEmpty={organizations.length === 0}
       >
         {organizations.map(org => renderOrganization(org))}
       </OrganizationTreeContainer>
-
     </OrganizationPageLayout>
   );
 };

@@ -1,19 +1,23 @@
-import React, { useCallback, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { ChevronRight } from 'lucide-react';
 import { Organization } from '../../shared/types/organization';
 import OrganizationTreeItem from './components/OrganizationTreeItem';
-import OrganizationTreeContainer from './components/OrganizationTreeContainer';
 import OrganizationPageLayout from './components/OrganizationPageLayout';
 import { useOrganizationPage } from './hooks/useOrganizationPage';
-import { createOrganizationImportConfig } from './utils/organizationUtils';
+import { createOrganizationImportConfig, shouldShowUserList, getDisplayOrganization } from './utils/organizationUtils';
+import { OrganizationUserList } from './components/OrganizationUserList';
+import { organizationService } from '../../shared/services/organizationService';
 
 const OrganizationsSubDetailPage: React.FC = () => {
     const { t } = useTranslation(['organizations', 'common']);
     const { type, code } = useParams<{ type: string; code: string }>();
-    const importConfig = createOrganizationImportConfig(3);
+
     const level = 3;
-    const {
+
+    // State to trigger memberStats refresh
+    const [refreshKey, setRefreshKey] = useState(0); const {
         organizations,
         stats,
         loading,
@@ -25,6 +29,8 @@ const OrganizationsSubDetailPage: React.FC = () => {
         handleOrganizationUpdated,
         handleOrganizationDeleted,
         handleDeleteError,
+        handleBulkDeleteSuccess,
+        handleBulkDeleteError,
         toasts,
         hideToast,
         getPageTitle
@@ -33,7 +39,7 @@ const OrganizationsSubDetailPage: React.FC = () => {
         code,
         isSubDetailPage: true
     });
-
+    const importConfig = createOrganizationImportConfig(3);
     const filteredOrg = useMemo(() => {
         if (!type || !code || !organizations.length) return [];
 
@@ -44,10 +50,110 @@ const OrganizationsSubDetailPage: React.FC = () => {
         return filtered;
     }, [organizations, type, code]);
 
-    const currentOrgName = useMemo(() => {
+    const showUserList = useMemo(() =>
+        shouldShowUserList(filteredOrg, level),
+        [filteredOrg, level]
+    );
+    const displayOrganization = useMemo(() =>
+        getDisplayOrganization(filteredOrg),
+        [filteredOrg]
+    ); const currentOrgName = useMemo(() => {
         return filteredOrg[0]?.name || '';
     }, [filteredOrg]);
 
+    // Custom memberStats with refresh capability  
+    const [memberStats, setMemberStats] = useState({
+        doanVienCount: 0,
+        hoiVienCount: 0,
+        bothMemberCount: 0,
+        nonMemberCount: 0,
+        totalMembers: 0,
+    });
+    const [memberStatsLoading, setMemberStatsLoading] = useState(false);
+
+    // Load memberStats function
+    const loadMemberStats = useCallback(async () => {
+        if (!showUserList || !displayOrganization) return;
+
+        try {
+            setMemberStatsLoading(true);
+            const members = await organizationService.getOrganizationMembers(displayOrganization.id);
+
+            let doanVienCount = 0;
+            let hoiVienCount = 0;
+            let bothMemberCount = 0;
+            let nonMemberCount = 0;
+
+            members.forEach(member => {
+                const user = member.user;
+                const isDoanVien = user.membershipStatus === 'doan_vien' || user.membershipStatus === 'both';
+                const isHoiVien = user.membershipStatus === 'hoi_vien' || user.membershipStatus === 'both';
+
+                if (user.membershipStatus === 'both') {
+                    bothMemberCount++;
+                } else if (isDoanVien) {
+                    doanVienCount++;
+                } else if (isHoiVien) {
+                    hoiVienCount++;
+                } else {
+                    nonMemberCount++;
+                }
+            });
+
+            setMemberStats({
+                doanVienCount,
+                hoiVienCount,
+                bothMemberCount,
+                nonMemberCount,
+                totalMembers: members.length,
+            });
+        } catch (err) {
+            console.error('Error loading member stats:', err);
+        } finally {
+            setMemberStatsLoading(false);
+        }
+    }, [showUserList, displayOrganization]);
+
+    // Load stats when displayOrganization or refreshKey changes
+    useEffect(() => {
+        loadMemberStats();
+    }, [loadMemberStats, refreshKey]);
+
+    // Create combined refresh function that refreshes both data and stats  
+    const handleRefreshAll = useCallback(async () => {
+        await fetchData(); // Refresh main data
+        setRefreshKey(prev => prev + 1); // Trigger memberStats refresh
+    }, [fetchData]);
+
+    // Create clickable breadcrumb title for sub-detail page
+    const getBreadcrumbTitle = () => {
+        const baseTitle = t('organizations:title');
+        const parentOrg = organizations[0];
+
+        if (parentOrg && displayOrganization) {
+            return (
+                <div className="flex items-center space-x-2">
+                    <Link
+                        to="/organizations"
+                        className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
+                    >
+                        {baseTitle}
+                    </Link>
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                    <Link
+                        to={`/organizations/${window.location.pathname.split('/')[2]}/${window.location.pathname.split('/')[3]}`}
+                        className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
+                    >
+                        {parentOrg.name}
+                    </Link>
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-900 dark:text-white">{displayOrganization.name}</span>
+                </div>
+            );
+        }
+
+        return getPageTitle(currentOrgName);
+    };
 
     const renderOrganization = useCallback((org: Organization, level: number = 0) => {
         const parentParams = {
@@ -80,17 +186,38 @@ const OrganizationsSubDetailPage: React.FC = () => {
         handleMemberAddError,
         handleOrganizationDeleted,
         handleDeleteError
-    ]);
+    ]); const renderContent = () => {
+        if (showUserList && displayOrganization) {
+            // Create wrapper functions to handle the message format
+            const handleShowSuccess = (message: string) => {
+                handleBulkDeleteSuccess(message);
+            };
 
+            const handleShowError = (message: string) => {
+                handleBulkDeleteError(message);
+            }; return (
+                <OrganizationUserList
+                    organization={displayOrganization}
+                    onRefresh={handleRefreshAll}
+                    onShowSuccess={handleShowSuccess}
+                    onShowError={handleShowError}
+                />
+            );
+        }
 
-    return (
+        return null;
+    }; return (
         <OrganizationPageLayout
-            title={getPageTitle(currentOrgName)}
+            title={getBreadcrumbTitle()}
             subtitle={t('organizations:subtitle')}
             stats={stats}
+            memberStats={showUserList ? {
+                ...memberStats,
+                loading: memberStatsLoading,
+            } : undefined}
+            showMemberStats={showUserList}
             loading={loading}
-            error={error}
-            onRetry={fetchData}
+            error={error} onRetry={handleRefreshAll}
             showDropdownButton={true}
             importConfig={importConfig}
             dropdownLabel={t('organizations:addButton.dropdown')}
@@ -103,13 +230,12 @@ const OrganizationsSubDetailPage: React.FC = () => {
             }
             onCloseToast={hideToast}
             level={level}
+            onRefreshData={handleRefreshAll}
+            onShowSuccess={handleBulkDeleteSuccess}
+            onShowError={handleBulkDeleteError}
         >
 
-            <OrganizationTreeContainer
-                isEmpty={organizations.length === 0}
-            >
-                {filteredOrg.map(org => renderOrganization(org))}
-            </OrganizationTreeContainer>
+            {renderContent()}
 
         </OrganizationPageLayout>
     );

@@ -67,13 +67,15 @@ export const useOrganizationPage = (options: UseOrganizationPageOptions = {}) =>
 
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
-
-    // Handlers
-    const handleMemberAdded = useCallback(() => {
-        fetchStats();
+    }, [fetchData]);    // Handlers
+    const handleMemberAdded = useCallback(async () => {
         showSuccess(t('common:messages.success.add'));
-    }, [fetchStats, showSuccess, t]);
+        // Small delay to allow toast to render before refresh
+        setTimeout(async () => {
+            await fetchStats();
+            await fetchData();
+        }, 150);
+    }, [fetchStats, fetchData, showSuccess, t]);
 
     const handleMemberAddError = useCallback((error: string) => {
         showError(error);
@@ -95,9 +97,25 @@ export const useOrganizationPage = (options: UseOrganizationPageOptions = {}) =>
         } catch (error) {
             showError(t('common:messages.error.delete'));
         }
-    }, [fetchData, showSuccess, showError, t]);
+    }, [fetchData, showSuccess, showError, t]); const handleDeleteError = useCallback((error: string) => {
+        showError(error);
+    }, [showError]); const handleBulkDeleteSuccess = useCallback((message: string) => {
+        fetchStats();
+        showSuccess(message);
+    }, [fetchStats, showSuccess]); const handleBulkDeleteError = useCallback((error: string) => {
+        showError(error);
+    }, [showError]);
 
-    const handleDeleteError = useCallback((error: string) => {
+    const handleOrganizationCreated = useCallback(async (message?: string) => {
+        showSuccess(message || t('organizations:messages.createSuccess'));
+        // Small delay to allow toast to render before refresh
+        setTimeout(async () => {
+            await fetchStats();
+            await fetchData();
+        }, 150);
+    }, [fetchStats, fetchData, showSuccess, t]);
+
+    const handleOrganizationCreateError = useCallback((error: string) => {
         showError(error);
     }, [showError]);
 
@@ -105,9 +123,9 @@ export const useOrganizationPage = (options: UseOrganizationPageOptions = {}) =>
     const getPageTitle = useCallback((customName?: string) => {
         if (isSubDetailPage) {
 
-            return `${t('organizations:title')} / ${organizations[0]?.name || ''} / ${customName}`;
+            return `${t('organizations:title')}  ${organizations[0]?.name || ''}  ${customName}`;
         } else if (isDetailPage) {
-            return `${t('organizations:title')} / ${organizations[0]?.name || ''}`;
+            return `${t('organizations:title')}  ${organizations[0]?.name || ''}`;
         }
         return t('organizations:title');
     }, [t, organizations, isDetailPage, isSubDetailPage]);
@@ -115,9 +133,7 @@ export const useOrganizationPage = (options: UseOrganizationPageOptions = {}) =>
     // Render organization tree
     const renderOrganization = useCallback(() => {
         return null;
-    }, []);
-
-    return {
+    }, []); return {
         organizations,
         stats,
         loading: loading || loadingTree || loadingStats,
@@ -129,6 +145,10 @@ export const useOrganizationPage = (options: UseOrganizationPageOptions = {}) =>
         handleOrganizationUpdated,
         handleOrganizationDeleted,
         handleDeleteError,
+        handleBulkDeleteSuccess,
+        handleBulkDeleteError,
+        handleOrganizationCreated,
+        handleOrganizationCreateError,
         toasts,
         hideToast,
         getPageTitle,
