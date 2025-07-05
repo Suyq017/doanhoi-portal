@@ -1,19 +1,31 @@
 {
   "title": "Department Management",
+  "titlePhonetic": "Department Management",
   "subtitle": "Manage information of departments, faculties and units within university",
+  "subtitlePhonetic": "Manage department information",
   "titles": {
     "create": "Add New Department",
+    "createPhonetic": "Add New Department",
     "edit": "Edit Department Information",
+    "editPhonetic": "Edit Department Information",
     "view": "Department Details",
-    "delete": "Delete Department"
+    "viewPhonetic": "Department Details",
+    "delete": "Delete Department",
+    "deletePhonetic": "Delete Department"
   },
   "fields": {
     "name": "Department Name",
+    "namePhonetic": "Department Name",
     "code": "Department Code",
+    "codePhonetic": "Department Code",
     "description": "Description",
+    "descriptionPhonetic": "Description",
     "managementUsers": "Management Users",
+    "managementUsersPhonetic": "Management Users",
     "trainingUsers": "Training Users",
-    "isActive": "Active"
+    "trainingUsersPhonetic": "Training Users",
+    "isActive": "Active",
+    "isActivePhonetic": "Active"
   },
   "placeholders": {
     "name": "e.g.: Faculty of Computer Science",
@@ -32,31 +44,56 @@
   },
   "addButton": {
     "dropdown": "Add Department",
+    "dropdownPhonetic": "Add Department",
     "single": "Add Single Department",
+    "singlePhonetic": "Add Single Department",
     "fromFile": "Add from File",
+    "fromFilePhonetic": "Add from File",
     "singleDescription": "Create new department using form",
-    "fromFileDescription": "Import multiple departments from Excel file"
+    "singleDescriptionPhonetic": "Create new department using form",
+    "fromFileDescription": "Import multiple departments from Excel file",
+    "fromFileDescriptionPhonetic": "Import multiple departments from Excel file"
   },
   "import": {
     "title": "Import Department List",
+    "titlePhonetic": "Import Department List",
     "instructions": "Department Data Import Guide",
+    "instructionsPhonetic": "Department Data Import Guide",
     "step1": "Download Excel template here and fill in department information",
+    "step1Phonetic": "Download Excel template",
     "step2": "Check data format and ensure no errors",
+    "step2Phonetic": "Check data format",
     "step3": "Upload file to import into the system",
+    "step3Phonetic": "Upload file",
     "templateFile": "departments_template.xlsx",
+    "templateFilePhonetic": "departments_template.xlsx",
     "templateLinkText": "here",
+    "templateLinkTextPhonetic": "here",
     "onlyExcelAllowed": "Only Excel files (.xlsx) are accepted",
+    "onlyExcelAllowedPhonetic": "Only Excel files accepted",
     "success": "Successfully imported {{count}} departments",
+    "successPhonetic": "Successfully imported {{count}} departments",
     "partialSuccess": "Successfully imported {{success}}/{{total}} departments",
+    "partialSuccessPhonetic": "Successfully imported {{success}}/{{total}} departments",
     "importError": "An error occurred during import process",
+    "importErrorPhonetic": "An error occurred during import process",
     "importSuccess": "Data imported successfully",
+    "importSuccessPhonetic": "Data imported successfully",
     "uploadSuccess": "File uploaded successfully. Found {{count}} data rows",
+    "uploadSuccessPhonetic": "File uploaded successfully",
     "validationError": "Data is invalid",
+    "validationErrorPhonetic": "Data is invalid",
     "validationSuccess": "Data is valid, ready to import",
+    "validationSuccessPhonetic": "Data is valid",
     "serverError": "Server error during processing",
+    "serverErrorPhonetic": "Server error",
     "sessionExpired": "Session expired, please upload file again",
+    "sessionExpiredPhonetic": "Session expired",
     "conflictsFound": "Data conflicts detected",
+    "conflictsFoundPhonetic": "Data conflicts detected",
     "duplicatesFound": "Duplicate data detected",
-    "skipConflicts": "Skip conflicts"
+    "duplicatesFoundPhonetic": "Duplicate data detected",
+    "skipConflicts": "Skip conflicts",
+    "skipConflictsPhonetic": "Skip conflicts"
   }
 }

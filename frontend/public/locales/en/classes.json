@@ -1,19 +1,35 @@
 {
   "title": "Class Management",
+  "titlePhonetic": "Class Management",
   "subtitle": "Manage class information and students",
+  "subtitlePhonetic": "Manage class information",
   "titles": {
     "create": "Add New Class",
+    "createPhonetic": "Add New Class",
     "edit": "Edit Class Information",
+    "editPhonetic": "Edit Class Information",
     "view": "Class Details",
-    "delete": "Delete Class"
+    "viewPhonetic": "Class Details",
+    "delete": "Delete Class",
+    "deletePhonetic": "Delete Class"
   },
   "fields": {
+    "code": "Class Code",
+    "codePhonetic": "Class Code",
+    "departmentCode": "Department Code",
+    "departmentCodePhonetic": "Department Code",
     "info": "Class Information",
+    "infoPhonetic": "Class Information",
     "name": "Class Name",
+    "namePhonetic": "Class Name",
     "year": "Academic Year",
+    "yearPhonetic": "Academic Year",
     "studentCount": "Student Count",
+    "studentCountPhonetic": "Student Count",
     "department": "Department",
-    "isActive": "Active"
+    "departmentPhonetic": "Department",
+    "isActive": "Active",
+    "isActivePhonetic": "Active"
   },
   "placeholders": {
     "search": "Search classes...",
@@ -31,19 +47,32 @@
   },
   "addButton": {
     "dropdown": "Add Class",
+    "dropdownPhonetic": "Add Class",
     "single": "Add Single Class",
+    "singlePhonetic": "Add Single Class",
     "singleDesc": "Create new class with form",
+    "singleDescPhonetic": "Create new class with form",
     "fromFile": "Import from Excel",
-    "fromFileDesc": "Import multiple classes from Excel file"
+    "fromFilePhonetic": "Import from Excel",
+    "fromFileDesc": "Import multiple classes from Excel file",
+    "fromFileDescPhonetic": "Import multiple classes from Excel file"
   },
   "import": {
     "title": "Import Class List",
+    "titlePhonetic": "Import Class List",
     "importError": "An error occurred during import process",
+    "importErrorPhonetic": "An error occurred during import process",
     "instructions": "Import Instructions",
+    "instructionsPhonetic": "Import Instructions",
     "step1": "Download Excel template here and fill in class information",
+    "step1Phonetic": "Download Excel template",
     "step2": "Check data format and ensure no errors",
+    "step2Phonetic": "Check data format",
     "step3": "Upload file to import into the system",
+    "step3Phonetic": "Upload file",
     "templateLinkText": "here",
-    "onlyExcelAllowed": "Only Excel files (.xlsx, .xls) are allowed"
+    "templateLinkTextPhonetic": "here",
+    "onlyExcelAllowed": "Only Excel files (.xlsx, .xls) are allowed",
+    "onlyExcelAllowedPhonetic": "Only Excel files allowed"
   }
 }

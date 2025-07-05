@@ -2,39 +2,65 @@
   "title": "Organization Management",
   "titlePhonetic": "Organizations",
   "subtitle": "Manage Youth Union, Student Association and Club structures",
+  "subtitlePhonetic": "Manage organization structures",
   "titles": {
     "create": "Create New Organization",
+    "createPhonetic": "Create New Organization",
     "edit": "Edit Organization Information",
+    "editPhonetic": "Edit Organization Information",
     "view": "Organization Details",
-    "delete": "Delete Organization"
+    "viewPhonetic": "Organization Details",
+    "delete": "Delete Organization",
+    "deletePhonetic": "Delete Organization"
   },
   "fields": {
     "code": "Organization Code",
+    "codePhonetic": "Organization Code",
     "name": "Organization Name",
+    "namePhonetic": "Organization Name",
     "type": "Organization Type",
+    "typePhonetic": "Organization Type",
     "level": "Organization Level",
+    "levelPhonetic": "Organization Level",
     "parent": "Parent Organization",
+    "parentPhonetic": "Parent Organization",
     "description": "Description",
-    "membersCount": "Number of Members"
+    "descriptionPhonetic": "Description",
+    "membersCount": "Number of Members",
+    "membersCountPhonetic": "Number of Members"
   },
   "createOrganization": "Create Organization",
+  "createOrganizationPhonetic": "Create Organization",
   "addOrganization": "Add Organization",
+  "addOrganizationPhonetic": "Add Organization",
   "editOrganization": "Edit Organization",
+  "editOrganizationPhonetic": "Edit Organization",
   "deleteOrganization": "Delete Organization",
+  "deleteOrganizationPhonetic": "Delete Organization",
   "organizationInfo": "Organization Information",
+  "organizationInfoPhonetic": "Organization Information",
   "actions": {
     "add_organization": "Add Organization"
   },
   "addButton": {
     "dropdown": "Add New",
+    "dropdownPhonetic": "Add New",
     "manual": "Add Manually",
+    "manualPhonetic": "Add Manually",
     "manualDesc": "Create new organization using form",
+    "manualDescPhonetic": "Create new organization using form",
     "fromFile": "Add from Excel File",
+    "fromFilePhonetic": "Add from Excel File",
     "fromFileDesc": "Import multiple members from Excel file",
+    "fromFileDescPhonetic": "Import multiple members from Excel file",
     "addMember": "Add Member",
+    "addMemberPhonetic": "Add Member",
     "addMemberDesc": "Add new member to organization",
+    "addMemberDescPhonetic": "Add new member to organization",
     "addOrganization": "Add Organization",
-    "addOrganizationDesc": "Create new sub-organization"
+    "addOrganizationPhonetic": "Add Organization",
+    "addOrganizationDesc": "Create new sub-organization",
+    "addOrganizationDescPhonetic": "Create new sub-organization"
   },
   "description": {
     "addOrganization": "Add New Organization Manually",
@@ -42,17 +68,26 @@
   },
   "import": {
     "instructions": "Organization Data Import Guide",
+    "instructionsPhonetic": "Organization Data Import Guide",
     "step1": "Download the Excel template file here and fill in all member information",
+    "step1Phonetic": "Download Excel template",
     "step2": "Check data format and ensure there are no errors",
+    "step2Phonetic": "Check data format",
     "step3": "Upload the file to proceed with importing into the system",
+    "step3Phonetic": "Upload file",
     "templateLinkText": "here",
+    "templateLinkTextPhonetic": "here",
     "level2": {
       "title": "Import Organization Members",
-      "description": "Import members with student code and class/unit code"
+      "titlePhonetic": "Import Organization Members",
+      "description": "Import members with student code and class/unit code",
+      "descriptionPhonetic": "Import members with student code"
     },
     "level3": {
       "title": "Import Branch/Chapter Members",
-      "description": "Import members with student code only"
+      "titlePhonetic": "Import Branch Members",
+      "description": "Import members with student code only",
+      "descriptionPhonetic": "Import members with student code only"
     }
   },
   "tree": {
