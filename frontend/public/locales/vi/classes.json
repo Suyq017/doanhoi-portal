@@ -1,21 +1,35 @@
 {
   "title": "Quản lý Lớp học",
+  "titlePhonetic": "Quản lý Lớp học",
   "subtitle": "Quản lý thông tin lớp học và sinh viên",
+  "subtitlePhonetic": "Quản lý thông tin lớp học",
   "titles": {
     "create": "Thêm lớp học mới",
+    "createPhonetic": "Thêm lớp học mới",
     "edit": "Chỉnh sửa thông tin lớp học",
+    "editPhonetic": "Chỉnh sửa thông tin lớp học",
     "view": "Thông tin chi tiết lớp học",
-    "delete": "Xóa lớp học"
+    "viewPhonetic": "Thông tin chi tiết lớp học",
+    "delete": "Xóa lớp học",
+    "deletePhonetic": "Xóa lớp học"
   },
   "fields": {
     "code": "Mã lớp học",
+    "codePhonetic": "Mã lớp học",
     "departmentCode": "Mã đơn vị",
+    "departmentCodePhonetic": "Mã đơn vị",
     "info": "Thông tin lớp",
+    "infoPhonetic": "Thông tin lớp",
     "name": "Tên lớp",
+    "namePhonetic": "Tên lớp",
     "year": "Năm học",
+    "yearPhonetic": "Năm học",
     "studentCount": "Số sinh viên",
+    "studentCountPhonetic": "Số sinh viên",
     "department": "Đơn vị",
-    "isActive": "Trạng thái hoạt động"
+    "departmentPhonetic": "Đơn vị",
+    "isActive": "Trạng thái hoạt động",
+    "isActivePhonetic": "Trạng thái hoạt động"
   },
   "placeholders": {
     "search": "Tìm kiếm lớp học...",
@@ -33,19 +47,32 @@
   },
   "addButton": {
     "dropdown": "Thêm lớp học",
+    "dropdownPhonetic": "Thêm lớp học",
     "single": "Thêm một lớp học",
+    "singlePhonetic": "Thêm một lớp học",
     "singleDesc": "Tạo lớp mới bằng form",
+    "singleDescPhonetic": "Tạo lớp mới bằng form",
     "fromFile": "Thêm từ file",
-    "fromFileDesc": "Thêm nhiều lớp từ file Excel"
+    "fromFilePhonetic": "Thêm từ file",
+    "fromFileDesc": "Thêm nhiều lớp từ file Excel",
+    "fromFileDescPhonetic": "Thêm nhiều lớp từ file Excel"
   },
   "import": {
     "title": "Nhập danh sách lớp học",
+    "titlePhonetic": "Nhập danh sách lớp học",
     "importError": "Có lỗi xảy ra trong quá trình nhập dữ liệu",
+    "importErrorPhonetic": "Có lỗi xảy ra trong quá trình nhập dữ liệu",
     "instructions": "Hướng dẫn nhập dữ liệu",
+    "instructionsPhonetic": "Hướng dẫn nhập dữ liệu",
     "step1": "Tải file mẫu Excel tại đây và điền đầy đủ thông tin các lớp học",
+    "step1Phonetic": "Tải file mẫu Excel",
     "step2": "Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi",
+    "step2Phonetic": "Kiểm tra định dạng dữ liệu",
     "step3": "Tải file lên để tiến hành thêm vào hệ thống",
+    "step3Phonetic": "Tải file lên",
     "templateLinkText": "tại đây",
-    "onlyExcelAllowed": "Chỉ cho phép file Excel (.xlsx, .xls)"
+    "templateLinkTextPhonetic": "tại đây",
+    "onlyExcelAllowed": "Chỉ cho phép file Excel (.xlsx, .xls)",
+    "onlyExcelAllowedPhonetic": "Chỉ cho phép file Excel"
   }
 }

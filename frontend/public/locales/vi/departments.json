@@ -1,19 +1,31 @@
 {
   "title": "Quản lý Đơn vị",
+  "titlePhonetic": "Quản lý Đơn vị",
   "subtitle": "Quản lý thông tin các đơn vị, phòng ban trong trường",
+  "subtitlePhonetic": "Quản lý thông tin các đơn vị",
   "titles": {
     "create": "Thêm đơn vị mới",
+    "createPhonetic": "Thêm đơn vị mới",
     "edit": "Chỉnh sửa thông tin đơn vị",
+    "editPhonetic": "Chỉnh sửa thông tin đơn vị",
     "view": "Thông tin chi tiết đơn vị",
-    "delete": "Xóa đơn vị"
+    "viewPhonetic": "Thông tin chi tiết đơn vị",
+    "delete": "Xóa đơn vị",
+    "deletePhonetic": "Xóa đơn vị"
   },
   "fields": {
     "name": "Tên đơn vị",
-    "code": "Mã đơn vị", 
+    "namePhonetic": "Tên đơn vị",
+    "code": "Mã đơn vị",
+    "codePhonetic": "Mã đơn vị",
     "description": "Mô tả",
+    "descriptionPhonetic": "Mô tả",
     "managementUsers": "Người dùng quản lý",
+    "managementUsersPhonetic": "Người dùng quản lý",
     "trainingUsers": "Người dùng đào tạo",
-    "isActive": "Hoạt động"
+    "trainingUsersPhonetic": "Người dùng đào tạo",
+    "isActive": "Hoạt động",
+    "isActivePhonetic": "Hoạt động"
   },
   "placeholders": {
     "name": "Ví dụ: Khoa Khoa học máy tính",
@@ -32,31 +44,56 @@
   },
   "addButton": {
     "dropdown": "Thêm đơn vị",
+    "dropdownPhonetic": "Thêm đơn vị",
     "single": "Thêm từng đơn vị",
+    "singlePhonetic": "Thêm từng đơn vị",
     "fromFile": "Thêm từ file",
+    "fromFilePhonetic": "Thêm từ file",
     "singleDescription": "Tạo đơn vị mới bằng form",
-    "fromFileDescription": "Thêm nhiều đơn vị từ file Excel"
+    "singleDescriptionPhonetic": "Tạo đơn vị mới bằng form",
+    "fromFileDescription": "Thêm nhiều đơn vị từ file Excel",
+    "fromFileDescriptionPhonetic": "Thêm nhiều đơn vị từ file Excel"
   },
   "import": {
     "title": "Nhập danh sách đơn vị",
+    "titlePhonetic": "Nhập danh sách đơn vị",
     "instructions": "Hướng dẫn thêm dữ liệu đơn vị",
+    "instructionsPhonetic": "Hướng dẫn thêm dữ liệu đơn vị",
     "step1": "Tải file mẫu Excel tại đây và điền đầy đủ thông tin các đơn vị",
+    "step1Phonetic": "Tải file mẫu Excel",
     "step2": "Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi",
+    "step2Phonetic": "Kiểm tra định dạng dữ liệu",
     "step3": "Tải file lên để tiến hành thêm vào hệ thống",
+    "step3Phonetic": "Tải file lên",
     "templateFile": "departments_template.xlsx",
+    "templateFilePhonetic": "departments_template.xlsx",
     "templateLinkText": "tại đây",
+    "templateLinkTextPhonetic": "tại đây",
     "onlyExcelAllowed": "Chỉ chấp nhận file Excel (.xlsx)",
+    "onlyExcelAllowedPhonetic": "Chỉ chấp nhận file Excel",
     "success": "Import thành công {{count}} đơn vị",
+    "successPhonetic": "Import thành công {{count}} đơn vị",
     "partialSuccess": "Import thành công {{success}}/{{total}} đơn vị",
+    "partialSuccessPhonetic": "Import thành công {{success}}/{{total}} đơn vị",
     "importError": "Có lỗi xảy ra trong quá trình import",
+    "importErrorPhonetic": "Có lỗi xảy ra trong quá trình import",
     "importSuccess": "Import dữ liệu thành công",
+    "importSuccessPhonetic": "Import dữ liệu thành công",
     "uploadSuccess": "Tải file thành công. Tìm thấy {{count}} dòng dữ liệu",
+    "uploadSuccessPhonetic": "Tải file thành công",
     "validationError": "Dữ liệu không hợp lệ",
+    "validationErrorPhonetic": "Dữ liệu không hợp lệ",
     "validationSuccess": "Dữ liệu hợp lệ, sẵn sàng import",
+    "validationSuccessPhonetic": "Dữ liệu hợp lệ",
     "serverError": "Lỗi máy chủ trong quá trình xử lý",
+    "serverErrorPhonetic": "Lỗi máy chủ",
     "sessionExpired": "Phiên làm việc đã hết hạn, vui lòng tải file lại",
+    "sessionExpiredPhonetic": "Phiên làm việc đã hết hạn",
     "conflictsFound": "Phát hiện xung đột dữ liệu",
+    "conflictsFoundPhonetic": "Phát hiện xung đột dữ liệu",
     "duplicatesFound": "Phát hiện dữ liệu trùng lặp",
-    "skipConflicts": "Bỏ qua xung đột"
+    "duplicatesFoundPhonetic": "Phát hiện dữ liệu trùng lặp",
+    "skipConflicts": "Bỏ qua xung đột",
+    "skipConflictsPhonetic": "Bỏ qua xung đột"
   }
 }
