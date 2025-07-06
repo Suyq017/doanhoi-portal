@@ -6,6 +6,8 @@ import { ImportService } from './services/import.service';
 import { ExcelParserService } from './services/excel-parser.service';
 import { ImportValidationService } from './services/import-validation.service';
 import { ImportSessionService } from './services/import-session.service';
+import { BatchProcessingService } from './services/batch-processing.service';
+import { TransactionService } from './services/transaction.service';
 import { Class } from '../entities/class.entity';
 import { Department } from '../entities/department.entity';
 
@@ -18,6 +20,8 @@ import { Department } from '../entities/department.entity';
     ExcelParserService,
     ImportValidationService,
     ImportSessionService,
+    BatchProcessingService,
+    TransactionService,
   ],
   exports: [ClassesService],
 })

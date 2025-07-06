@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, UseInterceptors, UploadedFile, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { DepartmentsService } from './departments.service';
 import { ImportService } from './services/import.service';
+import { DepartmentBatchImportMonitoringService } from './services/batch-import-monitoring.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { QueryDepartmentDto } from './dto/query-department.dto';
@@ -14,6 +15,7 @@ export class DepartmentsController {
   constructor(
     private readonly departmentsService: DepartmentsService,
     private readonly importService: ImportService,
+    private readonly monitoringService: DepartmentBatchImportMonitoringService,
   ) {}
 
   @Post()
@@ -93,7 +95,13 @@ export class DepartmentsController {
   @ApiResponse({ status: 404, description: 'Session không tồn tại' })
   async executeImport(
     @Param('sessionId') sessionId: string,
-    @Body() options?: { skipConflicts?: boolean }
+    @Body() options?: { 
+      skipConflicts?: boolean;
+      batchSize?: number;
+      enableFallback?: boolean;
+      maxRetries?: number;
+      enableTransaction?: boolean;
+    }
   ) {
     return this.importService.executeImport(sessionId, options);
   }
@@ -105,4 +113,80 @@ export class DepartmentsController {
   async getImportStatus(@Param('sessionId') sessionId: string) {
     return this.importService.getSessionStatus(sessionId);
   }
+
+  // @Get('import/:sessionId/progress')
+  // @ApiOperation({ summary: 'Lấy tiến trình import real-time' })
+  // @ApiResponse({ status: 200, description: 'Thông tin tiến trình import' })
+  // @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  // async getImportProgress(@Param('sessionId') sessionId: string) {
+  //   return this.importService.getImportProgress(sessionId);
+  // }
+
+  // @Post('import/:sessionId/pause')
+  // @ApiOperation({ summary: 'Tạm dừng import' })
+  // @ApiResponse({ status: 200, description: 'Import đã được tạm dừng' })
+  // @ApiResponse({ status: 400, description: 'Không thể tạm dừng import' })
+  // @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  // async pauseImport(@Param('sessionId') sessionId: string) {
+  //   return this.importService.pauseImport(sessionId);
+  // }
+
+  // @Post('import/:sessionId/resume')
+  // @ApiOperation({ summary: 'Tiếp tục import' })
+  // @ApiResponse({ status: 200, description: 'Import đã được tiếp tục' })
+  // @ApiResponse({ status: 400, description: 'Không thể tiếp tục import' })
+  // @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  // async resumeImport(@Param('sessionId') sessionId: string) {
+  //   return this.importService.resumeImport(sessionId);
+  // }
+
+  // @Post('import/:sessionId/cancel')
+  // @ApiOperation({ summary: 'Hủy import' })
+  // @ApiResponse({ status: 200, description: 'Import đã được hủy' })
+  // @ApiResponse({ status: 400, description: 'Không thể hủy import' })
+  // @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  // async cancelImport(@Param('sessionId') sessionId: string) {
+  //   return this.importService.cancelImport(sessionId);
+  // }
+
+  // // Monitoring endpoints
+  // @Get('import/system/health')
+  // @ApiOperation({ summary: 'Lấy trạng thái sức khỏe hệ thống import' })
+  // @ApiResponse({ status: 200, description: 'Trạng thái sức khỏe hệ thống' })
+  // async getSystemHealth() {
+  //   return this.monitoringService.getSystemHealth();
+  // }
+
+  // @Get('import/system/metrics')
+  // @ApiOperation({ summary: 'Lấy metrics hiệu suất hệ thống' })
+  // @ApiResponse({ status: 200, description: 'Metrics hiệu suất' })
+  // async getSystemMetrics() {
+  //   return this.monitoringService.getCurrentMetrics();
+  // }
+
+  // @Get('import/sessions/active')
+  // @ApiOperation({ summary: 'Lấy danh sách sessions đang hoạt động' })
+  // @ApiResponse({ status: 200, description: 'Danh sách active sessions' })
+  // async getActiveSessions() {
+  //   return this.monitoringService.getActiveSessionsMetrics();
+  // }
+
+  // @Get('import/:sessionId/metrics')
+  // @ApiOperation({ summary: 'Lấy metrics của session cụ thể' })
+  // @ApiResponse({ status: 200, description: 'Metrics của session' })
+  // @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  // async getSessionMetrics(@Param('sessionId') sessionId: string) {
+  //   const metrics = this.monitoringService.getSessionMetrics(sessionId);
+  //   if (!metrics) {
+  //     throw new NotFoundException('Session metrics not found');
+  //   }
+  //   return metrics;
+  // }
+
+  // @Get('import/system/performance-history')
+  // @ApiOperation({ summary: 'Lấy lịch sử hiệu suất hệ thống' })
+  // @ApiResponse({ status: 200, description: 'Lịch sử hiệu suất' })
+  // async getPerformanceHistory() {
+  //   return this.monitoringService.getPerformanceHistory();
+  // }
 }
