@@ -47,10 +47,9 @@ export class OrganizationImportService {
     private validationService: OrganizationImportValidationService,
     private sessionService: OrganizationImportSessionService,
   ) { }
-
   async uploadFile(
     file: Express.Multer.File,
-    organizationId: string,
+    organizationId: string | undefined,
     level: number
   ): Promise<OrganizationImportUploadResponse> {
     if (!file) {
@@ -61,12 +60,15 @@ export class OrganizationImportService {
       throw new BadRequestException('Only Excel files (.xlsx, .xls) are allowed');
     }
 
-    // Validate organization exists
-    const organization = await this.organizationsRepository.findOne({
-      where: { id: organizationId }
-    });
-    if (!organization) {
-      throw new NotFoundException('Organization not found');
+    // Validate organization exists if organizationId is provided
+    let organization: Organization | null = null;
+    if (organizationId) {
+      organization = await this.organizationsRepository.findOne({
+        where: { id: organizationId }
+      });
+      if (!organization) {
+        throw new NotFoundException('Organization not found');
+      }
     }
 
     try {
@@ -129,25 +131,45 @@ export class OrganizationImportService {
 
           // Xác định target organization
           let targetOrganizationId = session.organizationId;
-          let targetOrganization = null;
-
-          // Nếu có classOrUnitCode thì tìm organization con
+          let targetOrganization = null;          // Nếu có classOrUnitCode thì tìm organization con
           if (item.classOrUnitCode) {
-            const childOrg = await this.organizationsRepository.findOne({
+            // Đầu tiên, thử tìm organization con trực tiếp
+            let childOrg = await this.organizationsRepository.findOne({
               where: {
                 code: item.classOrUnitCode,
                 parent: { id: session.organizationId }
               }
             });
+
+            // Nếu không tìm thấy, thử tìm trong toàn bộ hệ thống (case insensitive)
+            if (!childOrg) {
+              childOrg = await this.organizationsRepository
+                .createQueryBuilder('org')
+                .where('UPPER(org.code) = UPPER(:code)', { code: item.classOrUnitCode })
+                .getOne();
+
+              // Nếu tìm thấy nhưng không phải con của session organization
+              if (childOrg) {
+                console.log(`Found organization with code ${item.classOrUnitCode} but it's not a direct child of session organization`);
+                // Kiểm tra xem có phải là descendant không
+                const isDescendant = await this.isDescendantOf(childOrg.id, session.organizationId);
+                if (!isDescendant) {
+                  console.log(`Organization ${item.classOrUnitCode} exists but is not under session organization`);
+                  childOrg = null; // Reset nếu không phải descendant
+                }
+              }
+            }
+
             if (childOrg) {
               targetOrganizationId = childOrg.id;
               targetOrganization = childOrg;
+              console.log(`Found target organization: ${childOrg.name} (${childOrg.code})`);
             } else {
               // Không tìm thấy organization con, thêm error và skip
               item._errors.push({
                 row: (item as any)._rowIndex !== undefined ? (item as any)._rowIndex + 2 : (validationResult.data.indexOf(item) + 2),
                 column: 'classOrUnitCode',
-                message: `Organization with code ${item.classOrUnitCode} not found`,
+                message: `Organization with code ${item.classOrUnitCode} not found or not under current organization`,
                 severity: 'error'
               });
               continue; // Skip kiểm tra membership vì organization không tồn tại
@@ -287,9 +309,27 @@ export class OrganizationImportService {
     }
     return session;
   }
-
   async generateTemplate(level: number): Promise<Buffer> {
     return this.excelParserService.generateTemplate(level);
+  }
+
+  // Helper method to check if an organization is descendant of another
+  private async isDescendantOf(childId: string, ancestorId: string): Promise<boolean> {
+    if (childId === ancestorId) {
+      return true;
+    }
+
+    const child = await this.organizationsRepository.findOne({
+      where: { id: childId },
+      relations: ['parent']
+    });
+
+    if (!child || !child.parent) {
+      return false;
+    }
+
+    // Recursively check parent chain
+    return this.isDescendantOf(child.parent.id, ancestorId);
   } private async performImport(
     validatedData: any[],
     organizationId: string,
@@ -347,17 +387,35 @@ export class OrganizationImportService {
         }
 
         // Xác định target organization
-        let targetOrganization: Organization;
-
-        // Nếu có classOrUnitCode thì tìm organization con
+        let targetOrganization: Organization;        // Nếu có classOrUnitCode thì tìm organization con
         if (rowData.classOrUnitCode) {
-          const childOrg = await this.organizationsRepository.findOne({
+          // Đầu tiên, thử tìm organization con trực tiếp
+          let childOrg = await this.organizationsRepository.findOne({
             where: {
               code: rowData.classOrUnitCode,
               parent: { id: organizationId }
             },
             relations: ['parent']
           });
+
+          // Nếu không tìm thấy, thử tìm trong toàn bộ hệ thống (case insensitive)
+          if (!childOrg) {
+            childOrg = await this.organizationsRepository
+              .createQueryBuilder('org')
+              .leftJoinAndSelect('org.parent', 'parent')
+              .where('UPPER(org.code) = UPPER(:code)', { code: rowData.classOrUnitCode })
+              .getOne();
+
+            // Nếu tìm thấy nhưng không phải con của session organization
+            if (childOrg) {
+              console.log(`Found organization with code ${rowData.classOrUnitCode} but checking if it's under session organization`);
+              const isDescendant = await this.isDescendantOf(childOrg.id, organizationId);
+              if (!isDescendant) {
+                console.log(`Organization ${rowData.classOrUnitCode} exists but is not under session organization`);
+                childOrg = null; // Reset nếu không phải descendant
+              }
+            }
+          }
 
           if (childOrg) {
             targetOrganization = childOrg;
@@ -368,7 +426,7 @@ export class OrganizationImportService {
               where: { id: organizationId },
               relations: ['parent']
             });
-            console.log(`Child organization "${rowData.classOrUnitCode}" not found, using parent organization`);
+            console.log(`Child organization "${rowData.classOrUnitCode}" not found or not under session organization, using parent organization`);
           }
         } else {
           // Nếu không có classOrUnitCode, sử dụng organization gốc

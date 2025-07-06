@@ -5,7 +5,7 @@ import { OrganizationValidationResult, OrganizationMemberImportDataWithValidatio
 export interface OrganizationImportSession {
   id: string;
   fileName: string;
-  organizationId: string;
+  organizationId?: string;
   level: number;
   uploadedAt: Date;
   expiresAt: Date;
@@ -36,10 +36,10 @@ export class OrganizationImportSessionService {
   private sessions = new Map<string, OrganizationImportSession>();
   private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
-  createSession(fileName: string, organizationId: string, level: number, data: OrganizationMemberImportData[]): OrganizationImportSession {
+  createSession(fileName: string, organizationId: string | undefined, level: number, data: OrganizationMemberImportData[]): OrganizationImportSession {
     const sessionId = this.generateSessionId();
     const now = new Date();
-    
+
     const session: OrganizationImportSession = {
       id: sessionId,
       fileName,
@@ -60,7 +60,7 @@ export class OrganizationImportSessionService {
 
     this.sessions.set(sessionId, session);
     this.cleanupExpiredSessions();
-    
+
     return session;
   }
 

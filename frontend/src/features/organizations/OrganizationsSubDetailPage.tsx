@@ -1,23 +1,28 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight } from 'lucide-react';
 import { Organization } from '../../shared/types/organization';
 import OrganizationTreeItem from './components/OrganizationTreeItem';
 import OrganizationPageLayout from './components/OrganizationPageLayout';
 import { useOrganizationPage } from './hooks/useOrganizationPage';
-import { createOrganizationImportConfig, shouldShowUserList, getDisplayOrganization } from './utils/organizationUtils';
+import { shouldShowUserList, getDisplayOrganization } from './utils/organizationUtils';
 import { OrganizationUserList } from './components/OrganizationUserList';
+import { useOrganizationImport } from './hooks/useOrganizationImport';
 import { organizationService } from '../../shared/services/organizationService';
+import { useBreadcrumbJSX } from './hooks/useBreadcrumbJSX';
 
 const OrganizationsSubDetailPage: React.FC = () => {
     const { t } = useTranslation(['organizations', 'common']);
-    const { type, code } = useParams<{ type: string; code: string }>();
-
+    const { parentType, parentCode, type, code } = useParams<{
+        parentType: string;
+        parentCode: string;
+        type: string;
+        code: string;
+    }>();
     const level = 3;
 
     // State to trigger memberStats refresh
-    const [refreshKey, setRefreshKey] = useState(0); const {
+    const [memberStatsRefreshKey, setMemberStatsRefreshKey] = useState(0); const {
         organizations,
         stats,
         loading,
@@ -26,20 +31,18 @@ const OrganizationsSubDetailPage: React.FC = () => {
         fetchData,
         handleMemberAdded,
         handleMemberAddError,
+        handleBulkDeleteSuccess,
+        handleBulkDeleteError,
         handleOrganizationUpdated,
         handleOrganizationDeleted,
         handleDeleteError,
-        handleBulkDeleteSuccess,
-        handleBulkDeleteError,
         toasts,
-        hideToast,
-        getPageTitle
-    } = useOrganizationPage({
-        type,
-        code,
-        isSubDetailPage: true
-    });
-    const importConfig = createOrganizationImportConfig(3);
+        hideToast } = useOrganizationPage({
+            type: parentType,
+            code: parentCode,
+            isSubDetailPage: true
+        });
+
     const filteredOrg = useMemo(() => {
         if (!type || !code || !organizations.length) return [];
 
@@ -54,14 +57,37 @@ const OrganizationsSubDetailPage: React.FC = () => {
         shouldShowUserList(filteredOrg, level),
         [filteredOrg, level]
     );
+
     const displayOrganization = useMemo(() =>
         getDisplayOrganization(filteredOrg),
         [filteredOrg]
-    ); const currentOrgName = useMemo(() => {
-        return filteredOrg[0]?.name || '';
-    }, [filteredOrg]);
+    );    // ✅ Use useOrganizationImport hook for sub-detail
+    const { importConfig, setIsImportModalOpen } = useOrganizationImport({
+        level,
+        organizationId: displayOrganization?.id,
+        onSuccess: () => {
+            // Don't refresh here, just show success message
+            console.log('Import completed successfully');
+        },
+        onError: (error) => {
+            console.error('Import error:', error.message);
+        }
+    });
 
-    // Custom memberStats with refresh capability  
+    // ✅ Use breadcrumb JSX for better navigation
+    const breadcrumbTitle = useBreadcrumbJSX({
+        type,
+        code,
+        parentType,
+        parentCode,
+        organizations,
+        displayOrganization,
+        isDetailPage: false,
+        isSubDetailPage: true,
+        isMembersPage: false
+    });
+
+    // ✅ Custom memberStats with refresh capability
     const [memberStats, setMemberStats] = useState({
         doanVienCount: 0,
         hoiVienCount: 0,
@@ -73,7 +99,7 @@ const OrganizationsSubDetailPage: React.FC = () => {
 
     // Load memberStats function
     const loadMemberStats = useCallback(async () => {
-        if (!showUserList || !displayOrganization) return;
+        if (!displayOrganization) return;
 
         try {
             setMemberStatsLoading(true);
@@ -112,48 +138,37 @@ const OrganizationsSubDetailPage: React.FC = () => {
         } finally {
             setMemberStatsLoading(false);
         }
-    }, [showUserList, displayOrganization]);
+    }, [displayOrganization]);
 
     // Load stats when displayOrganization or refreshKey changes
     useEffect(() => {
         loadMemberStats();
-    }, [loadMemberStats, refreshKey]);
+    }, [loadMemberStats, memberStatsRefreshKey]);
 
-    // Create combined refresh function that refreshes both data and stats  
+    // ✅ Update combined refresh function for both data and member stats
     const handleRefreshAll = useCallback(async () => {
         await fetchData(); // Refresh main data
-        setRefreshKey(prev => prev + 1); // Trigger memberStats refresh
-    }, [fetchData]);
+        // Force memberStats refresh by incrementing key
+        setMemberStatsRefreshKey(prev => prev + 1);
+    }, [fetchData]);    // ✅ Update modal close handler to use combined refresh
+    const handleImportModalClose = useCallback(() => {
+        setIsImportModalOpen(false);
+        // Refresh data when modal closes (after import is done)
+        handleRefreshAll();
+    }, [setIsImportModalOpen, handleRefreshAll]);
 
-    // Create clickable breadcrumb title for sub-detail page
-    const getBreadcrumbTitle = () => {
-        const baseTitle = t('organizations:title');
-        const parentOrg = organizations[0];
+    // ✅ Create wrapper functions to handle success/error messages with delayed refresh
+    const handleShowSuccess = useCallback((message: string) => {
+        handleBulkDeleteSuccess(message);
+        // Delay refresh to allow toast to be visible
+        setTimeout(() => {
+            handleRefreshAll();
+        }, 1500); // 1.5 seconds delay
+    }, [handleBulkDeleteSuccess, handleRefreshAll]);
 
-        if (parentOrg && displayOrganization) {
-            return (
-                <div className="flex items-center space-x-2">
-                    <Link
-                        to="/organizations"
-                        className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
-                    >
-                        {baseTitle}
-                    </Link>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                    <Link
-                        to={`/organizations/${window.location.pathname.split('/')[2]}/${window.location.pathname.split('/')[3]}`}
-                        className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
-                    >
-                        {parentOrg.name}
-                    </Link>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">{displayOrganization.name}</span>
-                </div>
-            );
-        }
-
-        return getPageTitle(currentOrgName);
-    };
+    const handleShowError = useCallback((message: string) => {
+        handleBulkDeleteError(message);
+    }, [handleBulkDeleteError]);
 
     const renderOrganization = useCallback((org: Organization, level: number = 0) => {
         const parentParams = {
@@ -188,56 +203,50 @@ const OrganizationsSubDetailPage: React.FC = () => {
         handleDeleteError
     ]); const renderContent = () => {
         if (showUserList && displayOrganization) {
-            // Create wrapper functions to handle the message format
-            const handleShowSuccess = (message: string) => {
-                handleBulkDeleteSuccess(message);
-            };
-
-            const handleShowError = (message: string) => {
-                handleBulkDeleteError(message);
-            }; return (
+            return (
                 <OrganizationUserList
                     organization={displayOrganization}
-                    onRefresh={handleRefreshAll}
-                    onShowSuccess={handleShowSuccess}
-                    onShowError={handleShowError}
+                    onRefresh={fetchData} // Use regular fetchData for normal refresh
+                    onShowSuccess={handleShowSuccess} // Handle success with delayed refresh
+                    onShowError={handleShowError} // Handle error messages
                 />
             );
         }
 
         return null;
-    }; return (
-        <OrganizationPageLayout
-            title={getBreadcrumbTitle()}
-            subtitle={t('organizations:subtitle')}
-            stats={stats}
-            memberStats={showUserList ? {
-                ...memberStats,
-                loading: memberStatsLoading,
-            } : undefined}
-            showMemberStats={showUserList}
-            loading={loading}
-            error={error} onRetry={handleRefreshAll}
-            showDropdownButton={true}
-            importConfig={importConfig}
-            dropdownLabel={t('organizations:addButton.dropdown')}
-            toasts={toasts
-                .filter(toast => toast.type === 'error' || toast.type === 'success' || toast.type === 'info')
-                .map(({ type, ...rest }) => ({
-                    ...rest,
-                    type: type as 'error' | 'success' | 'info'
-                }))
-            }
-            onCloseToast={hideToast}
-            level={level}
-            onRefreshData={handleRefreshAll}
-            onShowSuccess={handleBulkDeleteSuccess}
-            onShowError={handleBulkDeleteError}
-        >
+    };
 
-            {renderContent()}
 
-        </OrganizationPageLayout>
+    return (<OrganizationPageLayout
+        title={breadcrumbTitle}
+        subtitle={t('organizations:subtitle')}
+        stats={stats}
+        memberStats={showUserList ? {
+            ...memberStats,
+            loading: memberStatsLoading,
+        } : undefined} showMemberStats={showUserList}
+        loading={loading}
+        error={error}
+        onRetry={handleRefreshAll} // Use combined refresh for retry
+        showDropdownButton={true}
+        importConfig={importConfig}
+        dropdownLabel={t('organizations:addButton.dropdown')}
+        toasts={toasts
+            .filter(toast => toast.type === 'error' || toast.type === 'success' || toast.type === 'info')
+            .map(({ type, ...rest }) => ({
+                ...rest,
+                type: type as 'error' | 'success' | 'info'
+            }))
+        } onCloseToast={hideToast}
+        level={level}
+        onShowSuccess={handleBulkDeleteSuccess}
+        onShowError={handleBulkDeleteError}
+        onImportModalClose={handleImportModalClose} // Add import modal close handler
+    >
+
+        {renderContent()}
+
+    </OrganizationPageLayout>
     );
 };
 

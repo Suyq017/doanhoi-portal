@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight } from 'lucide-react';
 import OrganizationPageLayout from './components/OrganizationPageLayout';
 import { useOrganizationPage } from './hooks/useOrganizationPage';
 import { OrganizationUserList } from './components/OrganizationUserList';
 import { organizationService } from '../../shared/services/organizationService';
+import { useOrganizationImport } from './hooks/useOrganizationImport';
+import { useBreadcrumbJSX } from './hooks/useBreadcrumbJSX';
 
 const OrganizationMembersPage: React.FC = () => {
     const { t } = useTranslation(['organizations', 'common']);
@@ -49,7 +50,9 @@ const OrganizationMembersPage: React.FC = () => {
             // Direct organization
             return organizations.length > 0 ? organizations[0] : null;
         }
-    }, [organizations, isSubDetailPage, type, code]);    // Custom memberStats with refresh capability
+    }, [organizations, isSubDetailPage, type, code]);
+
+    // Custom memberStats with refresh capability
     const [memberStats, setMemberStats] = useState({
         doanVienCount: 0,
         hoiVienCount: 0,
@@ -112,83 +115,54 @@ const OrganizationMembersPage: React.FC = () => {
         await fetchData(); // Refresh main data
         // Force memberStats refresh by incrementing key
         setRefreshKey(prev => prev + 1);
-    }, [fetchData]);// Create page title similar to useOrganizationPage's getPageTitle
-    const getPageTitle = () => {
-        const baseTitle = t('organizations:title');
-        const membersText = t('organizations:members.title', { defaultValue: 'Danh sách thành viên' });
+    }, [fetchData]);
 
-        if (isSubDetailPage) {
-            // For sub-detail: clickable breadcrumb
-            const parentOrg = organizations[0];
-            const childOrgName = displayOrganization?.name || '';
-
-            return (
-                <div className="flex items-center space-x-2">
-                    <Link
-                        to="/organizations"
-                        className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
-                    >
-                        {baseTitle}
-                    </Link>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                    <Link
-                        to={`/organizations/${parentType}/${parentCode}`}
-                        className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
-                    >
-                        {parentOrg?.name || ''}
-                    </Link>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                    <Link
-                        to={`/organizations/${parentType}/${parentCode}/${type}/${code}`}
-                        className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
-                    >
-                        {childOrgName}
-                    </Link>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">{membersText}</span>
-                </div>
-            );
-        } else if (displayOrganization) {
-            // For detail: clickable breadcrumb
-            return (
-                <div className="flex items-center space-x-2">
-                    <Link
-                        to="/organizations"
-                        className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
-                    >
-                        {baseTitle}
-                    </Link>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                    <Link
-                        to={`/organizations/${type}/${code}`}
-                        className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
-                    >
-                        {displayOrganization.name}
-                    </Link>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">{membersText}</span>
-                </div>
-            );
+    // ✅ Add import config for member page
+    const { importConfig, setIsImportModalOpen } = useOrganizationImport({
+        level: isSubDetailPage ? 3 : 2,
+        organizationId: displayOrganization?.id,
+        onSuccess: () => {
+            // Don't refresh here, just show success message
+            console.log('Import completed successfully');
+        },
+        onError: (error) => {
+            console.error('Import error:', error.message);
         }
-
-        return `${baseTitle} - ${membersText}`;
-    };
-
-    // Create wrapper functions to handle the message format
-    const handleShowSuccess = (message: string) => {
+    });    // ✅ Handle modal close with data refresh
+    const handleImportModalClose = useCallback(() => {
+        setIsImportModalOpen(false);
+        // Refresh data when modal closes (after import is done)
+        handleRefreshAll();
+    }, [setIsImportModalOpen, handleRefreshAll]);    // ✅ Use breadcrumb JSX for better navigation  
+    const breadcrumbTitle = useBreadcrumbJSX({
+        type,
+        code,
+        parentType,
+        parentCode,
+        organizations,
+        displayOrganization,
+        isDetailPage: !isSubDetailPage,
+        isSubDetailPage,
+        isMembersPage: true
+    });// Create wrapper functions to handle the message format
+    const handleShowSuccess = useCallback((message: string) => {
         handleBulkDeleteSuccess(message);
-    };
+        // Delay refresh to allow toast to be visible
+        setTimeout(() => {
+            handleRefreshAll();
+        }, 1500); // 1.5 seconds delay
+    }, [handleBulkDeleteSuccess, handleRefreshAll]);
 
-    const handleShowError = (message: string) => {
+    const handleShowError = useCallback((message: string) => {
         handleBulkDeleteError(message);
-    }; const renderContent = () => {
+    }, [handleBulkDeleteError]); const renderContent = () => {
         if (displayOrganization) {
             return (
                 <OrganizationUserList
                     organization={displayOrganization}
-                    onRefresh={handleRefreshAll}
-                    onShowSuccess={handleShowSuccess}
-                    onShowError={handleShowError}
+                    onRefresh={fetchData} // Use regular fetchData for normal refresh
+                    onShowSuccess={handleShowSuccess} // Handle success with delayed refresh
+                    onShowError={handleShowError} // Handle error messages
                 />
             );
         }
@@ -201,8 +175,7 @@ const OrganizationMembersPage: React.FC = () => {
             </div>
         );
     }; return (
-        <OrganizationPageLayout
-            title={getPageTitle()}
+        <OrganizationPageLayout title={breadcrumbTitle}
             subtitle={t('organizations:members.subtitle', { defaultValue: 'Quản lý danh sách thành viên' })}
             stats={stats}
             memberStats={{
@@ -210,9 +183,9 @@ const OrganizationMembersPage: React.FC = () => {
                 loading: memberStatsLoading,
             }}
             showMemberStats={true}
-            loading={loading}
-            error={error} onRetry={handleRefreshAll}
-            showDropdownButton={false}
+            loading={loading} error={error} onRetry={handleRefreshAll}
+            showDropdownButton={true} // Enable dropdown for import
+            importConfig={importConfig} // Add import config
             toasts={toasts
                 .filter(toast => toast.type === 'error' || toast.type === 'success' || toast.type === 'info')
                 .map(({ type, ...rest }) => ({
@@ -222,10 +195,10 @@ const OrganizationMembersPage: React.FC = () => {
             }
             onCloseToast={hideToast}
             level={isSubDetailPage ? 3 : 2}
-            type={type}
-            onRefreshData={handleRefreshAll}
+            type={type} onRefreshData={handleRefreshAll}
             onShowSuccess={handleBulkDeleteSuccess}
             onShowError={handleBulkDeleteError}
+            onImportModalClose={handleImportModalClose} // Add import modal close handler
         >
             {renderContent()}
         </OrganizationPageLayout>

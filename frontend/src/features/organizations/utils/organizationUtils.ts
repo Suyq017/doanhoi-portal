@@ -1,16 +1,10 @@
-import { ImportModalConfig, ImportModal } from '../../../shared';
+import { ImportModalConfig } from '../../../shared';
 import { organizationService } from '../../../shared/services';
 import { Organization } from '../../../shared/types/organization';
-import { useImportConfig } from "../../../shared";
 import { organizationColumns } from "../../../shared/utils/importColumns";
-import { useTranslation } from 'react-i18next';
 
-interface UseOrganizationImportConfigOptions {
-    level: 2 | 3;
-    organizationId?: string;
-    onSuccess?: () => void;
-    onError?: (error: Error) => void;
-}
+// Remove unused interface
+// interface UseOrganizationImportConfigOptions removed
 
 export const toggleExpanded = (id: string, orgs: Organization[]): Organization[] => {
     return orgs.map(org => {
@@ -89,114 +83,6 @@ export const getOrgTypeColor = (type: string): string => {
     return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600';
 };
 
-export const createOrganizationImportConfig = (level: any, organizationId?: string): ImportModalConfig<any> => {
-    return {
-        templateUrl: organizationService.getTemplateByLevel(level),
-        templateFileName: `organization_level${level}_template.xlsx`,
-        acceptedFileTypes: ['.xlsx', '.xls'],
-        maxFileSize: 5 * 1024 * 1024, // 5MB
-
-        // Use server-side processing
-        processingMode: 'server',
-        uploadFile: async (file: File) => {
-            const result = await organizationService.uploadImportFile(file, organizationId, level);
-            // Add missing properties to match ServerImportSession
-            return {
-                sessionId: result.sessionId,
-                previewData: result.previewData,
-                fileName: file.name,
-                totalRows: result.previewData?.length ?? 0,
-                message: '',
-            };
-
-        },
-
-        validateServerData: async (sessionId: string) => {
-            try {
-                const result = await organizationService.validateImportData(sessionId);
-
-                let mappedPreviewData: any[] = [];
-
-                if ((result as any).validationResults) {
-                    // ...existing code for Users service...
-                } else if (result.previewData) {
-
-                    // Format từ Organizations service (direct preview data)
-                    mappedPreviewData = result.previewData.map((item: any) => ({
-                        ...item,
-                        _rowIndex: item.row - 2, // Excel row to 0-based index
-                        _hasError: item.hasErrors,
-                        _hasWarning: item.hasWarnings,
-                        _errors: item.errors || [],
-                        _warnings: item.warnings || [],
-                        // Thêm trường để hiển thị thông báo warning rõ ràng cho từng dòng
-                        warningMessages: [...(item.warnings || []), ...(item.errors || [])].map((entry: any) => {
-                            const msg = entry.message || entry;
-                            // if (msg.includes('already a member')) {
-                            //     return 'Người dùng đã tồn tại trong tổ chức';
-                            // }
-                            if (msg.includes('not found')) {
-                                return 'Không tìm thấy người dùng';
-                            }
-                            return msg;
-                        })
-                    }));
-                    console.log('Mapped preview data:', mappedPreviewData);
-                }
-                console.log('Validation result:', result);
-                return {
-                    sessionId: result.sessionId,
-                    isValid: result.isValid,
-                    summary: {
-                        total: result.summary.total,
-                        valid: result.summary.valid,
-                        invalid: result.summary.invalid,
-                        duplicates: result.summary.duplicates || 0,
-                        conflicts: result.summary.conflicts || 0
-                    },
-                    errors: result.errors || [],
-                    warnings: result.warnings || [],
-                    previewData: mappedPreviewData
-                };
-            } catch (error) {
-                throw error;
-            }
-        },
-        executeServerImport: async (sessionId: string, importOptions?: any) => {
-            try {
-                const result = await organizationService.executeImport(sessionId, importOptions);
-                // setIsImporting(false);
-
-                return {
-                    sessionId: result.sessionId,
-                    success: result.success,
-                    importedCount: result.importedCount,
-                    skippedCount: result.skippedCount,
-                    failedCount: result.failedCount,
-                    errors: result.errors || [],
-                    message: result.message
-                };
-            } catch (error) {
-                // setIsImporting(false);
-                throw error;
-            }
-        },
-
-        getImportStatus: organizationService.getImportStatus.bind(organizationService),
-
-        // Columns khác nhau theo level
-        columns: organizationColumns(level),
-
-        entityName: 'organizations',
-        onSuccess: () => {
-            // Có thể truyền callback từ ngoài vào nếu cần
-            console.log('Import success');
-        },
-        onError: (error) => {
-            console.error('Import error:', error);
-        }
-    };
-};
 
 export const isLeafOrganization = (org: Organization): boolean => {
     // Check if organization has no children
@@ -225,30 +111,30 @@ export const getDisplayOrganization = (organizations: Organization[]): Organizat
     return organizations.length === 1 ? organizations[0] : null;
 };
 
-// export const useOrganizationImportConfig = ({
-//     level,
-//     organizationId = '',
-//     onSuccess,
-//     onError
-// }: UseOrganizationImportConfigOptions) => {
-//     const { t } = useTranslation(['organizations', 'common']);
+export const countByType = (org: Organization): { doanCount: number; hoiCount: number; clbCount: number } => {
+    let doanCount = 0;
+    let hoiCount = 0;
+    let clbCount = 0;
 
-//     return useImportConfig({
-//         entityName: 'organizations',
-//         entityService: {
-//             getTemplate: () => organizationService.getTemplateByLevel(level),
-//             uploadImportFile: (file: File) => organizationService.uploadImportFile(file, organizationId, level),
-//             validateImportData: organizationService.validateImportData.bind(organizationService),
-//             executeImport: organizationService.executeImport.bind(organizationService),
-//             getImportStatus: organizationService.getImportStatus.bind(organizationService),
-//         },
-//         columns: organizationColumns(level),
-//         templateFileName: `organization_level${level}_template.xlsx`,
-//         onSuccess: onSuccess || (() => {
-//             console.log('Organization import success');
-//         }),
-//         onError: onError || ((error: Error) => {
-//             console.error('Organization import error:', error);
-//         })
-//     });
-// };
+    if (org.children) {
+        org.children.forEach(child => {
+            // Count current level
+            if (child.type === 'chi_doan' || child.type === 'doan_co_so') {
+                doanCount++;
+            } else if (child.type === 'chi_hoi' || child.type === 'lien_chi_hoi') {
+                hoiCount++;
+            } else if (child.type === 'clb_khoa' || child.type === 'clb_truong') {
+                clbCount++;
+            }
+
+            // Count recursively for nested children
+            const childCounts = countByType(child);
+            doanCount += childCounts.doanCount;
+            hoiCount += childCounts.hoiCount;
+            clbCount += childCounts.clbCount;
+        });
+    }
+
+    return { doanCount, hoiCount, clbCount };
+};
+

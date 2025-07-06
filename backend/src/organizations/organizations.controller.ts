@@ -166,20 +166,17 @@ export class OrganizationsController {
         @Param('code_user') userCode: string
     ) {
         return this.organizationsService.addMemberBySimpleCode(orgCode, userCode);
-    }
-
-    // Import Members Endpoints
-    @Post(':id/members/import/upload')
+    }    // Import Members Endpoints
+    @Post('members/import/upload')
     @ApiOperation({ summary: 'Upload file Excel để import thành viên' })
     @ApiConsumes('multipart/form-data')
-    @ApiParam({ name: 'id', description: 'ID của tổ chức' })
     @ApiResponse({ status: 200, description: 'File đã được upload và xử lý thành công' })
     @ApiResponse({ status: 400, description: 'File không hợp lệ' })
     @UseInterceptors(FileInterceptor('file'))
     async uploadImportFile(
-        @Param('id') organizationId: string,
         @UploadedFile() file: Express.Multer.File,
-        @Query('level') level: string = '3'
+        @Query('level') level: string = '3',
+        @Query('organizationId') organizationId?: string
     ) {
         const levelNum = parseInt(level);
         if (![2, 3].includes(levelNum)) {
@@ -217,13 +214,10 @@ export class OrganizationsController {
 
     @Get('/template/:level')
     @ApiOperation({ summary: 'Tải file mẫu Excel cho import' })
-    @ApiParam({ name: 'level', description: 'Cấp độ tổ chức (2 hoặc 3)' })
+    @ApiParam({ name: 'level', description: 'Cấp độ tổ chức' })
     @ApiResponse({ status: 200, description: 'File mẫu Excel' })
     async downloadTemplate(@Param('level') level: string, @Res() res: Response) {
         const levelNum = parseInt(level);
-        if (![2, 3].includes(levelNum)) {
-            throw new BadRequestException('Level phải là 2 hoặc 3');
-        }
 
         const templateBuffer = await this.importService.generateTemplate(levelNum);
         const filename = `organizationsss_level${levelNum}_template.xlsx`;

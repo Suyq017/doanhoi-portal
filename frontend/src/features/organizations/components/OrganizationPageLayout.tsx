@@ -34,11 +34,11 @@ interface OrganizationPageLayoutProps {
         message: string;
         duration?: number;
     }>;
-    onCloseToast?: (id: string) => void;
-    level: number;
+    onCloseToast?: (id: string) => void; level: number;
     onRefreshData?: () => void;
     onShowSuccess?: (message: string) => void;
     onShowError?: (message: string) => void;
+    onImportModalClose?: () => void; // Add callback for import modal close
     type?: string;
 }
 
@@ -57,10 +57,11 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
     showDropdownButton = false,
     dropdownLabel,
     toasts = [],
-    onCloseToast,
-    level,
+    onCloseToast, level,
     onRefreshData,
     onShowSuccess,
+    onShowError,
+    onImportModalClose,
     type
 }) => {
     const { t, i18n } = useTranslation(['organizations', 'common']);
@@ -248,12 +249,14 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
                     level={level}
                     type={type}
                 />
-            )}
-
-            {isImportModalOpen && importConfig && (
+            )}            {isImportModalOpen && importConfig && (
                 <ImportModal
                     isOpen={isImportModalOpen}
-                    onClose={() => setIsImportModalOpen(false)}
+                    onClose={() => {
+                        setIsImportModalOpen(false);
+                        // Call the custom close handler if provided
+                        onImportModalClose?.();
+                    }}
                     config={importConfig}
                 />
             )}

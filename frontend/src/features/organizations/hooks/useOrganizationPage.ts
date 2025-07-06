@@ -77,6 +77,15 @@ export const useOrganizationPage = (options: UseOrganizationPageOptions = {}) =>
         }, 150);
     }, [fetchStats, fetchData, showSuccess, t]);
 
+    const handleMemberDelete = useCallback(async () => {
+        showSuccess(t('common:messages.success.delete'));
+        // Small delay to allow toast to render before refresh
+        setTimeout(async () => {
+            await fetchStats();
+            await fetchData();
+        }, 150);
+    }, [fetchStats, fetchData, showSuccess, t]);
+
     const handleMemberAddError = useCallback((error: string) => {
         showError(error);
     }, [showError]);
@@ -141,6 +150,7 @@ export const useOrganizationPage = (options: UseOrganizationPageOptions = {}) =>
         toggleOrgExpanded,
         fetchData,
         handleMemberAdded,
+        handleMemberDelete,
         handleMemberAddError,
         handleOrganizationUpdated,
         handleOrganizationDeleted,

@@ -80,7 +80,9 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
         }, 300);
 
         return () => clearTimeout(timeoutId);
-    }, [userCode, selectedUser, searchUsers]);    // Handle click outside to close dropdown
+    }, [userCode, selectedUser, searchUsers]);
+
+    // Handle click outside to close dropdown
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -93,28 +95,9 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             }
         };
 
-        const handleResize = () => {
-            if (showDropdown) {
-                updateDropdownPosition();
-            }
-        };
-
-        const handleScroll = () => {
-            if (showDropdown) {
-                updateDropdownPosition();
-            }
-        };
-
         document.addEventListener('mousedown', handleClickOutside);
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('scroll', handleScroll);
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('scroll', handleScroll);
-        };
-    }, [showDropdown, updateDropdownPosition]); const validateForm = (): boolean => {
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []); const validateForm = (): boolean => {
         if (!userCode.trim()) {
             const errorMsg = t('common:validation.required', { field: t('users:fields.code') });
             setError(errorMsg);

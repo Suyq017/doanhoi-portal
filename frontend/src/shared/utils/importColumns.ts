@@ -40,20 +40,20 @@ export const userColumns = (t?: (key: string) => string): ImportColumn[] => [
   { key: 'managementDepartmentCode', label: t?.('users:fields.managementDepartmentCode') || 'Management Department Code', required: false, type: 'text' },
   { key: 'trainingDepartmentCode', label: t?.('users:fields.trainingDepartmentCode') || 'Training Department Code', required: false, type: 'text' },
   { key: 'organizationCodes', label: t?.('users:fields.organizationCodes') || 'Organization Codes', required: false, type: 'text' },
-  { 
-    key: 'userType', 
-    label: t?.('users:fields.userType') || 'User Type', 
-    required: false, 
+  {
+    key: 'userType',
+    label: t?.('users:fields.userType') || 'User Type',
+    required: false,
     type: 'select',
     selectOptions: [
       { value: 'student', label: t?.('users:types.student') || 'Student' },
       { value: 'staff', label: t?.('users:types.staff') || 'Staff' }
     ]
   },
-  { 
-    key: 'membershipStatus', 
-    label: t?.('users:fields.membershipStatus') || 'Membership Status', 
-    required: false, 
+  {
+    key: 'membershipStatus',
+    label: t?.('users:fields.membershipStatus') || 'Membership Status',
+    required: false,
     type: 'select',
     selectOptions: [
       { value: 'doan_vien', label: t?.('users:membershipStatus.doan_vien') || 'Đoàn viên' },
@@ -72,26 +72,26 @@ export const userColumns = (t?: (key: string) => string): ImportColumn[] => [
 export const organizationColumns = (level: 2 | 3, t?: (key: string) => string): ImportColumn[] => {
   if (level === 2) {
     return [
-      { 
-        key: 'studentCode', 
-        label: t?.('organizations:fields.studentCode') || 'Mã số sinh viên', 
-        required: true, 
-        type: 'text' 
+      {
+        key: 'studentCode',
+        label: t?.('organizations:fields.studentCode') || 'Mã số sinh viên',
+        required: true,
+        type: 'text'
       },
-      { 
-        key: 'classOrUnitCode', 
-        label: t?.('organizations:fields.classOrUnitCode') || 'Mã lớp/đơn vị', 
-        required: true, 
-        type: 'text' 
+      {
+        key: 'classOrUnitCode',
+        label: t?.('organizations:fields.classOrUnitCode') || 'Mã lớp/đơn vị',
+        required: true,
+        type: 'text'
       }
     ];
   } else {
     return [
-      { 
-        key: 'studentCode', 
-        label: t?.('organizations:fields.studentCode') || 'Mã số sinh viên', 
-        required: true, 
-        type: 'text' 
+      {
+        key: 'studentCode',
+        label: t?.('organizations:fields.studentCode') || 'Mã số sinh viên',
+        required: true,
+        type: 'text'
       }
     ];
   }

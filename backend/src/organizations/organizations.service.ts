@@ -202,8 +202,8 @@ export class OrganizationsService {
     for (const child of children) {
       await this.removeMember(child.id, userId);
     }
-  }
-  async bulkRemoveMembers(organizationId: string, userIds: string[]): Promise<void> {
+  } async bulkRemoveMembers(organizationId: string, userIds: string[]): Promise<void> {
+    console.log('Starting bulkRemoveMembers:', { organizationId, userIds });
 
     if (!userIds || userIds.length === 0) {
       throw new BadRequestException('No user IDs provided');
@@ -215,22 +215,12 @@ export class OrganizationsService {
       throw new NotFoundException('Organization not found');
     }
 
-    // Find all memberships
-    const memberships = await this.userOrganizationsRepository.find({
-      where: {
-        organizationId,
-        userId: In(userIds)
-      }
-    });
-
-    if (memberships.length !== userIds.length) {
-      const foundUserIds = memberships.map(m => m.userId);
-      const notFoundUserIds = userIds.filter(id => !foundUserIds.includes(id));
-      throw new NotFoundException(`Memberships not found for users: ${notFoundUserIds.join(', ')}`);
+    // Remove each user from the organization and all its children
+    for (const userId of userIds) {
+      await this.removeMember(organizationId, userId);
     }
 
-    // Remove all memberships
-    await this.userOrganizationsRepository.remove(memberships);
+    console.log('Completed bulkRemoveMembers for organization:', organizationId);
   }
 
   async getMembers(organizationId: string): Promise<UserOrganization[]> {

@@ -92,41 +92,41 @@ const ImportModal = <T extends Record<string, any>>({
         }
 
         const validationResult = await config.validateServerData(serverSession.sessionId);
-        
+        console.log('Server-side validation result:', validationResult.previewData);
         // Auto-fill dữ liệu cho server-side processing
         if (validationResult.previewData) {
           let totalAutoFilled = 0;
           validationResult.previewData = validationResult.previewData.map((item: any) => {
             const modified: Record<string, boolean> = {};
-            
+
             // Tìm field email (case-insensitive và nhiều pattern khác nhau)
             const emailField = Object.keys(item).find(key => {
               const lowerKey = key.toLowerCase();
               return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
             });
-            
+
             // Tìm field password (case-insensitive) hoặc tạo mới
             let passwordField = Object.keys(item).find(key => {
               const lowerKey = key.toLowerCase();
               return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
             });
-            
+
             // Nếu không tìm thấy field password, tạo field mới
             if (!passwordField) {
               passwordField = 'password';
               item[passwordField] = ''; // Khởi tạo với giá trị rỗng
             }
-            
+
             // Tìm field isActive (case-insensitive và nhiều pattern khác nhau)
             const isActiveField = Object.keys(item).find(key => {
               const lowerKey = key.toLowerCase();
-              return lowerKey === 'isactive' || lowerKey === 'active' || 
-                     lowerKey === 'hoatdong' || lowerKey === 'is_active' ||
-                     lowerKey === 'activestatus' || lowerKey === 'status';
+              return lowerKey === 'isactive' || lowerKey === 'active' ||
+                lowerKey === 'hoatdong' || lowerKey === 'is_active' ||
+                lowerKey === 'activestatus' || lowerKey === 'status';
             });
-            
+
             const emailValue = emailField ? item[emailField] : null;
-            
+
             // Auto-fill isActive = true (luôn luôn, kể cả khi đã có giá trị)
             if (isActiveField) {
               // Luôn set isActive = true, bất kể giá trị hiện tại
@@ -139,34 +139,34 @@ const ImportModal = <T extends Record<string, any>>({
               item['isActive'] = true;
               modified['isActive'] = true;
             }
-            
+
             // Auto-fill password từ email prefix nếu trống hoặc là '-'
             if (emailValue && passwordField && (!item[passwordField] || item[passwordField] === '' || item[passwordField] === '-')) {
               const emailPrefix = emailValue.split('@')[0];
               item[passwordField] = emailPrefix;
               modified[passwordField] = true;
             }
-            
+
             // Debug logging - luôn log để biết đã xử lý
-            console.log(`Server-side processing for ${emailValue || 'NO_EMAIL'}:`, {
-              emailField,
-              passwordField,
-              isActiveField: isActiveField || 'isActive (new)',
-              currentValues: {
-                email: emailValue,
-                password: passwordField ? item[passwordField] : 'NOT_FOUND',
-                isActive: isActiveField ? item[isActiveField] : item['isActive']
-              },
-              modified,
-              itemAfter: item
-            });
-            
+            // console.log(`Server-side processing for ${emailValue || 'NO_EMAIL'}:`, {
+            //   emailField,
+            //   passwordField,
+            //   isActiveField: isActiveField || 'isActive (new)',
+            //   currentValues: {
+            //     email: emailValue,
+            //     password: passwordField ? item[passwordField] : 'NOT_FOUND',
+            //     isActive: isActiveField ? item[isActiveField] : item['isActive']
+            //   },
+            //   modified,
+            //   itemAfter: item
+            // });
+
             return item;
           });
-          
+
           console.log(`Total auto-filled records: ${totalAutoFilled}`);
         }
-        
+
         config.onValidationComplete?.(validationResult);
 
         setState(prev => ({
@@ -183,41 +183,41 @@ const ImportModal = <T extends Record<string, any>>({
         }
 
         const parsedData = await config.parseFile(file);
-        
+
         // Auto-fill dữ liệu
         let totalAutoFilled = 0;
         const processedData = parsedData.map(item => {
           const processedItem = { ...item } as any;
           const modified: Record<string, boolean> = {};
-          
+
           // Tìm field email (case-insensitive và nhiều pattern khác nhau)
           const emailField = Object.keys(processedItem).find(key => {
             const lowerKey = key.toLowerCase();
             return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
           });
-          
+
           // Tìm field password (case-insensitive) hoặc tạo mới
           let passwordField = Object.keys(processedItem).find(key => {
             const lowerKey = key.toLowerCase();
             return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
           });
-          
+
           // Nếu không tìm thấy field password, tạo field mới
           if (!passwordField) {
             passwordField = 'password';
             processedItem[passwordField] = ''; // Khởi tạo với giá trị rỗng
           }
-          
+
           // Tìm field isActive (case-insensitive và nhiều pattern khác nhau)
           const isActiveField = Object.keys(processedItem).find(key => {
             const lowerKey = key.toLowerCase();
-            return lowerKey === 'isactive' || lowerKey === 'active' || 
-                   lowerKey === 'hoatdong' || lowerKey === 'is_active' ||
-                   lowerKey === 'activestatus' || lowerKey === 'status';
+            return lowerKey === 'isactive' || lowerKey === 'active' ||
+              lowerKey === 'hoatdong' || lowerKey === 'is_active' ||
+              lowerKey === 'activestatus' || lowerKey === 'status';
           });
-          
+
           const emailValue = emailField ? processedItem[emailField] : null;
-          
+
           // Auto-fill isActive = true (luôn luôn, kể cả khi đã có giá trị)
           if (isActiveField) {
             // Luôn set isActive = true, bất kể giá trị hiện tại
@@ -230,14 +230,14 @@ const ImportModal = <T extends Record<string, any>>({
             processedItem['isActive'] = true;
             modified['isActive'] = true;
           }
-          
+
           // Auto-fill password từ email prefix nếu trống hoặc là '-'
           if (emailValue && passwordField && (!processedItem[passwordField] || processedItem[passwordField] === '' || processedItem[passwordField] === '-')) {
             const emailPrefix = emailValue.split('@')[0];
             processedItem[passwordField] = emailPrefix;
             modified[passwordField] = true;
           }
-          
+
           // Debug logging - luôn log để biết đã xử lý
           console.log(`Client-side processing for ${emailValue || 'NO_EMAIL'}:`, {
             emailField,
@@ -251,18 +251,18 @@ const ImportModal = <T extends Record<string, any>>({
             modified,
             itemAfter: processedItem
           });
-          
+
           // Đánh dấu các field đã được auto-fill
           if (Object.keys(modified).length > 0) {
             processedItem._autoFilled = modified;
             totalAutoFilled++;
           }
-          
+
           return processedItem;
         });
-        
+
         console.log(`Total client-side auto-filled records: ${totalAutoFilled}`);
-        
+
         const validationResult = await config.validateData(processedData as T[]);
 
         config.onValidationComplete?.(validationResult);

@@ -44,8 +44,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     },
   ];
 
-  const isActive = (path: string) =>
-    location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
   const isParentActive = (children: any[]) => children.some(child => child.href && isActive(child.href));
 
   return (
