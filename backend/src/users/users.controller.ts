@@ -104,16 +104,81 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Dữ liệu chưa được validate hoặc có lỗi' })
   async executeImport(
     @Param('sessionId') sessionId: string,
-    @Body() options?: { skipConflicts?: boolean }
+    @Body() options?: { skipConflicts?: boolean; batchSize?: number }
   ) {
     return this.importService.executeImport(sessionId, options);
   }
 
-  @Get('import/:sessionId/status')
-  @ApiOperation({ summary: 'Lấy trạng thái import session' })
-  @ApiResponse({ status: 200, description: 'Trạng thái session' })
+  @Post('import/:sessionId/execute-async')
+  @ApiOperation({ summary: 'Thực hiện import dữ liệu bất đồng bộ (cho file lớn)' })
+  @ApiResponse({ status: 200, description: 'Import được xếp hàng thành công' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu chưa được validate hoặc có lỗi' })
+  async executeImportAsync(
+    @Param('sessionId') sessionId: string,
+    @Body() options?: { skipConflicts?: boolean; batchSize?: number }
+  ) {
+    return this.importService.executeImportAsync(sessionId, options);
+  }
+
+  @Get('import/:sessionId/progress')
+  @ApiOperation({ summary: 'Lấy tiến trình import' })
+  @ApiResponse({ status: 200, description: 'Tiến trình import' })
   @ApiResponse({ status: 404, description: 'Session không tồn tại' })
-  async getImportStatus(@Param('sessionId') sessionId: string) {
-    return this.importService.getSessionStatus(sessionId);
+  async getImportProgress(@Param('sessionId') sessionId: string) {
+    return this.importService.getImportProgress(sessionId);
+  }
+
+  @Post('import/:sessionId/pause')
+  @ApiOperation({ summary: 'Tạm dừng import' })
+  @ApiResponse({ status: 200, description: 'Import đã được tạm dừng' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async pauseImport(@Param('sessionId') sessionId: string) {
+    return this.importService.pauseImport(sessionId);
+  }
+
+  @Post('import/:sessionId/resume')
+  @ApiOperation({ summary: 'Tiếp tục import' })
+  @ApiResponse({ status: 200, description: 'Import đã được tiếp tục' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async resumeImport(@Param('sessionId') sessionId: string) {
+    return this.importService.resumeImport(sessionId);
+  }
+
+  @Post('import/:sessionId/cancel')
+  @ApiOperation({ summary: 'Hủy import' })
+  @ApiResponse({ status: 200, description: 'Import đã được hủy' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async cancelImport(@Param('sessionId') sessionId: string) {
+    return this.importService.cancelImport(sessionId);
+  }
+
+  @Get('import/system-health')
+  @ApiOperation({ summary: 'Lấy thông tin sức khỏe hệ thống import' })
+  @ApiResponse({ status: 200, description: 'Thông tin hệ thống' })
+  async getSystemHealth() {
+    return this.importService.getSystemHealth();
+  }
+
+  @Get('import/background-job/:jobId/status')
+  @ApiOperation({ summary: 'Lấy trạng thái background job' })
+  @ApiResponse({ status: 200, description: 'Trạng thái job' })
+  @ApiResponse({ status: 404, description: 'Job không tồn tại' })
+  async getBackgroundJobStatus(@Param('jobId') jobId: string) {
+    return this.importService.getBackgroundJobStatus(jobId);
+  }
+
+  @Post('import/background-job/:jobId/cancel')
+  @ApiOperation({ summary: 'Hủy background job' })
+  @ApiResponse({ status: 200, description: 'Job đã được hủy' })
+  @ApiResponse({ status: 404, description: 'Job không tồn tại' })
+  async cancelBackgroundJob(@Param('jobId') jobId: string) {
+    return this.importService.cancelBackgroundJob(jobId);
+  }
+
+  @Get('import/queue-status')
+  @ApiOperation({ summary: 'Lấy trạng thái hàng đợi import' })
+  @ApiResponse({ status: 200, description: 'Trạng thái hàng đợi' })
+  async getQueueStatus() {
+    return this.importService.getQueueStatus();
   }
 }
