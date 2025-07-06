@@ -19,14 +19,42 @@ export interface UserImportData {
 
 @Injectable()
 export class ExcelParserService {
+  private readonly MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  private readonly MAX_ROWS = 50000; // Maximum rows to process
+  private readonly CHUNK_SIZE = 1000; // Process rows in chunks
+
   async parseExcelFile(buffer: Buffer): Promise<UserImportData[]> {
     try {
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      // Check file size
+      if (buffer.length > this.MAX_FILE_SIZE) {
+        throw new Error(`File size exceeds maximum limit of ${this.MAX_FILE_SIZE / (1024 * 1024)}MB`);
+      }
+
+      // Parse with memory optimization
+      const workbook = XLSX.read(buffer, { 
+        type: 'buffer',
+        cellDates: true,
+        cellNF: false,
+        cellText: false
+      });
+      
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       
+      // Get worksheet range to check size
+      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
+      const totalRows = range.e.r - range.s.r;
+      
+      if (totalRows > this.MAX_ROWS) {
+        throw new Error(`File contains ${totalRows} rows, maximum allowed is ${this.MAX_ROWS}`);
+      }
+
       // Convert to JSON with header mapping
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+        header: 1,
+        defval: '',
+        blankrows: false
+      });
       
       if (jsonData.length < 2) {
         throw new Error('Excel file must contain header row and at least one data row');
@@ -38,33 +66,44 @@ export class ExcelParserService {
       // Map headers to expected columns (case insensitive)
       const headerMap = this.createHeaderMap(headers);
       
+      // Process rows in chunks to manage memory
       const parsedData: UserImportData[] = [];
       
-      for (let i = 0; i < dataRows.length; i++) {
-        const row = dataRows[i] as any[];
+      for (let chunkStart = 0; chunkStart < dataRows.length; chunkStart += this.CHUNK_SIZE) {
+        const chunkEnd = Math.min(chunkStart + this.CHUNK_SIZE, dataRows.length);
+        const chunk = dataRows.slice(chunkStart, chunkEnd);
         
-        // Skip empty rows
-        if (!row || row.every(cell => !cell || cell.toString().trim() === '')) {
-          continue;
+        for (let i = 0; i < chunk.length; i++) {
+          const row = chunk[i] as any[];
+          
+          // Skip empty rows
+          if (!row || row.every(cell => !cell || cell.toString().trim() === '')) {
+            continue;
+          }
+
+          const userData: UserImportData = {
+            familyName: this.getCellValue(row, headerMap.familyName),
+            givenName: this.getCellValue(row, headerMap.givenName),
+            email: this.getCellValue(row, headerMap.email),
+            code: this.getCellValue(row, headerMap.code),
+            password: this.getCellValue(row, headerMap.password),
+            phone: this.getCellValue(row, headerMap.phone),
+            className: this.getCellValue(row, headerMap.className),
+            managementDepartmentCode: this.getCellValue(row, headerMap.managementDepartmentCode),
+            trainingDepartmentCode: this.getCellValue(row, headerMap.trainingDepartmentCode),
+            organizationCodes: this.getCellValue(row, headerMap.organizationCodes),
+            userType: this.parseUserType(this.getCellValue(row, headerMap.userType)),
+            membershipStatus: this.parseMembershipStatus(this.getCellValue(row, headerMap.membershipStatus)),
+            isActive: this.parseBooleanValue(this.getCellValue(row, headerMap.isActive))
+          };
+
+          parsedData.push(userData);
         }
-
-        const userData: UserImportData = {
-          familyName: this.getCellValue(row, headerMap.familyName),
-          givenName: this.getCellValue(row, headerMap.givenName),
-          email: this.getCellValue(row, headerMap.email),
-          code: this.getCellValue(row, headerMap.code),
-          password: this.getCellValue(row, headerMap.password),
-          phone: this.getCellValue(row, headerMap.phone),
-          className: this.getCellValue(row, headerMap.className),
-          managementDepartmentCode: this.getCellValue(row, headerMap.managementDepartmentCode),
-          trainingDepartmentCode: this.getCellValue(row, headerMap.trainingDepartmentCode),
-          organizationCodes: this.getCellValue(row, headerMap.organizationCodes),
-          userType: this.parseUserType(this.getCellValue(row, headerMap.userType)),
-          membershipStatus: this.parseMembershipStatus(this.getCellValue(row, headerMap.membershipStatus)),
-          isActive: this.parseBooleanValue(this.getCellValue(row, headerMap.isActive))
-        };
-
-        parsedData.push(userData);
+        
+        // Force garbage collection after each chunk
+        if (global.gc) {
+          global.gc();
+        }
       }
 
       return parsedData;
