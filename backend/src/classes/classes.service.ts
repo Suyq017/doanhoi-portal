@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Class } from '../entities/class.entity';
 import { Department } from '../entities/department.entity';
 import { CreateClassDto } from './dto/create-class.dto';
@@ -138,5 +138,28 @@ export class ClassesService {
     }
 
     await this.classesRepository.remove(classEntity);
+  }
+
+  async bulkDelete(ids: string[]): Promise<void> {
+    // Validate tất cả classes có tồn tại
+    const classes = await this.classesRepository.find({
+      where: { id: In(ids) },
+      relations: ['students']
+    });
+
+    if (classes.length !== ids.length) {
+      throw new BadRequestException('Some classes not found');
+    }
+
+    // Kiểm tra có class nào có students không
+    const classesWithStudents = classes.filter(c => c.students && c.students.length > 0);
+    if (classesWithStudents.length > 0) {
+      throw new BadRequestException(
+        `Cannot delete classes with students: ${classesWithStudents.map(c => c.name).join(', ')}`
+      );
+    }
+
+    // Xóa bulk
+    await this.classesRepository.remove(classes);
   }
 }

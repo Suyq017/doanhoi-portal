@@ -45,6 +45,21 @@
     "hasStudents": "Lớp học này có sinh viên",
     "moveStudentsFirst": "Cần chuyển {{count}} sinh viên sang lớp khác trước khi xóa."
   },
+  "bulk": {
+    "selected": "Đã chọn {{count}} lớp học",
+    "noSelection": "Vui lòng chọn ít nhất một lớp học để xóa",
+    "deleteSuccess": "Xóa thành công {{count}} lớp học",
+    "deleteError": "Có lỗi xảy ra khi xóa lớp học",
+    "notFoundError": "Một số lớp học đã bị xóa hoặc không tồn tại",
+    "deleteTitle": "Xóa nhiều lớp học",
+    "deleteMessage": "Bạn có chắc chắn muốn xóa {{count}} lớp học đã chọn?",
+    "deleteWarning": "Hành động này không thể hoàn tác!"
+  },
+  "bulkDelete": {
+    "title": "Xóa nhiều lớp học",
+    "message": "Bạn có chắc chắn muốn xóa {{count}} lớp học đã chọn?",
+    "hasStudentsWarning": "Các lớp học sau có sinh viên và không thể xóa:"
+  },
   "addButton": {
     "dropdown": "Thêm lớp học",
     "dropdownPhonetic": "Thêm lớp học",

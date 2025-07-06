@@ -155,6 +155,13 @@ class ClassService {
     });
   }
 
+  async bulkDeleteClasses(ids: string[]): Promise<void> {
+    await this.request('/classes/bulk', {
+      method: 'DELETE',
+      body: JSON.stringify({ ids }),
+    });
+  }
+
   // Import functionality - Server-side processing
   async getTemplate(): Promise<string> {
     return `${API_BASE_URL}/classes/template`;

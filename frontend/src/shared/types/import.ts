@@ -5,37 +5,6 @@ export interface ValidationError {
   severity: 'error' | 'warning';
 }
 
-export interface ValidationResult<T> {
-  data: (T & {
-    _rowIndex: number;
-    _hasError: boolean;
-    _errors: ValidationError[];
-    _warnings: ValidationError[];
-  })[];
-  errors: ValidationError[];
-  warnings: ValidationError[];
-  isValid: boolean;
-  summary: {
-    total: number;
-    valid: number;
-    invalid: number;
-  };
-}
-
-export interface ImportResult {
-  total: number;
-  success: number;
-  failed: number;
-  skipped: number;
-  errors: string[];
-  warnings: string[];
-  details?: {
-    successIds: string[];
-    failedRows: number[];
-    duplicates: number[];
-  };
-}
-
 export interface ImportOptions {
   skipErrors: boolean;
   updateExisting: boolean;
@@ -87,26 +56,18 @@ export interface ImportColumn {
   width?: string;
 }
 
-// Enhanced config interface supporting both client-side and server-side processing
-export interface ImportModalConfig<T> {
+// Enhanced config interface for server-side processing only
+export interface ImportModalConfig {
   // Template & File handling
   templateUrl: string;
   templateFileName: string;
   acceptedFileTypes: string[];
   maxFileSize: number;
 
-  // Processing mode: 'client' for legacy, 'server' for new implementation
-  processingMode: 'client' | 'server';
-
-  // Client-side data processing functions (legacy)
-  parseFile?: (file: File) => Promise<T[]>;
-  validateData?: (data: T[]) => Promise<ValidationResult<T>>;
-  importData?: (data: T[], options?: ImportOptions) => Promise<ImportResult>;
-
-  // Server-side data processing functions (new)
-  uploadFile?: (file: File) => Promise<ServerImportSession>;
-  validateServerData?: (sessionId: string) => Promise<ServerValidationResult>;
-  executeServerImport?: (sessionId: string, options?: { skipConflicts?: boolean }) => Promise<ServerImportResult>;
+  // Server-side data processing functions
+  uploadFile: (file: File) => Promise<ServerImportSession>;
+  validateServerData: (sessionId: string) => Promise<ServerValidationResult>;
+  executeServerImport: (sessionId: string, options?: { skipConflicts?: boolean }) => Promise<ServerImportResult>;
   getImportStatus?: (sessionId: string) => Promise<any>;
 
   // UI Configuration
@@ -116,18 +77,19 @@ export interface ImportModalConfig<T> {
   allowPartialImport?: boolean;
 
   // Optional callbacks
-  onSuccess?: (result: ImportResult | ServerImportResult) => void;
+  onSuccess?: (result: ServerImportResult) => void;
   onError?: (error: Error) => void;
-  onValidationComplete?: (result: ValidationResult<T> | ServerValidationResult) => void;
+  onValidationComplete?: (result: ServerValidationResult) => void;
 }
 
 export type ImportStep = 'upload' | 'preview' | 'importing' | 'result';
 
-export interface ImportState<T> {
+export interface ImportState {
   step: ImportStep;
   selectedFile: File | null;
-  importData: ValidationResult<T> | null;
-  importResult: ImportResult | null;
+  // Remove client-side fields
+  importData: null;
+  importResult: null;
 
   // Server-side state
   serverSession: ServerImportSession | null;
@@ -137,47 +99,4 @@ export interface ImportState<T> {
   options: ImportOptions;
   loading: boolean;
   dragActive: boolean;
-}
-
-
-export interface ImportValidationResult {
-  isValid: boolean;
-  rowIndex: number;
-  data: Record<string, any>;
-  errors: Array<{
-    field: string;
-    message: string;
-    code?: string;
-  }>;
-  warnings?: Array<{
-    field: string;
-    message: string;
-    code?: string;
-  }>;
-}
-
-export interface ImportExecutionResult {
-  total: number;
-  successful: number;
-  failed: number;
-  skipped?: number;
-  errors: Array<{
-    rowIndex: number;
-    data: Record<string, any>;
-    error: string;
-    field?: string;
-  }>;
-  warnings?: Array<{
-    rowIndex: number;
-    data: Record<string, any>;
-    message: string;
-    field?: string;
-  }>;
-  summary?: {
-    totalProcessed: number;
-    successfulImports: number;
-    failedImports: number;
-    duplicatesSkipped?: number;
-    invalidDataSkipped?: number;
-  };
 }

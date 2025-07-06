@@ -20,6 +20,7 @@ import CreateClassModal from './components/CreateClassModal';
 import EditClassModal from './components/EditClassModal';
 import ViewClassModal from './components/ViewClassModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
+import BulkDeleteConfirmModal from './components/BulkDeleteConfirmModal';
 
 const ClassesPage: React.FC = () => {
   const { t } = useTranslation(['classes', 'common']);
@@ -48,6 +49,12 @@ const ClassesPage: React.FC = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
+
+  // Bulk delete state
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [classesWithStudents, setClassesWithStudents] = useState<string[]>([]);
 
   // Import configuration using custom hook
   const { 
@@ -116,6 +123,11 @@ const ClassesPage: React.FC = () => {
       onClick: openImportModal
     }
   ];
+
+  // Clear selection when classes data changes
+  useEffect(() => {
+    setSelectedClassIds([]);
+  }, [classes]);
 
   // Load data
   useEffect(() => {
@@ -217,12 +229,85 @@ const ClassesPage: React.FC = () => {
     }
   };
 
+  // Bulk delete handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedClassIds(classes.map(c => c.id));
+    } else {
+      setSelectedClassIds([]);
+    }
+  };
+
+  const handleSelectClass = (classId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedClassIds(prev => [...prev, classId]);
+    } else {
+      setSelectedClassIds(prev => prev.filter(id => id !== classId));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedClassIds.length === 0) {
+      showError(t('classes:bulk.noSelection', { defaultValue: 'Vui lòng chọn ít nhất một lớp học để xóa' }));
+      return;
+    }
+    
+    // Check for classes with students
+    const selectedClasses = classes.filter(c => selectedClassIds.includes(c.id));
+    const classesWithStudents = selectedClasses
+      .filter(c => c.students && c.students.length > 0)
+      .map(c => c.name);
+    
+    // Store this info for the modal
+    setClassesWithStudents(classesWithStudents);
+    setShowBulkDeleteModal(true);
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    try {
+      setIsBulkDeleting(true);
+      await classService.bulkDeleteClasses(selectedClassIds);
+      setShowBulkDeleteModal(false);
+      setSelectedClassIds([]);
+      setClassesWithStudents([]);
+      await loadClasses();
+      showSuccess(t('classes:bulk.deleteSuccess', { 
+        defaultValue: 'Xóa thành công {{count}} lớp học', 
+        count: selectedClassIds.length 
+      }));
+    } catch (error: any) {
+      console.error('Bulk delete error:', error);
+      // Handle specific error cases
+      if (error.message?.includes('students')) {
+        showError(t('classes:messages.cannotDeleteWithStudents', { 
+          defaultValue: 'Không thể xóa lớp học có sinh viên. Vui lòng chuyển sinh viên trước.' 
+        }));
+      } else if (error.message?.includes('not found')) {
+        showError(t('classes:bulk.notFoundError', { 
+          defaultValue: 'Một số lớp học đã bị xóa hoặc không tồn tại' 
+        }));
+      } else {
+        showError(t('classes:bulk.deleteError', { 
+          defaultValue: 'Có lỗi xảy ra khi xóa lớp học' 
+        }));
+      }
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedClassIds([]);
+  };
+
   const handleCloseModals = () => {
     setShowCreateModal(false);
     setShowEditModal(false);
     setShowViewModal(false);
     setShowDeleteModal(false);
+    setShowBulkDeleteModal(false);
     setSelectedClass(null);
+    setClassesWithStudents([]);
   };
 
   // Clear filters
@@ -367,12 +452,57 @@ const ClassesPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Bulk Actions Bar
+      {selectedClassIds.length > 0 && (
+        <div className="p-4 border-2 border-blue-200 rounded-lg shadow-md bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 dark:border-blue-700">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  {t('classes:bulk.selected', { 
+                    defaultValue: 'Đã chọn {{count}} lớp học', 
+                    count: selectedClassIds.length 
+                  })}
+                </span>
+              </div>
+              <button
+                onClick={handleClearSelection}
+                className="text-sm text-blue-600 underline transition-colors hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                {t('common:actions.clearSelection', { defaultValue: 'Bỏ chọn tất cả' })}
+              </button>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white transition-colors bg-red-600 border border-red-600 rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {t('common:actions.delete')} ({selectedClassIds.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )} */}
+
       {/* Classes Table */}
       <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full table-auto">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
+                <th className="w-12 px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-400">
+                  {/* <div className="flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedClassIds.length === classes.length && classes.length > 0}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      title={selectedClassIds.length === classes.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                    />
+                  </div> */}
+                </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('classes:fields.info')}
                 </th>
@@ -396,6 +526,16 @@ const ClassesPage: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {classes.map((classItem) => (
                 <tr key={classItem.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-4 text-center whitespace-nowrap">
+                    {/* <div className="flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedClassIds.includes(classItem.id)}
+                        onChange={(e) => handleSelectClass(classItem.id, e.target.checked)}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                    </div> */}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
                       {classItem.name}
@@ -538,6 +678,18 @@ const ClassesPage: React.FC = () => {
           classData={selectedClass}
           onClose={handleCloseModals}
           onSuccess={handleDeleteSuccess}
+        />
+      )}
+
+      {/* Bulk Delete Modal */}
+      {showBulkDeleteModal && (
+        <BulkDeleteConfirmModal
+          isOpen={showBulkDeleteModal}
+          classCount={selectedClassIds.length}
+          onClose={handleCloseModals}
+          onConfirm={handleBulkDeleteConfirm}
+          loading={isBulkDeleting}
+          classesWithStudents={classesWithStudents}
         />
       )}
 

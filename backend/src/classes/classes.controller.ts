@@ -7,6 +7,7 @@ import { ImportService } from './services/import.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { QueryClassDto } from './dto/query-class.dto';
+import { BulkDeleteClassesDto } from './dto/bulk-delete-classes.dto';
 
 @ApiTags('classes')
 @Controller('classes')
@@ -56,6 +57,18 @@ export class ClassesController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy lớp học' })
   update(@Param('id') id: string, @Body() updateClassDto: UpdateClassDto) {
     return this.classesService.update(id, updateClassDto);
+  }
+
+  @Delete('bulk')
+  @ApiOperation({ summary: 'Xóa nhiều lớp học' })
+  @ApiResponse({ status: 200, description: 'Lớp học đã được xóa thành công' })
+  @ApiResponse({ status: 400, description: 'Không thể xóa lớp học có sinh viên' })
+  async bulkDelete(@Body() bulkDeleteDto: BulkDeleteClassesDto) {
+    await this.classesService.bulkDelete(bulkDeleteDto.ids);
+    return {
+      message: `Đã xóa thành công ${bulkDeleteDto.ids.length} lớp học`,
+      deletedCount: bulkDeleteDto.ids.length
+    };
   }
 
   @Delete(':id')
