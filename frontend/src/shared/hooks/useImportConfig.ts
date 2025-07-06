@@ -46,7 +46,7 @@ export interface UseImportConfigOptions {
 
 // Hook return interface
 export interface UseImportConfigReturn {
-  importConfig: ImportModalConfig<any>;
+  importConfig: ImportModalConfig;
   isImporting: boolean;
   isImportModalOpen: boolean;
   openImportModal: () => void;
@@ -93,7 +93,7 @@ export const useImportConfig = (options: UseImportConfigOptions): UseImportConfi
   const closeImportModal = () => setIsImportModalOpen(false);
 
   // Create import config with standardized logic
-  const importConfig: ImportModalConfig<any> = useMemo(() => ({
+  const importConfig: ImportModalConfig = useMemo(() => ({
     // Template & File handling
     templateUrl: entityService.getTemplate(templateParams?.level?.toString()),
     templateFileName: defaultTemplateFileName,
@@ -141,11 +141,22 @@ export const useImportConfig = (options: UseImportConfigOptions): UseImportConfi
             _rowIndex: item.rowIndex,
             _hasError: !item.validation?.isValid,
             _errors: item._errors || [],
-            _warnings: item._warnings || []
+            _warnings: item._warnings || [],
+            // Also add hasErrors and hasWarnings for compatibility
+            hasErrors: !item.validation?.isValid,
+            hasWarnings: item._warnings && item._warnings.length > 0
           }));
+          
+          // Debug log to check error mapping
+          console.log('Mapped preview data with errors:', mappedPreviewData.filter(item => item.hasErrors));
         } else if (result.previewData) {
           // Format from other services (direct preview data)
-          mappedPreviewData = result.previewData;
+          mappedPreviewData = result.previewData.map((item: any) => ({
+            ...item,
+            // Ensure compatibility with both naming conventions
+            hasErrors: item.hasErrors || item._hasError,
+            hasWarnings: item.hasWarnings || (item._warnings && item._warnings.length > 0)
+          }));
         }
 
         return {

@@ -60,7 +60,9 @@
     "addOrganization": "Add Organization",
     "addOrganizationPhonetic": "Add Organization",
     "addOrganizationDesc": "Create new sub-organization",
-    "addOrganizationDescPhonetic": "Create new sub-organization"
+    "addOrganizationDescPhonetic": "Create new sub-organization",
+    "suggest": "Suggest",
+    "useSuggestedName": "Use Suggested Name"
   },
   "description": {
     "addOrganization": "Add New Organization Manually",
@@ -98,7 +100,15 @@
   "messages": {
     "hasChildren": "This organization has child levels",
     "removeChildrenFirst": "Please remove child levels before deleting this organization",
-    "createSuccess": "Organization created successfully"
+    "createSuccess": "Organization created successfully",
+    "success": {
+      "removeMember": "Member removed from organization successfully",
+      "bulkRemoveMembers": "{{count}} members removed from organization successfully"
+    },
+    "error": {
+      "removeMember": "Error occurred while removing member from organization",
+      "bulkRemoveMembers": "Error occurred while removing members from organization"
+    }
   },
   "stats": {
     "doan_organizations": "Youth Union Organizations",

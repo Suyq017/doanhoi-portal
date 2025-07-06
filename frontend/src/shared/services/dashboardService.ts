@@ -1,30 +1,10 @@
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
-export interface DashboardStats {
-  totalUsers: number;
-  doanVienCount: number;
-  hoiVienCount: number;
-  organizationCount: number;
-  totalUserGrowth: string;
-  doanVienGrowth: string;
-  hoiVienGrowth: string;
-  organizationGrowth: string;
-}
-
-export interface OrganizationStats {
-  doanOrganizations: number;
-  hoiOrganizations: number;
-  clubOrganizations: number;
-  totalMembers: number;
-}
-
-export interface RecentActivity {
-  id: string;
-  type: 'user_created' | 'organization_created' | 'user_joined' | 'organization_updated';
-  message: string;
-  timestamp: string;
-  category: 'doan' | 'hoi' | 'general';
-}
+import {
+  DashboardStats,
+  OrganizationStats,
+  RecentActivity
+} from '../types/dashboard';
 
 class DashboardService {
   private async request<T>(

@@ -115,23 +115,6 @@ export class ImportValidationService {
         allErrors.push(error);
       }
 
-      // Department code validation
-      if (item.departmentCode) {
-        const departmentId = departmentMap.get(item.departmentCode.toLowerCase());
-        if (departmentId) {
-          item._departmentId = departmentId;
-        } else {
-          const warning: ValidationError = {
-            row: rowNumber,
-            column: 'departmentCode',
-            message: `Department with code '${item.departmentCode}' not found`,
-            severity: 'warning'
-          };
-          item._warnings.push(warning);
-          allWarnings.push(warning);
-        }
-      }
-
       // Format validation (code field is optional and not stored in database)
     }
 
@@ -150,17 +133,43 @@ export class ImportValidationService {
       }
     }
 
-    // Check conflicts with existing data
+    // Department code validation - only add warnings for rows without errors
+    for (let i = 0; i < validatedData.length; i++) {
+      const item = validatedData[i];
+      const rowNumber = i + 2;
+
+      if (item.departmentCode) {
+        const departmentId = departmentMap.get(item.departmentCode.toLowerCase());
+        if (departmentId) {
+          item._departmentId = departmentId;
+        } else if (item._errors.length === 0) {
+          // Only add warning if no errors exist for this row
+          const warning: ValidationError = {
+            row: rowNumber,
+            column: 'departmentCode',
+            message: `Department with code '${item.departmentCode}' not found`,
+            severity: 'warning'
+          };
+          item._warnings.push(warning);
+          allWarnings.push(warning);
+        }
+      }
+    }
+
+    // Check conflicts with existing data (only for rows without errors)
     const conflicts = await this.checkExistingConflicts(validatedData);
     for (const conflict of conflicts) {
-      const warning: ValidationError = {
-        row: conflict.row + 2,
-        column: conflict.conflictType,
-        message: `${conflict.conflictType === 'name' ? 'Name' : 'Code'} already exists in database`,
-        severity: 'warning'
-      };
-      validatedData[conflict.row]._warnings.push(warning);
-      allWarnings.push(warning);
+      // Only add warning if the row doesn't already have errors
+      if (validatedData[conflict.row]._errors.length === 0) {
+        const warning: ValidationError = {
+          row: conflict.row + 2,
+          column: conflict.conflictType,
+          message: `${conflict.conflictType === 'name' ? 'Name' : 'Code'} already exists in database`,
+          severity: 'warning'
+        };
+        validatedData[conflict.row]._warnings.push(warning);
+        allWarnings.push(warning);
+      }
     }
 
     const validCount = validatedData.filter(item => item._errors.length === 0).length;

@@ -17,23 +17,23 @@ import {
   ImportStep
 } from '../types/import';
 
-interface ImportModalProps<T> {
+interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  config: ImportModalConfig<T>;
+  config: ImportModalConfig;
   className?: string;
 }
 
-const ImportModal = <T extends Record<string, any>>({
+const ImportModal = ({
   isOpen,
   onClose,
   config,
   className = ''
-}: ImportModalProps<T>) => {
+}: ImportModalProps) => {
   const { t } = useTranslation(['common', config.entityName]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [state, setState] = useState<ImportState<T>>({
+  const [state, setState] = useState<ImportState>({
     step: 'upload',
     selectedFile: null,
     importData: null,
@@ -54,6 +54,8 @@ const ImportModal = <T extends Record<string, any>>({
 
   const [showAllRows, setShowAllRows] = useState(false);
   const [showOnlyErrors, setShowOnlyErrors] = useState(false);
+  const [previewPage, setPreviewPage] = useState(1);
+  const [previewLimit] = useState(10);
 
   // File validation
   const isValidFile = (file: File): boolean => {
@@ -71,133 +73,40 @@ const ImportModal = <T extends Record<string, any>>({
     return true;
   };
 
-  // File handling - supports both client and server processing
+  // File handling - server-side processing only
   const handleFileSelect = async (file: File) => {
     if (!isValidFile(file)) return;
 
     setState(prev => ({ ...prev, selectedFile: file, loading: true }));
 
     try {
-      if (config.processingMode === 'server') {
-        // Server-side processing
-        if (!config.uploadFile) {
-          throw new Error('uploadFile function not provided for server mode');
-        }
+      // Server-side processing
+      if (!config.uploadFile) {
+        throw new Error('uploadFile function not provided');
+      }
 
-        const serverSession = await config.uploadFile(file);
+      const serverSession = await config.uploadFile(file);
 
-        // Automatically validate after upload
-        if (!config.validateServerData) {
-          throw new Error('validateServerData function not provided for server mode');
-        }
+      // Automatically validate after upload
+      if (!config.validateServerData) {
+        throw new Error('validateServerData function not provided');
+      }
 
-        const validationResult = await config.validateServerData(serverSession.sessionId);
-        console.log('Server-side validation result:', validationResult.previewData);
-        // Auto-fill dữ liệu cho server-side processing
-        if (validationResult.previewData) {
-          let totalAutoFilled = 0;
-          validationResult.previewData = validationResult.previewData.map((item: any) => {
-            const modified: Record<string, boolean> = {};
+      const validationResult = await config.validateServerData(serverSession.sessionId);
 
-            // Tìm field email (case-insensitive và nhiều pattern khác nhau)
-            const emailField = Object.keys(item).find(key => {
-              const lowerKey = key.toLowerCase();
-              return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
-            });
-
-            // Tìm field password (case-insensitive) hoặc tạo mới
-            let passwordField = Object.keys(item).find(key => {
-              const lowerKey = key.toLowerCase();
-              return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
-            });
-
-            // Nếu không tìm thấy field password, tạo field mới
-            if (!passwordField) {
-              passwordField = 'password';
-              item[passwordField] = ''; // Khởi tạo với giá trị rỗng
-            }
-
-            // Tìm field isActive (case-insensitive và nhiều pattern khác nhau)
-            const isActiveField = Object.keys(item).find(key => {
-              const lowerKey = key.toLowerCase();
-              return lowerKey === 'isactive' || lowerKey === 'active' ||
-                lowerKey === 'hoatdong' || lowerKey === 'is_active' ||
-                lowerKey === 'activestatus' || lowerKey === 'status';
-            });
-
-            const emailValue = emailField ? item[emailField] : null;
-
-            // Auto-fill isActive = true (luôn luôn, kể cả khi đã có giá trị)
-            if (isActiveField) {
-              // Luôn set isActive = true, bất kể giá trị hiện tại
-              if (item[isActiveField] !== true) {
-                item[isActiveField] = true;
-                modified[isActiveField] = true;
-              }
-            } else {
-              // Nếu không tìm thấy field isActive, tạo mới với key 'isActive'
-              item['isActive'] = true;
-              modified['isActive'] = true;
-            }
-
-            // Auto-fill password từ email prefix nếu trống hoặc là '-'
-            if (emailValue && passwordField && (!item[passwordField] || item[passwordField] === '' || item[passwordField] === '-')) {
-              const emailPrefix = emailValue.split('@')[0];
-              item[passwordField] = emailPrefix;
-              modified[passwordField] = true;
-            }
-
-            // Debug logging - luôn log để biết đã xử lý
-            // console.log(`Server-side processing for ${emailValue || 'NO_EMAIL'}:`, {
-            //   emailField,
-            //   passwordField,
-            //   isActiveField: isActiveField || 'isActive (new)',
-            //   currentValues: {
-            //     email: emailValue,
-            //     password: passwordField ? item[passwordField] : 'NOT_FOUND',
-            //     isActive: isActiveField ? item[isActiveField] : item['isActive']
-            //   },
-            //   modified,
-            //   itemAfter: item
-            // });
-
-            return item;
-          });
-
-          console.log(`Total auto-filled records: ${totalAutoFilled}`);
-        }
-
-        config.onValidationComplete?.(validationResult);
-
-        setState(prev => ({
-          ...prev,
-          serverSession,
-          serverValidation: validationResult,
-          step: 'preview',
-          loading: false
-        }));
-      } else {
-        // Client-side processing (legacy)
-        if (!config.parseFile || !config.validateData) {
-          throw new Error('parseFile and validateData functions required for client mode');
-        }
-
-        const parsedData = await config.parseFile(file);
-
-        // Auto-fill dữ liệu
-        let totalAutoFilled = 0;
-        const processedData = parsedData.map(item => {
-          const processedItem = { ...item } as any;
+      // Auto-fill dữ liệu cho server-side processing
+      if (validationResult.previewData) {
+        validationResult.previewData = validationResult.previewData.map((item: any) => {
           const modified: Record<string, boolean> = {};
 
           // Tìm field email (case-insensitive và nhiều pattern khác nhau)
-          const emailField = Object.keys(processedItem).find(key => {
+          const emailField = Object.keys(item).find(key => {
             const lowerKey = key.toLowerCase();
             return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
           });
 
           // Tìm field password (case-insensitive) hoặc tạo mới
-          let passwordField = Object.keys(processedItem).find(key => {
+          let passwordField = Object.keys(item).find(key => {
             const lowerKey = key.toLowerCase();
             return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
           });
@@ -205,75 +114,52 @@ const ImportModal = <T extends Record<string, any>>({
           // Nếu không tìm thấy field password, tạo field mới
           if (!passwordField) {
             passwordField = 'password';
-            processedItem[passwordField] = ''; // Khởi tạo với giá trị rỗng
+            item[passwordField] = ''; // Khởi tạo với giá trị rỗng
           }
 
           // Tìm field isActive (case-insensitive và nhiều pattern khác nhau)
-          const isActiveField = Object.keys(processedItem).find(key => {
+          const isActiveField = Object.keys(item).find(key => {
             const lowerKey = key.toLowerCase();
             return lowerKey === 'isactive' || lowerKey === 'active' ||
               lowerKey === 'hoatdong' || lowerKey === 'is_active' ||
               lowerKey === 'activestatus' || lowerKey === 'status';
           });
 
-          const emailValue = emailField ? processedItem[emailField] : null;
+          const emailValue = emailField ? item[emailField] : null;
 
           // Auto-fill isActive = true (luôn luôn, kể cả khi đã có giá trị)
           if (isActiveField) {
             // Luôn set isActive = true, bất kể giá trị hiện tại
-            if (processedItem[isActiveField] !== true) {
-              processedItem[isActiveField] = true;
+            if (item[isActiveField] !== true) {
+              item[isActiveField] = true;
               modified[isActiveField] = true;
             }
           } else {
             // Nếu không tìm thấy field isActive, tạo mới với key 'isActive'
-            processedItem['isActive'] = true;
+            item['isActive'] = true;
             modified['isActive'] = true;
           }
 
           // Auto-fill password từ email prefix nếu trống hoặc là '-'
-          if (emailValue && passwordField && (!processedItem[passwordField] || processedItem[passwordField] === '' || processedItem[passwordField] === '-')) {
+          if (emailValue && passwordField && (!item[passwordField] || item[passwordField] === '' || item[passwordField] === '-')) {
             const emailPrefix = emailValue.split('@')[0];
-            processedItem[passwordField] = emailPrefix;
+            item[passwordField] = emailPrefix;
             modified[passwordField] = true;
           }
 
-          // Debug logging - luôn log để biết đã xử lý
-          console.log(`Client-side processing for ${emailValue || 'NO_EMAIL'}:`, {
-            emailField,
-            passwordField,
-            isActiveField: isActiveField || 'isActive (new)',
-            currentValues: {
-              email: emailValue,
-              password: passwordField ? processedItem[passwordField] : 'NOT_FOUND',
-              isActive: isActiveField ? processedItem[isActiveField] : processedItem['isActive']
-            },
-            modified,
-            itemAfter: processedItem
-          });
-
-          // Đánh dấu các field đã được auto-fill
-          if (Object.keys(modified).length > 0) {
-            processedItem._autoFilled = modified;
-            totalAutoFilled++;
-          }
-
-          return processedItem;
+          return item;
         });
-
-        console.log(`Total client-side auto-filled records: ${totalAutoFilled}`);
-
-        const validationResult = await config.validateData(processedData as T[]);
-
-        config.onValidationComplete?.(validationResult);
-
-        setState(prev => ({
-          ...prev,
-          importData: validationResult,
-          step: 'preview',
-          loading: false
-        }));
       }
+
+      config.onValidationComplete?.(validationResult);
+
+      setState(prev => ({
+        ...prev,
+        serverSession,
+        serverValidation: validationResult,
+        step: 'preview',
+        loading: false
+      }));
     } catch (error) {
       console.error('File processing error:', error);
       alert(t('errors.parseFile'));
@@ -301,50 +187,30 @@ const ImportModal = <T extends Record<string, any>>({
     setState(prev => ({ ...prev, dragActive: false }));
   };
 
-  // Import process - supports both client and server processing
+  // Import process - server-side processing only
   const handleImport = async () => {
     setState(prev => ({ ...prev, step: 'importing', loading: true }));
 
     try {
-      if (config.processingMode === 'server') {
-        // Server-side import
-        if (!state.serverSession || !config.executeServerImport) {
-          throw new Error('Server session or executeServerImport function not available');
-        }
+      // Server-side import
+      if (!state.serverSession || !config.executeServerImport) {
+        throw new Error('Server session or executeServerImport function not available');
+      }
 
-        const result = await config.executeServerImport(
-          state.serverSession.sessionId,
-          { skipConflicts: state.options.skipErrors }
-        );
+      const result = await config.executeServerImport(
+        state.serverSession.sessionId,
+        { skipConflicts: state.options.skipErrors }
+      );
 
-        setState(prev => ({
-          ...prev,
-          serverResult: result,
-          step: 'result',
-          loading: false
-        }));
+      setState(prev => ({
+        ...prev,
+        serverResult: result,
+        step: 'result',
+        loading: false
+      }));
 
-        if (result.success) {
-          config.onSuccess?.(result);
-        }
-      } else {
-        // Client-side import (legacy)
-        if (!state.importData || !config.importData) {
-          throw new Error('Import data or importData function not available');
-        }
-
-        const result = await config.importData(state.importData.data, state.options);
-
-        setState(prev => ({
-          ...prev,
-          importResult: result,
-          step: 'result',
-          loading: false
-        }));
-
-        if (result.failed === 0) {
-          config.onSuccess?.(result);
-        }
+      if (result.success) {
+        config.onSuccess?.(result);
       }
     } catch (error) {
       console.error('Import error:', error);
@@ -375,15 +241,14 @@ const ImportModal = <T extends Record<string, any>>({
     });
     setShowAllRows(false);
     setShowOnlyErrors(false);
+    setPreviewPage(1);
   };
 
   // Utility functions
-  const renderCellValue = (value: any, type: string, item?: any, fieldKey?: string): React.ReactNode => {
+  const renderCellValue = (value: any, type: string): React.ReactNode => {
     if (value === null || value === undefined || value === '') {
       return <span className="italic text-gray-400">-</span>;
     }
-
-    const isAutoFilled = item?._autoFilled && fieldKey && item._autoFilled[fieldKey];
 
     const renderValue = () => {
       switch (type) {
@@ -402,52 +267,65 @@ const ImportModal = <T extends Record<string, any>>({
       }
     };
 
-    const valueElement = renderValue();
-
-    if (isAutoFilled) {
-      return (
-        <div className="flex items-center gap-2">
-          {valueElement}
-          <span className="text-blue-500 text-xs italic font-medium">
-            ({t('common:import.autoFilled')})
-          </span>
-        </div>
-      );
-    }
-
-    return valueElement;
+    return renderValue();
   };
 
   const getDisplayRows = () => {
-    // For server-side processing, we use previewData directly
-    if (config.processingMode === 'server' && state.serverValidation) {
-      let rows = state.serverValidation.previewData || [];
+    // Server-side processing only
+    if (!state.serverValidation) return [];
 
-      if (showOnlyErrors) {
-        rows = rows.filter(row => row.hasErrors);
-      }
+    let rows = state.serverValidation.previewData || [];
 
-      if (!showAllRows) {
-        rows = rows.slice(0, config.previewRowCount || 10);
-      }
+    // Debug log to check error detection
+    console.log('Preview data rows:', rows);
+    console.log('Rows with errors:', rows.filter(row => row.hasErrors || row._hasError));
 
-      return rows;
-    }
-
-    // For client-side processing (legacy)
-    if (!state.importData) return [];
-
-    let rows = state.importData.data;
-
+    // Apply error filtering - check both hasErrors and _hasError for compatibility
     if (showOnlyErrors) {
-      rows = rows.filter(row => row._hasError);
+      rows = rows.filter(row => row.hasErrors || row._hasError);
     }
 
+    // Calculate pagination
+    const startIndex = (previewPage - 1) * previewLimit;
+    const endIndex = startIndex + previewLimit;
+
+    // Apply pagination if not showing all rows
     if (!showAllRows) {
-      rows = rows.slice(0, config.previewRowCount || 10);
+      rows = rows.slice(startIndex, endIndex);
     }
 
     return rows;
+  };
+
+  const getTotalPages = () => {
+    if (!state.serverValidation) return 0;
+
+    let totalRows = state.serverValidation.previewData?.length || 0;
+
+    if (showOnlyErrors) {
+      totalRows = state.serverValidation.previewData?.filter(row => row.hasErrors || row._hasError).length || 0;
+    }
+
+    return Math.ceil(totalRows / previewLimit);
+  };
+
+  const getCurrentRowRange = () => {
+    if (!state.serverValidation) return { start: 0, end: 0, total: 0 };
+
+    let totalRows = state.serverValidation.previewData?.length || 0;
+
+    if (showOnlyErrors) {
+      totalRows = state.serverValidation.previewData?.filter(row => row.hasErrors || row._hasError).length || 0;
+    }
+
+    if (showAllRows) {
+      return { start: 1, end: totalRows, total: totalRows };
+    }
+
+    const start = (previewPage - 1) * previewLimit + 1;
+    const end = Math.min(previewPage * previewLimit, totalRows);
+
+    return { start, end, total: totalRows };
   };
 
   // Render steps
@@ -537,31 +415,13 @@ const ImportModal = <T extends Record<string, any>>({
   );
 
   const renderPreviewStep = () => {
-    // Support both client-side and server-side processing
-    const validationData = config.processingMode === 'server'
-      ? state.serverValidation
-      : state.importData;
+    // Server-side processing only
+    if (!state.serverValidation) return null;
 
-    if (!validationData) return null;
-
-    // Adapt data structure for display - server response has different format
-    let displayRows, summary, errors, warnings;
-
-    if (config.processingMode === 'server' && state.serverValidation) {
-      // Server-side data structure
-      displayRows = state.serverValidation.previewData || [];
-      summary = state.serverValidation.summary;
-      errors = state.serverValidation.errors || [];
-      warnings = state.serverValidation.warnings || [];
-    } else if (state.importData) {
-      // Client-side data structure
-      displayRows = getDisplayRows();
-      summary = state.importData.summary;
-      errors = state.importData.errors;
-      warnings = state.importData.warnings;
-    } else {
-      return null;
-    }
+    const displayRows = getDisplayRows();
+    const summary = state.serverValidation.summary;
+    const errors = state.serverValidation.errors || [];
+    const warnings = state.serverValidation.warnings || [];
 
     return (
       <div className="space-y-6">
@@ -608,7 +468,10 @@ const ImportModal = <T extends Record<string, any>>({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button
-              onClick={() => setShowOnlyErrors(!showOnlyErrors)}
+              onClick={() => {
+                setShowOnlyErrors(!showOnlyErrors);
+                setPreviewPage(1); // Reset to first page when filter changes
+              }}
               className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${showOnlyErrors
                 ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
                 : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
@@ -619,21 +482,50 @@ const ImportModal = <T extends Record<string, any>>({
             </button>
 
             <button
-              onClick={() => setShowAllRows(!showAllRows)}
+              onClick={() => {
+                setShowAllRows(!showAllRows);
+                setPreviewPage(1); // Reset to first page when view changes
+              }}
               className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-700 transition-colors bg-gray-100 rounded-md dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               {showAllRows ? t('import.showLess') : t('import.showAll')}
-              {!showAllRows && config.processingMode === 'client' && state.importData &&
-                ` (${Math.min(config.previewRowCount || 10, state.importData.data.length)}/${state.importData.data.length})`
-              }
             </button>
           </div>
 
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {t('import.showingRows', {
-              count: displayRows.length,
-              total: showOnlyErrors ? summary.invalid : summary.total
-            })}
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {(() => {
+                const range = getCurrentRowRange();
+                return t('common:pagination.showing', {
+                  start: range.start,
+                  end: range.end,
+                  total: range.total
+                });
+              })()}
+            </div>
+
+            {/* Pagination Controls */}
+            {!showAllRows && getTotalPages() > 1 && (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setPreviewPage(Math.max(1, previewPage - 1))}
+                  disabled={previewPage <= 1}
+                  className="px-2 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400"
+                >
+                  {t('common:pagination.previous')}
+                </button>
+                <span className="px-2 py-1 text-sm text-gray-700 dark:text-gray-300">
+                  {previewPage} / {getTotalPages()}
+                </span>
+                <button
+                  onClick={() => setPreviewPage(Math.min(getTotalPages(), previewPage + 1))}
+                  disabled={previewPage >= getTotalPages()}
+                  className="px-2 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400"
+                >
+                  {t('common:pagination.next')}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -663,15 +555,21 @@ const ImportModal = <T extends Record<string, any>>({
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {displayRows.map((item, index) => {
-                  // Handle different data structures between client and server mode
-                  const hasErrors = config.processingMode === 'server'
-                    ? item.hasErrors
-                    : item._hasError;
-                  const hasWarnings = config.processingMode === 'server'
-                    ? item.hasWarnings
-                    : item._warnings?.length > 0;
-                  // Display sequential order number (Thứ tự) instead of original row number
-                  const orderNumber = index + 1;
+                  // Handle server-side data structure
+                  // Check both hasErrors and _hasError for compatibility
+                  const hasErrors = item.hasErrors || item._hasError;
+                  const hasWarnings = item.hasWarnings || (item._warnings && item._warnings.length > 0);
+
+                  // Calculate proper row number for pagination
+                  let rowNumber;
+                  if (showAllRows) {
+                    // For show all rows, use sequential numbering
+                    rowNumber = index + 1;
+                  } else {
+                    // For paginated view, calculate based on page and position
+                    const range = getCurrentRowRange();
+                    rowNumber = range.start + index;
+                  }
 
                   return (
                     <tr
@@ -682,11 +580,11 @@ const ImportModal = <T extends Record<string, any>>({
                         }`}
                     >
                       <td className="px-4 py-3 font-mono text-sm text-gray-500 dark:text-gray-400">
-                        {orderNumber}
+                        {rowNumber}
                       </td>
                       {config.columns.map(col => (
                         <td key={col.key} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                          {renderCellValue(item[col.key], col.type, item, col.key)}
+                          {renderCellValue(item[col.key], col.type)}
                         </td>
                       ))}
                       <td className="px-4 py-3 text-center">
@@ -831,36 +729,20 @@ const ImportModal = <T extends Record<string, any>>({
   );
 
   const renderResultStep = () => {
-    // Support both client-side and server-side results
-    const result = config.processingMode === 'server' ? state.serverResult : state.importResult;
+    // Server-side results only
+    const result = state.serverResult;
     if (!result) return null;
 
-    // Adapt data structure for display
-    let total: number, success: number, failed: number, skipped: number, isSuccess: boolean, isPartialSuccess: boolean;
-    let errors: string[], warnings: string[];
+    // Server-side result structure
+    const total = result.importedCount + result.skippedCount + result.failedCount;
+    const success = result.importedCount;
+    const failed = result.failedCount;
+    const skipped = result.skippedCount;
+    const errors = result.errors || [];
+    const warnings: string[] = []; // Server result doesn't have warnings field
 
-    if (config.processingMode === 'server' && state.serverResult) {
-      // Server-side result structure
-      total = state.serverResult.importedCount + state.serverResult.skippedCount + state.serverResult.failedCount;
-      success = state.serverResult.importedCount;
-      failed = state.serverResult.failedCount;
-      skipped = state.serverResult.skippedCount;
-      errors = state.serverResult.errors || [];
-      warnings = []; // Server result doesn't have warnings field
-    } else if (state.importResult) {
-      // Client-side result structure
-      total = state.importResult.total;
-      success = state.importResult.success;
-      failed = state.importResult.failed;
-      skipped = state.importResult.skipped;
-      errors = state.importResult.errors || [];
-      warnings = state.importResult.warnings || [];
-    } else {
-      return null;
-    }
-
-    isSuccess = failed === 0;
-    isPartialSuccess = success > 0 && failed > 0;
+    const isSuccess = failed === 0;
+    const isPartialSuccess = success > 0 && failed > 0;
 
     return (
       <div className="py-8 text-center">
@@ -1058,11 +940,7 @@ const ImportModal = <T extends Record<string, any>>({
                   </button>
                   <button
                     onClick={handleImport}
-                    disabled={
-                      config.processingMode === 'server'
-                        ? !state.serverValidation?.isValid && !state.options.skipErrors
-                        : !state.importData?.isValid && !state.options.skipErrors
-                    }
+                    disabled={!state.serverValidation?.isValid && !state.options.skipErrors}
                     className="px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {state.options.dryRun ? t('import.validate') : t('import.startImport')}

@@ -227,14 +227,14 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
             )}            {namePlaceholder && !formData.name.trim() && (
               <div className="flex items-center justify-between mt-1">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  💡 Gợi ý: "{namePlaceholder}"
+                  💡 {t('organizations:addButton.suggest')}: "{namePlaceholder}"
                 </p>
                 <button
                   type="button"
                   onClick={() => handleInputChange('name', namePlaceholder)}
                   className="text-xs text-doan-600 hover:text-doan-700 dark:text-doan-400 dark:hover:text-doan-300 underline"
                 >
-                  Sử dụng gợi ý
+                  {t('organizations:addButton.useSuggestedName')}
                 </button>
               </div>
             )}

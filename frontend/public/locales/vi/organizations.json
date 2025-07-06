@@ -58,7 +58,9 @@
     "addOrganization": "Thêm tổ chức",
     "addOrganizationPhonetic": "Thêm tổ chức",
     "addOrganizationDesc": "Tạo tổ chức con mới",
-    "addOrganizationDescPhonetic": "Tạo tổ chức con mới"
+    "addOrganizationDescPhonetic": "Tạo tổ chức con mới",
+    "suggest": "Gợi ý",
+    "useSuggestedName": "Sử dụng tên gợi ý"
   },
   "import": {
     "instructions": "Hướng dẫn import dữ liệu tổ chức",
@@ -92,7 +94,15 @@
   "messages": {
     "hasChildren": "Tổ chức này có cấp con",
     "removeChildrenFirst": "Vui lòng xóa các cấp con trước khi xóa tổ chức này",
-    "createSuccess": "Tạo tổ chức mới thành công"
+    "createSuccess": "Tạo tổ chức mới thành công",
+    "success": {
+      "removeMember": "Đã loại bỏ thành viên khỏi tổ chức",
+      "bulkRemoveMembers": "Đã loại bỏ {{count}} thành viên khỏi tổ chức"
+    },
+    "error": {
+      "removeMember": "Có lỗi xảy ra khi loại bỏ thành viên khỏi tổ chức",
+      "bulkRemoveMembers": "Có lỗi xảy ra khi loại bỏ thành viên khỏi tổ chức"
+    }
   },
   "stats": {
     "doan_organizations": "Tổ chức Đoàn",

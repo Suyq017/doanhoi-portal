@@ -10,6 +10,11 @@ import { UserOrganization } from '../../entities/user-organization.entity';
 import { ExcelParserService, UserImportData } from './excel-parser.service';
 import { ImportValidationService, ResolvedUserData, ValidationError } from './import-validation.service';
 import { ImportSessionService, ImportSession, ImportResult } from './import-session.service';
+import { UserBatchProcessingService, BatchData, BatchProcessingOptions } from './batch-processing.service';
+import { UserTransactionService, TransactionOptions } from './transaction.service';
+import { UserImportMonitoringService } from './monitoring.service';
+import { UserBackgroundJobService } from './background-job.service';
+import { getBatchProcessingConfig, shouldUseBatchProcessing } from './batch-processing.config';
 
 export interface ImportUploadResponse {
   sessionId: string;
@@ -60,6 +65,10 @@ export class ImportService {
     private readonly excelParserService: ExcelParserService,
     private readonly validationService: ImportValidationService,
     private readonly sessionService: ImportSessionService,
+    private readonly batchProcessingService: UserBatchProcessingService,
+    private readonly transactionService: UserTransactionService,
+    private readonly monitoringService: UserImportMonitoringService,
+    private readonly backgroundJobService: UserBackgroundJobService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -156,7 +165,7 @@ export class ImportService {
     }
   }
 
-  async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponse> {
+  async executeImport(sessionId: string, options?: { skipConflicts?: boolean; batchSize?: number }): Promise<ImportExecuteResponse> {
     const session = this.sessionService.getSession(sessionId);
     
     if (!session) {
@@ -172,55 +181,49 @@ export class ImportService {
       throw new BadRequestException('No valid data found to import');
     }
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
     try {
-      const results: ImportResult = {
-        success: true,
-        importedCount: 0,
-        skippedCount: 0,
-        failedCount: 0,
-        errors: [],
-        importedIds: []
-      };
+      // Initialize batch processing
+      const batchSize = options?.batchSize || this.batchProcessingService.getOptimizedBatchSize(validData.length);
+      const batchProcessingOptions: BatchProcessingOptions = this.batchProcessingService.mergeOptions({
+        batchSize,
+        enableFallback: true
+      });
 
-      for (let i = 0; i < validData.length; i++) {
-        const validationResult = validData[i];
-        const userData = validationResult.data;
-        
-        try {
-          const importedUser = await this.importSingleUser(queryRunner, userData);
-          results.importedCount++;
-          results.importedIds.push(importedUser.id);
-        } catch (error) {
-          results.failedCount++;
-          results.errors.push(`Row ${validationResult.rowIndex}: ${error.message}`);
-          
-          // If not skipping conflicts, rollback transaction
-          if (!options?.skipConflicts) {
-            throw error;
-          }
-        }
-      }
+      // Initialize batch processing in session
+      this.sessionService.initializeBatchProcessing(sessionId, validData.length, batchSize);
 
-      await queryRunner.commitTransaction();
-      
-      this.sessionService.updateImportResult(sessionId, results);
+      // Start monitoring
+      this.monitoringService.startSession(sessionId, validData.length);
+
+      // Execute batch import
+      const importResult = await this.performBatchImport(
+        sessionId,
+        validData,
+        batchProcessingOptions,
+        options
+      );
+
+      // End monitoring
+      this.monitoringService.endSession(sessionId);
+
+      // Finalize batch processing
+      this.sessionService.finalizeBatchProcessing(sessionId, importResult.success);
 
       return {
         sessionId,
-        success: true,
-        message: `Import completed successfully. ${results.importedCount} users imported.`,
-        importedCount: results.importedCount,
-        skippedCount: results.skippedCount,
-        failedCount: results.failedCount,
-        errors: results.errors
+        success: importResult.success,
+        message: importResult.success 
+          ? `Import completed successfully. ${importResult.importedCount} users imported.`
+          : `Import failed: ${importResult.errors.join(', ')}`,
+        importedCount: importResult.importedCount,
+        skippedCount: importResult.skippedCount,
+        failedCount: importResult.failedCount,
+        errors: importResult.errors
       };
 
     } catch (error) {
-      await queryRunner.rollbackTransaction();
+      // Finalize batch processing on error
+      this.sessionService.finalizeBatchProcessing(sessionId, false);
       
       const failureResult: ImportResult = {
         success: false,
@@ -233,18 +236,87 @@ export class ImportService {
       
       this.sessionService.updateImportResult(sessionId, failureResult);
       
-      return {
-        sessionId,
-        success: false,
-        message: `Import failed: ${error.message}`,
-        importedCount: 0,
-        skippedCount: 0,
-        failedCount: validData.length,
-        errors: [error.message]
-      };
-    } finally {
-      await queryRunner.release();
+      throw new BadRequestException(`Import failed: ${error.message}`);
     }
+  }
+
+  async executeImportAsync(sessionId: string, options?: { skipConflicts?: boolean; batchSize?: number }): Promise<{ jobId: string; message: string }> {
+    const session = this.sessionService.getSession(sessionId);
+    
+    if (!session) {
+      throw new NotFoundException('Import session not found');
+    }
+
+    if (session.status !== 'validated') {
+      throw new BadRequestException('Session data must be validated before import');
+    }
+
+    const validData = this.sessionService.getValidatedData(sessionId);
+    if (validData.length === 0) {
+      throw new BadRequestException('No valid data found to import');
+    }
+
+    // Check if should use background processing
+    const config = getBatchProcessingConfig();
+    const useBackground = shouldUseBatchProcessing(validData.length) || validData.length > 1000;
+
+    if (useBackground) {
+      // Create background job for large imports
+      const jobId = this.backgroundJobService.createJob(
+        sessionId,
+        'import',
+        {
+          sessionId,
+          validData: validData.slice(0, 100), // Only pass metadata, not full data
+          options,
+          totalRows: validData.length
+        },
+        1 // High priority
+      );
+
+      return {
+        jobId,
+        message: `Large import queued for background processing. Job ID: ${jobId}`
+      };
+    } else {
+      // Execute synchronously for small imports
+      const result = await this.executeImport(sessionId, options);
+      return {
+        jobId: '',
+        message: result.message
+      };
+    }
+  }
+
+  async getBackgroundJobStatus(jobId: string): Promise<any> {
+    const job = this.backgroundJobService.getJob(jobId);
+    if (!job) {
+      throw new NotFoundException('Background job not found');
+    }
+
+    return {
+      jobId: job.id,
+      sessionId: job.sessionId,
+      status: job.status,
+      progress: job.progress,
+      result: job.result,
+      error: job.error,
+      createdAt: job.createdAt,
+      startedAt: job.startedAt,
+      completedAt: job.completedAt
+    };
+  }
+
+  async cancelBackgroundJob(jobId: string): Promise<{ success: boolean; message: string }> {
+    const success = this.backgroundJobService.cancelJob(jobId);
+    return {
+      success,
+      message: success ? 'Background job cancelled successfully' : 'Failed to cancel background job'
+    };
+  }
+
+  async getQueueStatus(): Promise<any> {
+    return this.backgroundJobService.getQueueStatus();
   }
 
   private async importSingleUser(queryRunner: any, userData: ResolvedUserData): Promise<User> {
@@ -352,8 +424,313 @@ export class ImportService {
     return this.excelParserService.generateTemplate();
   }
 
+  async getSystemHealth(): Promise<any> {
+    return this.monitoringService.getSystemHealth();
+  }
+
   // Cleanup old sessions periodically
   cleanupSessions(): void {
     this.sessionService.cleanupExpiredSessions();
+  }
+
+  private async performBatchImport(
+    sessionId: string,
+    validatedData: any[],
+    batchProcessingOptions: BatchProcessingOptions,
+    options?: { skipConflicts?: boolean }
+  ): Promise<ImportResult> {
+    const startTime = new Date();
+    const importResult: ImportResult = {
+      success: true,
+      importedCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+      errors: [],
+      importedIds: []
+    };
+
+    // Divide data into batches
+    const batches = this.batchProcessingService.divideToBatches(validatedData, batchProcessingOptions.batchSize);
+    
+    console.log(`Starting user batch import: ${batches.length} batches, ${validatedData.length} total rows`);
+
+    for (const batch of batches) {
+      // Check if import is paused
+      if (this.sessionService.getBatchProgress(sessionId)?.isPaused) {
+        console.log(`Import paused at batch ${batch.batchNumber}`);
+        break;
+      }
+
+      // Update batch status to processing
+      this.sessionService.updateBatchProgress(sessionId, batch.batchNumber, {
+        status: 'processing',
+        startTime: new Date()
+      });
+
+      try {
+        // Process batch with transaction and fallback
+        const batchStartTime = Date.now();
+        const batchResult = await this.processBatchWithTransaction(batch, options);
+        const batchTime = Date.now() - batchStartTime;
+        
+        // Update monitoring
+        this.monitoringService.updateBatchStats(sessionId, batch.batchNumber, batchTime, true);
+        this.monitoringService.updateProgress(
+          sessionId,
+          importResult.importedCount + importResult.failedCount + batchResult.importedCount + batchResult.failedCount,
+          importResult.importedCount + batchResult.importedCount,
+          importResult.failedCount + batchResult.failedCount
+        );
+        
+        // Update batch progress
+        this.sessionService.updateBatchProgress(sessionId, batch.batchNumber, {
+          status: 'success',
+          processedRows: batch.data.length,
+          successfulRows: batchResult.importedCount,
+          failedRows: batchResult.failedCount,
+          errors: batchResult.errors,
+          endTime: new Date()
+        });
+
+        // Aggregate results
+        importResult.importedCount += batchResult.importedCount;
+        importResult.skippedCount += batchResult.skippedCount;
+        importResult.failedCount += batchResult.failedCount;
+        importResult.errors.push(...batchResult.errors);
+        importResult.importedIds.push(...batchResult.importedIds);
+
+      } catch (error) {
+        console.error(`Batch ${batch.batchNumber} processing failed:`, error);
+        
+        // Update monitoring
+        this.monitoringService.updateBatchStats(sessionId, batch.batchNumber, 0, false);
+        
+        // Update batch progress with error
+        this.sessionService.updateBatchProgress(sessionId, batch.batchNumber, {
+          status: 'failed',
+          processedRows: batch.data.length,
+          failedRows: batch.data.length,
+          errors: [error.message],
+          endTime: new Date()
+        });
+
+        // Handle batch failure
+        importResult.failedCount += batch.data.length;
+        importResult.errors.push(`Batch ${batch.batchNumber}: ${error.message}`);
+        
+        // If not skipping conflicts, stop processing
+        if (!options?.skipConflicts) {
+          importResult.success = false;
+          break;
+        }
+      }
+    }
+
+    console.log(`User batch import completed: ${importResult.importedCount} imported, ${importResult.failedCount} failed, ${importResult.skippedCount} skipped`);
+    return importResult;
+  }
+
+  private async processBatchWithTransaction(
+    batch: BatchData<any>,
+    options?: { skipConflicts?: boolean }
+  ): Promise<ImportResult> {
+    const transactionResult = await this.transactionService.executeWithTransaction(
+      async (queryRunner) => {
+        const batchResult: ImportResult = {
+          success: true,
+          importedCount: 0,
+          skippedCount: 0,
+          failedCount: 0,
+          errors: [],
+          importedIds: []
+        };
+
+        for (const validationResult of batch.data) {
+          const userData = validationResult.data;
+          
+          try {
+            const importedUser = await this.importSingleUser(queryRunner, userData);
+            batchResult.importedCount++;
+            batchResult.importedIds.push(importedUser.id);
+          } catch (error) {
+            batchResult.failedCount++;
+            batchResult.errors.push(`Row ${validationResult.rowIndex}: ${error.message}`);
+            
+            // If not skipping conflicts, throw error to rollback transaction
+            if (!options?.skipConflicts) {
+              throw error;
+            }
+          }
+        }
+
+        return batchResult;
+      },
+      {
+        timeout: 60000, // 1 minute timeout per batch
+        retryCount: 2
+      }
+    );
+
+    if (!transactionResult.success) {
+      // Try fallback with smaller batches
+      return this.processBatchWithFallback(batch, options);
+    }
+
+    return transactionResult.result!;
+  }
+
+  private async processBatchWithFallback(
+    batch: BatchData<any>,
+    options?: { skipConflicts?: boolean }
+  ): Promise<ImportResult> {
+    console.log(`Attempting fallback processing for batch ${batch.batchNumber}`);
+    
+    // Create smaller fallback batches
+    const fallbackBatches = this.batchProcessingService.createFallbackBatches(
+      batch, 
+      this.batchProcessingService.getDefaultOptions().fallbackBatchSize
+    );
+
+    const fallbackResult: ImportResult = {
+      success: true,
+      importedCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+      errors: [],
+      importedIds: []
+    };
+
+    for (const fallbackBatch of fallbackBatches) {
+      try {
+        const result = await this.processBatchWithTransaction(fallbackBatch, options);
+        
+        fallbackResult.importedCount += result.importedCount;
+        fallbackResult.skippedCount += result.skippedCount;
+        fallbackResult.failedCount += result.failedCount;
+        fallbackResult.errors.push(...result.errors);
+        fallbackResult.importedIds.push(...result.importedIds);
+
+      } catch (error) {
+        // If fallback also fails, try single row processing
+        const singleRowResult = await this.processSingleRowFallback(fallbackBatch.data, options);
+        
+        fallbackResult.importedCount += singleRowResult.importedCount;
+        fallbackResult.skippedCount += singleRowResult.skippedCount;
+        fallbackResult.failedCount += singleRowResult.failedCount;
+        fallbackResult.errors.push(...singleRowResult.errors);
+        fallbackResult.importedIds.push(...singleRowResult.importedIds);
+      }
+    }
+
+    return fallbackResult;
+  }
+
+  private async processSingleRowFallback(
+    data: any[],
+    options?: { skipConflicts?: boolean }
+  ): Promise<ImportResult> {
+    console.log(`Processing ${data.length} rows individually as final fallback`);
+    
+    const result: ImportResult = {
+      success: true,
+      importedCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+      errors: [],
+      importedIds: []
+    };
+
+    for (const validationResult of data) {
+      const singleRowResult = await this.transactionService.executeWithTransaction(
+        async (queryRunner) => {
+          const userData = validationResult.data;
+          const importedUser = await this.importSingleUser(queryRunner, userData);
+          return importedUser;
+        },
+        {
+          timeout: 10000, // 10 seconds per row
+          retryCount: 1
+        }
+      );
+
+      if (singleRowResult.success) {
+        result.importedCount++;
+        result.importedIds.push(singleRowResult.result!.id);
+      } else {
+        result.failedCount++;
+        result.errors.push(`Row ${validationResult.rowIndex}: ${singleRowResult.error?.message}`);
+      }
+    }
+
+    return result;
+  }
+
+  async pauseImport(sessionId: string): Promise<{ success: boolean; message: string }> {
+    const success = this.sessionService.pauseImport(sessionId);
+    return {
+      success,
+      message: success ? 'Import paused successfully' : 'Failed to pause import'
+    };
+  }
+
+  async resumeImport(sessionId: string): Promise<{ success: boolean; message: string }> {
+    const success = this.sessionService.resumeImport(sessionId);
+    return {
+      success,
+      message: success ? 'Import resumed successfully' : 'Failed to resume import'
+    };
+  }
+
+  async cancelImport(sessionId: string): Promise<{ success: boolean; message: string }> {
+    const success = this.sessionService.finalizeBatchProcessing(sessionId, false);
+    return {
+      success,
+      message: success ? 'Import cancelled successfully' : 'Failed to cancel import'
+    };
+  }
+
+  async getImportProgress(sessionId: string): Promise<any> {
+    const session = this.sessionService.getSession(sessionId);
+    if (!session) {
+      throw new NotFoundException('Import session not found or expired');
+    }
+
+    const batchProgress = this.sessionService.getBatchProgress(sessionId);
+    if (!batchProgress) {
+      return {
+        sessionId,
+        status: session.status,
+        progress: null
+      };
+    }
+
+    return {
+      sessionId,
+      status: session.status,
+      progress: {
+        currentBatch: batchProgress.currentBatch,
+        totalBatches: batchProgress.totalBatches,
+        processedRows: batchProgress.processedRows,
+        totalRows: batchProgress.totalRows,
+        batchSize: batchProgress.batchSize,
+        canPause: batchProgress.canPause,
+        canResume: batchProgress.canResume,
+        isPaused: batchProgress.isPaused,
+        completedBatches: batchProgress.batchResults.filter(b => b.status === 'success').length,
+        failedBatches: batchProgress.batchResults.filter(b => b.status === 'failed').length,
+        progressPercent: Math.round((batchProgress.processedRows / batchProgress.totalRows) * 100)
+      },
+      batches: batchProgress.batchResults.map(batch => ({
+        batchNumber: batch.batchNumber,
+        status: batch.status,
+        processedRows: batch.processedRows,
+        successfulRows: batch.successfulRows,
+        failedRows: batch.failedRows,
+        errors: batch.errors.slice(0, 5), // Limit errors to prevent large responses
+        retryCount: batch.retryCount,
+        startTime: batch.startTime,
+        endTime: batch.endTime
+      }))
+    };
   }
 }

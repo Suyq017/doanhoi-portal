@@ -59,7 +59,7 @@ export class ImportValidationService {
     const allErrors: ValidationError[] = [];
     const allWarnings: ValidationError[] = [];
 
-    // Basic validation
+    // Basic validation - ERROR validation first
     for (let i = 0; i < validatedData.length; i++) {
       const item = validatedData[i];
       const rowNumber = i + 2; // Excel row (header is row 1)
@@ -98,29 +98,6 @@ export class ImportValidationService {
         item._errors.push(error);
         allErrors.push(error);
       }
-
-      if (item.description && item.description.length > 500) {
-        const warning: ValidationError = {
-          row: rowNumber,
-          column: 'description',
-          message: 'Description is quite long (over 500 characters)',
-          severity: 'warning'
-        };
-        item._warnings.push(warning);
-        allWarnings.push(warning);
-      }
-
-      // Format validation
-      if (item.code && !/^[A-Z0-9_-]+$/i.test(item.code)) {
-        const warning: ValidationError = {
-          row: rowNumber,
-          column: 'code',
-          message: 'Department code should only contain letters, numbers, underscore and dash',
-          severity: 'warning'
-        };
-        item._warnings.push(warning);
-        allWarnings.push(warning);
-      }
     }
 
     // Check duplicates within import data
@@ -138,17 +115,52 @@ export class ImportValidationService {
       }
     }
 
-    // Check conflicts with existing data
+    // WARNING validation - only for rows without errors
+    for (let i = 0; i < validatedData.length; i++) {
+      const item = validatedData[i];
+      const rowNumber = i + 2;
+
+      // Only add warnings if the row doesn't have errors
+      if (item._errors.length === 0) {
+        if (item.description && item.description.length > 500) {
+          const warning: ValidationError = {
+            row: rowNumber,
+            column: 'description',
+            message: 'Description is quite long (over 500 characters)',
+            severity: 'warning'
+          };
+          item._warnings.push(warning);
+          allWarnings.push(warning);
+        }
+
+        // Format validation
+        if (item.code && !/^[A-Z0-9_-]+$/i.test(item.code)) {
+          const warning: ValidationError = {
+            row: rowNumber,
+            column: 'code',
+            message: 'Department code should only contain letters, numbers, underscore and dash',
+            severity: 'warning'
+          };
+          item._warnings.push(warning);
+          allWarnings.push(warning);
+        }
+      }
+    }
+
+    // Check conflicts with existing data (only for rows without errors)
     const conflicts = await this.checkExistingConflicts(validatedData);
     for (const conflict of conflicts) {
-      const warning: ValidationError = {
-        row: conflict.row + 2,
-        column: conflict.conflictType,
-        message: `${conflict.conflictType === 'name' ? 'Name' : 'Code'} already exists in database`,
-        severity: 'warning'
-      };
-      validatedData[conflict.row]._warnings.push(warning);
-      allWarnings.push(warning);
+      // Only add warning if the row doesn't already have errors
+      if (validatedData[conflict.row]._errors.length === 0) {
+        const warning: ValidationError = {
+          row: conflict.row + 2,
+          column: conflict.conflictType,
+          message: `${conflict.conflictType === 'name' ? 'Name' : 'Code'} already exists in database`,
+          severity: 'warning'
+        };
+        validatedData[conflict.row]._warnings.push(warning);
+        allWarnings.push(warning);
+      }
     }
 
     const validCount = validatedData.filter(item => item._errors.length === 0).length;

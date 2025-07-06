@@ -21,9 +21,8 @@ interface OrganizationPageLayoutProps {
     showMemberStats?: boolean;
     children: ReactNode;
     loading?: boolean;
-    error?: string | null;
-    onRetry?: () => Promise<void>;
-    importConfig?: ImportModalConfig<any>;
+    error?: string | null; onRetry?: () => Promise<void>;
+    importConfig?: ImportModalConfig;
     // Dropdown button support
     showDropdownButton?: boolean;
     dropdownOptions?: DropdownOption[];

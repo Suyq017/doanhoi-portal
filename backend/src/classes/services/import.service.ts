@@ -102,7 +102,7 @@ export class ImportService {
       this.sessionService.updateSessionValidation(sessionId, validationResult);
 
       // Create preview data (first 10 rows with validation info)
-      const previewData = validationResult.data.slice(0, 10).map((item, index) => ({
+      const previewData = validationResult.data.map((item, index) => ({
         row: index + 2, // Excel row number
         name: item.name,
         code: item.code,

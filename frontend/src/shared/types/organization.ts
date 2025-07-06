@@ -114,3 +114,8 @@ export interface OrganizationStats {
     };
     totalMembers: number;
 }
+
+export interface OrganizationImportData {
+    studentCode: string;
+    classOrUnitCode?: string;
+}

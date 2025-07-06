@@ -11,6 +11,10 @@ import { ExcelParserService } from './services/excel-parser.service';
 import { ImportValidationService } from './services/import-validation.service';
 import { ImportSessionService } from './services/import-session.service';
 import { ImportService } from './services/import.service';
+import { UserBatchProcessingService } from './services/batch-processing.service';
+import { UserTransactionService } from './services/transaction.service';
+import { UserImportMonitoringService } from './services/monitoring.service';
+import { UserBackgroundJobService } from './services/background-job.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Department, Class, Organization, UserOrganization])],
@@ -20,7 +24,11 @@ import { ImportService } from './services/import.service';
     ExcelParserService,
     ImportValidationService,
     ImportSessionService,
-    ImportService
+    ImportService,
+    UserBatchProcessingService,
+    UserTransactionService,
+    UserImportMonitoringService,
+    UserBackgroundJobService
   ],
   exports: [UsersService],
 })

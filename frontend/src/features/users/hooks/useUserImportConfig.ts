@@ -16,10 +16,10 @@ export const useUserImportConfig = (params: UseUserImportConfigParams = {}) => {
     return useImportConfig({
         entityName: 'users', entityService: {
             getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL}/users/template`,
-            uploadImportFile: userService.uploadImportFile,
-            validateImportData: userService.validateImportData,
-            executeImport: userService.executeImport,
-            getImportStatus: userService.getImportStatus,
+            uploadImportFile: userService.uploadImportFile.bind(userService),
+            validateImportData: userService.validateImportData.bind(userService),
+            executeImport: userService.executeImport.bind(userService),
+            getImportStatus: userService.getImportStatus.bind(userService),
         },
         columns: userColumns(t),
         templateFileName: 'users_import_template.xlsx',

@@ -6,12 +6,9 @@ import {
   UpdateOrganizationRequest,
   UserOrganization,
   OrganizationStats,
+  OrganizationImportData
 } from '../types/organization';
 
-export interface OrganizationImportData {
-  studentCode: string;
-  classOrUnitCode?: string;
-}
 
 class OrganizationService {
 

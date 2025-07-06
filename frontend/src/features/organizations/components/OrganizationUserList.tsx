@@ -65,14 +65,9 @@ export const OrganizationUserList: React.FC<OrganizationUserListProps> = ({
     };    // Bulk remove users from organization
     const handleBulkRemoveFromOrganization = async (userIds: string[]) => {
         try {
-            console.log('Starting bulk remove for userIds:', userIds);
-            await organizationService.removeUsersFromOrganization(organization.id, userIds);
-            console.log('Bulk remove successful, showing success message...');
-
-            // Show success message immediately since we're using parent toast
+            await organizationService.removeUsersFromOrganization(organization.id, userIds);            // Show success message immediately since we're using parent toast
             showSuccess(t('organizations:messages.success.bulkRemoveMembers', {
-                count: userIds.length,
-                defaultValue: `Đã loại bỏ ${userIds.length} thành viên khỏi tổ chức`
+                count: userIds.length
             }));
 
             // Refresh data
@@ -85,9 +80,7 @@ export const OrganizationUserList: React.FC<OrganizationUserListProps> = ({
             console.log('Bulk remove process completed');
         } catch (error) {
             console.error('Error in bulk remove:', error);
-            showError(t('organizations:messages.error.bulkRemoveMembers', {
-                defaultValue: 'Có lỗi xảy ra khi loại bỏ thành viên khỏi tổ chức'
-            }));
+            showError(t('organizations:messages.error.bulkRemoveMembers'));
             console.error('Error bulk removing users from organization:', error);
         }
     };    // Combined refresh handler for both local data and parent org tree
