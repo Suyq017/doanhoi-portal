@@ -2,15 +2,43 @@ import { Injectable } from '@nestjs/common';
 import { ClassImportData } from './excel-parser.service';
 import { ValidationResult, ClassImportDataWithValidation } from './import-validation.service';
 
+export interface BatchProcessingStatus {
+  currentBatch: number;
+  totalBatches: number;
+  processedRows: number;
+  batchSize: number;
+  batchResults: BatchResult[];
+  startTime?: Date;
+  endTime?: Date;
+  canPause: boolean;
+  canResume: boolean;
+  isPaused: boolean;
+}
+
+export interface BatchResult {
+  batchNumber: number;
+  status: 'pending' | 'processing' | 'success' | 'failed';
+  startTime?: Date;
+  endTime?: Date;
+  processedRows: number;
+  successCount: number;
+  failedCount: number;
+  skippedCount: number;
+  errors: string[];
+  retryCount: number;
+  maxRetries: number;
+}
+
 export interface ImportSession {
   id: string;
   fileName: string;
   uploadedAt: Date;
   expiresAt: Date;
-  status: 'uploaded' | 'validated' | 'imported' | 'failed';
+  status: 'uploaded' | 'validated' | 'importing' | 'paused' | 'imported' | 'failed';
   data?: ClassImportData[];
   validationResult?: ValidationResult;
   importResult?: ImportResult;
+  batchProcessing?: BatchProcessingStatus;
   metadata: {
     totalRows: number;
     validRows: number;
@@ -32,7 +60,8 @@ export interface ImportResult {
 @Injectable()
 export class ImportSessionService {
   private sessions = new Map<string, ImportSession>();
-  private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+  private readonly SESSION_TIMEOUT = 2 * 60 * 60 * 1000; // 2 hours (increased from 30 minutes)
+  private readonly DEFAULT_BATCH_SIZE = 200;
 
   createSession(fileName: string, data: ClassImportData[]): ImportSession {
     const sessionId = this.generateSessionId();
@@ -125,6 +154,140 @@ export class ImportSessionService {
   getValidatedData(sessionId: string): ClassImportDataWithValidation[] | null {
     const session = this.getSession(sessionId);
     return session?.validationResult?.data || null;
+  }
+
+  initializeBatchProcessing(sessionId: string, totalRows: number, batchSize: number = this.DEFAULT_BATCH_SIZE): boolean {
+    const session = this.getSession(sessionId);
+    if (!session) {
+      return false;
+    }
+
+    const totalBatches = Math.ceil(totalRows / batchSize);
+    const batchResults: BatchResult[] = [];
+    
+    // Initialize all batch results
+    for (let i = 0; i < totalBatches; i++) {
+      batchResults.push({
+        batchNumber: i + 1,
+        status: 'pending',
+        processedRows: 0,
+        successCount: 0,
+        failedCount: 0,
+        skippedCount: 0,
+        errors: [],
+        retryCount: 0,
+        maxRetries: 3
+      });
+    }
+
+    session.batchProcessing = {
+      currentBatch: 0,
+      totalBatches,
+      processedRows: 0,
+      batchSize,
+      batchResults,
+      startTime: new Date(),
+      canPause: true,
+      canResume: false,
+      isPaused: false
+    };
+
+    session.status = 'importing';
+    return true;
+  }
+
+  updateBatchProgress(sessionId: string, batchNumber: number, result: Partial<BatchResult>): boolean {
+    const session = this.getSession(sessionId);
+    if (!session?.batchProcessing) {
+      return false;
+    }
+
+    const batchIndex = batchNumber - 1;
+    if (batchIndex >= 0 && batchIndex < session.batchProcessing.batchResults.length) {
+      const batchResult = session.batchProcessing.batchResults[batchIndex];
+      
+      // Update batch result
+      Object.assign(batchResult, result);
+      
+      // Update overall progress
+      session.batchProcessing.currentBatch = batchNumber;
+      session.batchProcessing.processedRows += result.processedRows || 0;
+      
+      // Update session status based on batch status
+      if (result.status === 'success') {
+        batchResult.endTime = new Date();
+      } else if (result.status === 'failed') {
+        batchResult.endTime = new Date();
+        // Check if we should retry
+        if (batchResult.retryCount < batchResult.maxRetries) {
+          batchResult.status = 'pending';
+          batchResult.retryCount++;
+        }
+      }
+      
+      return true;
+    }
+    
+    return false;
+  }
+
+  pauseImport(sessionId: string): boolean {
+    const session = this.getSession(sessionId);
+    if (!session?.batchProcessing || !session.batchProcessing.canPause) {
+      return false;
+    }
+
+    session.status = 'paused';
+    session.batchProcessing.isPaused = true;
+    session.batchProcessing.canPause = false;
+    session.batchProcessing.canResume = true;
+    
+    return true;
+  }
+
+  resumeImport(sessionId: string): boolean {
+    const session = this.getSession(sessionId);
+    if (!session?.batchProcessing || !session.batchProcessing.canResume) {
+      return false;
+    }
+
+    session.status = 'importing';
+    session.batchProcessing.isPaused = false;
+    session.batchProcessing.canPause = true;
+    session.batchProcessing.canResume = false;
+    
+    return true;
+  }
+
+  finalizeBatchProcessing(sessionId: string, success: boolean): boolean {
+    const session = this.getSession(sessionId);
+    if (!session?.batchProcessing) {
+      return false;
+    }
+
+    session.batchProcessing.endTime = new Date();
+    session.batchProcessing.canPause = false;
+    session.batchProcessing.canResume = false;
+    session.status = success ? 'imported' : 'failed';
+    
+    return true;
+  }
+
+  getBatchProgress(sessionId: string): BatchProcessingStatus | null {
+    const session = this.getSession(sessionId);
+    return session?.batchProcessing || null;
+  }
+
+  getNextPendingBatch(sessionId: string): BatchResult | null {
+    const session = this.getSession(sessionId);
+    if (!session?.batchProcessing) {
+      return null;
+    }
+
+    return session.batchProcessing.batchResults.find(batch => 
+      batch.status === 'pending' || 
+      (batch.status === 'failed' && batch.retryCount < batch.maxRetries)
+    ) || null;
   }
 
   private generateSessionId(): string {

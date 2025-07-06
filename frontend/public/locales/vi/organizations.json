@@ -2,52 +2,86 @@
   "title": "Quản lý Tổ chức",
   "titlePhonetic": "Tổ chức",
   "subtitle": "Quản lý cấu trúc tổ chức Đoàn, Hội và CLB",
+  "subtitlePhonetic": "Quản lý cấu trúc tổ chức",
   "titles": {
     "create": "Tạo tổ chức mới",
+    "createPhonetic": "Tạo tổ chức mới",
     "edit": "Chỉnh sửa thông tin tổ chức",
+    "editPhonetic": "Chỉnh sửa thông tin tổ chức",
     "view": "Thông tin chi tiết tổ chức",
-    "delete": "Xóa tổ chức"
+    "viewPhonetic": "Thông tin chi tiết tổ chức",
+    "delete": "Xóa tổ chức",
+    "deletePhonetic": "Xóa tổ chức"
   },
   "fields": {
     "code": "Mã tổ chức",
+    "codePhonetic": "Mã tổ chức",
     "name": "Tên tổ chức",
+    "namePhonetic": "Tên tổ chức",
     "type": "Loại tổ chức",
+    "typePhonetic": "Loại tổ chức",
     "level": "Cấp độ tổ chức",
+    "levelPhonetic": "Cấp độ tổ chức",
     "parent": "Tổ chức cha",
+    "parentPhonetic": "Tổ chức cha",
     "description": "Mô tả",
-    "membersCount": "Số lượng thành viên"
+    "descriptionPhonetic": "Mô tả",
+    "membersCount": "Số lượng thành viên",
+    "membersCountPhonetic": "Số lượng thành viên"
   },
   "createOrganization": "Tạo tổ chức",
+  "createOrganizationPhonetic": "Tạo tổ chức",
   "editOrganization": "Chỉnh sửa tổ chức",
+  "editOrganizationPhonetic": "Chỉnh sửa tổ chức",
   "deleteOrganization": "Xóa tổ chức",
+  "deleteOrganizationPhonetic": "Xóa tổ chức",
   "organizationInfo": "Thông tin tổ chức",
+  "organizationInfoPhonetic": "Thông tin tổ chức",
   "actions": {
     "add_organization": "Thêm tổ chức"
   },
   "addButton": {
     "dropdown": "Thêm mới",
+    "dropdownPhonetic": "Thêm mới",
     "manual": "Thêm thủ công",
+    "manualPhonetic": "Thêm thủ công",
     "manualDesc": "Tạo tổ chức mới bằng form",
+    "manualDescPhonetic": "Tạo tổ chức mới bằng form",
     "fromFile": "Thêm từ file Excel",
+    "fromFilePhonetic": "Thêm từ file Excel",
     "fromFileDesc": "Import nhiều thành viên từ file Excel",
+    "fromFileDescPhonetic": "Import nhiều thành viên từ file Excel",
     "addMember": "Thêm thành viên",
+    "addMemberPhonetic": "Thêm thành viên",
     "addMemberDesc": "Thêm thành viên mới vào tổ chức",
+    "addMemberDescPhonetic": "Thêm thành viên mới vào tổ chức",
     "addOrganization": "Thêm tổ chức",
-    "addOrganizationDesc": "Tạo tổ chức con mới"
+    "addOrganizationPhonetic": "Thêm tổ chức",
+    "addOrganizationDesc": "Tạo tổ chức con mới",
+    "addOrganizationDescPhonetic": "Tạo tổ chức con mới"
   },
   "import": {
     "instructions": "Hướng dẫn import dữ liệu tổ chức",
+    "instructionsPhonetic": "Hướng dẫn import dữ liệu tổ chức",
     "step1": "Tải file mẫu Excel tại đây và điền đầy đủ thông tin thành viên",
+    "step1Phonetic": "Tải file mẫu Excel",
     "step2": "Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi",
+    "step2Phonetic": "Kiểm tra định dạng dữ liệu",
     "step3": "Tải file lên để tiến hành import vào hệ thống",
+    "step3Phonetic": "Tải file lên",
     "templateLinkText": "tại đây",
+    "templateLinkTextPhonetic": "tại đây",
     "level2": {
       "title": "Import thành viên tổ chức",
-      "description": "Import thành viên với mã số sinh viên và mã lớp/đơn vị"
+      "titlePhonetic": "Import thành viên tổ chức",
+      "description": "Import thành viên với mã số sinh viên và mã lớp/đơn vị",
+      "descriptionPhonetic": "Import thành viên với mã số sinh viên"
     },
     "level3": {
       "title": "Import thành viên chi đoàn/chi hội",
-      "description": "Import thành viên với mã số sinh viên"
+      "titlePhonetic": "Import thành viên chi đoàn",
+      "description": "Import thành viên với mã số sinh viên",
+      "descriptionPhonetic": "Import thành viên với mã số sinh viên"
     }
   },
   "tree": {

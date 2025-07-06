@@ -1,34 +1,61 @@
 {
   "title": "Quản lý Người dùng",
+  "titlePhonetic": "Quản lý Người dùng",
   "subtitle": "Quản lý thông tin thành viên, đoàn viên và hội viên",
+  "subtitlePhonetic": "Quản lý thông tin thành viên",
   "titles": {
     "create": "Thêm người dùng mới",
+    "createPhonetic": "Thêm người dùng mới",
     "edit": "Chỉnh sửa thông tin người dùng",
+    "editPhonetic": "Chỉnh sửa thông tin người dùng",
     "view": "Thông tin chi tiết người dùng",
-    "delete": "Xóa người dùng"
+    "viewPhonetic": "Thông tin chi tiết người dùng",
+    "delete": "Xóa người dùng",
+    "deletePhonetic": "Xóa người dùng"
   },
   "fields": {
     "email": "Email",
+    "emailPhonetic": "Email",
     "phone": "Số điện thoại",
+    "phonePhonetic": "Số điện thoại",
     "className": "Tên lớp",
+    "classNamePhonetic": "Tên lớp",
     "managementDepartmentCode": "Mã đơn vị quản lý",
+    "managementDepartmentCodePhonetic": "Mã đơn vị quản lý",
     "trainingDepartmentCode": "Mã đơn vị đào tạo",
+    "trainingDepartmentCodePhonetic": "Mã đơn vị đào tạo",
     "organizationCodes": "Mã tổ chức",
+    "organizationCodesPhonetic": "Mã tổ chức",
     "isActive": "Trạng thái hoạt động",
+    "isActivePhonetic": "Trạng thái hoạt động",
     "code": "Mã số sinh viên/cán bộ",
+    "codePhonetic": "Mã số sinh viên",
     "familyName": "Họ và tên lót",
+    "familyNamePhonetic": "Họ và tên lót",
     "givenName": "Tên",
+    "givenNamePhonetic": "Tên",
     "fullName": "Họ và tên",
+    "fullNamePhonetic": "Họ và tên",
     "password": "Mật khẩu",
+    "passwordPhonetic": "Mật khẩu",
     "userType": "Loại người dùng",
+    "userTypePhonetic": "Loại người dùng",
     "membershipStatus": "Trạng thái thành viên",
+    "membershipStatusPhonetic": "Trạng thái thành viên",
     "managementDepartment": "Đơn vị quản lý",
+    "managementDepartmentPhonetic": "Đơn vị quản lý",
     "trainingDepartment": "Đơn vị đào tạo",
+    "trainingDepartmentPhonetic": "Đơn vị đào tạo",
     "class": "Lớp",
+    "classPhonetic": "Lớp",
     "info": "Thông tin",
+    "infoPhonetic": "Thông tin",
     "contact": "Liên hệ",
+    "contactPhonetic": "Liên hệ",
     "type": "Loại",
-    "created": "Ngày tạo"
+    "typePhonetic": "Loại",
+    "created": "Ngày tạo",
+    "createdPhonetic": "Ngày tạo"
   },
   "placeholders": {
     "code": "Ví dụ: 2024001, CB001",
@@ -43,15 +70,23 @@
   },
   "types": {
     "student": "Sinh viên",
+    "studentPhonetic": "Sinh viên",
     "staff": "Cán bộ",
-    "all": "Tất cả loại"
+    "staffPhonetic": "Cán bộ",
+    "all": "Tất cả loại",
+    "allPhonetic": "Tất cả loại"
   },
   "membershipStatus": {
     "none": "Chưa tham gia",
+    "nonePhonetic": "Chưa tham gia",
     "doan_vien": "Đoàn viên",
+    "doan_vienPhonetic": "Đoàn viên",
     "hoi_vien": "Hội viên",
+    "hoi_vienPhonetic": "Hội viên",
     "both": "Đoàn viên & Hội viên",
-    "all": "Tất cả trạng thái"
+    "bothPhonetic": "Đoàn viên và Hội viên",
+    "all": "Tất cả trạng thái",
+    "allPhonetic": "Tất cả trạng thái"
   },
   "messages": {
     "noUsers": "Không tìm thấy người dùng nào",
@@ -74,18 +109,30 @@
   },
   "addButton": {
     "dropdown": "Thêm người dùng",
-    "single": "Thêm một người dùng", 
+    "dropdownPhonetic": "Thêm người dùng",
+    "single": "Thêm một người dùng",
+    "singlePhonetic": "Thêm một người dùng",
     "singleDesc": "Tạo người dùng mới bằng form",
+    "singleDescPhonetic": "Tạo người dùng mới bằng form",
     "fromFile": "Thêm từ file",
-    "fromFileDesc": "Thêm nhiều người dùng từ file Excel"
+    "fromFilePhonetic": "Thêm từ file",
+    "fromFileDesc": "Thêm nhiều người dùng từ file Excel",
+    "fromFileDescPhonetic": "Thêm nhiều người dùng từ file Excel"
   },
   "import": {
     "title": "Nhập danh sách người dùng",
+    "titlePhonetic": "Nhập danh sách người dùng",
     "instructions": "Hướng dẫn nhập dữ liệu",
+    "instructionsPhonetic": "Hướng dẫn nhập dữ liệu",
     "step1": "Tải file mẫu Excel tại đây và điền đầy đủ thông tin các người dùng",
+    "step1Phonetic": "Tải file mẫu Excel",
     "step2": "Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi",
+    "step2Phonetic": "Kiểm tra định dạng dữ liệu",
     "step3": "Tải file lên để tiến hành thêm vào hệ thống",
+    "step3Phonetic": "Tải file lên",
     "templateLinkText": "tại đây",
-    "onlyExcelAllowed": "Chỉ cho phép file Excel (.xlsx, .xls)"
+    "templateLinkTextPhonetic": "tại đây",
+    "onlyExcelAllowed": "Chỉ cho phép file Excel (.xlsx, .xls)",
+    "onlyExcelAllowedPhonetic": "Chỉ cho phép file Excel"
   }
 }

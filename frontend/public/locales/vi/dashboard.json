@@ -2,29 +2,50 @@
   "title": "Bảng điều khiển",
   "titlePhonetic": "Trang chủ",
   "subtitle": "Tổng quan hệ thống quản lý Đoàn Thanh niên và Hội Sinh viên",
+  "subtitlePhonetic": "Tổng quan hệ thống quản lý",
   "welcome": "Chào mừng đến với Hệ thống Đoàn Hội Sinh viên",
+  "welcomePhonetic": "Chào mừng đến với Hệ thống Đoàn Hội",
   "stats": {
     "totalUsers": "Tổng số người dùng",
+    "totalUsersPhonetic": "Tổng số người dùng",
     "totalOrganizations": "Tổng số tổ chức",
+    "totalOrganizationsPhonetic": "Tổng số tổ chức",
     "youthMembers": "Đoàn viên",
+    "youthMembersPhonetic": "Đoàn viên",
     "associationMembers": "Hội viên",
+    "associationMembersPhonetic": "Hội viên",
     "students": "Sinh viên",
+    "studentsPhonetic": "Sinh viên",
     "staff": "Cán bộ",
+    "staffPhonetic": "Cán bộ",
     "totalMembers": "Tổng số thành viên",
+    "totalMembersPhonetic": "Tổng số thành viên",
     "youthUnionMembers": "Đoàn viên",
+    "youthUnionMembersPhonetic": "Đoàn viên",
     "studentAssocMembers": "Hội viên",
+    "studentAssocMembersPhonetic": "Hội viên",
     "organizations": "Tổ chức",
+    "organizationsPhonetic": "Tổ chức",
     "doanMembers": "Đoàn viên",
+    "doanMembersPhonetic": "Đoàn viên",
     "hoiMembers": "Hội viên",
-    "percentageChange": "{{change}} so với tháng trước"
+    "hoiMembersPhonetic": "Hội viên",
+    "percentageChange": "{{change}} so với tháng trước",
+    "percentageChangePhonetic": "{{change}} so với tháng trước"
   },
   "quickActions": {
     "title": "Thao tác nhanh",
+    "titlePhonetic": "Thao tác nhanh",
     "addUser": "Thêm người dùng mới",
+    "addUserPhonetic": "Thêm người dùng mới",
     "createOrganization": "Tạo tổ chức mới",
+    "createOrganizationPhonetic": "Tạo tổ chức mới",
     "viewReports": "Xem báo cáo",
+    "viewReportsPhonetic": "Xem báo cáo",
     "addNewUser": "Thêm người dùng mới",
-    "createNewOrganization": "Tạo tổ chức mới"
+    "addNewUserPhonetic": "Thêm người dùng mới",
+    "createNewOrganization": "Tạo tổ chức mới",
+    "createNewOrganizationPhonetic": "Tạo tổ chức mới"
   },
   "recentActivity": {
     "title": "Hoạt động gần đây",
@@ -38,17 +59,28 @@
   },
   "activities": {
     "title": "Hoạt động gần đây",
+    "titlePhonetic": "Hoạt động gần đây",
     "added15Members": "Thêm 15 thành viên mới vào Chi đoàn Khoa CNTT",
+    "added15MembersPhonetic": "Thêm 15 thành viên mới vào Chi đoàn Khoa CNTT",
     "updatedClub": "Cập nhật thông tin CLB Tin học",
+    "updatedClubPhonetic": "Cập nhật thông tin CLB Tin học",
     "createdBranch": "Tạo mới Liên chi hội Khoa Cơ khí",
+    "createdBranchPhonetic": "Tạo mới Liên chi hội Khoa Cơ khí",
     "addedMembersToCSE": "Thêm 15 thành viên mới vào Chi đoàn Khoa CNTT",
+    "addedMembersToCSEPhonetic": "Thêm 15 thành viên mới vào Chi đoàn Khoa CNTT",
     "updatedITClub": "Cập nhật thông tin CLB Tin học",
-    "createdMEUnit": "Tạo mới Liên chi hội Khoa Cơ khí"
+    "updatedITClubPhonetic": "Cập nhật thông tin CLB Tin học",
+    "createdMEUnit": "Tạo mới Liên chi hội Khoa Cơ khí",
+    "createdMEUnitPhonetic": "Tạo mới Liên chi hội Khoa Cơ khí"
   },
   "actions": {
     "title": "Thao tác nhanh",
+    "titlePhonetic": "Thao tác nhanh",
     "addUser": "Thêm người dùng mới",
+    "addUserPhonetic": "Thêm người dùng mới",
     "createOrg": "Tạo tổ chức mới",
-    "viewReports": "Xem báo cáo"
+    "createOrgPhonetic": "Tạo tổ chức mới",
+    "viewReports": "Xem báo cáo",
+    "viewReportsPhonetic": "Xem báo cáo"
   }
 }

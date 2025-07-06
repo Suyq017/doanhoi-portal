@@ -2,29 +2,50 @@
   "title": "Dashboard",
   "titlePhonetic": "Homepage",
   "subtitle": "Youth Union & Student Association Management System Overview",
+  "subtitlePhonetic": "Management System Overview",
   "welcome": "Welcome to Youth Union & Student Association System",
+  "welcomePhonetic": "Welcome to Youth Union System",
   "stats": {
     "totalUsers": "Total Users",
+    "totalUsersPhonetic": "Total Users",
     "totalOrganizations": "Total Organizations",
+    "totalOrganizationsPhonetic": "Total Organizations",
     "youthMembers": "Youth Union Members",
+    "youthMembersPhonetic": "Youth Union Members",
     "associationMembers": "Student Association Members",
+    "associationMembersPhonetic": "Student Association Members",
     "students": "Students",
+    "studentsPhonetic": "Students",
     "staff": "Staff",
+    "staffPhonetic": "Staff",
     "totalMembers": "Total Members",
+    "totalMembersPhonetic": "Total Members",
     "youthUnionMembers": "Youth Union Members",
+    "youthUnionMembersPhonetic": "Youth Union Members",
     "studentAssocMembers": "Student Association Members",
+    "studentAssocMembersPhonetic": "Student Association Members",
     "organizations": "Organizations",
+    "organizationsPhonetic": "Organizations",
     "doanMembers": "Youth Union Members",
+    "doanMembersPhonetic": "Youth Union Members",
     "hoiMembers": "Student Association Members",
-    "percentageChange": "{{change}} from last month"
+    "hoiMembersPhonetic": "Student Association Members",
+    "percentageChange": "{{change}} from last month",
+    "percentageChangePhonetic": "{{change}} from last month"
   },
   "quickActions": {
     "title": "Quick Actions",
+    "titlePhonetic": "Quick Actions",
     "addUser": "Add New User",
+    "addUserPhonetic": "Add New User",
     "createOrganization": "Create New Organization",
+    "createOrganizationPhonetic": "Create New Organization",
     "viewReports": "View Reports",
+    "viewReportsPhonetic": "View Reports",
     "addNewUser": "Add new user",
-    "createNewOrganization": "Create new organization"
+    "addNewUserPhonetic": "Add new user",
+    "createNewOrganization": "Create new organization",
+    "createNewOrganizationPhonetic": "Create new organization"
   },
   "recentActivity": {
     "title": "Recent Activity",
@@ -38,17 +59,28 @@
   },
   "activities": {
     "title": "Recent Activities",
+    "titlePhonetic": "Recent Activities",
     "added15Members": "Added 15 new members to CSE Faculty Youth Union Branch",
+    "added15MembersPhonetic": "Added 15 new members to CSE Faculty Youth Union Branch",
     "updatedClub": "Updated IT Club information",
+    "updatedClubPhonetic": "Updated IT Club information",
     "createdBranch": "Created new Mechanical Engineering Faculty Sub-Association",
+    "createdBranchPhonetic": "Created new Mechanical Engineering Faculty Sub-Association",
     "addedMembersToCSE": "Added 15 new members to CSE Faculty Youth Union Branch",
+    "addedMembersToCSEPhonetic": "Added 15 new members to CSE Faculty Youth Union Branch",
     "updatedITClub": "Updated IT Club information",
-    "createdMEUnit": "Created new Mechanical Engineering Faculty Sub-Association"
+    "updatedITClubPhonetic": "Updated IT Club information",
+    "createdMEUnit": "Created new Mechanical Engineering Faculty Sub-Association",
+    "createdMEUnitPhonetic": "Created new Mechanical Engineering Faculty Sub-Association"
   },
   "actions": {
     "title": "Quick Actions",
+    "titlePhonetic": "Quick Actions",
     "addUser": "Add New User",
+    "addUserPhonetic": "Add New User",
     "createOrg": "Create New Organization",
-    "viewReports": "View Reports"
+    "createOrgPhonetic": "Create New Organization",
+    "viewReports": "View Reports",
+    "viewReportsPhonetic": "View Reports"
   }
 }

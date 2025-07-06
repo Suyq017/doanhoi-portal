@@ -92,6 +92,81 @@ const ImportModal = <T extends Record<string, any>>({
         }
 
         const validationResult = await config.validateServerData(serverSession.sessionId);
+        
+        // Auto-fill dữ liệu cho server-side processing
+        if (validationResult.previewData) {
+          let totalAutoFilled = 0;
+          validationResult.previewData = validationResult.previewData.map((item: any) => {
+            const modified: Record<string, boolean> = {};
+            
+            // Tìm field email (case-insensitive và nhiều pattern khác nhau)
+            const emailField = Object.keys(item).find(key => {
+              const lowerKey = key.toLowerCase();
+              return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
+            });
+            
+            // Tìm field password (case-insensitive) hoặc tạo mới
+            let passwordField = Object.keys(item).find(key => {
+              const lowerKey = key.toLowerCase();
+              return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
+            });
+            
+            // Nếu không tìm thấy field password, tạo field mới
+            if (!passwordField) {
+              passwordField = 'password';
+              item[passwordField] = ''; // Khởi tạo với giá trị rỗng
+            }
+            
+            // Tìm field isActive (case-insensitive và nhiều pattern khác nhau)
+            const isActiveField = Object.keys(item).find(key => {
+              const lowerKey = key.toLowerCase();
+              return lowerKey === 'isactive' || lowerKey === 'active' || 
+                     lowerKey === 'hoatdong' || lowerKey === 'is_active' ||
+                     lowerKey === 'activestatus' || lowerKey === 'status';
+            });
+            
+            const emailValue = emailField ? item[emailField] : null;
+            
+            // Auto-fill isActive = true (luôn luôn, kể cả khi đã có giá trị)
+            if (isActiveField) {
+              // Luôn set isActive = true, bất kể giá trị hiện tại
+              if (item[isActiveField] !== true) {
+                item[isActiveField] = true;
+                modified[isActiveField] = true;
+              }
+            } else {
+              // Nếu không tìm thấy field isActive, tạo mới với key 'isActive'
+              item['isActive'] = true;
+              modified['isActive'] = true;
+            }
+            
+            // Auto-fill password từ email prefix nếu trống hoặc là '-'
+            if (emailValue && passwordField && (!item[passwordField] || item[passwordField] === '' || item[passwordField] === '-')) {
+              const emailPrefix = emailValue.split('@')[0];
+              item[passwordField] = emailPrefix;
+              modified[passwordField] = true;
+            }
+            
+            // Debug logging - luôn log để biết đã xử lý
+            console.log(`Server-side processing for ${emailValue || 'NO_EMAIL'}:`, {
+              emailField,
+              passwordField,
+              isActiveField: isActiveField || 'isActive (new)',
+              currentValues: {
+                email: emailValue,
+                password: passwordField ? item[passwordField] : 'NOT_FOUND',
+                isActive: isActiveField ? item[isActiveField] : item['isActive']
+              },
+              modified,
+              itemAfter: item
+            });
+            
+            return item;
+          });
+          
+          console.log(`Total auto-filled records: ${totalAutoFilled}`);
+        }
+        
         config.onValidationComplete?.(validationResult);
 
         setState(prev => ({
@@ -108,7 +183,87 @@ const ImportModal = <T extends Record<string, any>>({
         }
 
         const parsedData = await config.parseFile(file);
-        const validationResult = await config.validateData(parsedData);
+        
+        // Auto-fill dữ liệu
+        let totalAutoFilled = 0;
+        const processedData = parsedData.map(item => {
+          const processedItem = { ...item } as any;
+          const modified: Record<string, boolean> = {};
+          
+          // Tìm field email (case-insensitive và nhiều pattern khác nhau)
+          const emailField = Object.keys(processedItem).find(key => {
+            const lowerKey = key.toLowerCase();
+            return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
+          });
+          
+          // Tìm field password (case-insensitive) hoặc tạo mới
+          let passwordField = Object.keys(processedItem).find(key => {
+            const lowerKey = key.toLowerCase();
+            return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
+          });
+          
+          // Nếu không tìm thấy field password, tạo field mới
+          if (!passwordField) {
+            passwordField = 'password';
+            processedItem[passwordField] = ''; // Khởi tạo với giá trị rỗng
+          }
+          
+          // Tìm field isActive (case-insensitive và nhiều pattern khác nhau)
+          const isActiveField = Object.keys(processedItem).find(key => {
+            const lowerKey = key.toLowerCase();
+            return lowerKey === 'isactive' || lowerKey === 'active' || 
+                   lowerKey === 'hoatdong' || lowerKey === 'is_active' ||
+                   lowerKey === 'activestatus' || lowerKey === 'status';
+          });
+          
+          const emailValue = emailField ? processedItem[emailField] : null;
+          
+          // Auto-fill isActive = true (luôn luôn, kể cả khi đã có giá trị)
+          if (isActiveField) {
+            // Luôn set isActive = true, bất kể giá trị hiện tại
+            if (processedItem[isActiveField] !== true) {
+              processedItem[isActiveField] = true;
+              modified[isActiveField] = true;
+            }
+          } else {
+            // Nếu không tìm thấy field isActive, tạo mới với key 'isActive'
+            processedItem['isActive'] = true;
+            modified['isActive'] = true;
+          }
+          
+          // Auto-fill password từ email prefix nếu trống hoặc là '-'
+          if (emailValue && passwordField && (!processedItem[passwordField] || processedItem[passwordField] === '' || processedItem[passwordField] === '-')) {
+            const emailPrefix = emailValue.split('@')[0];
+            processedItem[passwordField] = emailPrefix;
+            modified[passwordField] = true;
+          }
+          
+          // Debug logging - luôn log để biết đã xử lý
+          console.log(`Client-side processing for ${emailValue || 'NO_EMAIL'}:`, {
+            emailField,
+            passwordField,
+            isActiveField: isActiveField || 'isActive (new)',
+            currentValues: {
+              email: emailValue,
+              password: passwordField ? processedItem[passwordField] : 'NOT_FOUND',
+              isActive: isActiveField ? processedItem[isActiveField] : processedItem['isActive']
+            },
+            modified,
+            itemAfter: processedItem
+          });
+          
+          // Đánh dấu các field đã được auto-fill
+          if (Object.keys(modified).length > 0) {
+            processedItem._autoFilled = modified;
+            totalAutoFilled++;
+          }
+          
+          return processedItem;
+        });
+        
+        console.log(`Total client-side auto-filled records: ${totalAutoFilled}`);
+        
+        const validationResult = await config.validateData(processedData as T[]);
 
         config.onValidationComplete?.(validationResult);
 
@@ -223,25 +378,44 @@ const ImportModal = <T extends Record<string, any>>({
   };
 
   // Utility functions
-  const renderCellValue = (value: any, type: string): React.ReactNode => {
+  const renderCellValue = (value: any, type: string, item?: any, fieldKey?: string): React.ReactNode => {
     if (value === null || value === undefined || value === '') {
       return <span className="italic text-gray-400">-</span>;
     }
 
-    switch (type) {
-      case 'boolean':
-        return value ? (
-          <CheckCircle className="w-4 h-4 text-green-500" />
-        ) : (
-          <XCircle className="w-4 h-4 text-red-500" />
-        );
-      case 'date':
-        return new Date(value).toLocaleDateString();
-      case 'number':
-        return typeof value === 'number' ? value.toLocaleString('en-US', { useGrouping: false }) : value;
-      default:
-        return String(value);
+    const isAutoFilled = item?._autoFilled && fieldKey && item._autoFilled[fieldKey];
+
+    const renderValue = () => {
+      switch (type) {
+        case 'boolean':
+          return value ? (
+            <CheckCircle className="w-4 h-4 text-green-500" />
+          ) : (
+            <XCircle className="w-4 h-4 text-red-500" />
+          );
+        case 'date':
+          return new Date(value).toLocaleDateString();
+        case 'number':
+          return typeof value === 'number' ? value.toLocaleString('en-US', { useGrouping: false }) : value;
+        default:
+          return String(value);
+      }
+    };
+
+    const valueElement = renderValue();
+
+    if (isAutoFilled) {
+      return (
+        <div className="flex items-center gap-2">
+          {valueElement}
+          <span className="text-blue-500 text-xs italic font-medium">
+            ({t('common:import.autoFilled')})
+          </span>
+        </div>
+      );
     }
+
+    return valueElement;
   };
 
   const getDisplayRows = () => {
@@ -470,7 +644,7 @@ const ImportModal = <T extends Record<string, any>>({
               <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
                 <tr>
                   <th className="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                    {t('common:fields.row')}
+                    {t('common:fields.order')}
                   </th>
                   {config.columns.map(col => (
                     <th
@@ -483,7 +657,7 @@ const ImportModal = <T extends Record<string, any>>({
                     </th>
                   ))}
                   <th className="px-4 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-400">
-                    {t('common:fields.status')}
+                    {t('common:fields.dataStatus')}
                   </th>
                 </tr>
               </thead>
@@ -496,9 +670,8 @@ const ImportModal = <T extends Record<string, any>>({
                   const hasWarnings = config.processingMode === 'server'
                     ? item.hasWarnings
                     : item._warnings?.length > 0;
-                  const rowNumber = config.processingMode === 'server'
-                    ? item.row
-                    : item._rowIndex + 1;
+                  // Display sequential order number (Thứ tự) instead of original row number
+                  const orderNumber = index + 1;
 
                   return (
                     <tr
@@ -509,11 +682,11 @@ const ImportModal = <T extends Record<string, any>>({
                         }`}
                     >
                       <td className="px-4 py-3 font-mono text-sm text-gray-500 dark:text-gray-400">
-                        {rowNumber}
+                        {orderNumber}
                       </td>
                       {config.columns.map(col => (
                         <td key={col.key} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                          {renderCellValue(item[col.key], col.type)}
+                          {renderCellValue(item[col.key], col.type, item, col.key)}
                         </td>
                       ))}
                       <td className="px-4 py-3 text-center">

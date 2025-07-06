@@ -1,27 +1,61 @@
 {
   "title": "User Management",
+  "titlePhonetic": "User Management",
   "subtitle": "Manage members, youth union members and student association members information",
+  "subtitlePhonetic": "Manage members information",
   "titles": {
     "create": "Add New User",
+    "createPhonetic": "Add New User",
     "edit": "Edit User Information",
+    "editPhonetic": "Edit User Information",
     "view": "User Details",
-    "delete": "Delete User"
+    "viewPhonetic": "User Details",
+    "delete": "Delete User",
+    "deletePhonetic": "Delete User"
   },
   "fields": {
     "code": "Student/Staff ID",
+    "codePhonetic": "Student ID",
     "familyName": "Family Name",
+    "familyNamePhonetic": "Family Name",
     "givenName": "Given Name",
+    "givenNamePhonetic": "Given Name",
     "fullName": "Full Name",
+    "fullNamePhonetic": "Full Name",
     "password": "Password",
+    "passwordPhonetic": "Password",
     "userType": "User Type",
+    "userTypePhonetic": "User Type",
     "membershipStatus": "Membership Status",
+    "membershipStatusPhonetic": "Membership Status",
     "managementDepartment": "Management Department",
+    "managementDepartmentPhonetic": "Management Department",
     "trainingDepartment": "Training Department",
+    "trainingDepartmentPhonetic": "Training Department",
     "class": "Class",
+    "classPhonetic": "Class",
+    "className": "Class Name",
+    "classNamePhonetic": "Class Name",
+    "managementDepartmentCode": "Management Department Code",
+    "managementDepartmentCodePhonetic": "Management Department Code",
+    "trainingDepartmentCode": "Training Department Code",
+    "trainingDepartmentCodePhonetic": "Training Department Code",
+    "organizationCodes": "Organization Codes",
+    "organizationCodesPhonetic": "Organization Codes",
+    "isActive": "Active Status",
+    "isActivePhonetic": "Active Status",
+    "email": "Email",
+    "emailPhonetic": "Email",
+    "phone": "Phone Number",
+    "phonePhonetic": "Phone Number",
     "info": "Information",
+    "infoPhonetic": "Information",
     "contact": "Contact",
+    "contactPhonetic": "Contact",
     "type": "Type",
-    "created": "Created Date"
+    "typePhonetic": "Type",
+    "created": "Created Date",
+    "createdPhonetic": "Created Date"
   },
   "placeholders": {
     "code": "e.g.: 2024001, CB001",
@@ -36,15 +70,23 @@
   },
   "types": {
     "student": "Student",
+    "studentPhonetic": "Student",
     "staff": "Staff",
-    "all": "All Types"
+    "staffPhonetic": "Staff",
+    "all": "All Types",
+    "allPhonetic": "All Types"
   },
   "membershipStatus": {
     "none": "Not Joined",
+    "nonePhonetic": "Not Joined",
     "doan_vien": "Youth Union Member",
+    "doan_vienPhonetic": "Youth Union Member",
     "hoi_vien": "Student Association Member",
+    "hoi_vienPhonetic": "Student Association Member",
     "both": "Both Members",
-    "all": "All Status"
+    "bothPhonetic": "Both Members",
+    "all": "All Status",
+    "allPhonetic": "All Status"
   },
   "messages": {
     "noUsers": "No users found",
@@ -67,18 +109,30 @@
   },
   "addButton": {
     "dropdown": "Add User",
+    "dropdownPhonetic": "Add User",
     "single": "Add Single User",
+    "singlePhonetic": "Add Single User",
     "singleDesc": "Create new user with form",
+    "singleDescPhonetic": "Create new user with form",
     "fromFile": "Import from Excel",
-    "fromFileDesc": "Import multiple users from Excel file"
+    "fromFilePhonetic": "Import from Excel",
+    "fromFileDesc": "Import multiple users from Excel file",
+    "fromFileDescPhonetic": "Import multiple users from Excel file"
   },
   "import": {
     "title": "Import Users List",
+    "titlePhonetic": "Import Users List",
     "instructions": "Import Instructions",
+    "instructionsPhonetic": "Import Instructions",
     "step1": "Download Excel template here and fill in user information",
+    "step1Phonetic": "Download Excel template",
     "step2": "Check data format and ensure no errors",
+    "step2Phonetic": "Check data format",
     "step3": "Upload file to import into the system",
+    "step3Phonetic": "Upload file",
     "templateLinkText": "here",
-    "onlyExcelAllowed": "Only Excel files (.xlsx, .xls) are allowed"
+    "templateLinkTextPhonetic": "here",
+    "onlyExcelAllowed": "Only Excel files (.xlsx, .xls) are allowed",
+    "onlyExcelAllowedPhonetic": "Only Excel files allowed"
   }
 }
