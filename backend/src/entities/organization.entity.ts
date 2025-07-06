@@ -53,7 +53,7 @@ export class Organization {
   @TreeParent()
   parent: Organization;
 
-  @TreeChildren()
+  @TreeChildren() vgy
   children: Organization[];
 
   @OneToMany(() => UserOrganization, userOrg => userOrg.organization)
