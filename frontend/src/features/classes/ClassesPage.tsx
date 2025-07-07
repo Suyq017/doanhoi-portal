@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, Filter, Eye, Edit, Trash2, Users, Upload } from 'lucide-react';
+import type { Class, ClassQueryParams } from '../../shared/types';
 import { 
-  Class, 
-  ClassQueryParams, 
   classService,
   departmentService,
   Toast,

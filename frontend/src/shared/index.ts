@@ -1,5 +1,6 @@
 // Components
 export * from './components';
+export * from './components/export';
 
 // Hooks  
 export * from './hooks';

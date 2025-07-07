@@ -623,20 +623,19 @@ const ImportModal = ({
             </h5>
             <div className="overflow-auto max-h-32">
               <ul className="space-y-1 text-sm text-red-700 dark:text-red-300">
-                {errors.slice(0, 10).map((error, index) => (
+                {errors.map((error, index) => (
                   <li key={index} className="flex items-start">
                     <span className="font-mono text-xs bg-red-100 dark:bg-red-900/30 px-1 rounded mr-2 mt-0.5">
                       {error.row}
                     </span>
-                    <span className="mr-2 font-medium">{error.column}:</span>
                     <span>{error.message}</span>
                   </li>
                 ))}
-                {errors.length > 10 && (
+                {/* {errors.length > 10 && (
                   <li className="italic text-red-600 dark:text-red-400">
                     {t('import.andMoreErrors', { count: errors.length - 10 })}
                   </li>
-                )}
+                )} */}
               </ul>
             </div>
           </div>

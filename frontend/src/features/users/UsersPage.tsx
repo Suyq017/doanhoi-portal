@@ -1,5 +1,5 @@
-import React from "react";
-import { Plus, Upload } from "lucide-react";
+import React, { useState } from "react";
+import { Plus, Upload, Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Toast,
@@ -11,6 +11,7 @@ import {
   useToast,
   useUserManagement,
 } from "../../shared";
+import { ExportModal, useExport, USER_EXPORT_FIELDS } from "../../shared/components/export";
 import { userService } from "../../shared/services/userService";
 import CreateUserModal from "./components/CreateUserModal";
 import ViewUserModal from "./components/ViewUserModal";
@@ -56,6 +57,22 @@ const Users: React.FC = () => {
     updateUser: userService.updateUser.bind(userService),
     deleteUser: userService.deleteUser.bind(userService),
   });
+
+  // Export functionality
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const { exportData } = useExport({
+    onSuccess: (fileName) => {
+      showSuccess(`Xuất file thành công: ${fileName}`);
+      setIsExportModalOpen(false);
+    },
+    onError: (error) => {
+      showError(`Lỗi xuất file: ${error}`);
+    },
+  });
+
+  const handleExport = async (fields: string[]) => {
+    await exportData(fields, 'users');
+  };
 
   const {
     selectedUser,
@@ -114,6 +131,13 @@ const Users: React.FC = () => {
       icon: <Upload className="w-4 h-4" />,
       description: t('users:addButton.fromFileDesc', { defaultValue: 'Import nhiều người dùng từ file Excel' }),
       onClick: openImportModal
+    },
+    {
+      key: 'export',
+      label: t('users:addButton.export', { defaultValue: 'Xuất dữ liệu' }),
+      icon: <Download className="w-4 h-4" />,
+      description: t('users:addButton.exportDesc', { defaultValue: 'Xuất danh sách người dùng ra file Excel' }),
+      onClick: () => setIsExportModalOpen(true)
     }
   ];
 
@@ -201,6 +225,15 @@ const Users: React.FC = () => {
         isOpen={isImportModalOpen}
         onClose={closeImportModal}
         config={importConfig}
+      />
+
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        title="Xuất danh sách người dùng"
+        description="Chọn các trường dữ liệu bạn muốn xuất ra file Excel"
+        availableFields={USER_EXPORT_FIELDS}
       />
 
       {/* Toast Notifications */}

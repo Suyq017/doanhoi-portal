@@ -4,7 +4,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { DepartmentsService } from './departments.service';
 import { ImportService } from './services/import.service';
-import { DepartmentBatchImportMonitoringService } from './services/batch-import-monitoring.service';
+//import { DepartmentBatchImportMonitoringService } from './services/batch-import-monitoring.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { QueryDepartmentDto } from './dto/query-department.dto';
@@ -15,7 +15,7 @@ export class DepartmentsController {
   constructor(
     private readonly departmentsService: DepartmentsService,
     private readonly importService: ImportService,
-    private readonly monitoringService: DepartmentBatchImportMonitoringService,
+    //private readonly monitoringService: DepartmentBatchImportMonitoringService,
   ) {}
 
   @Post()
