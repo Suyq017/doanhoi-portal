@@ -21,8 +21,8 @@ export const classColumns = (t: (key: string) => string): ImportColumn[] => [
   { key: 'name', label: t('classes:fields.name'), required: true, type: 'text' },
   { key: 'code', label: t('classes:fields.code'), required: false, type: 'text' },
   { key: 'year', label: t('classes:fields.year'), required: false, type: 'number' },
-  { key: 'departmentCode', label: t('classes:fields.departmentCode'), required: false, type: 'text' },
-  { key: 'isActive', label: t('common:fields.status'), required: false, type: 'boolean' },
+  { key: 'departmentCode', label: t('classes:fields.departmentCode'), required: false, type: 'text' }
+  // Đã bỏ cột isActive vì backend tự động set mặc định là true
 ];
 
 /**
@@ -61,8 +61,8 @@ export const userColumns = (t?: (key: string) => string): ImportColumn[] => [
       { value: 'both', label: t?.('users:membershipStatus.both') || 'Cả hai' },
       { value: 'none', label: t?.('users:membershipStatus.none') || 'Không' }
     ]
-  },
-  { key: 'isActive', label: t?.('users:fields.isActive') || 'Is Active', required: false, type: 'boolean' }
+  }
+  // Đã bỏ cột isActive vì backend tự động set mặc định là true
 ];
 
 /**
