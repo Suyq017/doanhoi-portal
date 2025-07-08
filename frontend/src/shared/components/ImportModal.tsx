@@ -117,28 +117,7 @@ const ImportModal = ({
             item[passwordField] = ''; // Khởi tạo với giá trị rỗng
           }
 
-          // Tìm field isActive (case-insensitive và nhiều pattern khác nhau)
-          const isActiveField = Object.keys(item).find(key => {
-            const lowerKey = key.toLowerCase();
-            return lowerKey === 'isactive' || lowerKey === 'active' ||
-              lowerKey === 'hoatdong' || lowerKey === 'is_active' ||
-              lowerKey === 'activestatus' || lowerKey === 'status';
-          });
-
           const emailValue = emailField ? item[emailField] : null;
-
-          // Auto-fill isActive = true (luôn luôn, kể cả khi đã có giá trị)
-          if (isActiveField) {
-            // Luôn set isActive = true, bất kể giá trị hiện tại
-            if (item[isActiveField] !== true) {
-              item[isActiveField] = true;
-              modified[isActiveField] = true;
-            }
-          } else {
-            // Nếu không tìm thấy field isActive, tạo mới với key 'isActive'
-            item['isActive'] = true;
-            modified['isActive'] = true;
-          }
 
           // Auto-fill password từ email prefix nếu trống hoặc là '-'
           if (emailValue && passwordField && (!item[passwordField] || item[passwordField] === '' || item[passwordField] === '-')) {
@@ -146,6 +125,8 @@ const ImportModal = ({
             item[passwordField] = emailPrefix;
             modified[passwordField] = true;
           }
+
+          // Note: Đã bỏ auto-fill isActive vì backend tự động set mặc định là true
 
           return item;
         });

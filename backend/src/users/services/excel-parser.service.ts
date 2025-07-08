@@ -94,7 +94,7 @@ export class ExcelParserService {
             organizationCodes: this.getCellValue(row, headerMap.organizationCodes),
             userType: this.parseUserType(this.getCellValue(row, headerMap.userType)),
             membershipStatus: this.parseMembershipStatus(this.getCellValue(row, headerMap.membershipStatus)),
-            isActive: this.parseBooleanValue(this.getCellValue(row, headerMap.isActive))
+            isActive: true // Mặc định là active vì không có cột này trong template
           };
 
           parsedData.push(userData);
@@ -116,19 +116,18 @@ export class ExcelParserService {
     const templateData = [
       // Header row
       [
-        'Family Name*',
-        'Given Name*',
+        'Họ*',
+        'Tên*',
         'Email*', 
-        'Code*',
-        'Password',
-        'Phone',
-        'Class Name',
-        'Management Department Code',
-        'Training Department Code',
-        'Organization Codes',
-        'User Type',
-        'Membership Status',
-        'Is Active'
+        'Mã số*',
+        'Mật khẩu',
+        'Điện thoại',
+        'Tên lớp',
+        'Mã đơn vị quản lý',
+        'Mã đơn vị đào tạo',
+        'Mã tổ chức',
+        'Loại người dùng',
+        'Tình trạng thành viên'
       ],
       // Sample data rows
       [
@@ -138,13 +137,12 @@ export class ExcelParserService {
         'SV001',
         '123456',
         '0987654321',
-        'CS2024A',
-        'IT',
+        'TH2024A',
+        'CNTT',
         'CNTT',
         'ORG1;ORG2',
-        'student',
-        'doan_vien',
-        'TRUE'
+        'sinh_vien',
+        'doan_vien'
       ],
       [
         'Trần Thị',
@@ -154,12 +152,11 @@ export class ExcelParserService {
         'password123',
         '0987654322',
         '',
-        'MATH',
+        'TOAN',
         'TOAN',
         'ORG1',
-        'staff',
-        'hoi_vien',
-        'TRUE'
+        'can_bo',
+        'hoi_vien'
       ]
     ];
 
@@ -167,19 +164,18 @@ export class ExcelParserService {
     
     // Set column widths
     worksheet['!cols'] = [
-      { width: 15 }, // Family Name
-      { width: 15 }, // Given Name
+      { width: 15 }, // Họ
+      { width: 15 }, // Tên
       { width: 25 }, // Email
-      { width: 10 }, // Code
-      { width: 12 }, // Password
-      { width: 15 }, // Phone
-      { width: 12 }, // Class Code
-      { width: 20 }, // Management Department Code
-      { width: 20 }, // Training Department Code
-      { width: 20 }, // Organization Codes
-      { width: 12 }, // User Type
-      { width: 18 }, // Membership Status
-      { width: 10 }  // Is Active
+      { width: 10 }, // Mã số
+      { width: 12 }, // Mật khẩu
+      { width: 15 }, // Điện thoại
+      { width: 12 }, // Tên lớp
+      { width: 20 }, // Mã đơn vị quản lý
+      { width: 20 }, // Mã đơn vị đào tạo
+      { width: 20 }, // Mã tổ chức
+      { width: 15 }, // Loại người dùng
+      { width: 20 }  // Tình trạng thành viên
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -196,17 +192,28 @@ export class ExcelParserService {
       code: -1,
       password: -1,
       phone: -1,
-      className: -1,  // Changed from classCode
+      className: -1,
       managementDepartmentCode: -1,
       trainingDepartmentCode: -1,
       organizationCodes: -1,
       userType: -1,
-      membershipStatus: -1,
-      isActive: -1
+      membershipStatus: -1
+      // Bỏ isActive
     };
 
     headers.forEach((header, index) => {
-      const normalizedHeader = header?.toString().toLowerCase().trim().replace(/[*\s]/g, '');
+      // Normalize header: lowercase, remove *, remove spaces, remove Vietnamese accents
+      const normalizedHeader = header?.toString().toLowerCase().trim()
+        .replace(/[*]/g, '') // Remove asterisks
+        .replace(/\s+/g, '') // Remove all spaces
+        .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
+        .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
+        .replace(/[ìíịỉĩ]/g, 'i')
+        .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
+        .replace(/[ùúụủũưừứựửữ]/g, 'u')
+        .replace(/[ỳýỵỷỹ]/g, 'y')
+        .replace(/[đ]/g, 'd')
+        .replace(/[ñ]/g, 'n');
       
       switch (normalizedHeader) {
         case 'familyname':
@@ -228,6 +235,7 @@ export class ExcelParserService {
         case 'staffcode':
         case 'masv':
         case 'macb':
+        case 'maso':
           map.code = index;
           break;
         case 'password':
@@ -238,25 +246,30 @@ export class ExcelParserService {
         case 'phone':
         case 'phonenumber':
         case 'sodienthoai':
+        case 'dienthoai':
           map.phone = index;
           break;
         case 'classcode':
         case 'classname':
         case 'class':
         case 'malop':
+        case 'tenlop':
           map.className = index;
           break;
         case 'managementdepartmentcode':
         case 'managementdepartment':
+        case 'madonviquanly':
         case 'maphongbanquanly':
           map.managementDepartmentCode = index;
           break;
         case 'trainingdepartmentcode':
         case 'trainingdepartment':
+        case 'madonvidaotao':
         case 'maphongbandaotao':
           map.trainingDepartmentCode = index;
           break;
         case 'organizationcodes':
+        case 'organization':
         case 'organizations':
         case 'matochuc':
           map.organizationCodes = index;
@@ -266,13 +279,9 @@ export class ExcelParserService {
           map.userType = index;
           break;
         case 'membershipstatus':
+        case 'tinhtrangthanhvien':
         case 'trangthaithanhdoan':
           map.membershipStatus = index;
-          break;
-        case 'isactive':
-        case 'active':
-        case 'hoatdong':
-          map.isActive = index;
           break;
       }
     });
@@ -310,11 +319,11 @@ export class ExcelParserService {
     
     const normalizedValue = value.toLowerCase().trim();
     
-    if (['student', 'sinh viên', 'sinhvien', 'sv'].includes(normalizedValue)) {
+    if (['student', 'sinh viên', 'sinhvien', 'sv', 'sinh_vien'].includes(normalizedValue)) {
       return 'student';
     }
     
-    if (['staff', 'cán bộ', 'canbo', 'cb', 'nhân viên', 'nhanvien'].includes(normalizedValue)) {
+    if (['staff', 'cán bộ', 'canbo', 'cb', 'nhân viên', 'nhanvien', 'nv', 'can_bo'].includes(normalizedValue)) {
       return 'staff';
     }
     

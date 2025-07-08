@@ -11,8 +11,8 @@ export interface DepartmentImportData {
 
 @Injectable()
 export class ExcelParserService {
-  private readonly expectedHeaders = ['name', 'code', 'description', 'isActive'];
-  private readonly requiredHeaders = ['name'];
+  private readonly expectedHeaders = ['tên đơn vị', 'mã đơn vị', 'mô tả'];
+  private readonly requiredHeaders = ['tên đơn vị'];
 
   async parseExcelFile(buffer: Buffer): Promise<DepartmentImportData[]> {
     try {
@@ -59,7 +59,8 @@ export class ExcelParserService {
   private mapRowData(row: any[], headers: string[], rowIndex: number): DepartmentImportData {
     const data: Partial<DepartmentImportData> = {
       _rowIndex: rowIndex,
-      name: '' // Default value
+      name: '', // Default value
+      isActive: true // Mặc định là active vì không có cột này trong template
     };
 
     headers.forEach((header, index) => {
@@ -67,6 +68,16 @@ export class ExcelParserService {
       const cellValue = row[index];
 
       switch (normalizedHeader) {
+        case 'tên đơn vị':
+          data.name = cellValue?.toString().trim() || '';
+          break;
+        case 'mã đơn vị':
+          data.code = cellValue?.toString().trim() || undefined;
+          break;
+        case 'mô tả':
+          data.description = cellValue?.toString().trim() || undefined;
+          break;
+        // Backward compatibility - keep old headers working
         case 'name':
           data.name = cellValue?.toString().trim() || '';
           break;
@@ -96,20 +107,19 @@ export class ExcelParserService {
 
   async generateTemplate(): Promise<Buffer> {
     const templateData = [
-      ['name', 'code', 'description', 'isActive'],
-      ['Technology Department', 'TECH', 'Responsible for all technology initiatives', 'true'],
-      ['Human Resources', 'HR', 'Manages employee relations and policies', 'true'],
-      ['Finance Department', 'FIN', 'Handles financial planning and accounting', 'true']
+      ['Tên đơn vị*', 'Mã đơn vị*', 'Mô tả'],
+      ['Phòng Công nghệ thông tin', 'CNTT', 'Phụ trách tất cả các sáng kiến công nghệ'],
+      ['Phòng Nhân sự', 'NS', 'Quản lý quan hệ nhân viên và chính sách'],
+      ['Phòng Tài chính', 'TC', 'Xử lý kế hoạch tài chính và kế toán']
     ];
 
     const worksheet = XLSX.utils.aoa_to_sheet(templateData);
     
     // Set column widths
     worksheet['!cols'] = [
-      { width: 25 }, // name
-      { width: 15 }, // code
-      { width: 40 }, // description
-      { width: 15 }  // isActive
+      { width: 25 }, // Tên đơn vị
+      { width: 15 }, // Mã đơn vị
+      { width: 40 }  // Mô tả
     ];
 
     // Set header style (bold)

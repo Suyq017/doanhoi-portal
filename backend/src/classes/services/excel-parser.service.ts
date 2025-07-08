@@ -12,8 +12,8 @@ export interface ClassImportData {
 
 @Injectable()
 export class ExcelParserService {
-  private readonly expectedHeaders = ['name', 'code', 'year', 'departmentCode', 'isActive'];
-  private readonly requiredHeaders = ['name'];
+  private readonly expectedHeaders = ['tên lớp', 'mã lớp', 'năm học', 'mã đơn vị'];
+  private readonly requiredHeaders = ['tên lớp'];
 
   async parseExcelFile(buffer: Buffer): Promise<ClassImportData[]> {
     try {
@@ -60,7 +60,8 @@ export class ExcelParserService {
   private mapRowData(row: any[], headers: string[], rowIndex: number): ClassImportData {
     const data: Partial<ClassImportData> = {
       _rowIndex: rowIndex,
-      name: '' // Default value
+      name: '', // Default value
+      isActive: true // Mặc định là active vì không có cột này trong template
     };
 
     headers.forEach((header, index) => {
@@ -68,6 +69,19 @@ export class ExcelParserService {
       const cellValue = row[index];
 
       switch (normalizedHeader) {
+        case 'tên lớp':
+          data.name = cellValue?.toString().trim() || '';
+          break;
+        case 'mã lớp':
+          data.code = cellValue?.toString().trim() || undefined;
+          break;
+        case 'năm học':
+          data.year = this.parseYear(cellValue);
+          break;
+        case 'mã đơn vị':
+          data.departmentCode = cellValue?.toString().trim() || undefined;
+          break;
+        // Backward compatibility - keep old headers working
         case 'name':
           data.name = cellValue?.toString().trim() || '';
           break;
@@ -113,21 +127,20 @@ export class ExcelParserService {
 
   async generateTemplate(): Promise<Buffer> {
     const templateData = [
-      ['name', 'code', 'year', 'departmentCode', 'isActive'],
-      ['Computer Science A', 'CS-A', '2024', 'TECH', 'true'],
-      ['Mathematics B', 'MATH-B', '2024', 'MATH', 'true'],
-      ['Physics C', 'PHY-C', '2023', 'SCI', 'true']
+      ['Tên lớp*', 'Mã lớp*', 'Năm học', 'Mã đơn vị'],
+      ['Tin học A', 'TH-A', '2024', 'CNTT'],
+      ['Toán học B', 'TOAN-B', '2024', 'TOAN'],
+      ['Vật lý C', 'VL-C', '2023', 'VL']
     ];
 
     const worksheet = XLSX.utils.aoa_to_sheet(templateData);
     
     // Set column widths
     worksheet['!cols'] = [
-      { width: 25 }, // name
-      { width: 15 }, // code
-      { width: 10 }, // year
-      { width: 20 }, // departmentCode
-      { width: 15 }  // isActive
+      { width: 25 }, // Tên lớp
+      { width: 15 }, // Mã lớp
+      { width: 10 }, // Năm học
+      { width: 20 }  // Mã đơn vị
     ];
 
     // Set header style (bold)
