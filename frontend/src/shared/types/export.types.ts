@@ -7,7 +7,6 @@ export interface ExportField {
 
 export interface ExportRequest {
   fields: string[];
-  organizationId?: string;
   format?: 'xlsx' | 'csv';
 }
 

@@ -242,6 +242,8 @@ const OrganizationsSubDetailPage: React.FC = () => {
         onShowSuccess={handleBulkDeleteSuccess}
         onShowError={handleBulkDeleteError}
         onImportModalClose={handleImportModalClose} // Add import modal close handler
+        organizationId={displayOrganization?.id}
+        organizationName={displayOrganization?.name}
     >
 
         {renderContent()}

@@ -37,8 +37,9 @@ export class ExportService {
       throw new Error('Không có dữ liệu để xuất');
     }
 
-    // Generate Excel file
-    const buffer = await this.generateExcelFile(users, fields, 'Danh sách người dùng');
+    // Generate Excel file with safe sheet name
+    const safeSheetName = this.createSafeSheetName('Danh sách người dùng');
+    const buffer = await this.generateExcelFile(users, fields, safeSheetName);
     return buffer;
   }
 
@@ -80,11 +81,12 @@ export class ExportService {
       isActive: uo.isActive,
     }));
 
-    // Generate Excel file
+    // Generate Excel file with safe sheet name
+    const safeSheetName = this.createSafeSheetName(`Danh sách thành viên - ${organization.name}`);
     const buffer = await this.generateExcelFile(
       users,
       fields,
-      `Danh sách thành viên - ${organization.name}`,
+      safeSheetName,
     );
     return buffer;
   }
@@ -235,5 +237,37 @@ export class ExportService {
     }
     
     return `${prefix}_${timestamp}.xlsx`;
+  }
+
+  private createSafeSheetName(name: string): string {
+    // Excel sheet name limitations:
+    // - Maximum 31 characters
+    // - Cannot contain: \ / ? * [ ] : 
+    let safeName = name
+      .replace(/[\\\/\?\*\[\]:]/g, '') // Remove invalid characters
+      .trim();
+    
+    // If name is too long, truncate it but keep meaningful part
+    if (safeName.length > 31) {
+      // Try to keep the most important part
+      if (safeName.includes(' - ')) {
+        const parts = safeName.split(' - ');
+        const prefix = 'DS thành viên'; // Short prefix
+        const orgName = parts[1] || parts[0];
+        safeName = `${prefix} - ${orgName}`;
+        
+        // If still too long, truncate organization name
+        if (safeName.length > 31) {
+          const maxOrgLength = 31 - prefix.length - 3; // 3 for " - "
+          const truncatedOrg = orgName.substring(0, maxOrgLength);
+          safeName = `${prefix} - ${truncatedOrg}`;
+        }
+      } else {
+        // Simple truncation as fallback
+        safeName = safeName.substring(0, 31);
+      }
+    }
+    
+    return safeName;
   }
 }

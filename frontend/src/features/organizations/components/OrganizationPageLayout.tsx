@@ -1,5 +1,5 @@
 import React, { ReactNode, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Upload, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { OrganizationStats as StatsType } from '../../../shared/types/organization';
 import OrganizationStats from './OrganizationStats';
@@ -7,8 +7,8 @@ import {
     Toast, AddDropdownButton, DropdownOption, ImportModal, ImportModalConfig,
 
 } from '../../../shared';
+import { ExportModal, useExport, USER_EXPORT_FIELDS } from '../../../shared/components/export';
 import MemberStats, { MemberStatsProps } from './MemberStats';
-import { Upload } from 'lucide-react';
 import CreateOrganizationModal, { CreateOrganizationData } from '../components/CreateOrganizationModal';
 import { organizationService } from '../../../shared/services/organizationService';
 
@@ -38,6 +38,9 @@ interface OrganizationPageLayoutProps {
     onShowSuccess?: (message: string) => void;
     onShowError?: (message: string) => void;
     onImportModalClose?: () => void; // Add callback for import modal close
+    // Export support
+    organizationId?: string;
+    organizationName?: string;
     type?: string;
 }
 
@@ -61,11 +64,33 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
     onShowSuccess,
     onShowError,
     onImportModalClose,
-    type
+    type,
+    organizationId,
+    organizationName
 }) => {
     const { t, i18n } = useTranslation(['organizations', 'common']);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    // Export functionality
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const { exportData } = useExport({
+        organizationId,
+        organizationName,
+        onSuccess: (fileName) => {
+            onShowSuccess?.(`Xuất file thành công: ${fileName}`);
+            setIsExportModalOpen(false);
+        },
+        onError: (error) => {
+            onShowError?.(`Lỗi xuất file: ${error}`);
+        },
+    });
+
+    const handleExport = async (fields: string[]) => {
+        if (organizationId) {
+            await exportData(fields, 'organization');
+        }
+    };
 
     const renderStats = () => {
         if (showMemberStats && memberStats) {
@@ -147,11 +172,19 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
             icon: <Upload className="w-4 h-4" />,
             description: t('organizations:addButton.fromFileDesc'),
             onClick: () => setIsImportModalOpen(true)
-        }
+        },
+        // Export option for level 3
+        ...(level === 3 && organizationId ? [{
+            key: 'export',
+            label: t('organizations:addButton.export', { defaultValue: 'Xuất dữ liệu' }),
+            icon: <Download className="w-4 h-4" />,
+            description: t('organizations:addButton.exportDesc', { defaultValue: 'Xuất danh sách thành viên ra file Excel' }),
+            onClick: () => setIsExportModalOpen(true)
+        }] : [])
     ];
 
     const filteredDropdownOptions = (type === 'clb_khoa' || type === 'clb_truong' || level === 3)
-        ? addDropdownOptions.filter(opt => opt.key === 'fromFile')
+        ? addDropdownOptions.filter(opt => opt.key === 'fromFile' || opt.key === 'export')
         : addDropdownOptions;
 
     if (loading) {
@@ -257,6 +290,18 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
                         onImportModalClose?.();
                     }}
                     config={importConfig}
+                />
+            )}
+
+            {/* Export Modal */}
+            {organizationId && (
+                <ExportModal
+                    isOpen={isExportModalOpen}
+                    onClose={() => setIsExportModalOpen(false)}
+                    onExport={handleExport}
+                    title={`Xuất danh sách thành viên${organizationName ? ` - ${organizationName}` : ''}`}
+                    description="Chọn các trường dữ liệu bạn muốn xuất ra file Excel"
+                    availableFields={USER_EXPORT_FIELDS}
                 />
             )}
 

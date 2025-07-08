@@ -6,7 +6,6 @@ class ExportService {
   async exportOrganizationMembers(organizationId: string, fields: string[]): Promise<Blob> {
     const request: ExportRequest = {
       fields,
-      organizationId,
       format: 'xlsx'
     };
 
