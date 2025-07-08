@@ -81,19 +81,6 @@ export class ExcelParserService {
         case 'mã đơn vị':
           data.departmentCode = cellValue?.toString().trim() || undefined;
           break;
-        // Backward compatibility - keep old headers working
-        case 'name':
-          data.name = cellValue?.toString().trim() || '';
-          break;
-        case 'code':
-          data.code = cellValue?.toString().trim() || undefined;
-          break;
-        case 'year':
-          data.year = this.parseYear(cellValue);
-          break;
-        case 'departmentcode':
-          data.departmentCode = cellValue?.toString().trim() || undefined;
-          break;
         case 'isactive':
           data.isActive = this.parseBoolean(cellValue);
           break;
@@ -127,7 +114,7 @@ export class ExcelParserService {
 
   async generateTemplate(): Promise<Buffer> {
     const templateData = [
-      ['Tên lớp*', 'Mã lớp*', 'Năm học', 'Mã đơn vị'],
+      ['Tên lớp', 'Mã lớp', 'Năm học', 'Mã đơn vị'],
       ['Tin học A', 'TH-A', '2024', 'CNTT'],
       ['Toán học B', 'TOAN-B', '2024', 'TOAN'],
       ['Vật lý C', 'VL-C', '2023', 'VL']

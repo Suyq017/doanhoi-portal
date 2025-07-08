@@ -116,10 +116,10 @@ export class ExcelParserService {
     const templateData = [
       // Header row
       [
-        'Họ*',
-        'Tên*',
-        'Email*', 
-        'Mã số*',
+        'Họ',
+        'Tên',
+        'Email', 
+        'Mã số',
         'Mật khẩu',
         'Điện thoại',
         'Tên lớp',
@@ -216,71 +216,40 @@ export class ExcelParserService {
         .replace(/[ñ]/g, 'n');
       
       switch (normalizedHeader) {
-        case 'familyname':
-        case 'lastname':
         case 'ho':
           map.familyName = index;
           break;
-        case 'givenname':
-        case 'firstname':
         case 'ten':
           map.givenName = index;
           break;
         case 'email':
-        case 'emailaddress':
           map.email = index;
           break;
-        case 'code':
-        case 'studentcode':
-        case 'staffcode':
-        case 'masv':
-        case 'macb':
         case 'maso':
           map.code = index;
           break;
-        case 'password':
-        case 'pass':
         case 'matkhau':
           map.password = index;
           break;
-        case 'phone':
-        case 'phonenumber':
-        case 'sodienthoai':
         case 'dienthoai':
           map.phone = index;
           break;
-        case 'classcode':
-        case 'classname':
-        case 'class':
-        case 'malop':
         case 'tenlop':
           map.className = index;
           break;
-        case 'managementdepartmentcode':
-        case 'managementdepartment':
         case 'madonviquanly':
-        case 'maphongbanquanly':
           map.managementDepartmentCode = index;
           break;
-        case 'trainingdepartmentcode':
-        case 'trainingdepartment':
         case 'madonvidaotao':
-        case 'maphongbandaotao':
           map.trainingDepartmentCode = index;
           break;
-        case 'organizationcodes':
-        case 'organization':
-        case 'organizations':
         case 'matochuc':
           map.organizationCodes = index;
           break;
-        case 'usertype':
         case 'loainguoidung':
           map.userType = index;
           break;
-        case 'membershipstatus':
         case 'tinhtrangthanhvien':
-        case 'trangthaithanhdoan':
           map.membershipStatus = index;
           break;
       }

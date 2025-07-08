@@ -114,7 +114,7 @@ export class OrganizationExcelParserService {
       templateData = [
         // Header row
         [
-          'Mã số sinh viên*',
+          'Mã số sinh viên',
           'Mã lớp/đơn vị'
         ],
         // Sample data rows
@@ -140,7 +140,7 @@ export class OrganizationExcelParserService {
       templateData = [
         // Header row
         [
-          'Mã số sinh viên*'
+          'Mã số sinh viên'
         ],
         // Sample data rows
         [

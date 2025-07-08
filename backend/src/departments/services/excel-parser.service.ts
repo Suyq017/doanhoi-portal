@@ -78,15 +78,6 @@ export class ExcelParserService {
           data.description = cellValue?.toString().trim() || undefined;
           break;
         // Backward compatibility - keep old headers working
-        case 'name':
-          data.name = cellValue?.toString().trim() || '';
-          break;
-        case 'code':
-          data.code = cellValue?.toString().trim() || undefined;
-          break;
-        case 'description':
-          data.description = cellValue?.toString().trim() || undefined;
-          break;
         case 'isactive':
           data.isActive = this.parseBoolean(cellValue);
           break;
@@ -107,10 +98,10 @@ export class ExcelParserService {
 
   async generateTemplate(): Promise<Buffer> {
     const templateData = [
-      ['Tên đơn vị*', 'Mã đơn vị*', 'Mô tả'],
-      ['Phòng Công nghệ thông tin', 'CNTT', 'Phụ trách tất cả các sáng kiến công nghệ'],
-      ['Phòng Nhân sự', 'NS', 'Quản lý quan hệ nhân viên và chính sách'],
-      ['Phòng Tài chính', 'TC', 'Xử lý kế hoạch tài chính và kế toán']
+      ['Tên đơn vị', 'Mã đơn vị', 'Mô tả'],
+      ['Phòng Công nghệ thông tin', 'TECH', 'Phụ trách tất cả các sáng kiến công nghệ'],
+      ['Phòng Nhân sự', 'HR', 'Quản lý quan hệ nhân viên và chính sách'],
+      ['Phòng Tài chính', 'FIN', 'Xử lý kế hoạch tài chính và kế toán']
     ];
 
     const worksheet = XLSX.utils.aoa_to_sheet(templateData);
