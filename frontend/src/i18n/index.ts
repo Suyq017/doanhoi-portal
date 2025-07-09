@@ -26,7 +26,7 @@ i18n
       caches: ['localStorage', 'cookie'],
     },
 
-    ns: ['common', 'users', 'organizations', 'dashboard', 'classes', 'departments'],
+    ns: ['common', 'users', 'organizations', 'dashboard', 'classes', 'departments', 'auth'],
     defaultNS: 'common',
   });
 

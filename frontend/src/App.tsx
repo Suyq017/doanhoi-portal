@@ -10,6 +10,7 @@ import { OrganizationsDetailPage } from './features/organizations';
 import { OrganizationsSubDetailPage } from './features/organizations';
 import { OrganizationMembersPage } from './features/organizations';
 import { ClassesPage } from './features/classes';
+import { AuthProvider } from './features/auth';
 import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
 
@@ -18,24 +19,27 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-        <Router>
-          <Layout>
-            <OrganizationStatsProvider>
-              <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/users" element={<UsersPage />} />                <Route path="/organizations" element={<OrganizationsPage />} />
-                <Route path="/organizations/:type/:code" element={<OrganizationsDetailPage />} />
-                <Route path="/organizations/:type/:code/members" element={<OrganizationMembersPage />} />
-                <Route path="/organizations/:parentType/:parentCode/:type/:code" element={<OrganizationsSubDetailPage />} />
-                <Route path="/organizations/:parentType/:parentCode/:type/:code/members" element={<OrganizationMembersPage />} />
-                <Route path="/departments" element={<DepartmentsPage />} />
-                <Route path="/classes" element={<ClassesPage />} />
-              </Routes>
-            </OrganizationStatsProvider>
-          </Layout>
-        </Router>
-      </Suspense>
+      <AuthProvider>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+          <Router>
+            <Layout>
+              <OrganizationStatsProvider>
+                <Routes>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/users" element={<UsersPage />} />                
+                  <Route path="/organizations" element={<OrganizationsPage />} />
+                  <Route path="/organizations/:type/:code" element={<OrganizationsDetailPage />} />
+                  <Route path="/organizations/:type/:code/members" element={<OrganizationMembersPage />} />
+                  <Route path="/organizations/:parentType/:parentCode/:type/:code" element={<OrganizationsSubDetailPage />} />
+                  <Route path="/organizations/:parentType/:parentCode/:type/:code/members" element={<OrganizationMembersPage />} />
+                  <Route path="/departments" element={<DepartmentsPage />} />
+                  <Route path="/classes" element={<ClassesPage />} />
+                </Routes>
+              </OrganizationStatsProvider>
+            </Layout>
+          </Router>
+        </Suspense>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

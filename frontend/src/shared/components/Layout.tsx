@@ -4,6 +4,7 @@ import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Datab
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
+import { LoginButton } from '../../features/auth';
 
 interface LayoutProps {
   children: ReactNode;
@@ -54,12 +55,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <h1 className="text-lg font-bold bg-gradient-to-r from-doan-500 to-hsv-500 bg-clip-text text-transparent">
+            <h1 className="text-lg font-bold text-transparent bg-gradient-to-r from-doan-500 to-hsv-500 bg-clip-text">
               {t('appName')}
             </h1>
             <button
               onClick={() => setIsSidebarOpen(false)}
-              className="lg:hidden p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="p-1 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -98,7 +99,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                     {/* Child menu items */}
                     {isExpanded && (
-                      <div className="ml-8 mt-2 space-y-1">
+                      <div className="mt-2 ml-8 space-y-1">
                         {item.children.map((child) => {
                           const ChildIcon = child.icon;
                           return (
@@ -150,7 +151,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Main content */}
       <div className={`transition-all ${isSidebarOpen ? 'lg:ml-64' : ''}`}>
         {/* Top bar */}
-        <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-700">
           <div className="flex items-center justify-between px-4 py-3">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -160,7 +161,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </button>
 
             <div className="flex items-center space-x-4">
-              <LanguageSwitcher />
               <button
                 onClick={toggleDarkMode}
                 className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -171,6 +171,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <Moon className="w-5 h-5" />
                 )}
               </button>
+              <LanguageSwitcher />
+              <LoginButton />
             </div>
           </div>
         </header>
