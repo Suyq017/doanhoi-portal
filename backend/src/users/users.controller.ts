@@ -55,6 +55,13 @@ export class UsersController {
     };
   }
 
+  @Get('password-status')
+  @ApiOperation({ summary: 'Kiểm tra users có mật khẩu mặc định cần thông báo' })
+  @ApiResponse({ status: 200, description: 'Danh sách users cần thông báo mật khẩu' })
+  async getUsersWithDefaultPassword() {
+    return this.usersService.getUsersWithDefaultPassword();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Lấy thông tin chi tiết người dùng' })
   @ApiResponse({ status: 200, description: 'Thông tin người dùng' })

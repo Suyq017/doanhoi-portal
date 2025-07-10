@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User } from '../../../shared/types/user';
+import { authService, AuthResponse } from '../services/authService';
 
 export interface AuthState {
   user: User | null;
@@ -11,7 +12,7 @@ export interface AuthState {
 
 export interface AuthContextType {
   auth: AuthState;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthResponse>;
   googleLogin: (googleToken: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
@@ -36,66 +37,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check for stored tokens on app start
-    const token = localStorage.getItem('accessToken');
-    const refreshToken = localStorage.getItem('refreshToken');
-    const userData = localStorage.getItem('user');
+    const token = authService.getAccessToken();
+    const refreshToken = authService.getRefreshToken();
+    const userData = authService.getUser();
 
     if (token && refreshToken && userData) {
-      try {
-        const user = JSON.parse(userData);
-        setAuth({
-          user,
-          token,
-          refreshToken,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      } catch (error) {
-        console.error('Error parsing stored user data:', error);
-        clearAuth();
-      }
+      setAuth({
+        user: userData,
+        token,
+        refreshToken,
+        isAuthenticated: true,
+        isLoading: false,
+      });
     } else {
       setAuth(prev => ({ ...prev, isLoading: false }));
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<AuthResponse> => {
     try {
       setAuth(prev => ({ ...prev, isLoading: true }));
       
-      // Mock API call - replace with actual API call
-      console.log('Login attempt:', { email, password });
+      // Use actual auth service
+      const response = await authService.login({ email, password });
       
-      // Simulate API response
-      const mockResponse = {
-        user: {
-          id: '1',
-          code: 'U001',
-          familyName: 'User',
-          givenName: 'Test',
-          email: email,
-          phone: '0123456789',
-          userType: 'staff' as const,
-          membershipStatus: 'doan_vien' as const,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        token: 'mock-access-token',
-        refreshToken: 'mock-refresh-token',
-      };
-
-      // Store tokens
-      localStorage.setItem('accessToken', mockResponse.token);
-      localStorage.setItem('refreshToken', mockResponse.refreshToken);
-      localStorage.setItem('user', JSON.stringify(mockResponse.user));
-
+      // Store tokens and user data
+      authService.setTokens(response.accessToken, response.refreshToken);
+      authService.setUser(response.user);
+      
       setAuth({
-        user: mockResponse.user,
-        token: mockResponse.token,
-        refreshToken: mockResponse.refreshToken,
+        user: response.user,
+        token: response.accessToken,
+        refreshToken: response.refreshToken,
         isAuthenticated: true,
         isLoading: false,
       });
+      
+      return response;
     } catch (error) {
       setAuth(prev => ({ ...prev, isLoading: false }));
       throw error;
@@ -106,70 +84,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setAuth(prev => ({ ...prev, isLoading: true }));
       
-      // Mock API call - replace with actual API call
+      // TODO: Implement Google OAuth later
       console.log('Google login attempt:', { googleToken });
-      
-      // Simulate API response
-      const mockResponse = {
-        user: {
-          id: '2',
-          code: 'U002',
-          familyName: 'User',
-          givenName: 'Google',
-          email: 'user@gmail.com',
-          phone: '0987654321',
-          userType: 'student' as const,
-          membershipStatus: 'hoi_vien' as const,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        token: 'mock-google-access-token',
-        refreshToken: 'mock-google-refresh-token',
-      };
-
-      // Store tokens
-      localStorage.setItem('accessToken', mockResponse.token);
-      localStorage.setItem('refreshToken', mockResponse.refreshToken);
-      localStorage.setItem('user', JSON.stringify(mockResponse.user));
-
-      setAuth({
-        user: mockResponse.user,
-        token: mockResponse.token,
-        refreshToken: mockResponse.refreshToken,
-        isAuthenticated: true,
-        isLoading: false,
-      });
+      throw new Error('Google login not implemented yet');
     } catch (error) {
       setAuth(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
   };
 
-  const logout = () => {
-    clearAuth();
-    // Mock API call for logout
-    console.log('Logout');
+  const logout = async () => {
+    try {
+      const token = authService.getAccessToken();
+      if (token) {
+        await authService.logout(token);
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      clearAuth();
+    }
   };
 
   const setUser = (user: User | null) => {
     setAuth(prev => ({ ...prev, user }));
     if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('user');
+      authService.setUser(user);
     }
   };
 
   const setTokens = (token: string, refreshToken: string) => {
+    authService.setTokens(token, refreshToken);
     setAuth(prev => ({ ...prev, token, refreshToken }));
-    localStorage.setItem('accessToken', token);
-    localStorage.setItem('refreshToken', refreshToken);
   };
 
   const clearAuth = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    authService.clearTokens();
     setAuth({
       user: null,
       token: null,

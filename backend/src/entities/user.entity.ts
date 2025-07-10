@@ -15,6 +15,11 @@ export enum MembershipStatus {
   NONE = 'none',
 }
 
+export enum AuthProvider {
+  LOCAL = 'local',
+  GOOGLE = 'google',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -40,6 +45,22 @@ export class User {
 
   @Column({ nullable: true })
   googleId: string; // For Google OAuth
+
+  @Column({
+    type: 'enum',
+    enum: AuthProvider,
+    default: AuthProvider.LOCAL,
+  })
+  authProvider: AuthProvider;
+
+  @Column({ default: true })
+  isActive: boolean;
+
+  @Column({ nullable: true })
+  lastLogin: Date;
+
+  @Column({ nullable: true, type: 'text' })
+  refreshToken: string;
 
   @Column({
     type: 'enum',

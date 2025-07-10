@@ -9,6 +9,8 @@ export interface User {
     googleId?: string;
     userType: 'student' | 'staff';
     membershipStatus: 'doan_vien' | 'hoi_vien' | 'both' | 'none';
+    isActive: boolean;
+    lastLogin?: string;
     createdAt: string;
     updatedAt: string;
     managementDepartment?: any;

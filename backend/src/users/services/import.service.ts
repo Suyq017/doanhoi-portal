@@ -2,7 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User, UserType, MembershipStatus } from '../../entities/user.entity';
+import { User, UserType, MembershipStatus, AuthProvider } from '../../entities/user.entity';
 import { Class } from '../../entities/class.entity';
 import { Department } from '../../entities/department.entity';
 import { Organization } from '../../entities/organization.entity';
@@ -47,6 +47,8 @@ export interface ImportExecuteResponse {
   skippedCount: number;
   failedCount: number;
   errors: string[];
+  usersWithDefaultPassword?: string[]; // List of emails that received default password
+  defaultPassword?: string; // The default password used
 }
 
 @Injectable()
@@ -329,12 +331,17 @@ export class ImportService {
     user.phone = userData.phone || '';
     
     // Handle password
+    let userPassword = '';
     if (userData.password && userData.password.trim()) {
-      user.password = await bcrypt.hash(userData.password, 10);
+      userPassword = userData.password.trim();
+      user.password = await bcrypt.hash(userPassword, 10);
     } else {
-      // Generate random password if not provided
-      const randomPassword = this.generateRandomPassword();
-      user.password = await bcrypt.hash(randomPassword, 10);
+      // Generate password from email if not provided
+      userPassword = this.generatePasswordFromEmail(userData.email);
+      user.password = await bcrypt.hash(userPassword, 10);
+      
+      // Log the generated password for admin reference
+      console.log(`User ${userData.email} created with email-based password: ${userPassword}`);
     }
 
     // Set user type
@@ -343,7 +350,9 @@ export class ImportService {
     // Set membership status
     user.membershipStatus = userData.membershipStatus as MembershipStatus || MembershipStatus.NONE;
 
-    // Note: User entity does not have isActive field, so we ignore that property
+    // Set authentication fields
+    user.authProvider = AuthProvider.LOCAL;
+    user.isActive = true;
 
     // Set class reference
     if (userData.classId) {
@@ -397,6 +406,22 @@ export class ImportService {
     }
     
     return savedUser;
+  }
+
+  private getDefaultPassword(): string {
+    // This method is no longer used - keeping for compatibility
+    // Password will be generated from email instead
+    return '123456';
+  }
+
+  private generatePasswordFromEmail(email: string): string {
+    // Generate password from email: take username part before @
+    // Example: "nguyen.van.a@example.com" → "nguyen.van.a"
+    // Example: "test@example.com" → "test"
+    const username = email.split('@')[0];
+    
+    // Return the username as-is (no minimum length requirement)
+    return username;
   }
 
   private generateRandomPassword(length: number = 8): string {

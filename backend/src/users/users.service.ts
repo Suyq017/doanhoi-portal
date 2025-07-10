@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Not, IsNull } from 'typeorm';
 import { User, UserType, MembershipStatus } from '../entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -137,5 +137,71 @@ export class UsersService {
   async validatePassword(user: User, password: string): Promise<boolean> {
     if (!user.password) return false;
     return bcrypt.compare(password, user.password);
+  }
+
+  async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
+    await this.usersRepository.update(userId, { 
+      refreshToken,
+      lastLogin: refreshToken ? new Date() : undefined
+    });
+  }
+
+  async getUsersWithDefaultPassword(): Promise<{
+    users: { id: string; familyName: string; givenName: string; email: string; hasEmailBasedPassword: boolean; emailBasedPassword?: string }[];
+    totalUsersWithEmailBasedPassword: number;
+  }> {
+    
+    // Get all users with passwords
+    const users = await this.usersRepository.find({
+      select: ['id', 'familyName', 'givenName', 'email', 'password'],
+      where: { password: Not(IsNull()) }
+    });
+    
+    const usersWithStatus = [];
+    
+    for (const user of users) {
+      try {
+        // Generate expected email-based password
+        const emailBasedPassword = this.generatePasswordFromEmail(user.email);
+        
+        // Check if user has email-based password
+        const hasEmailBasedPassword = await bcrypt.compare(emailBasedPassword, user.password);
+        
+        usersWithStatus.push({
+          id: user.id,
+          familyName: user.familyName,
+          givenName: user.givenName,
+          email: user.email,
+          hasEmailBasedPassword,
+          emailBasedPassword: hasEmailBasedPassword ? emailBasedPassword : undefined
+        });
+      } catch (error) {
+        // If password comparison fails, assume it's not email-based password
+        usersWithStatus.push({
+          id: user.id,
+          familyName: user.familyName,
+          givenName: user.givenName,
+          email: user.email,
+          hasEmailBasedPassword: false
+        });
+      }
+    }
+    
+    const totalUsersWithEmailBasedPassword = usersWithStatus.filter(u => u.hasEmailBasedPassword).length;
+    
+    return {
+      users: usersWithStatus,
+      totalUsersWithEmailBasedPassword
+    };
+  }
+
+  private generatePasswordFromEmail(email: string): string {
+    // Generate password from email: take username part before @
+    // Example: "nguyen.van.a@example.com" → "nguyen.van.a"
+    // Example: "test@example.com" → "test"
+    const username = email.split('@')[0];
+    
+    // Return the username as-is (no minimum length requirement)
+    return username;
   }
 }
