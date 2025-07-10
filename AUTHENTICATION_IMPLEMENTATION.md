@@ -68,7 +68,11 @@ backend/src/auth/
 
 ## Configuration
 
+Hệ thống đã có sẵn file `.env` với cấu hình đúng, không cần tạo từ template.
+
 ### 1. Backend Environment Variables (.env)
+
+File `backend/.env` đã được cấu hình với:
 
 ```env
 # Database Configuration
@@ -79,21 +83,23 @@ DB_PASSWORD=password
 DB_NAME=doanhoi
 
 # JWT Configuration
-JWT_SECRET=your-super-secret-jwt-key-here-change-this-in-production
+JWT_SECRET=jwt-secret-key-2025
 JWT_EXPIRES_IN=30m
-JWT_REFRESH_SECRET=your-super-secret-refresh-key-here-change-this-in-production
+JWT_REFRESH_SECRET=jwt-refresh-secret-2025
 JWT_REFRESH_EXPIRES_IN=7d
 
 # Application Configuration
 NODE_ENV=development
-PORT=3000
+PORT=9200
 ```
 
 ### 2. Frontend Environment Variables (.env)
 
+File `frontend/.env` đã được cấu hình với:
+
 ```env
 # Backend API Configuration
-VITE_BACKEND_API_URL=http://localhost:3000
+VITE_BACKEND_API_URL=http://localhost:9200
 ```
 
 ## Cách sử dụng
