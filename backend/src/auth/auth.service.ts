@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
-import { User } from '../entities/user.entity';
+import { User, AuthProvider } from '../entities/user.entity';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
 import * as bcrypt from 'bcryptjs';
@@ -95,5 +95,26 @@ export class AuthService {
 
   async logout(userId: string): Promise<void> {
     await this.usersService.updateRefreshToken(userId, null);
+  }
+
+  async googleLogin(profile: any): Promise<AuthResponseDto> {
+    const { id, emails, name } = profile;
+    const email = emails[0].value;
+
+    let user = await this.usersService.findByEmail(email);
+
+    if (user) {
+      // User exists, update Google ID if not set
+      if (!user.googleId) {
+        await this.usersService.updateGoogleId(user.id, id);
+        user.googleId = id;
+        user.authProvider = AuthProvider.GOOGLE;
+      }
+    } else {
+      // User doesn't exist, return error since we only allow existing users
+      throw new UnauthorizedException('User not found. Please contact administrator.');
+    }
+
+    return this.login(user);
   }
 }

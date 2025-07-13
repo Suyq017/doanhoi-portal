@@ -41,6 +41,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const refreshToken = authService.getRefreshToken();
     const userData = authService.getUser();
 
+    console.log('AuthContext initialization:', { 
+      hasToken: !!token, 
+      hasRefreshToken: !!refreshToken, 
+      hasUserData: !!userData 
+    });
+
     if (token && refreshToken && userData) {
       setAuth({
         user: userData,
@@ -50,7 +56,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isLoading: false,
       });
     } else {
-      setAuth(prev => ({ ...prev, isLoading: false }));
+      setAuth(prev => ({ 
+        ...prev, 
+        isLoading: false,
+        isAuthenticated: false,
+        user: null,
+        token: null,
+        refreshToken: null
+      }));
     }
   }, []);
 
@@ -107,7 +120,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const setUser = (user: User | null) => {
-    setAuth(prev => ({ ...prev, user }));
+    setAuth(prev => ({ 
+      ...prev, 
+      user,
+      isAuthenticated: !!user 
+    }));
     if (user) {
       authService.setUser(user);
     }
@@ -115,7 +132,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const setTokens = (token: string, refreshToken: string) => {
     authService.setTokens(token, refreshToken);
-    setAuth(prev => ({ ...prev, token, refreshToken }));
+    setAuth(prev => ({ 
+      ...prev, 
+      token, 
+      refreshToken,
+      isAuthenticated: true 
+    }));
   };
 
   const clearAuth = () => {

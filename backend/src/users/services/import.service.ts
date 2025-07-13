@@ -408,30 +408,14 @@ export class ImportService {
     return savedUser;
   }
 
-  private getDefaultPassword(): string {
-    // This method is no longer used - keeping for compatibility
-    // Password will be generated from email instead
-    return '123456';
-  }
-
   private generatePasswordFromEmail(email: string): string {
     // Generate password from email: take username part before @
-    // Example: "nguyen.van.a@example.com" → "nguyen.van.a"
+    // Example: "nguyen.van.a@example.com" → "nguyenvana"
     // Example: "test@example.com" → "test"
     const username = email.split('@')[0];
     
-    // Return the username as-is (no minimum length requirement)
-    return username;
-  }
+    const password = username.replace(/\./g, '');
 
-  private generateRandomPassword(length: number = 8): string {
-    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let password = '';
-    
-    for (let i = 0; i < length; i++) {
-      password += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    
     return password;
   }
 

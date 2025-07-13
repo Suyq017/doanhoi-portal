@@ -146,6 +146,13 @@ export class UsersService {
     });
   }
 
+  async updateGoogleId(userId: string, googleId: string): Promise<void> {
+    await this.usersRepository.update(userId, { 
+      googleId,
+      authProvider: 'google' as any
+    });
+  }
+
   async getUsersWithDefaultPassword(): Promise<{
     users: { id: string; familyName: string; givenName: string; email: string; hasEmailBasedPassword: boolean; emailBasedPassword?: string }[];
     totalUsersWithEmailBasedPassword: number;
@@ -197,11 +204,12 @@ export class UsersService {
 
   private generatePasswordFromEmail(email: string): string {
     // Generate password from email: take username part before @
-    // Example: "nguyen.van.a@example.com" → "nguyen.van.a"
+    // Example: "nguyen.van.a@example.com" → "nguyenvana"
     // Example: "test@example.com" → "test"
     const username = email.split('@')[0];
-    
-    // Return the username as-is (no minimum length requirement)
-    return username;
+
+    const password = username.replace(/\./g, '');
+
+    return password;
   }
 }

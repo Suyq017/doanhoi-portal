@@ -10,7 +10,7 @@ import { OrganizationsDetailPage } from './features/organizations';
 import { OrganizationsSubDetailPage } from './features/organizations';
 import { OrganizationMembersPage } from './features/organizations';
 import { ClassesPage } from './features/classes';
-import { AuthProvider } from './features/auth';
+import { AuthProvider, AuthCallback } from './features/auth';
 import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
 
@@ -34,6 +34,7 @@ function App() {
                   <Route path="/organizations/:parentType/:parentCode/:type/:code/members" element={<OrganizationMembersPage />} />
                   <Route path="/departments" element={<DepartmentsPage />} />
                   <Route path="/classes" element={<ClassesPage />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
                 </Routes>
               </OrganizationStatsProvider>
             </Layout>

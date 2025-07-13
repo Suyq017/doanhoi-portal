@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../context/AuthContext';
 
 interface GoogleLoginButtonProps {
   onSuccess?: () => void;
@@ -9,22 +8,18 @@ interface GoogleLoginButtonProps {
 
 const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess, onError }) => {
   const { t } = useTranslation(['auth', 'common']);
-  const { googleLogin } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     
     try {
-      // Mock Google OAuth token - in real implementation, this would come from Google OAuth
-      const mockGoogleToken = 'mock-google-oauth-token';
-      
-      await googleLogin(mockGoogleToken);
-      onSuccess?.();
+      // Redirect to backend Google OAuth endpoint
+      const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
+      window.location.href = `${backendUrl}/auth/google`;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t('auth:form.error.googleLoginFailed');
       onError?.(errorMessage);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -34,11 +29,11 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess, onErro
       type="button"
       onClick={handleGoogleLogin}
       disabled={isLoading}
-      className="w-full flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus:ring-offset-gray-800"
+      className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus:ring-offset-gray-800"
     >
       {isLoading ? (
         <div className="flex items-center">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700 dark:border-gray-300 mr-2"></div>
+          <div className="w-4 h-4 mr-2 border-b-2 border-gray-700 rounded-full animate-spin dark:border-gray-300"></div>
           {t('auth:form.buttons.signingInWithGoogle')}
         </div>
       ) : (

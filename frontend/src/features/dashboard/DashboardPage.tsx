@@ -52,13 +52,13 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <div
               key={stat.name}
-              className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+              className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
             >
               <div className="flex items-center">
                 <div className={`p-3 rounded-lg ${stat.color}`}>
@@ -88,21 +88,21 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Content Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recent Activities */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
             {t('dashboard:activities.title')}
           </h3>
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-doan-500 rounded-full"></div>
+              <div className="w-2 h-2 rounded-full bg-doan-500"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {t('dashboard:activities.added15Members')}
               </p>
             </div>
             <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-hsv-500 rounded-full"></div>
+              <div className="w-2 h-2 rounded-full bg-hsv-500"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {t('dashboard:activities.updatedClub')}
               </p>
@@ -117,24 +117,24 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
             {t('dashboard:actions.title')}
           </h3>
           <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-3 text-left rounded-md border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <button className="flex items-center justify-between w-full p-3 text-left transition-colors border border-gray-200 rounded-md dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
               <span className="text-sm font-medium text-gray-900 dark:text-white">
                 {t('dashboard:actions.addUser')}
               </span>
               <Users className="w-4 h-4 text-gray-400" />
             </button>
-            <button className="w-full flex items-center justify-between p-3 text-left rounded-md border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <button className="flex items-center justify-between w-full p-3 text-left transition-colors border border-gray-200 rounded-md dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
               <span className="text-sm font-medium text-gray-900 dark:text-white">
                 {t('dashboard:actions.createOrg')}
               </span>
               <Building className="w-4 h-4 text-gray-400" />
             </button>
-            <button className="w-full flex items-center justify-between p-3 text-left rounded-md border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <button className="flex items-center justify-between w-full p-3 text-left transition-colors border border-gray-200 rounded-md dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
               <span className="text-sm font-medium text-gray-900 dark:text-white">
                 {t('dashboard:actions.viewReports')}
               </span>

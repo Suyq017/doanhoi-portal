@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Res } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -6,6 +6,8 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { Response } from 'express';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -65,5 +67,48 @@ export class AuthController {
   })
   async getProfile(@Request() req) {
     return req.user;
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Initiate Google OAuth login' })
+  async googleAuth(@Request() req) {
+    console.log('Initiating Google OAuth login...');
+    // This will redirect to Google
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Google OAuth callback' })
+  async googleAuthRedirect(@Request() req, @Res() res: Response) {
+    try {
+      console.log('Google OAuth callback received:', req.user);
+      
+      if (!req.user) {
+        console.error('No user data received from Google OAuth');
+        const frontendUrl = process.env.FRONTEND_URL;
+        const errorUrl = `${frontendUrl}/auth/callback?error=no_user_data`;
+        return res.redirect(errorUrl);
+      }
+
+      const { user, accessToken, refreshToken } = req.user;
+      
+      if (!accessToken || !refreshToken) {
+        console.error('Missing tokens from Google OAuth response');
+        const frontendUrl = process.env.FRONTEND_URL;
+        const errorUrl = `${frontendUrl}/auth/callback?error=missing_tokens`;
+        return res.redirect(errorUrl);
+      }
+      
+      // Redirect to frontend with tokens
+      const frontendUrl = process.env.FRONTEND_URL;
+      const redirectUrl = `${frontendUrl}/auth/callback?token=${accessToken}&refresh_token=${refreshToken}`;
+      return res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('Google OAuth callback error:', error);
+      const frontendUrl = process.env.FRONTEND_URL;
+      const errorUrl = `${frontendUrl}/auth/callback?error=callback_error`;
+      return res.redirect(errorUrl);
+    }
   }
 }
