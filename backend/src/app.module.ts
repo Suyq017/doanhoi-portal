@@ -8,6 +8,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { ClassesModule } from './classes/classes.module';
 import { ExportModule } from './export/export.module';
+import { PaymentModule } from './payment/payment.module';
+import { PayosModule } from './payos/payos.module';
 
 @Module({
   imports: [
@@ -24,7 +26,7 @@ import { ExportModule } from './export/export.module';
         password: configService.get('DB_PASSWORD', 'password'),
         database: configService.get('DB_NAME', 'doanhoi'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get('NODE_ENV') !== 'production',
+        synchronize: true,
         logging: configService.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
@@ -36,6 +38,8 @@ import { ExportModule } from './export/export.module';
     DepartmentsModule,
     ClassesModule,
     ExportModule,
+    PaymentModule,
+    PayosModule, // Import module PayOS của chúng ta
   ],
 })
 export class AppModule { }

@@ -10,7 +10,7 @@ class ApiClient {
   }> = [];
 
   constructor() {
-    this.baseURL = import.meta.env.VITE_BACKEND_API_URL || '';
+    this.baseURL = '';
   }
 
   private processQueue(error: any, token: string | null = null) {

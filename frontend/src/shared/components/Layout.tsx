@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight } from 'lucide-react';
+import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, CreditCard } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -43,6 +43,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         { name: t('navigation.classes'), href: '/classes', icon: GraduationCap },
       ]
     },
+    { name: 'Quản lý đóng phí', href: '/admin/payment-campaigns', icon: CreditCard },
+    { name: 'Đóng phí của tôi', href: '/payment/my-campaigns', icon: CreditCard },
   ];
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
