@@ -11,12 +11,13 @@ import { OrganizationsSubDetailPage } from './features/organizations';
 import { OrganizationMembersPage } from './features/organizations';
 import { ClassesPage } from './features/classes';
 import { AuthProvider, AuthCallback } from './features/auth';
-import { PaymentCampaignsPage } from './pages/admin/PaymentCampaignsPage';
-import CreatePaymentCampaignPage from './pages/admin/CreatePaymentCampaignPage';
-import PaymentCampaignDetailPage from './pages/admin/PaymentCampaignDetailPage';
-// Removed: PaymentHistoryPage import
-import { PaymentResultPage } from './pages/member/PaymentResultPage';
-import { MyCampaignsPage } from './pages/member/MyCampaignsPage';
+import { 
+  PaymentCampaignsPage,
+  CreatePaymentCampaignPage,
+  PaymentCampaignDetailPage,
+  PaymentResultPage,
+  MyCampaignsPage
+} from './features/fee-collection';
 import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
 

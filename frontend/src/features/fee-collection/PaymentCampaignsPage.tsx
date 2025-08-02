@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
-import PaymentCampaignList from "../../features/fee-collection/components/admin/PaymentCampaignList";
-import { Organization } from "../../features/fee-collection/types";
+import PaymentCampaignList from "./components/admin/PaymentCampaignList";
+import { Organization } from "./types";
 
 export const PaymentCampaignsPage = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -41,3 +41,5 @@ export const PaymentCampaignsPage = () => {
     </div>
   );
 };
+
+export default PaymentCampaignsPage;

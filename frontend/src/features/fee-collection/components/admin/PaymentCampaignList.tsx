@@ -4,7 +4,7 @@ import { Search, Eye, Edit, Trash2, Play, CheckCircle, X } from 'lucide-react';
 import { useToast } from '@/shared/hooks/useToast';
 import Toast from '@/shared/components/Toast';
 import { PaymentCampaign, PaymentCampaignFilters, Organization } from '../../types';
-import { paymentCampaignService } from '../../services/paymentCampaignService';
+import { paymentCampaignService } from '@/shared/services/fee-collection-service';
 
 interface PaymentCampaignListProps {
   organizations: Organization[];

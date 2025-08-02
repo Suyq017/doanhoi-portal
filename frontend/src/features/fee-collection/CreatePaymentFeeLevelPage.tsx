@@ -1,5 +1,5 @@
 import React from 'react';
-import PaymentFeeLevelForm from '../../features/fee-collection/components/admin/PaymentFeeLevelForm';
+import PaymentFeeLevelForm from './components/admin/PaymentFeeLevelForm';
 
 const CreatePaymentFeeLevelPage: React.FC = () => {
   return (

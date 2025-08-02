@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CreditCard, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { usePaymentAssignments } from '../../shared/hooks/usePaymentAssignments';
 import { TextInput, Select } from '../../shared/components/forms/FormFields';
-import { paymentService } from '../../features/fee-collection/services/paymentService';
+import { paymentService } from '../../shared/services/fee-collection-service';
 
 // Import the PaymentAssignment type from the hook file
 type PaymentAssignment = {
@@ -419,3 +419,5 @@ export const MyCampaignsPage: React.FC = () => {
     </div>
   );
 };
+
+export default MyCampaignsPage;

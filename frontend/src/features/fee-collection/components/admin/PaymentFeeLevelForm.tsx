@@ -7,8 +7,7 @@ import {
   UpdatePaymentFeeLevelDto,
   PaymentCampaign 
 } from '../../types';
-import { paymentFeeLevelService } from '../../services/paymentFeeLevelService';
-import { paymentCampaignService } from '../../services/paymentCampaignService';
+import { paymentFeeLevelService, paymentCampaignService } from '@/shared/services/fee-collection-service';
 
 interface PaymentFeeLevelFormProps {
   mode: 'create' | 'edit';

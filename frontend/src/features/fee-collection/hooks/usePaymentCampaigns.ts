@@ -6,7 +6,7 @@ import {
   CreatePaymentCampaignDto,
   UpdatePaymentCampaignDto
 } from '../types';
-import { paymentCampaignService } from '../services/paymentCampaignService';
+import { paymentCampaignService } from '../../../shared/services/fee-collection-service';
 
 export const usePaymentCampaigns = (initialFilters: PaymentCampaignFilters = {}) => {
   const [state, setState] = useState<PaymentCampaignListState>({

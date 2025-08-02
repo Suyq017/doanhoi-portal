@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import PaymentCampaignForm from '../../features/fee-collection/components/admin/PaymentCampaignForm';
-import { Organization } from '../../features/fee-collection/types';
+import PaymentCampaignForm from './components/admin/PaymentCampaignForm';
+import { Organization } from './types';
 
 // Temporary service to get organizations - this would use the existing organizations service
 const getOrganizations = async (): Promise<Organization[]> => {

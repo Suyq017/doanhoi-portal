@@ -114,3 +114,5 @@ export const PaymentStatus: React.FC<PaymentStatusProps> = ({
     </div>
   );
 };
+
+export default PaymentStatus;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PaymentCampaign } from '../../../types';
 import AssignmentStatistics from '../assignment/AssignmentStatistics';
-import { paymentAssignmentService } from '@/features/fee-collection/services/paymentAssignmentService';
+import { paymentAssignmentService } from '@/shared/services/fee-collection-service';
 
 interface StatisticsTabProps {
   campaign: PaymentCampaign;

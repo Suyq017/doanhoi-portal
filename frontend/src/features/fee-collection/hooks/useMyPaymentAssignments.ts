@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { paymentAssignmentService } from '../services/paymentAssignmentService';
+import { paymentAssignmentService } from '../../../shared/services/fee-collection-service';
 import { PaymentAssignment } from '../types';
 
 export const useMyPaymentAssignments = () => {

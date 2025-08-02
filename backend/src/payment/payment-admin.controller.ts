@@ -1,6 +1,6 @@
 import { Controller, Post, Param, HttpException, HttpStatus } from '@nestjs/common';
-import { PaymentHistoryService } from '../../payment/services/payment-history.service';
-import { PaymentAssignmentService } from '../../payment/services/payment-assignment.service';
+import { PaymentHistoryService } from './services/payment-history.service';
+import { PaymentAssignmentService } from './services/payment-assignment.service';
 
 @Controller('api/payment-admin')
 export class PaymentAdminController {

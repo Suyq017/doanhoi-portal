@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
-import { paymentService } from '../../features/fee-collection/services/paymentService';
+import { paymentService } from '../../shared/services/fee-collection-service';
 
 interface PaymentStatus {
   id: string;
@@ -302,3 +302,5 @@ export const PaymentResultPage: React.FC = () => {
     </div>
   );
 };
+
+export default PaymentResultPage;

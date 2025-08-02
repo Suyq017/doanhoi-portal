@@ -5,7 +5,7 @@ import {
   CreatePaymentFeeLevelDto, 
   UpdatePaymentFeeLevelDto 
 } from '../../types';
-import { paymentFeeLevelService } from '../../services/paymentFeeLevelService';
+import { paymentFeeLevelService } from '@/shared/services/fee-collection-service';
 
 interface FeeLevelManagerProps {
   campaignId: string;

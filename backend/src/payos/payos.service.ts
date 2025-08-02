@@ -29,10 +29,6 @@ export class SimplePayosService {
       config.apiKey,
       config.checksumKey
     );
-    console.log('Cliend ID:', config.clientId);
-    console.log('API Key:', config.apiKey);
-    console.log('Checksum Key:', config.checksumKey);
-
     // Xóa organizationId khỏi orderData trước khi gửi đến PayOS
     // const { organizationId, ...payosOrderData } = orderData;
     
@@ -124,7 +120,6 @@ export class SimplePayosService {
   private async updateAssignmentOnPaymentSuccess(assignmentId: string, paidAt: Date): Promise<void> {
     try {
       await this.paymentAssignmentService.markAsPaid(assignmentId);
-      console.log(`✅ Successfully marked assignment ${assignmentId} as paid at ${paidAt.toISOString()}`);
     } catch (error) {
       console.error(`❌ Failed to mark assignment ${assignmentId} as paid:`, error.message);
       // Log error nhưng không throw để không block việc cập nhật payment history

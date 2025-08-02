@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Param, Body, Query, HttpException, HttpStatus } from '@nestjs/common';
-import { SimplePayosService } from '../../payos/payos.service';
-import { PaymentHistoryService } from '../../payment/services/payment-history.service';
+import { SimplePayosService } from './payos.service';
+import { PaymentHistoryService } from '../payment/services/payment-history.service';
 
 @Controller('api/payment')
 export class PaymentController {
@@ -35,7 +35,6 @@ export class PaymentController {
         organizationId: requestBody.organizationId
       };
 
-      console.log('Payment request:', requestBody);
       const paymentLink = await this.payosService.createPaymentLink(order);
 
       return {
@@ -76,14 +75,12 @@ export class PaymentController {
 
       // Lấy organizationId từ assignment → campaign → organization
       const organizationId = paymentHistory.assignment?.campaign?.organization?.id;
-      console.log('Organization ID:', organizationId);
       if (!organizationId) {
         throw new HttpException('Organization not found for this payment', HttpStatus.NOT_FOUND);
       }
 
       // Gọi PayOS để check status và cập nhật database
       const paymentInfo = await this.payosService.getPaymentLinkInformation(orderNumber, organizationId);
-      console.log(paymentInfo)
       return paymentInfo;
     } catch (error) {
       console.error(`Error checking status for order ${orderCode}:`, error);

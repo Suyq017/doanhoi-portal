@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings, AlertCircle, CheckCircle } from 'lucide-react';
 import PayOSConfigForm from '../payos/PayOSConfigForm';
 import { PaymentCampaign } from '../../../types';
-import { payosConfigService, PayOSConfig, CreatePayOSConfigRequest, UpdatePayOSConfigRequest } from '../../../services/payosConfigService';
+import { payosConfigService, PayOSConfig, CreatePayOSConfigRequest, UpdatePayOSConfigRequest } from '@/shared/services/fee-collection-service/payosConfigService';
 
 // PayOSConfig interface for form compatibility
 interface FormPayOSConfig {

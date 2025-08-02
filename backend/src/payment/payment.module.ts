@@ -19,7 +19,6 @@ import { PaymentFeeLevelService } from './services/payment-fee-level.service';
 import { PaymentHistoryService } from './services/payment-history.service';
 import { PaymentAssignmentService } from './services/payment-assignment.service';
 import { PayosConfigService } from './services/payos-config.service';
-import { PayosService } from './services/payos.service';
 
 // Controllers
 import { PaymentCampaignController } from './controllers/payment-campaign.controller';
@@ -27,8 +26,8 @@ import { PaymentFeeLevelController } from './controllers/payment-fee-level.contr
 import { PaymentAssignmentController } from './payment-assignment.controller';
 import { OrganizationPayOSConfigController } from './controllers/organization-payos-config.controller';
 import { PayosConfigController } from './controllers/payos-config.controller';
-import { PaymentController } from '../api/payment/payment.controller'; // Import API controller
-import { PaymentAdminController } from '../api/payment/payment-admin.controller'; // Import Admin API controller
+import { PaymentController } from '../payos/payment.controller'; // Import API controller
+import { PaymentAdminController } from './payment-admin.controller'; // Import Admin API controller
 
 @Module({
   imports: [
@@ -58,7 +57,6 @@ import { PaymentAdminController } from '../api/payment/payment-admin.controller'
     PaymentHistoryService, // Thêm PaymentHistoryService
     PaymentAssignmentService,
     PayosConfigService,
-    PayosService,
   ],
   exports: [
     PaymentCampaignService,
@@ -66,7 +64,6 @@ import { PaymentAdminController } from '../api/payment/payment-admin.controller'
     PaymentHistoryService, // Export PaymentHistoryService
     PaymentAssignmentService,
     PayosConfigService, // Export để PayosModule có thể sử dụng
-    PayosService,
   ],
 })
 export class PaymentModule {}

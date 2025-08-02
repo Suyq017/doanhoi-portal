@@ -7,7 +7,7 @@ import {
   UpdatePaymentCampaignDto,
   Organization 
 } from '../../types';
-import { paymentCampaignService } from '../../services/paymentCampaignService';
+import { paymentCampaignService } from '@/shared/services/fee-collection-service';
 
 interface PaymentCampaignBasicFormData {
   organizationId: string;

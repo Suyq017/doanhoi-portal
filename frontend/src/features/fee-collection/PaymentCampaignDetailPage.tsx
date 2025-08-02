@@ -1,5 +1,5 @@
 import React from 'react';
-import PaymentCampaignDetail from '../../features/fee-collection/components/admin/PaymentCampaignDetail';
+import PaymentCampaignDetail from './components/admin/PaymentCampaignDetail';
 
 const PaymentCampaignDetailPage: React.FC = () => {
   return (

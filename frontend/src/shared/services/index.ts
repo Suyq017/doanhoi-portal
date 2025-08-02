@@ -3,3 +3,4 @@ export * from './organizationService';
 export * from './dashboardService';
 export * from './departmentService';
 export * from './classService';
+export * from './fee-collection-service';

@@ -3,8 +3,7 @@ import { PaymentCampaign } from '../../../types';
 import MemberSelector from '../assignment/MemberSelector';
 import AssignmentBulkForm from '../assignment/AssignmentBulkForm';
 import AssignmentList from '../assignment/AssignmentList';
-import { paymentAssignmentService } from '@/features/fee-collection/services/paymentAssignmentService';
-import { paymentFeeLevelService } from '@/features/fee-collection/services/paymentFeeLevelService';
+import { paymentAssignmentService, paymentFeeLevelService } from '@/shared/services/fee-collection-service';
 
 interface MemberAssignmentTabProps {
   campaign: PaymentCampaign;

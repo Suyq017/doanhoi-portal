@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { 
-  PaymentCampaign, 
-  PaymentCampaignFilters, 
+import { useState, useEffect, useCallback } from 'react';
+import {
+  PaymentCampaign,
+  PaymentCampaignFilters,
   PaymentCampaignListState,
   CreatePaymentCampaignDto,
   UpdatePaymentCampaignDto
-} from '../types';
-import { paymentCampaignService } from '../services/paymentCampaignService';
+} from '../../features/fee-collection/types';
+import { paymentCampaignService } from '../services/fee-collection-service';
 
 export const usePaymentCampaigns = (initialFilters: PaymentCampaignFilters = {}) => {
   const [state, setState] = useState<PaymentCampaignListState>({
