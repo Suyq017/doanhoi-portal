@@ -1,8 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { PaymentCampaign } from './payment-campaign.entity';
 import { PaymentFeeLevel } from './payment-fee-level.entity';
 import { User } from './user.entity';
-import { PaymentTransaction } from './payment-transaction.entity';
 
 export enum PaymentAssignmentStatus {
   PENDING = 'PENDING',
@@ -65,9 +64,6 @@ export class PaymentAssignment {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'assigned_by' })
   assignedByUser: User;
-
-  @OneToMany(() => PaymentTransaction, transaction => transaction.assignment)
-  transactions: PaymentTransaction[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, DollarSign, TrendingUp, Clock, CheckCircle, AlertTriangle, XCircle, BarChart3 } from 'lucide-react';
+import { Users, DollarSign, TrendingDown, Clock, CheckCircle, AlertTriangle, BarChart3 } from 'lucide-react';
 
 interface AssignmentStatisticsProps {
   campaignId: string;
@@ -8,7 +8,6 @@ interface AssignmentStatisticsProps {
     pendingCount: number;
     paidCount: number;
     overdueCount: number;
-    exemptedCount: number;
     totalPaidAmount: number;
     totalAmount: number;
     averageAmount: number;
@@ -93,10 +92,10 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
-          <div className="bg-gray-200 h-8 w-1/3 rounded mb-4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="w-1/3 h-8 mb-4 bg-gray-200 rounded"></div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-gray-200 h-24 rounded-lg"></div>
+              <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -109,11 +108,10 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium text-gray-900 flex items-center">
-            <BarChart3 className="w-5 h-5 mr-2" />
+          <h3 className="flex items-center text-lg font-medium text-gray-900">
             Thống Kê Assignment
           </h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="mt-1 text-sm text-gray-600">
             Tổng quan về tình hình thu phí và thanh toán
           </p>
         </div>
@@ -135,35 +133,35 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
       </div>
 
       {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Total Assignments */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="p-6 bg-white border rounded-lg">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Users className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng Assignment</p>
+              <p className="text-sm font-medium text-gray-600">Tổng Thành Viên Đóng Phí</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalAssignments}</p>
             </div>
           </div>
         </div>
 
-        {/* Payment Rate */}
-        <div className="bg-white border rounded-lg p-6">
+        {/* Remaining Amount */}
+        <div className="p-6 bg-white border rounded-lg">
           <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-green-600" />
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <TrendingDown className="w-6 h-6 text-orange-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tỷ Lệ Thanh Toán</p>
-              <p className="text-2xl font-bold text-gray-900">{formatPercentage(stats.paymentRate)}</p>
+              <p className="text-sm font-medium text-gray-600">Chưa Thu</p>
+              <p className="text-2xl font-bold text-gray-900">{formatAmount(stats.totalAmount - stats.totalPaidAmount)}</p>
             </div>
           </div>
         </div>
 
         {/* Total Collected */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="p-6 bg-white border rounded-lg">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
               <DollarSign className="w-6 h-6 text-green-600" />
@@ -176,13 +174,13 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
         </div>
 
         {/* Total Expected */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="p-6 bg-white border rounded-lg">
           <div className="flex items-center">
             <div className="p-2 bg-purple-100 rounded-lg">
               <DollarSign className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng Dự Kiến</p>
+              <p className="text-sm font-medium text-gray-600">Tổng Thu Dự Kiến</p>
               <p className="text-xl font-bold text-gray-900">{formatAmount(stats.totalAmount)}</p>
             </div>
           </div>
@@ -190,56 +188,35 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
       </div>
 
       {/* Status Breakdown */}
-      <div className="bg-white border rounded-lg p-6">
-        <h4 className="text-lg font-medium text-gray-900 mb-4">Phân Tích Trạng Thái</h4>
+      <div className="p-6 bg-white border rounded-lg">
+        <h4 className="mb-4 text-lg font-medium text-gray-900">Phân Tích Trạng Thái</h4>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
           {/* Pending */}
           <div className="text-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-lg mx-auto mb-2">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-2 bg-yellow-100 rounded-lg">
               <Clock className="w-6 h-6 text-yellow-600" />
             </div>
             <div className="text-2xl font-bold text-yellow-600">{stats.pendingCount}</div>
             <div className="text-sm text-gray-600">Chờ đóng</div>
-            <div className="text-xs text-gray-500 mt-1">
-              {formatPercentage((stats.pendingCount / stats.totalAssignments) * 100)}
-            </div>
           </div>
 
           {/* Paid */}
           <div className="text-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mx-auto mb-2">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-2 bg-green-100 rounded-lg">
               <CheckCircle className="w-6 h-6 text-green-600" />
             </div>
             <div className="text-2xl font-bold text-green-600">{stats.paidCount}</div>
             <div className="text-sm text-gray-600">Đã đóng</div>
-            <div className="text-xs text-gray-500 mt-1">
-              {formatPercentage((stats.paidCount / stats.totalAssignments) * 100)}
-            </div>
           </div>
 
           {/* Overdue */}
           <div className="text-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-lg mx-auto mb-2">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-2 bg-red-100 rounded-lg">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
             <div className="text-2xl font-bold text-red-600">{stats.overdueCount}</div>
             <div className="text-sm text-gray-600">Quá hạn</div>
-            <div className="text-xs text-gray-500 mt-1">
-              {formatPercentage((stats.overdueCount / stats.totalAssignments) * 100)}
-            </div>
-          </div>
-
-          {/* Exempted */}
-          <div className="text-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-lg mx-auto mb-2">
-              <XCircle className="w-6 h-6 text-gray-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-600">{stats.exemptedCount}</div>
-            <div className="text-sm text-gray-600">Miễn đóng</div>
-            <div className="text-xs text-gray-500 mt-1">
-              {formatPercentage((stats.exemptedCount / stats.totalAssignments) * 100)}
-            </div>
           </div>
         </div>
 
@@ -249,7 +226,7 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
             <span className="text-gray-600">Tiến độ thu phí</span>
             <span className="font-medium">{formatPercentage(stats.paymentRate)}</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-3">
+          <div className="w-full h-3 bg-gray-200 rounded-full">
             <div 
               className={`h-3 rounded-full transition-all duration-300 ${getProgressColor(stats.paymentRate)}`}
               style={{ width: `${Math.min(stats.paymentRate, 100)}%` }}
@@ -262,65 +239,6 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
         </div>
       </div>
 
-      {/* Financial Summary */}
-      <div className="bg-white border rounded-lg p-6">
-        <h4 className="text-lg font-medium text-gray-900 mb-4">Tổng Kết Tài Chính</h4>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Số tiền đã thu:</span>
-              <span className="font-medium text-green-600">{formatAmount(stats.totalPaidAmount)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Số tiền dự kiến:</span>
-              <span className="font-medium">{formatAmount(stats.totalAmount)}</span>
-            </div>
-            <div className="flex justify-between border-t pt-2">
-              <span className="text-gray-900 font-medium">Còn thiếu:</span>
-              <span className="font-bold text-red-600">
-                {formatAmount(stats.totalAmount - stats.totalPaidAmount)}
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Số tiền trung bình:</span>
-              <span className="font-medium">{formatAmount(stats.averageAmount)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Tỷ lệ hoàn thành:</span>
-              <span className="font-medium">{formatPercentage(stats.paymentRate)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Hiệu quả thu phí:</span>
-              <span className={`font-medium ${stats.paymentRate >= 80 ? 'text-green-600' : stats.paymentRate >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                {stats.paymentRate >= 80 ? 'Rất tốt' : stats.paymentRate >= 50 ? 'Trung bình' : 'Cần cải thiện'}
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Hạn thu phí:</span>
-              <span className="font-medium">{formatDate(campaignEndDate)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Trạng thái:</span>
-              <span className={`font-medium ${collectionStatus.color}`}>
-                {isOverdue ? 'Quá hạn' : 'Trong hạn'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Thời gian còn lại:</span>
-              <span className={`font-medium ${collectionStatus.color}`}>
-                {collectionStatus.text}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

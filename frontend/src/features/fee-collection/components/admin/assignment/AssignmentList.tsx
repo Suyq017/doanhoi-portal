@@ -1,14 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { Edit, Trash2, Download, Search, Filter, User, Clock, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { Edit, Trash2, Download, Search, Filter, User, Clock, CheckCircle, AlertTriangle, Plus } from 'lucide-react';
 import { PaymentAssignment } from '../../../types';
 
 interface AssignmentListProps {
   assignments: PaymentAssignment[];
   campaignEndDate: string;
+  campaignStatus: string;
   onEditAssignment: (assignment: PaymentAssignment) => void;
   onDeleteAssignment: (assignmentId: string) => void;
   onExportList: () => void;
+  onBulkCreate: () => void;
   loading?: boolean;
+  feeLevelsCount?: number;
 }
 
 interface AssignmentFilters {
@@ -21,10 +24,13 @@ interface AssignmentFilters {
 const AssignmentList: React.FC<AssignmentListProps> = ({
   assignments,
   campaignEndDate,
+  campaignStatus,
   onEditAssignment,
   onDeleteAssignment,
   onExportList,
-  loading = false
+  onBulkCreate,
+  loading = false,
+  feeLevelsCount = 0
 }) => {
   const [filters, setFilters] = useState<AssignmentFilters>({
     search: '',
@@ -38,7 +44,6 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
   // Calculate status including overdue based on campaign end date
   const getAssignmentStatus = (assignment: PaymentAssignment) => {
     if (assignment.status === 'PAID') return 'PAID';
-    if (assignment.status === 'EXEMPTED') return 'EXEMPTED';
     
     const now = new Date();
     const endDate = new Date(campaignEndDate);
@@ -61,8 +66,8 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
     if (filters.search.trim()) {
       const searchTerm = filters.search.toLowerCase();
       result = result.filter(assignment =>
-        assignment.user?.givenName.toLowerCase().includes(searchTerm) ||
-        assignment.user?.givenName.toLowerCase().includes(searchTerm) ||
+        ( assignment.user?.familyName.toLowerCase().includes(searchTerm) &&
+        assignment.user?.givenName.toLowerCase().includes(searchTerm) )||
         assignment.note?.toLowerCase().includes(searchTerm) ||
         assignment.feeLevel?.levelName.toLowerCase().includes(searchTerm)
       );
@@ -83,8 +88,8 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
           bValue = b.user?.givenName || '';
           break;
         case 'amount':
-          aValue = a.customAmount || a.feeLevel?.amount || 0;
-          bValue = b.customAmount || b.feeLevel?.amount || 0;
+          aValue = (a.customAmount ? parseFloat(a.customAmount) : 0) || a.feeLevel?.amount || 0;
+          bValue = (b.customAmount ? parseFloat(b.customAmount) : 0) || b.feeLevel?.amount || 0;
           break;
         case 'status':
           aValue = a.computedStatus;
@@ -124,8 +129,6 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
         return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'OVERDUE':
         return <AlertTriangle className="w-4 h-4 text-red-600" />;
-      case 'EXEMPTED':
-        return <XCircle className="w-4 h-4 text-gray-600" />;
       default:
         return <Clock className="w-4 h-4 text-yellow-600" />;
     }
@@ -135,7 +138,6 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
     switch (status) {
       case 'PAID': return 'Đã đóng';
       case 'OVERDUE': return 'Quá hạn';
-      case 'EXEMPTED': return 'Miễn đóng';
       default: return 'Chờ đóng';
     }
   };
@@ -146,8 +148,6 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
         return 'bg-green-50 text-green-800 border-green-200';
       case 'OVERDUE':
         return 'bg-red-50 text-red-800 border-red-200';
-      case 'EXEMPTED':
-        return 'bg-gray-50 text-gray-800 border-gray-200';
       default:
         return 'bg-yellow-50 text-yellow-800 border-yellow-200';
     }
@@ -171,9 +171,8 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
     const pending = filteredAssignments.filter(a => a.computedStatus === 'PENDING').length;
     const paid = filteredAssignments.filter(a => a.computedStatus === 'PAID').length;
     const overdue = filteredAssignments.filter(a => a.computedStatus === 'OVERDUE').length;
-    const exempted = filteredAssignments.filter(a => a.computedStatus === 'EXEMPTED').length;
 
-    return { total, pending, paid, overdue, exempted };
+    return { total, pending, paid, overdue };
   };
 
   const stats = getFilteredStats();
@@ -203,6 +202,16 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
           </button>
           
           <button
+            onClick={onBulkCreate}
+            disabled={loading || feeLevelsCount === 0 || campaignStatus !== 'ACTIVE'}
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={campaignStatus !== 'ACTIVE' ? 'Cần kích hoạt đợt thu phí trước khi phân công thành viên' : (feeLevelsCount === 0 ? 'Cần có ít nhất một mức phí' : '')}
+          >
+            <Plus className="inline w-4 h-4 mr-2" />
+            Phân công thành viên
+          </button>
+          
+          <button
             onClick={onExportList}
             className="flex items-center px-3 py-2 space-x-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
           >
@@ -212,8 +221,32 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
         </div>
       </div>
 
+      {/* Campaign Status Warning */}
+      {(campaignStatus !== 'ACTIVE' || feeLevelsCount === 0) && !loading && (
+        <div className="p-4 border border-yellow-200 rounded-md bg-yellow-50">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="w-5 h-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                {campaignStatus !== 'ACTIVE' ? 'Đợt thu phí chưa được kích hoạt' : 'Chưa có mức phí nào được thiết lập'}
+              </h3>
+              <p className="mt-1 text-sm text-yellow-700">
+                {campaignStatus !== 'ACTIVE' 
+                  ? 'Vui lòng kích hoạt đợt thu phí trước khi phân công thành viên.' 
+                  : 'Vui lòng thiết lập ít nhất một mức phí ở tab "Mức Phí" trước khi tạo assignment.'
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <div className="p-4 bg-white border rounded-lg">
           <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
           <div className="text-sm text-gray-600">Tổng cộng</div>
@@ -229,10 +262,6 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
         <div className="p-4 bg-white border rounded-lg">
           <div className="text-2xl font-bold text-red-600">{stats.overdue}</div>
           <div className="text-sm text-gray-600">Quá hạn</div>
-        </div>
-        <div className="p-4 bg-white border rounded-lg">
-          <div className="text-2xl font-bold text-gray-600">{stats.exempted}</div>
-          <div className="text-sm text-gray-600">Miễn đóng</div>
         </div>
       </div>
 
@@ -271,7 +300,6 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
                 <option value="PENDING">Chờ đóng</option>
                 <option value="PAID">Đã đóng</option>
                 <option value="OVERDUE">Quá hạn</option>
-                <option value="EXEMPTED">Miễn đóng</option>
               </select>
             </div>
 
@@ -387,7 +415,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
 
                     {/* Amount */}
                     <div className="text-sm font-medium text-gray-900">
-                      {formatAmount(assignment.customAmount || assignment.feeLevel?.amount || 0)}
+                      {formatAmount((assignment.customAmount ? parseFloat(assignment.customAmount) : 0) || assignment.feeLevel?.amount || 0)}
                     </div>
 
                     {/* Status */}
@@ -438,7 +466,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
       {/* Results Summary */}
       {filteredAssignments.length > 0 && (
         <div className="text-sm text-center text-gray-600">
-          Hiển thị {filteredAssignments.length} / {assignments.length} assignment
+          Hiển thị {filteredAssignments.length} / {assignments.length} thành viên
         </div>
       )}
     </div>

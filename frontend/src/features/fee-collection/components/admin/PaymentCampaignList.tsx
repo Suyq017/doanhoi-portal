@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit, Trash2, Play, CheckCircle, X } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, Play, CheckCircle, X } from 'lucide-react';
+import { useToast } from '@/shared/hooks/useToast';
+import Toast from '@/shared/components/Toast';
 import { PaymentCampaign, PaymentCampaignFilters, Organization } from '../../types';
 import { paymentCampaignService } from '../../services/paymentCampaignService';
 
@@ -9,9 +11,11 @@ interface PaymentCampaignListProps {
 }
 
 const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations }) => {
+  const { toasts, showSuccess, showError, hideToast } = useToast();
   const [campaigns, setCampaigns] = useState<PaymentCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null); // Track which action is loading
   const [filters, setFilters] = useState<PaymentCampaignFilters>({
     page: 1,
     limit: 10
@@ -30,6 +34,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
   const loadCampaigns = async () => {
     try {
       setLoading(true);
+      setError(null); // Clear any previous errors
       const response : any = await paymentCampaignService.getPaymentCampaigns(filters);
       setCampaigns(response.campaigns);
       setPagination({
@@ -39,7 +44,10 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
         totalPages: response.totalPages
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load campaigns');
+      console.error('Error loading campaigns:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load campaigns';
+      setError(errorMessage);
+      showError(`Không thể tải danh sách đợt thu phí: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -47,6 +55,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
 
   const handleStatusChange = async (id: string, action: 'activate' | 'complete' | 'cancel') => {
     try {
+      setActionLoading(`${id}-${action}`);
       let response;
       switch (action) {
         case 'activate':
@@ -60,12 +69,34 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
           break;
       }
       
-      // Update the campaign in the list
-      setCampaigns(prev => prev.map(campaign => 
-        campaign.id === id ? response.data : campaign
-      ));
+      // Handle response properly - it might be response.data or just response
+      const updatedCampaign = response?.data || response;
+      
+      if (updatedCampaign) {
+        // Update the campaign in the list
+        setCampaigns(prev => prev.map(campaign => 
+          campaign.id === id ? updatedCampaign : campaign
+        ));
+        
+        // Show success toast
+        const actionMessages = {
+          activate: 'Đợt thu phí đã được kích hoạt thành công!',
+          complete: 'Đợt thu phí đã được hoàn thành thành công!',
+          cancel: 'Đợt thu phí đã được hủy thành công!'
+        };
+        showSuccess(actionMessages[action]);
+      } else {
+        showError('Không thể cập nhật trạng thái đợt thu phí. Vui lòng thử lại.');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update campaign status');
+      console.error('Error in handleStatusChange:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update campaign status';
+      showError(`Không thể ${action === 'activate' ? 'kích hoạt' : action === 'complete' ? 'hoàn thành' : 'hủy'}: ${errorMessage}`);
+      
+      // Reload campaigns to ensure UI is in sync
+      await loadCampaigns();
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -75,8 +106,11 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
     try {
       await paymentCampaignService.deletePaymentCampaign(id);
       setCampaigns(prev => prev.filter(campaign => campaign.id !== id));
+      showSuccess('Đợt thu phí đã được xóa thành công!');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete campaign');
+      console.error('Error in handleDelete:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete campaign';
+      showError(`Không thể xóa đợt thu phí: ${errorMessage}`);
     }
   };
 
@@ -110,18 +144,6 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Quản Lý Đợt Đóng Phí</h1>
-        <Link
-          to="/admin/payment-campaigns/create"
-          className="inline-flex items-center px-4 py-2 text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Tạo Đợt Mới
-        </Link>
-      </div>
-
       {/* Filters */}
       <div className="p-4 bg-white border rounded-lg">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -286,7 +308,8 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
                           </Link>
                           <button
                             onClick={() => handleStatusChange(campaign.id, 'activate')}
-                            className="text-green-600 hover:text-green-900"
+                            disabled={actionLoading === `${campaign.id}-activate`}
+                            className="text-green-600 hover:text-green-900 disabled:opacity-50"
                             title="Kích hoạt"
                           >
                             <Play className="w-4 h-4" />
@@ -305,14 +328,16 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
                         <>
                           <button
                             onClick={() => handleStatusChange(campaign.id, 'complete')}
-                            className="text-blue-600 hover:text-blue-900"
+                            disabled={actionLoading === `${campaign.id}-complete`}
+                            className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
                             title="Hoàn thành"
                           >
                             <CheckCircle className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleStatusChange(campaign.id, 'cancel')}
-                            className="text-red-600 hover:text-red-900"
+                            disabled={actionLoading === `${campaign.id}-cancel`}
+                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
                             title="Hủy"
                           >
                             <X className="w-4 h-4" />
@@ -396,6 +421,19 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
           <div className="mb-4 text-gray-500">Không có đợt đóng phí nào</div>
         </div>
       )}
+
+      {/* Toast Container */}
+      <div className="fixed z-50 space-y-4 top-4 right-4">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            duration={toast.duration}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 };

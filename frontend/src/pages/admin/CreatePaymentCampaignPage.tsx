@@ -4,7 +4,7 @@ import { Organization } from '../../features/fee-collection/types';
 
 // Temporary service to get organizations - this would use the existing organizations service
 const getOrganizations = async (): Promise<Organization[]> => {
-  const response = await fetch('/organizations');
+  const response = await fetch('/api/organizations');
   if (!response.ok) {
     throw new Error('Failed to fetch organizations');
   }

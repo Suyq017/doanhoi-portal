@@ -16,10 +16,10 @@ interface Organization {
 
 interface OrganizationMember {
   id: string;
-  username: string;
-  fullName: string;
+  givenName: string;
+  familyName: string;
   email?: string;
-  studentCode?: string;
+  code?: string;
   organization: {
     id: string;
     name: string;
@@ -45,6 +45,12 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
   const [filteredMembers, setFilteredMembers] = useState<OrganizationMember[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedOrgId, setSelectedOrgId] = useState<string>(organizationId || '');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalMembers, setTotalMembers] = useState(0);
+  const MEMBERS_PER_PAGE = 10;
 
   const {
     organizations,
@@ -60,17 +66,19 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
 
   useEffect(() => {
     if (selectedOrgId) {
-      fetchOrganizationMembers(selectedOrgId);
+      setCurrentPage(1); // Reset to first page when organization changes
+      fetchOrganizationMembers(selectedOrgId, 1);
     }
   }, [selectedOrgId]);
 
   useEffect(() => {
+    // Search only works on current page members
     if (searchTerm.trim()) {
       const filtered = members.filter(member =>
-        member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        member.givenName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        member.familyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.studentCode?.toLowerCase().includes(searchTerm.toLowerCase())
+        member.code?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredMembers(filtered);
     } else {
@@ -78,33 +86,56 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
     }
   }, [searchTerm, members]);
 
-  const fetchOrganizationMembers = async (orgId: string) => {
+  const fetchOrganizationMembers = async (orgId: string, page: number = 1) => {
     try {
       setLoadingMembers(true);
       setError(null);
 
-      const members = await organizationService.getOrganizationMembers(orgId);
-      setMembers(members.map(userOrg => ({
+      const response = await organizationService.getOrganizationMembers(orgId, page, MEMBERS_PER_PAGE);
+      const membersList = response.members.map(userOrg => ({
         id: userOrg.user.id,
-        username: userOrg.user.username,
-        fullName: userOrg.user.fullName,
+        familyName: userOrg.user.familyName,
+        givenName: userOrg.user.givenName,
         email: userOrg.user.email,
-        studentCode: userOrg.user.studentCode,
+        code: userOrg.user.code,
         organization: {
           id: userOrg.organization?.id || orgId,
           name: userOrg.organization?.name || 'Unknown Organization'
         }
-      })));
+      }));
+      
+      setMembers(membersList);
+      setTotalPages(response.totalPages);
+      setTotalMembers(response.total);
+      setCurrentPage(response.page);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load members');
       setMembers([]);
+      setTotalPages(1);
+      setTotalMembers(0);
     } finally {
       setLoadingMembers(false);
     }
   };
 
   const handleOrganizationSelect = (orgId: string) => {
-    setSelectedOrgId(orgId);
+    if (orgId !== selectedOrgId) {
+      setSelectedOrgId(orgId);
+      setSearchTerm(''); // Clear search when changing organization
+      setCurrentPage(1); // Reset to first page
+      setMembers([]); // Clear current members
+      setFilteredMembers([]); // Clear filtered members
+      setTotalPages(1);
+      setTotalMembers(0);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages && selectedOrgId && !loadingMembers) {
+      setCurrentPage(newPage);
+      fetchOrganizationMembers(selectedOrgId, newPage);
+      setSearchTerm(''); // Clear search when changing page
+    }
   };
 
   const handleMemberToggle = (memberId: string) => {
@@ -159,7 +190,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
                   e.stopPropagation();
                   toggleOrgExpanded(org.id);
                 }}
-                className="mr-2 p-1 hover:bg-gray-200 rounded"
+                className="p-1 mr-2 rounded hover:bg-gray-200"
               >
                 {org.isExpanded ? (
                   <ChevronDown className="w-4 h-4" />
@@ -171,7 +202,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
               <div className="w-6 mr-2" />
             )}
 
-            <Building className="w-5 h-5 text-gray-400 mr-3" />
+            <Building className="w-5 h-5 mr-3 text-gray-400" />
 
             <div className="flex-1">
               <div className="flex items-center space-x-3">
@@ -185,7 +216,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
                 )}
               </div>
               {org.description && (
-                <p className="text-sm text-gray-500 mt-1">{org.description}</p>
+                <p className="mt-1 text-sm text-gray-500">{org.description}</p>
               )}
             </div>
           </div>
@@ -204,24 +235,24 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
     <div className="space-y-6">
       {/* Organization Tree */}
       <div className="border rounded-lg">
-        <div className="bg-gray-50 px-4 py-3 border-b">
+        <div className="px-4 py-3 border-b bg-gray-50">
           <h3 className="text-sm font-medium text-gray-900">Chọn Tổ Chức</h3>
-          <p className="text-xs text-gray-600 mt-1">
+          <p className="mt-1 text-xs text-gray-600">
             Chọn tổ chức để xem danh sách thành viên
           </p>
         </div>
 
-        <div className="max-h-64 overflow-y-auto">
+        <div className="overflow-y-auto max-h-64">
           {loadingOrgs ? (
             <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <div className="w-6 h-6 border-b-2 border-blue-600 rounded-full animate-spin"></div>
             </div>
           ) : orgError ? (
-            <div className="p-4 text-red-600 text-sm">
+            <div className="p-4 text-sm text-red-600">
               Lỗi: {orgError}
             </div>
           ) : organizations.length === 0 ? (
-            <div className="p-4 text-gray-500 text-sm text-center">
+            <div className="p-4 text-sm text-center text-gray-500">
               Không có tổ chức nào
             </div>
           ) : (
@@ -233,11 +264,11 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
       {/* Member List */}
       {selectedOrgId && (
         <div className="border rounded-lg">
-          <div className="bg-gray-50 px-4 py-3 border-b">
+          <div className="px-4 py-3 border-b bg-gray-50">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Thành Viên</h3>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="mt-1 text-xs text-gray-600">
                   Chọn thành viên để phân công đóng phí
                 </p>
               </div>
@@ -257,33 +288,43 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
             </div>
 
             {/* Search */}
-            <div className="mt-3 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <div className="relative mt-3">
+              <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
               <input
                 type="text"
                 placeholder="Tìm kiếm thành viên..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
+          <div className="overflow-y-auto max-h-96">
             {loadingMembers ? (
               <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <div className="w-6 h-6 border-b-2 border-blue-600 rounded-full animate-spin"></div>
               </div>
             ) : error ? (
-              <div className="p-4 text-red-600 text-sm">
+              <div className="p-4 text-sm text-red-600">
                 Lỗi: {error}
               </div>
             ) : filteredMembers.length === 0 ? (
               <div className="p-8 text-center">
-                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 text-sm">
-                  {searchTerm ? 'Không tìm thấy thành viên nào' : 'Tổ chức này chưa có thành viên'}
+                <Users className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-sm text-gray-500">
+                  {searchTerm 
+                    ? `Không tìm thấy thành viên nào trong trang ${currentPage}` 
+                    : totalMembers > 0 
+                      ? `Trang ${currentPage} không có thành viên nào`
+                      : 'Tổ chức này chưa có thành viên'
+                  }
                 </p>
+                {searchTerm && totalMembers > MEMBERS_PER_PAGE && (
+                  <p className="mt-2 text-xs text-gray-400">
+                    Thử tìm kiếm ở các trang khác hoặc xóa từ khóa tìm kiếm
+                  </p>
+                )}
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
@@ -310,16 +351,12 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
                         <User className="w-8 h-8 text-gray-400" />
 
                         <div>
-                          <div className="font-medium text-gray-900 text-sm">
-                            {member.fullName}
+                          <div className="text-sm font-medium text-gray-900">
+                            {member.givenName} {member.familyName}
                           </div>
-                          <div className="text-xs text-gray-500 space-x-2">
-                            <span>@{member.username}</span>
-                            {member.studentCode && (
-                              <span>• {member.studentCode}</span>
-                            )}
-                            {member.email && (
-                              <span>• {member.email}</span>
+                          <div className="space-x-2 text-xs text-gray-500">
+                            {member.code && (
+                              <span>• {member.code}</span>
                             )}
                           </div>
                         </div>
@@ -331,15 +368,84 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
             )}
           </div>
 
+          {/* Pagination Controls */}
+          {totalPages && (
+            <div className="px-4 py-3 border-t bg-gray-50">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-sm text-gray-700">
+                  Hiển thị {Math.min((currentPage - 1) * MEMBERS_PER_PAGE + 1, totalMembers)} - {Math.min(currentPage * MEMBERS_PER_PAGE, totalMembers)} 
+                  {' '}trong tổng số {totalMembers} thành viên
+                </div>
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || loadingMembers}
+                    className={`px-3 py-1 text-sm rounded ${
+                      currentPage === 1 || loadingMembers
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    ← Trước
+                  </button>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        disabled={loadingMembers}
+                        className={`px-3 py-1 text-sm rounded ${
+                          pageNum === currentPage
+                            ? 'bg-blue-600 text-white'
+                            : loadingMembers
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-blue-600 hover:bg-blue-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || loadingMembers}
+                    className={`px-3 py-1 text-sm rounded ${
+                      currentPage === totalPages || loadingMembers
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    Sau →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Selection Summary */}
           {selectedMemberIds.length > 0 && (
-            <div className="bg-blue-50 border-t px-4 py-3">
+            <div className="px-4 py-3 border-t bg-blue-50">
               <div className="flex items-center justify-between text-sm">
                 <div className="text-blue-900">
-                  Đã chọn {getSelectedCountInFiltered()} / {filteredMembers.length} thành viên hiển thị
+                  Đã chọn {getSelectedCountInFiltered()} / {filteredMembers.length} thành viên
+                  {searchTerm ? ' (trong kết quả tìm kiếm)' : ` (trang ${currentPage})`}
                 </div>
                 <div className="text-blue-700">
-                  Tổng: {selectedMemberIds.length} thành viên
+                  Tổng đã chọn: {selectedMemberIds.length} thành viên
                 </div>
               </div>
             </div>

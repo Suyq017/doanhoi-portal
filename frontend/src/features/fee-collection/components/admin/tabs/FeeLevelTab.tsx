@@ -10,15 +10,17 @@ interface FeeLevelTabProps {
 }
 
 const FeeLevelTab: React.FC<FeeLevelTabProps> = ({ 
-  campaign
-  // Note: feeLevels, onFeeLevelsChange, onError are not used as FeeLevelManager manages its own state
+  campaign,
+  feeLevels: _feeLevels,
+  onFeeLevelsChange,
+  onError: _onError
 }) => {
   const readOnly = campaign.status === 'COMPLETED' || campaign.status === 'CANCELLED';
 
   return (
-    <div className="py-6">
+    <div className="space-y-6">
       <div className="mb-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <h3 className="mb-2 text-lg font-medium text-gray-900">
           Quản Lý Mức Phí
         </h3>
         <p className="text-sm text-gray-600">
@@ -34,6 +36,7 @@ const FeeLevelTab: React.FC<FeeLevelTabProps> = ({
       <FeeLevelManager 
         campaignId={campaign.id} 
         readOnly={readOnly}
+        onFeeLevelsChange={onFeeLevelsChange}
       />
     </div>
   );

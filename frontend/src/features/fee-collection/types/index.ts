@@ -1,6 +1,5 @@
 // Payment Campaign Types
 import { User } from '../../../shared/types/index'
-import AssignmentBulkForm from '../components/admin/assignment/AssignmentBulkForm';
 
 export interface PaymentCampaign {
   id: string;
@@ -79,9 +78,9 @@ export interface PaymentAssignment {
   campaignId: string;
   userId: string;
   feeLevelId?: string;
-  customAmount?: number;
+  customAmount?: string; // Backend returns string like "20000.00"
   note: string;
-  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'EXEMPTED';
+  status: 'PENDING' | 'PAID' | 'OVERDUE';
   dueDate?: string;
   assignedAt: string;
   paidAt?: string;
@@ -94,7 +93,6 @@ export interface PaymentAssignment {
   user?: User;
   feeLevel?: PaymentFeeLevel;
   assignedByUser?: User;
-  transaction?: PaymentTransaction;
 }
 
 export interface CreatePaymentAssignmentDto {
@@ -124,33 +122,6 @@ export interface CreateMultiplePaymentAssignmentDto {
     note?: string;
   }[];
   dueDate?: string;
-}
-
-// Payment Transaction Types
-export interface PaymentTransaction {
-  id: string;
-  assignmentId: string;
-  amount: number;
-  status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED';
-  payosOrderCode: number;
-  payosPaymentLinkId?: string;
-  checkoutUrl?: string;
-  qrCode?: string;
-  description: string;
-  paidAt?: string;
-  payosWebhookData?: string;
-  signatureVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
-  
-  // Relationships
-  assignment?: PaymentAssignment;
-}
-
-export interface CreatePaymentTransactionDto {
-  assignmentId: string;
-  amount: number;
-  description: string;
 }
 
 // Organization PayOS Config Types
@@ -268,7 +239,6 @@ export interface PaymentStatistics {
   totalPending: number;
   totalPaid: number;
   totalOverdue: number;
-  totalExempted: number;
   totalAmount: number;
   paidAmount: number;
   pendingAmount: number;
@@ -332,7 +302,6 @@ export interface PaymentAssignmentListState {
 
 export interface PaymentProcessState {
   assignment: PaymentAssignment | null;
-  transaction: PaymentTransaction | null;
   qrCode: string | null;
   checkoutUrl: string | null;
   status: 'idle' | 'creating' | 'pending' | 'completed' | 'failed';

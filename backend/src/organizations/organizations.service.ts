@@ -223,12 +223,30 @@ export class OrganizationsService {
     console.log('Completed bulkRemoveMembers for organization:', organizationId);
   }
 
-  async getMembers(organizationId: string): Promise<UserOrganization[]> {
-    return this.userOrganizationsRepository.find({
+  async getMembers(
+    organizationId: string, 
+    page: number = 1, 
+    limit: number = 10
+  ): Promise<{ members: UserOrganization[], total: number, page: number, limit: number, totalPages: number }> {
+    const offset = (page - 1) * limit;
+    
+    const [members, total] = await this.userOrganizationsRepository.findAndCount({
       where: { organizationId },
       relations: ['user'],
-      order: { joinedAt: 'DESC' }
+      order: { joinedAt: 'DESC' },
+      take: limit,
+      skip: offset
     });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      members,
+      total,
+      page,
+      limit,
+      totalPages
+    };
   }
   // Lấy danh sách tổ chức con trực tiếp
   async findChildren(id: string): Promise<Organization[]> {

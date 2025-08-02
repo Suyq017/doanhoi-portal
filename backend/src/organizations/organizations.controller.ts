@@ -135,9 +135,15 @@ export class OrganizationsController {
 
     @Get(':id/members')
     @ApiOperation({ summary: 'Lấy danh sách thành viên của tổ chức' })
-    @ApiResponse({ status: 200, description: 'Danh sách thành viên' })
-    getMembers(@Param('id') id: string) {
-        return this.organizationsService.getMembers(id);
+    @ApiResponse({ status: 200, description: 'Danh sách thành viên với phân trang' })
+    getMembers(
+        @Param('id') id: string,
+        @Query('page') page: string = '1',
+        @Query('limit') limit: string = '10'
+    ) {
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+        return this.organizationsService.getMembers(id, pageNum, limitNum);
     }
 
     @Get('by-type-code/:type/:code')

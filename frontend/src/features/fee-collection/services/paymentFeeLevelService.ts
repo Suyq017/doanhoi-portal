@@ -43,7 +43,7 @@ class PaymentFeeLevelService {
 
   async updateFeeLevel(_campaignId: string, id: string, data: UpdatePaymentFeeLevelDto): Promise<ApiResponse<PaymentFeeLevel>> {
     const response = await fetch(`${API_BASE}/payment-fee-levels/${id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },

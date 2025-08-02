@@ -7,7 +7,7 @@ interface PaymentAssignment {
   feeLevelId?: string;
   customAmount?: number;
   note?: string;
-  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'EXEMPTED';
+  status: 'PENDING' | 'PAID' | 'OVERDUE';
   dueDate?: string;
   assignedAt: string;
   paidAt?: string;
@@ -50,7 +50,7 @@ interface UpdatePaymentAssignmentData {
   amount?: number;
   dueDate?: string;
   notes?: string;
-  status?: 'PENDING' | 'PAID' | 'OVERDUE' | 'EXEMPTED';
+  status?: 'PENDING' | 'PAID' | 'OVERDUE';
 }
 
 interface PaymentAssignmentFilters {
@@ -66,7 +66,6 @@ interface PaymentAssignmentStats {
   pendingCount: number;
   paidCount: number;
   overdueCount: number;
-  exemptedCount: number;
   totalPaidAmount: number;
   totalAmount: number;
   averageAmount: number;

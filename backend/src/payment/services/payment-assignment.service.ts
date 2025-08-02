@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, LessThan } from 'typeorm';
 import { PaymentAssignment, PaymentAssignmentStatus } from '../../entities/payment-assignment.entity';
 import { PaymentCampaign, PaymentCampaignStatus } from '../../entities/payment-campaign.entity';
 import { PaymentFeeLevel } from '../../entities/payment-fee-level.entity';
@@ -181,7 +181,7 @@ export class PaymentAssignmentService {
   async findOne(id: string): Promise<PaymentAssignment> {
     const assignment = await this.assignmentRepository.findOne({
       where: { id },
-      relations: ['campaign', 'user', 'feeLevel', 'transactions']
+      relations: ['campaign', 'user', 'feeLevel']
     });
 
     if (!assignment) {
@@ -395,10 +395,12 @@ export class PaymentAssignmentService {
    * Check overdue assignments and update status
    */
   async checkOverdueAssignments(): Promise<number> {
+    const now = new Date();
+    
     const overdueAssignments = await this.assignmentRepository.find({
       where: {
         status: PaymentAssignmentStatus.PENDING,
-        dueDate: { $lt: new Date() } as any
+        dueDate: LessThan(now)
       }
     });
 

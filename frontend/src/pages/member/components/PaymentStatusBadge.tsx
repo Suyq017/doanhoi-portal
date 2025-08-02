@@ -1,8 +1,8 @@
 import React from 'react';
-import { CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface PaymentStatusBadgeProps {
-  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'EXEMPTED';
+  status: 'PENDING' | 'PAID' | 'OVERDUE';
 }
 
 const PaymentStatusBadge: React.FC<PaymentStatusBadgeProps> = ({ status }) => {
@@ -25,12 +25,6 @@ const PaymentStatusBadge: React.FC<PaymentStatusBadgeProps> = ({ status }) => {
           icon: AlertCircle,
           text: 'Quá hạn',
           className: 'bg-red-100 text-red-800'
-        };
-      case 'EXEMPTED':
-        return {
-          icon: XCircle,
-          text: 'Miễn đóng',
-          className: 'bg-gray-100 text-gray-800'
         };
       default:
         return {

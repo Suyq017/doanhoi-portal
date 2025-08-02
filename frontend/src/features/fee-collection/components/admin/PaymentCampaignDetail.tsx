@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { Edit, ArrowLeft, Play, CheckCircle, X, Users, DollarSign, Calendar, Building } from 'lucide-react';
+import { Edit, ArrowLeft, Play, CheckCircle, X, Users, DollarSign, Calendar, Building, AlertCircle } from 'lucide-react';
+import { useToast } from '@/shared/hooks/useToast';
 import { PaymentCampaign, PaymentFeeLevel } from '../../types';
 import { paymentCampaignService } from '../../services/paymentCampaignService';
 import { paymentFeeLevelService } from '../../services/paymentFeeLevelService';
+import { paymentAssignmentService } from '../../services/paymentAssignmentService';
+import Toast from '@/shared/components/Toast';
 import TabNavigation from './tabs/TabNavigation';
+import StatisticsTab from './tabs/StatisticsTab';
 import FeeLevelTab from './tabs/FeeLevelTab';
 import MemberAssignmentTab from './tabs/MemberAssignmentTab';
 import PayOSConfigTab from './tabs/PayOSConfigTab';
@@ -12,14 +16,18 @@ import PayOSConfigTab from './tabs/PayOSConfigTab';
 const PaymentCampaignDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { toasts, showSuccess, showError, hideToast } = useToast();
   const [campaign, setCampaign] = useState<PaymentCampaign | null>(null);
   const [feeLevels, setFeeLevels] = useState<PaymentFeeLevel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [activationError, setActivationError] = useState<string | null>(null);
+  const [_assignmentCount, setAssignmentCount] = useState(0); // Keep for future use
+  const [canActivate, setCanActivate] = useState(false);
   
   // Tab state
-  const currentTab = searchParams.get('tab') || 'fee-levels';
+  const currentTab = searchParams.get('tab') || 'statistics';
   
   const handleTabChange = (tabId: string) => {
     setSearchParams({ tab: tabId });
@@ -31,17 +39,32 @@ const PaymentCampaignDetail: React.FC = () => {
     }
   }, [id]);
 
+  // Refresh activation requirements when feeLevels change
+  useEffect(() => {
+    if (id && feeLevels.length >= 0) {
+      checkActivationRequirements(id, feeLevels);
+    }
+  }, [id, feeLevels]);
+
   const loadCampaignData = async () => {
     if (!id) return;
     
     try {
       setLoading(true);
+      setError(null);
+      setActivationError(null);
+      
       const [campaignResponse, feeLevelsResponse] : any = await Promise.all([
         paymentCampaignService.getPaymentCampaignById(id),
         paymentFeeLevelService.getFeeLevelsByCampaign(id)
       ]);
+      
       setCampaign(campaignResponse);
       setFeeLevels(feeLevelsResponse);
+      
+      // Check assignments for activation requirements
+      await checkActivationRequirements(id, feeLevelsResponse);
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load campaign data');
     } finally {
@@ -49,11 +72,47 @@ const PaymentCampaignDetail: React.FC = () => {
     }
   };
 
+  const checkActivationRequirements = async (campaignId: string, currentFeeLevels: PaymentFeeLevel[]) => {
+    try {
+      // Check if there are fee levels - this is the only requirement now
+      const hasFeelevels = currentFeeLevels && currentFeeLevels.length > 0;
+      
+      // Still get assignment count for display purposes
+      try {
+        const assignmentsResponse = await paymentAssignmentService.getAssignmentsByCampaign(campaignId);
+        const assignments = assignmentsResponse.data || [];
+        setAssignmentCount(assignments.length);
+      } catch (err) {
+        // If assignments fail to load, just set count to 0
+        setAssignmentCount(0);
+      }
+      
+      // Only fee levels are required for activation
+      setCanActivate(hasFeelevels);
+      
+    } catch (err) {
+      console.error('Error checking activation requirements:', err);
+      setCanActivate(false);
+    }
+  };
+
   const handleStatusChange = async (action: 'activate' | 'complete' | 'cancel') => {
     if (!campaign) return;
     
+    // Check activation requirements for activate action
+    if (action === 'activate' && !canActivate) {
+      const missingRequirements = [];
+      if (!feeLevels || feeLevels.length === 0) {
+        missingRequirements.push('Chưa có mức phí nào được tạo');
+      }
+      
+      setActivationError(`Không thể kích hoạt đợt thu phí: ${missingRequirements.join(', ')}`);
+      return;
+    }
+    
     try {
       setActionLoading(true);
+      setActivationError(null);
       let response;
       
       switch (action) {
@@ -68,9 +127,40 @@ const PaymentCampaignDetail: React.FC = () => {
           break;
       }
       
-      setCampaign(response.data);
+      // Handle response properly - it might be response.data or just response
+      console.log('API Response:', response);
+      const updatedCampaign = response?.data || response;
+      console.log('Updated Campaign:', updatedCampaign);
+      
+      if (updatedCampaign) {
+        setCampaign(updatedCampaign);
+        
+        // Show success message with toast
+        const actionMessages = {
+          activate: 'Đợt thu phí đã được kích hoạt thành công!',
+          complete: 'Đợt thu phí đã được hoàn thành thành công!',
+          cancel: 'Đợt thu phí đã được hủy thành công!'
+        };
+        showSuccess(actionMessages[action]);
+      } else {
+        console.warn('No campaign data received from API response');
+        showError('Không thể cập nhật trạng thái đợt thu phí. Vui lòng thử lại.');
+      }
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update campaign status');
+      console.error('Error in handleStatusChange:', err);
+      const errorMessage = err instanceof Error ? err.message : `Failed to ${action} campaign`;
+      
+      if (action === 'activate') {
+        setActivationError(`Không thể kích hoạt: ${errorMessage}`);
+      } else {
+        showError(`Không thể ${action === 'complete' ? 'hoàn thành' : 'hủy'}: ${errorMessage}`);
+      }
+      
+      // Reload campaign data to ensure UI is in sync
+      if (id) {
+        await loadCampaignData();
+      }
     } finally {
       setActionLoading(false);
     }
@@ -155,14 +245,34 @@ const PaymentCampaignDetail: React.FC = () => {
                 <Edit className="w-4 h-4 mr-1" />
                 Chỉnh sửa
               </Link>
-              <button
-                onClick={() => handleStatusChange('activate')}
-                disabled={actionLoading}
-                className="inline-flex items-center px-3 py-2 text-white transition-colors bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50"
-              >
-                <Play className="w-4 h-4 mr-1" />
-                Kích hoạt
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => handleStatusChange('activate')}
+                  disabled={actionLoading || !canActivate}
+                  className={`inline-flex items-center px-3 py-2 text-white transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed ${
+                    canActivate 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-gray-400'
+                  }`}
+                  title={!canActivate ? 'Cần có mức phí trước khi kích hoạt' : ''}
+                >
+                  <Play className="w-4 h-4 mr-1" />
+                  Kích hoạt
+                </button>
+                {!canActivate && (
+                  <div className="absolute right-0 z-10 w-64 p-2 mt-1 text-xs text-yellow-700 bg-yellow-100 border border-yellow-200 rounded-md shadow-lg">
+                    <div className="flex items-start space-x-1">
+                      <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                      <div>
+                        Cần có:
+                        <ul className="mt-1 ml-2 list-disc">
+                          {(!feeLevels || feeLevels.length === 0) && <li>Tạo mức phí</li>}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           )}
           
@@ -188,6 +298,25 @@ const PaymentCampaignDetail: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Activation Error Message */}
+      {activationError && (
+        <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-medium text-red-800">Không thể kích hoạt</h3>
+              <p className="mt-1 text-sm text-red-700">{activationError}</p>
+            </div>
+            <button
+              onClick={() => setActivationError(null)}
+              className="ml-auto text-red-400 hover:text-red-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Campaign Info */}
       <div className="p-6 bg-white border rounded-lg">
@@ -245,6 +374,10 @@ const PaymentCampaignDetail: React.FC = () => {
         />
         
         <div className="p-6">
+          {currentTab === 'statistics' && (
+            <StatisticsTab campaign={campaign} />
+          )}
+          
           {currentTab === 'fee-levels' && (
             <FeeLevelTab 
               campaign={campaign}
@@ -262,6 +395,19 @@ const PaymentCampaignDetail: React.FC = () => {
             <PayOSConfigTab campaign={campaign} />
           )}
         </div>
+      </div>
+
+      {/* Toast Container */}
+      <div className="fixed top-4 right-4 z-50 space-y-4">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            duration={toast.duration}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
       </div>
     </div>
   );

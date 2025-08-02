@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { CreditCard, Clock, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
+import { CreditCard, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { usePaymentAssignments } from '../../shared/hooks/usePaymentAssignments';
 import { TextInput, Select } from '../../shared/components/forms/FormFields';
 import { paymentService } from '../../features/fee-collection/services/paymentService';
@@ -13,7 +12,7 @@ type PaymentAssignment = {
   feeLevelId?: string;
   customAmount?: number;
   note?: string;
-  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'EXEMPTED';
+  status: 'PENDING' | 'PAID' | 'OVERDUE';
   dueDate?: string;
   assignedAt: string;
   paidAt?: string;
@@ -95,10 +94,10 @@ export const MyCampaignsPage: React.FC = () => {
 
       // Gọi PayOS service để tạo payment link
       const paymentResponse = await paymentService.createPaymentLink({
+        assignmentId, // Thêm assignmentId vào request
         amount,
-        description: `Thanh toán phí: ${assignment.campaign.name}`,
+        description: `Thanh toán: ${assignment.campaign.name}`,
         organizationId,
-        assignmentId
       });
 
       // Redirect đến PayOS checkout URL
@@ -127,8 +126,6 @@ export const MyCampaignsPage: React.FC = () => {
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'OVERDUE':
         return <AlertCircle className="w-5 h-5 text-red-500" />;
-      case 'EXEMPTED':
-        return <CheckCircle className="w-5 h-5 text-blue-500" />;
       default:
         return <Clock className="w-5 h-5 text-yellow-500" />;
     }
@@ -140,8 +137,6 @@ export const MyCampaignsPage: React.FC = () => {
         return 'Đã thanh toán';
       case 'OVERDUE':
         return 'Quá hạn';
-      case 'EXEMPTED':
-        return 'Được miễn';
       default:
         return 'Chờ thanh toán';
     }
@@ -298,7 +293,6 @@ export const MyCampaignsPage: React.FC = () => {
                 { value: 'PENDING', label: 'Chờ thanh toán' },
                 { value: 'OVERDUE', label: 'Quá hạn' },
                 { value: 'PAID', label: 'Đã thanh toán' },
-                { value: 'EXEMPTED', label: 'Được miễn' }
               ]}
             />
 
@@ -349,7 +343,6 @@ export const MyCampaignsPage: React.FC = () => {
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         assignment.status === 'PAID' ? 'bg-green-100 text-green-800' :
                         assignment.status === 'OVERDUE' ? 'bg-red-100 text-red-800' :
-                        assignment.status === 'EXEMPTED' ? 'bg-blue-100 text-blue-800' :
                         'bg-yellow-100 text-yellow-800'
                       }`}>
                         {getStatusText(assignment.status)}
@@ -401,7 +394,6 @@ export const MyCampaignsPage: React.FC = () => {
                     <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                       assignment.status === 'PAID' ? 'text-green-600 bg-green-50' :
                       assignment.status === 'OVERDUE' ? 'text-red-600 bg-red-50' :
-                      assignment.status === 'EXEMPTED' ? 'text-blue-600 bg-blue-50' :
                       'text-yellow-600 bg-yellow-50'
                     }`}>
                       {getStatusIcon(assignment.status)}
@@ -422,17 +414,6 @@ export const MyCampaignsPage: React.FC = () => {
               </div>
             ))
           )}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="flex justify-center mt-8">
-          <Link
-            to="/payment/history"
-            className="flex items-center px-6 py-2 space-x-2 font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            <Calendar className="w-4 h-4" />
-            <span>Xem lịch sử thanh toán</span>
-          </Link>
         </div>
       </div>
     </div>

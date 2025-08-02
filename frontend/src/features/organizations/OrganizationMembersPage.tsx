@@ -62,20 +62,38 @@ const OrganizationMembersPage: React.FC = () => {
     });
     const [memberStatsLoading, setMemberStatsLoading] = useState(false);
 
-    // Load memberStats function
+    // Load memberStats function - get all members for stats calculation
     const loadMemberStats = useCallback(async () => {
         if (!displayOrganization) return;
 
         try {
             setMemberStatsLoading(true);
-            const members = await organizationService.getOrganizationMembers(displayOrganization.id);
+            // Get first page to know total count
+            const firstPageResponse = await organizationService.getOrganizationMembers(displayOrganization.id, 1, 10);
+            const totalMembers = firstPageResponse.total;
+            
+            // If we have many members, we need to fetch all pages for accurate stats
+            let allMembers = [...firstPageResponse.members];
+            const totalPages = firstPageResponse.totalPages;
+            
+            // Fetch remaining pages if needed
+            if (totalPages > 1) {
+                const promises = [];
+                for (let page = 2; page <= totalPages; page++) {
+                    promises.push(organizationService.getOrganizationMembers(displayOrganization.id, page, 10));
+                }
+                const additionalResponses = await Promise.all(promises);
+                additionalResponses.forEach(response => {
+                    allMembers.push(...response.members);
+                });
+            }
 
             let doanVienCount = 0;
             let hoiVienCount = 0;
             let bothMemberCount = 0;
             let nonMemberCount = 0;
 
-            members.forEach(member => {
+            allMembers.forEach(member => {
                 const user = member.user;
                 const isDoanVien = user.membershipStatus === 'doan_vien' || user.membershipStatus === 'both';
                 const isHoiVien = user.membershipStatus === 'hoi_vien' || user.membershipStatus === 'both';
@@ -96,7 +114,7 @@ const OrganizationMembersPage: React.FC = () => {
                 hoiVienCount,
                 bothMemberCount,
                 nonMemberCount,
-                totalMembers: members.length,
+                totalMembers,
             });
         } catch (err) {
             console.error('Error loading member stats:', err);
@@ -155,7 +173,8 @@ const OrganizationMembersPage: React.FC = () => {
 
     const handleShowError = useCallback((message: string) => {
         handleBulkDeleteError(message);
-    }, [handleBulkDeleteError]); const renderContent = () => {
+    }, [handleBulkDeleteError]); 
+    const renderContent = () => {
         if (displayOrganization) {
             return (
                 <OrganizationUserList
@@ -168,7 +187,7 @@ const OrganizationMembersPage: React.FC = () => {
         }
 
         return (
-            <div className="text-center py-12">
+            <div className="py-12 text-center">
                 <p className="text-gray-500 dark:text-gray-400">
                     {t('organizations:members.notFound', { defaultValue: 'Không tìm thấy tổ chức' })}
                 </p>

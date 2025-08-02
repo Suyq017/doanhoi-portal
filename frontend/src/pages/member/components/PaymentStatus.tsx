@@ -1,8 +1,8 @@
 import React from 'react';
-import { CheckCircle, Clock, AlertTriangle, Ban } from 'lucide-react';
+import { CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 
 interface PaymentStatusProps {
-  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'EXEMPTED';
+  status: 'PENDING' | 'PAID' | 'OVERDUE';
   amount?: number;
   dueDate?: string;
   showDetails?: boolean;
@@ -50,14 +50,6 @@ export const PaymentStatus: React.FC<PaymentStatusProps> = ({
           color: 'text-red-600',
           bgColor: 'bg-red-50',
           borderColor: 'border-red-200'
-        };
-      case 'EXEMPTED':
-        return {
-          icon: Ban,
-          text: 'Miễn đóng',
-          color: 'text-gray-600',
-          bgColor: 'bg-gray-50',
-          borderColor: 'border-gray-200'
         };
       default:
         return {

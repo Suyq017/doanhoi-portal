@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, Users, Settings } from 'lucide-react';
+import { DollarSign, Users, Settings, BarChart3 } from 'lucide-react';
 
 export interface Tab {
   id: string;
@@ -21,6 +21,11 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
 }) => {
   // Predefined tabs for payment campaign admin
   const tabs: Tab[] = [
+    {
+      id: 'statistics',
+      label: 'Theo dõi tiến độ thu phí',
+      icon: BarChart3
+    },
     {
       id: 'fee-levels',
       label: 'Mức Phí',

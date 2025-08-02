@@ -273,10 +273,10 @@ export const PaymentResultPage: React.FC = () => {
 
               {paymentStatus.status === 'PAID' && (
                 <button
-                  onClick={() => navigate('/payment/history')}
+                  onClick={() => navigate('/dashboard')}
                   className="w-full px-4 py-3 font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
                 >
-                  Xem lịch sử thanh toán
+                  Quay lại trang chủ
                 </button>
               )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { organizationService } from '../../../shared/services/organizationService';
-import { User, UserQueryParams } from '../../../shared/types/user';
+import { User } from '../../../shared/types/user';
 
 export interface UseOrganizationUserListReturn {
     users: User[];
@@ -24,6 +24,7 @@ export const useOrganizationUserList = (organizationId?: string): UseOrganizatio
     // States
     const [users, setUsers] = useState<User[]>([]);
     const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -32,8 +33,6 @@ export const useOrganizationUserList = (organizationId?: string): UseOrganizatio
     const [filterType, setFilterType] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
 
-    const totalPages = Math.ceil(total / limit);
-
     const loadUsers = useCallback(async () => {
         if (!organizationId) return;
 
@@ -41,27 +40,33 @@ export const useOrganizationUserList = (organizationId?: string): UseOrganizatio
             setLoading(true);
             setError(null);
 
-            // ✅ Sử dụng organization API để lấy members
-            const userOrganizations = await organizationService.getOrganizationMembers(organizationId);
+            // ✅ Sử dụng organization API với pagination
+            const response = await organizationService.getOrganizationMembers(
+                organizationId, 
+                currentPage, 
+                limit
+            );
 
             // ✅ Transform UserOrganization[] thành User[]
-            const transformedUsers: User[] = userOrganizations.map(userOrg => ({
+            const transformedUsers: User[] = response.members.map(userOrg => ({
                 id: userOrg.user.id,
                 code: userOrg.user.code,
                 familyName: userOrg.user.familyName,
                 givenName: userOrg.user.givenName,
+                fullname: `${userOrg.user.givenName} ${userOrg.user.familyName}`.trim(),
                 email: userOrg.user.email,
                 phone: userOrg.user.phone,
                 userType: userOrg.user.userType,
                 membershipStatus: userOrg.user.membershipStatus,
+                isActive: userOrg.user.isActive ?? true,
                 createdAt: userOrg.user.createdAt,
                 updatedAt: userOrg.user.updatedAt,
-                // Additional org context info
+                // Additional org context info (extend if needed)
                 organizationRole: userOrg.role,
                 joinedAt: userOrg.joinedAt,
-            }));
+            } as User & { organizationRole?: string; joinedAt?: string }));
 
-            // ✅ Apply client-side filtering and pagination
+            // ✅ Apply client-side search and filtering to current page data
             let filteredUsers = transformedUsers;
 
             // Search filter
@@ -84,13 +89,9 @@ export const useOrganizationUserList = (organizationId?: string): UseOrganizatio
                 filteredUsers = filteredUsers.filter(user => user.membershipStatus === filterStatus);
             }
 
-            // Pagination
-            const startIndex = (currentPage - 1) * limit;
-            const endIndex = startIndex + limit;
-            const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
-
-            setUsers(paginatedUsers);
-            setTotal(filteredUsers.length);
+            setUsers(filteredUsers);
+            setTotal(response.total); // Use server-side total
+            setTotalPages(response.totalPages); // Use server-side totalPages
 
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Error loading organization members';

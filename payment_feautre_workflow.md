@@ -1,5 +1,3 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" class="logo" width="120"/>
-
 ### Workflow Chi Tiết Chức Năng Đóng Phí
 
 #### 1. **Cấu hình đợt đóng phí (Dành cho Admin)**

@@ -9,6 +9,7 @@ export interface CreatePaymentRequest {
 
 // PayOS API Interfaces
 export interface CreatePaymentLinkRequest {
+  assignmentId: string;  // Required for creating payment history
   amount: number;
   description: string;
   organizationId: string;

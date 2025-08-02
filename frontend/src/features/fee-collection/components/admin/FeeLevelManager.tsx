@@ -10,6 +10,7 @@ import { paymentFeeLevelService } from '../../services/paymentFeeLevelService';
 interface FeeLevelManagerProps {
   campaignId: string;
   readOnly?: boolean;
+  onFeeLevelsChange?: (feeLevels: PaymentFeeLevel[]) => void;
 }
 
 interface FeeLevelFormData {
@@ -20,7 +21,7 @@ interface FeeLevelFormData {
   isDefault: boolean;
 }
 
-const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly = false }) => {
+const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly = false, onFeeLevelsChange }) => {
   const [feeLevels, setFeeLevels] = useState<PaymentFeeLevel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +43,13 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
     try {
       setLoading(true);
       const response : any = await paymentFeeLevelService.getFeeLevelsByCampaign(campaignId);
-      setFeeLevels(response?.sort((a: { orderIndex: number; }, b: { orderIndex: number; }) => a.orderIndex - b.orderIndex));
+      const sortedFeeLevels = response?.sort((a: { orderIndex: number; }, b: { orderIndex: number; }) => a.orderIndex - b.orderIndex);
+      setFeeLevels(sortedFeeLevels);
+      
+      // Notify parent component about fee levels change
+      if (onFeeLevelsChange) {
+        onFeeLevelsChange(sortedFeeLevels);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load fee levels');
     } finally {
@@ -216,11 +223,9 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                 Số tiền (VNĐ) <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
-                value={formData.amount}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="50000"
+                placeholder="50.000"
                 min="1"
                 required
               />

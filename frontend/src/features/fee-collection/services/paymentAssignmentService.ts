@@ -49,7 +49,7 @@ class PaymentAssignmentService {
   }
 
   async getAssignmentsByUser(userId: string): Promise<ApiResponse<PaymentAssignment[]>> {
-    const response = await fetch(`${API_BASE}/user/${userId}`);
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}${API_BASE}/${userId}`);
     if (!response.ok) {
       throw new Error('Failed to fetch user assignments');
     }

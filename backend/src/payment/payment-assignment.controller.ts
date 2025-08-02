@@ -89,6 +89,9 @@ export class PaymentAssignmentController {
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
     
+    // Auto-check for overdue assignments before returning results
+    await this.assignmentService.checkOverdueAssignments();
+    
     const result = await this.assignmentService.findAll(
       campaignId,
       userId,

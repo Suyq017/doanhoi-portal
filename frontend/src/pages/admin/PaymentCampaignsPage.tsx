@@ -1,60 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import PaymentCampaignList from '../../features/fee-collection/components/admin/PaymentCampaignList';
-import { Organization } from '../../features/fee-collection/types';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Plus } from "lucide-react";
+import PaymentCampaignList from "../../features/fee-collection/components/admin/PaymentCampaignList";
+import { Organization } from "../../features/fee-collection/types";
 
-// Temporary service to get organizations - this would use the existing organizations service
-const getOrganizations = async (): Promise<Organization[]> => {
-  // This would be replaced with actual API call to existing organizations endpoint
-  const response = await fetch('/api/organizations');
-  if (!response.ok) {
-    throw new Error('Failed to fetch organizations');
-  }
-  const result = await response.json();
-  return result || [];
-};
-
-const PaymentCampaignsPage: React.FC = () => {
+export const PaymentCampaignsPage = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadOrganizations();
+    // Load organizations if needed
+    // For now, using empty array
+    setOrganizations([]);
   }, []);
 
-  const loadOrganizations = async () => {
-    try {
-      setLoading(true);
-      const data = await getOrganizations();
-      setOrganizations(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load organizations');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-32 h-32 border-b-2 border-blue-600 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="px-4 py-3 text-red-700 border border-red-200 rounded bg-red-50">
-        {error}
-      </div>
-    );
-  }
-
   return (
-    <div className="container px-4 py-6 mx-auto">
+    <div className="space-y-6 ">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Quản Lý Thu Phí
+          </h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Quản lý các đợt thu phí của hội
+          </p>
+        </div>
+        <div className="mt-4 sm:mt-0">
+          <Link
+            to="/admin/payment-campaigns/create"
+            className="flex items-center gap-2 px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600"
+          >
+            <Plus className="w-4 h-4" />
+            Tạo Đợt Mới
+          </Link>
+        </div>
+      </div>
+
+      {/* Payment Campaign List Component */}
       <PaymentCampaignList organizations={organizations} />
     </div>
   );
 };
-
-export default PaymentCampaignsPage;
