@@ -4,9 +4,9 @@ import { Save, X } from 'lucide-react';
 import { 
   PaymentCampaign, 
   CreatePaymentCampaignDto, 
-  UpdatePaymentCampaignDto,
-  Organization 
+  UpdatePaymentCampaignDto, 
 } from '../../types';
+import { Organization } from '@/shared/types/organization';
 import { paymentCampaignService } from '@/shared/services/fee-collection-service';
 
 interface PaymentCampaignBasicFormData {
@@ -124,32 +124,32 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           {mode === 'create' ? 'Tạo Đợt Đóng Phí Mới' : 'Chỉnh Sửa Đợt Đóng Phí'}
         </h1>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="px-4 py-3 text-red-700 border border-red-200 rounded bg-red-50">
+        <div className="px-4 py-3 text-red-700 border border-red-200 rounded bg-red-50 dark:bg-red-900 dark:border-red-800 dark:text-red-200">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
-        <div className="p-6 bg-white border rounded-lg">
-          <h2 className="mb-4 text-lg font-medium text-gray-900">Thông Tin Cơ Bản</h2>
+        <div className="p-6 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
+          <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">Thông Tin Cơ Bản</h2>
           
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Tổ chức <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.organizationId}
                 onChange={(e) => setFormData(prev => ({ ...prev, organizationId: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 required
                 disabled={mode === 'edit'} // Don't allow changing organization in edit mode
               >
@@ -161,55 +161,55 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Tên đợt đóng phí <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 placeholder="VD: Đóng phí học kỳ 1 năm 2024"
                 required
               />
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Ngày bắt đầu <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 required
               />
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Ngày kết thúc <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 required
               />
             </div>
           </div>
 
           <div className="mt-4">
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
               Mô tả
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               placeholder="Mô tả chi tiết về đợt đóng phí này..."
             />
           </div>
@@ -220,7 +220,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           <button
             type="button"
             onClick={handleCancel}
-            className="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md hover:bg-gray-50"
+            className="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
           >
             <X className="inline w-4 h-4 mr-2" />
             Hủy
@@ -228,7 +228,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
           >
             <Save className="inline w-4 h-4 mr-2" />
             {loading ? 'Đang lưu...' : 'Lưu'}

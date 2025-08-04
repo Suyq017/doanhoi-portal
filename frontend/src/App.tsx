@@ -14,9 +14,10 @@ import { AuthProvider, AuthCallback } from './features/auth';
 import { 
   PaymentCampaignsPage,
   CreatePaymentCampaignPage,
-  PaymentCampaignDetailPage,
+  EditPaymentCampaignPage,
   PaymentResultPage,
-  MyCampaignsPage
+  MyCampaignsPage,
+  PaymentCampaignDetailPage
 } from './features/fee-collection';
 import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
@@ -45,6 +46,7 @@ function App() {
                   {/* Admin Payment Routes */}
                   <Route path="/admin/payment-campaigns" element={<PaymentCampaignsPage />} />
                   <Route path="/admin/payment-campaigns/create" element={<CreatePaymentCampaignPage />} />
+                  <Route path="/admin/payment-campaigns/:id/edit" element={<EditPaymentCampaignPage />} />
                   <Route path="/admin/payment-campaigns/:id" element={<PaymentCampaignDetailPage />} />
                   
                   {/* Member Payment Routes */}

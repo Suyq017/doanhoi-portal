@@ -5,7 +5,7 @@ import {
   PaymentCampaignFilters,
   ApiResponse,
   PaginatedResponse
-} from '../types';
+} from '../../../features/fee-collection/types';
 
 const API_BASE = '/api';
 
@@ -29,7 +29,7 @@ class PaymentCampaignService {
     return response.json();
   }
 
-  async getPaymentCampaignById(id: string): Promise<ApiResponse<PaymentCampaign>> {
+  async getPaymentCampaignById(id: string): Promise<PaymentCampaign> {
     const response = await fetch(`${API_BASE}/payment-campaigns/${id}`);
     if (!response.ok) {
       throw new Error('Failed to fetch payment campaign');
@@ -62,7 +62,7 @@ class PaymentCampaignService {
 
   async updatePaymentCampaign(id: string, data: UpdatePaymentCampaignDto): Promise<ApiResponse<PaymentCampaign>> {
     const response = await fetch(`${API_BASE}/payment-campaigns/${id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },

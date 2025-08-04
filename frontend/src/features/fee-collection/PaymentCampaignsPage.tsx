@@ -14,7 +14,7 @@ export const PaymentCampaignsPage = () => {
   }, []);
 
   return (
-    <div className="space-y-6 ">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -28,7 +28,7 @@ export const PaymentCampaignsPage = () => {
         <div className="mt-4 sm:mt-0">
           <Link
             to="/admin/payment-campaigns/create"
-            className="flex items-center gap-2 px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600"
+            className="flex items-center gap-2 px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 dark:bg-doan-600 dark:hover:bg-doan-700"
           >
             <Plus className="w-4 h-4" />
             Tạo Đợt Mới

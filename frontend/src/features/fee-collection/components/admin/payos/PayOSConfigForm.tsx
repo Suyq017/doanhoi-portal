@@ -126,7 +126,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Client ID */}
         <div>
-          <label htmlFor="clientId" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="clientId" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
             Client ID <span className="text-red-500">*</span>
           </label>
           <div className="relative">
@@ -135,8 +135,8 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               id="clientId"
               value={formData.clientId}
               onChange={(e) => handleInputChange('clientId', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                errors.clientId ? 'border-red-300' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${
+                errors.clientId ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
               }`}
               placeholder="Nhập Client ID từ PayOS"
               disabled={saving || loading}
@@ -145,24 +145,24 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               <button
                 type="button"
                 onClick={() => copyToClipboard('clientId')}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
               >
                 {copiedField === 'clientId' ? (
-                  <Check className="h-4 w-4 text-green-500" />
+                  <Check className="w-4 h-4 text-green-500" />
                 ) : (
-                  <Copy className="h-4 w-4" />
+                  <Copy className="w-4 h-4" />
                 )}
               </button>
             )}
           </div>
           {errors.clientId && (
-            <p className="mt-1 text-sm text-red-600">{errors.clientId}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.clientId}</p>
           )}
         </div>
 
         {/* API Key */}
         <div>
-          <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="apiKey" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
             API Key <span className="text-red-500">*</span>
           </label>
           <div className="relative">
@@ -171,47 +171,47 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               id="apiKey"
               value={formData.apiKey}
               onChange={(e) => handleInputChange('apiKey', e.target.value)}
-              className={`w-full px-3 py-2 pr-20 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                errors.apiKey ? 'border-red-300' : 'border-gray-300'
+              className={`w-full px-3 py-2 pr-20 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${
+                errors.apiKey ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
               }`}
               placeholder="Nhập API Key từ PayOS"
               disabled={saving || loading}
             />
-            <div className="absolute inset-y-0 right-0 flex items-center space-x-1 pr-3">
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 space-x-1">
               {formData.apiKey && (
                 <button
                   type="button"
                   onClick={() => copyToClipboard('apiKey')}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
                   {copiedField === 'apiKey' ? (
-                    <Check className="h-4 w-4 text-green-500" />
+                    <Check className="w-4 h-4 text-green-500" />
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    <Copy className="w-4 h-4" />
                   )}
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => toggleShowField('apiKey')}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
               >
                 {showFields.apiKey ? (
-                  <EyeOff className="h-4 w-4" />
+                  <EyeOff className="w-4 h-4" />
                 ) : (
-                  <Eye className="h-4 w-4" />
+                  <Eye className="w-4 h-4" />
                 )}
               </button>
             </div>
           </div>
           {errors.apiKey && (
-            <p className="mt-1 text-sm text-red-600">{errors.apiKey}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.apiKey}</p>
           )}
         </div>
 
         {/* Checksum Key */}
         <div>
-          <label htmlFor="checksumKey" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="checksumKey" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
             Checksum Key <span className="text-red-500">*</span>
           </label>
           <div className="relative">
@@ -220,41 +220,41 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               id="checksumKey"
               value={formData.checksumKey}
               onChange={(e) => handleInputChange('checksumKey', e.target.value)}
-              className={`w-full px-3 py-2 pr-20 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                errors.checksumKey ? 'border-red-300' : 'border-gray-300'
+              className={`w-full px-3 py-2 pr-20 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${
+                errors.checksumKey ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
               }`}
               placeholder="Nhập Checksum Key từ PayOS"
               disabled={saving || loading}
             />
-            <div className="absolute inset-y-0 right-0 flex items-center space-x-1 pr-3">
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 space-x-1">
               {formData.checksumKey && (
                 <button
                   type="button"
                   onClick={() => copyToClipboard('checksumKey')}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
                   {copiedField === 'checksumKey' ? (
-                    <Check className="h-4 w-4 text-green-500" />
+                    <Check className="w-4 h-4 text-green-500" />
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    <Copy className="w-4 h-4" />
                   )}
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => toggleShowField('checksumKey')}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
               >
                 {showFields.checksumKey ? (
-                  <EyeOff className="h-4 w-4" />
+                  <EyeOff className="w-4 h-4" />
                 ) : (
-                  <Eye className="h-4 w-4" />
+                  <Eye className="w-4 h-4" />
                 )}
               </button>
             </div>
           </div>
           {errors.checksumKey && (
-            <p className="mt-1 text-sm text-red-600">{errors.checksumKey}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.checksumKey}</p>
           )}
         </div>
 
@@ -263,11 +263,11 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
           <button
             type="submit"
             disabled={!isFormValid || saving || loading}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:focus:ring-indigo-400"
           >
             {saving ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
                 Đang Lưu...
               </>
             ) : (
@@ -281,11 +281,11 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
       </form>
 
       {/* Helper Text */}
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-        <h4 className="text-sm font-medium text-blue-900 mb-2">
+      <div className="p-4 border border-blue-200 rounded-md bg-blue-50 dark:bg-blue-900 dark:border-blue-800">
+        <h4 className="mb-2 text-sm font-medium text-blue-900 dark:text-blue-200">
           Hướng Dẫn Lấy API Credentials
         </h4>
-        <div className="text-sm text-blue-700 space-y-1">
+        <div className="space-y-1 text-sm text-blue-700 dark:text-blue-300">
           <p>1. Đăng nhập vào PayOS Dashboard</p>
           <p>2. Vào phần <strong>Cài đặt</strong> → <strong>API Keys</strong></p>
           <p>3. Copy các thông tin: Client ID, API Key, và Checksum Key</p>

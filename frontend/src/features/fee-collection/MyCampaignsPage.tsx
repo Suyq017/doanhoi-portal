@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { CreditCard, Clock, CheckCircle, AlertCircle, Search } from 'lucide-react';
 import { usePaymentAssignments } from '../../shared/hooks/usePaymentAssignments';
-import { TextInput, Select } from '../../shared/components/forms/FormFields';
 import { paymentService } from '../../shared/services/fee-collection-service';
 
 // Import the PaymentAssignment type from the hook file
@@ -89,7 +88,7 @@ export const MyCampaignsPage: React.FC = () => {
       }
 
       // Lấy số tiền và thông tin cần thiết
-      const amount = assignment.feeLevel?.amount || 0;
+      const amount = Number(assignment.customAmount) || Number(assignment.feeLevel?.amount) || 0;
       const organizationId = assignment.campaign.organization.id;
 
       // Gọi PayOS service để tạo payment link
@@ -120,28 +119,6 @@ export const MyCampaignsPage: React.FC = () => {
     }).format(amount);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'PAID':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'OVERDUE':
-        return <AlertCircle className="w-5 h-5 text-red-500" />;
-      default:
-        return <Clock className="w-5 h-5 text-yellow-500" />;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'PAID':
-        return 'Đã thanh toán';
-      case 'OVERDUE':
-        return 'Quá hạn';
-      default:
-        return 'Chờ thanh toán';
-    }
-  };
-
   const filteredAndSortedAssignments = assignments
     .filter(assignment => {
       const matchesStatus = !filters.status || assignment.status === filters.status;
@@ -152,6 +129,10 @@ export const MyCampaignsPage: React.FC = () => {
       return matchesStatus && matchesSearch;
     })
     .sort((a, b) => {
+      // Ưu tiên PENDING lên đầu
+      if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
+      if (b.status === 'PENDING' && a.status !== 'PENDING') return 1;
+      
       let comparison = 0;
       
       switch (filters.sortBy) {
@@ -164,8 +145,8 @@ export const MyCampaignsPage: React.FC = () => {
           comparison = new Date(a.assignedAt).getTime() - new Date(b.assignedAt).getTime();
           break;
         case 'amount':
-          const amountA = a.customAmount || a.feeLevel?.amount || 0;
-          const amountB = b.customAmount || b.feeLevel?.amount || 0;
+          const amountA = Number(a.customAmount) || Number(a.feeLevel?.amount) || 0;
+          const amountB = Number(b.customAmount) || Number(b.feeLevel?.amount) || 0;
           comparison = amountA - amountB;
           break;
       }
@@ -180,15 +161,32 @@ export const MyCampaignsPage: React.FC = () => {
     paid: assignments.filter(a => a.status === 'PAID').length,
     totalAmount: assignments
       .filter(a => a.status === 'PENDING' || a.status === 'OVERDUE')
-      .reduce((sum, a) => sum + (a.customAmount || a.feeLevel?.amount || 0), 0)
+      .reduce((sum, a) => {
+        const amount = Number(a.customAmount) || Number(a.feeLevel?.amount) || 0;
+        return sum + amount;
+      }, 0)
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600">Đang tải danh sách...</p>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Đóng phí của tôi
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Quản lý và thanh toán các khoản phí được phân công
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">
+              Đang tải danh sách...
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -196,225 +194,268 @@ export const MyCampaignsPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="w-full max-w-md p-8 text-center bg-white rounded-lg shadow-sm">
-          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">Lỗi</h2>
-          <p className="mb-6 text-gray-600">{error}</p>
-          <button
-            onClick={fetchAssignments}
-            className="px-6 py-2 font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-          >
-            Thử lại
-          </button>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Đóng phí của tôi
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Quản lý và thanh toán các khoản phí được phân công
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="mb-4 text-xl text-red-500">⚠️</div>
+            <p className="text-red-600 dark:text-red-400">{error}</p>
+            <button
+              onClick={fetchAssignments}
+              className="px-4 py-2 mt-4 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+            >
+              Thử lại
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="px-4 py-8 mx-auto max-w-7xl">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Đóng phí của tôi</h1>
-          <p className="mt-2 text-gray-600">Quản lý và thanh toán các khoản phí được phân công</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Đóng phí của tôi
+          </h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Quản lý và thanh toán các khoản phí được phân công
+          </p>
         </div>
+      </div>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
-          <div className="p-6 bg-white rounded-lg shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Tổng số</p>
-                <p className="text-3xl font-bold text-gray-900">{summaryStats.total}</p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <CreditCard className="w-6 h-6 text-blue-600" />
-              </div>
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng số</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{summaryStats.total}</p>
             </div>
-          </div>
-
-          <div className="p-6 bg-white rounded-lg shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Chờ thanh toán</p>
-                <p className="text-3xl font-bold text-yellow-600">{summaryStats.pending}</p>
-              </div>
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <Clock className="w-6 h-6 text-yellow-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 bg-white rounded-lg shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Quá hạn</p>
-                <p className="text-3xl font-bold text-red-600">{summaryStats.overdue}</p>
-              </div>
-              <div className="p-3 bg-red-100 rounded-full">
-                <AlertCircle className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 bg-white rounded-lg shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Tổng tiền cần đóng</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {formatAmount(summaryStats.totalAmount)}
-                </p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
+            <div className="p-3 bg-blue-100 rounded-full dark:bg-blue-900">
+              <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="p-6 mb-6 bg-white rounded-lg shadow-sm">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <TextInput
+        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Chờ thanh toán</p>
+              <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{summaryStats.pending}</p>
+            </div>
+            <div className="p-3 bg-yellow-100 rounded-full dark:bg-yellow-900">
+              <Clock className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Quá hạn</p>
+              <p className="text-3xl font-bold text-red-600 dark:text-red-400">{summaryStats.overdue}</p>
+            </div>
+            <div className="p-3 bg-red-100 rounded-full dark:bg-red-900">
+              <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng tiền cần đóng</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">
+                {formatAmount(summaryStats.totalAmount)}
+              </p>
+            </div>
+            <div className="p-3 bg-green-100 rounded-full dark:bg-green-900">
+              <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
+            <input
+              type="text"
               placeholder="Tìm kiếm đợt đóng phí..."
               value={filters.search}
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-              className="pl-10"
-            />
-
-            <Select
-              placeholder="Trạng thái"
-              value={filters.status}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              options={[
-                { value: '', label: 'Tất cả trạng thái' },
-                { value: 'PENDING', label: 'Chờ thanh toán' },
-                { value: 'OVERDUE', label: 'Quá hạn' },
-                { value: 'PAID', label: 'Đã thanh toán' },
-              ]}
-            />
-
-            <Select
-              value={filters.sortBy}
-              onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
-              options={[
-                { value: 'dueDate', label: 'Hạn thanh toán' },
-                { value: 'assignedAt', label: 'Ngày phân công' },
-                { value: 'amount', label: 'Số tiền' }
-              ]}
-            />
-
-            <Select
-              value={filters.sortOrder}
-              onChange={(e) => setFilters(prev => ({ ...prev, sortOrder: e.target.value as any }))}
-              options={[
-                { value: 'asc', label: 'Tăng dần' },
-                { value: 'desc', label: 'Giảm dần' }
-              ]}
+              className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
+
+          {/* Status Filter */}
+          <div>
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="PENDING">Chờ thanh toán</option>
+              <option value="OVERDUE">Quá hạn</option>
+              <option value="PAID">Đã thanh toán</option>
+            </select>
+          </div>
+
+          {/* Sort By */}
+          <div>
+            <select
+              value={filters.sortBy}
+              onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            >
+              <option value="dueDate">Hạn thanh toán</option>
+              <option value="assignedAt">Ngày phân công</option>
+              <option value="amount">Số tiền</option>
+            </select>
+          </div>
+
+          {/* Sort Order */}
+          <div>
+            <select
+              value={filters.sortOrder}
+              onChange={(e) => setFilters(prev => ({ ...prev, sortOrder: e.target.value as any }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            >
+              <option value="asc">Tăng dần</option>
+              <option value="desc">Giảm dần</option>
+            </select>
+          </div>
         </div>
+      </div>
 
-        {/* Assignments List */}
-        <div className="space-y-4">
-          {filteredAndSortedAssignments.length === 0 ? (
-            <div className="p-12 text-center bg-white rounded-lg shadow-sm">
-              <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="mb-2 text-lg font-medium text-gray-900">Không có đợt đóng phí nào</h3>
-              <p className="text-gray-600">
-                {filters.search || filters.status 
-                  ? 'Không tìm thấy đợt đóng phí nào phù hợp với bộ lọc'
-                  : 'Bạn chưa được phân công đóng phí nào'
-                }
-              </p>
-            </div>
-          ) : (
-            filteredAndSortedAssignments.map((assignment) => (
-              <div key={assignment.id} className="p-6 bg-white rounded-lg shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center mb-2 space-x-3">
-                      {getStatusIcon(assignment.status)}
-                      <h3 className="text-lg font-semibold text-gray-900">
+      {/* Assignments Table */}
+      <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto">
+            <thead className="bg-gray-50 dark:bg-gray-900">
+              <tr>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                  Đợt đóng phí
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                  Tổ chức
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                  Số tiền
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                  Thời gian
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-400">
+                  Thanh toán
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+              {filteredAndSortedAssignments.map((assignment) => (
+                <tr key={assignment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">
                         {assignment.campaign.name}
-                      </h3>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        assignment.status === 'PAID' ? 'bg-green-100 text-green-800' :
-                        assignment.status === 'OVERDUE' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {getStatusText(assignment.status)}
-                      </span>
-                    </div>
-
-                    <p className="mb-2 text-gray-600">{assignment.campaign.organization.name}</p>
-                    
-                    {assignment.campaign.description && (
-                      <p className="mb-3 text-sm text-gray-500">{assignment.campaign.description}</p>
-                    )}
-
-                    <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
-                      <div>
-                        <span className="text-gray-500">Số tiền:</span>
-                        <span className="ml-2 font-semibold text-blue-600">
-                          {formatAmount(assignment.customAmount || assignment.feeLevel?.amount || 0)}
-                        </span>
                       </div>
-                      
-                      {assignment.feeLevel && (
-                        <div>
-                          <span className="text-gray-500">Mức phí:</span>
-                          <span className="ml-2">{assignment.feeLevel.levelName}</span>
-                        </div>
-                      )}
-                      
-                      {assignment.dueDate && (
-                        <div>
-                          <span className="text-gray-500">Hạn đóng:</span>
-                          <span className="ml-2">
-                            {new Date(assignment.dueDate).toLocaleDateString('vi-VN')}
-                          </span>
+                      {assignment.campaign.description && (
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {assignment.campaign.description}
                         </div>
                       )}
                     </div>
-
-                    {assignment.note && (
-                      <div className="p-3 mt-3 rounded-lg bg-gray-50">
-                        <p className="text-sm text-gray-700">
-                          <span className="font-medium">Ghi chú:</span> {assignment.note}
-                        </p>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-white">
+                      {assignment.campaign.organization.name}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                      {formatAmount(Number(assignment.customAmount) || Number(assignment.feeLevel?.amount) || 0)}
+                    </div>
+                    {assignment.feeLevel && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {assignment.feeLevel.levelName}
                       </div>
                     )}
-                  </div>
-
-                  <div className="flex flex-col ml-6 space-y-2">
-                    {/* Status display */}
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                      assignment.status === 'PAID' ? 'text-green-600 bg-green-50' :
-                      assignment.status === 'OVERDUE' ? 'text-red-600 bg-red-50' :
-                      'text-yellow-600 bg-yellow-50'
-                    }`}>
-                      {getStatusIcon(assignment.status)}
-                      <span className="ml-1">{getStatusText(assignment.status)}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-white">
+                      {new Date(assignment.assignedAt).toLocaleDateString('vi-VN')} - {assignment.dueDate 
+                        ? new Date(assignment.dueDate).toLocaleDateString('vi-VN')
+                        : 'Không giới hạn'
+                      }
                     </div>
-                    
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium text-center whitespace-nowrap">
                     {assignment.status === 'PENDING' && (
                       <button
                         onClick={() => handlePayNow(assignment.id)}
-                        className="flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-all duration-300 bg-blue-600 rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
                       >
                         <CreditCard className="w-4 h-4" />
                         <span>Thanh toán ngay</span>
                       </button>
                     )}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+                    
+                    {assignment.status === 'OVERDUE' && (
+                      <button
+                        disabled
+                        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-red-800 bg-red-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-red-900 dark:text-red-400"
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                        <span>Đã hết hạn thanh toán</span>
+                      </button>
+                    )}
+                    
+                    {assignment.status === 'PAID' && (
+                      <button
+                        disabled
+                        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-green-800 bg-green-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-green-900 dark:text-green-400"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span>Đã thanh toán</span>
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+
+        {filteredAndSortedAssignments.length === 0 && (
+          <div className="py-12 text-center">
+            <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+            <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
+              Không có đợt đóng phí nào
+            </h3>
+            <div className="text-gray-500 dark:text-gray-400">
+              {filters.search || filters.status 
+                ? 'Không tìm thấy đợt đóng phí nào phù hợp với bộ lọc'
+                : 'Bạn chưa được phân công đóng phí nào'
+              }
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -43,7 +43,7 @@ const CreatePaymentCampaignPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="px-4 py-3 text-red-700 border border-red-200 rounded bg-red-50">
+      <div className="px-4 py-3 text-red-700 border border-red-200 rounded bg-red-50 dark:bg-red-900 dark:border-red-800 dark:text-red-200">
         {error}
       </div>
     );

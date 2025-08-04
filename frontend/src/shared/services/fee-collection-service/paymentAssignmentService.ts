@@ -7,7 +7,7 @@ import {
   PaymentStatistics,
   ApiResponse,
   PaginatedResponse
-} from '../types';
+} from '../../../features/fee-collection/types';
 
 const API_BASE = '/api/payment/assignments';
 

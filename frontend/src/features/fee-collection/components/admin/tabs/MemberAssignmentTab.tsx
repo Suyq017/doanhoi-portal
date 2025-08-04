@@ -147,11 +147,11 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
 
       {/* Bulk Create Modal */}
       {showBulkCreate && (
-        <div className="fixed inset-0 z-50 w-full h-full overflow-y-auto bg-gray-600 bg-opacity-50">
-          <div className="relative w-11/12 max-w-6xl p-5 mx-auto bg-white border rounded-md shadow-lg top-20">
+        <div className="fixed inset-0 z-50 w-full h-full overflow-y-auto bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-75">
+          <div className="relative w-11/12 max-w-6xl p-5 mx-auto bg-white border rounded-md shadow-lg top-20 dark:bg-gray-800 dark:border-gray-700">
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Phân Công Thành Viên Đóng Phí
                 </h3>
                 <button
@@ -159,7 +159,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
                     setShowBulkCreate(false);
                     setSelectedMemberIds([]);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
                   <span className="sr-only">Đóng</span>
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -171,7 +171,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Member Selection */}
                 <div>
-                  <h4 className="mb-3 font-medium text-gray-900 text-md">
+                  <h4 className="mb-3 font-medium text-gray-900 text-md dark:text-white">
                     Chọn Thành Viên
                   </h4>
                   <MemberSelector
@@ -183,7 +183,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
 
                 {/* Assignment Form */}
                 <div>
-                  <h4 className="mb-3 font-medium text-gray-900 text-md">
+                  <h4 className="mb-3 font-medium text-gray-900 text-md dark:text-white">
                     Thiết Lập Mức Phí
                   </h4>
                   <AssignmentBulkForm
