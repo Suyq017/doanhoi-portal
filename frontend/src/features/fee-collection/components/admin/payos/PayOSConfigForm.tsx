@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, Copy, Check, Save } from 'lucide-react';
+import { Eye, EyeOff, Copy, Check, Save, ClipboardCopy, Clipboard } from 'lucide-react';
 
 interface PayOSConfig {
   id?: string;
@@ -119,11 +119,119 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
     }
   };
 
+  // Hàm xử lý khi nhấn nút "Sao chép cấu hình"
+  const handleCopyConfig = async () => {
+    try {
+      // Chuyển object thành chuỗi JSON để lưu vào clipboard
+      const configToCopy = {
+        clientId: formData.clientId,
+        apiKey: formData.apiKey,
+        checksumKey: formData.checksumKey
+      };
+      const textToCopy = JSON.stringify(configToCopy);
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedField('config');
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (err) {
+      console.error('Không thể sao chép cấu hình: ', err);
+      alert('Lỗi: Không thể sao chép dữ liệu cấu hình.');
+    }
+  };
+
+  // Hàm xử lý khi nhấn nút "Dán cấu hình"  
+  const handlePasteConfig = async () => {
+    try {
+      // Đọc văn bản từ clipboard
+      const textFromClipboard = await navigator.clipboard.readText();
+      // Chuyển chuỗi JSON trở lại thành object
+      const parsedData = JSON.parse(textFromClipboard);
+      
+      // Đảm bảo dữ liệu đọc được có đúng cấu trúc
+      if (parsedData && 
+          typeof parsedData.clientId !== 'undefined' && 
+          typeof parsedData.apiKey !== 'undefined' && 
+          typeof parsedData.checksumKey !== 'undefined') {
+        setFormData({
+          clientId: parsedData.clientId || '',
+          apiKey: parsedData.apiKey || '',
+          checksumKey: parsedData.checksumKey || ''
+        });
+        // Clear any existing errors
+        setErrors({});
+        setCopiedField('paste');
+        setTimeout(() => setCopiedField(null), 2000);
+      } else {
+        alert('Dữ liệu trong clipboard không phải là cấu hình PayOS hợp lệ.');
+      }
+    } catch (err) {
+      console.error('Không thể dán cấu hình: ', err);
+      alert('Lỗi: Dữ liệu trong clipboard không phải là định dạng hợp lệ hoặc không thể truy cập.');
+    }
+  };
+
   const isFormValid = formData.clientId.trim() && formData.apiKey.trim() && formData.checksumKey.trim();
 
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Copy/Paste Configuration Buttons */}
+        <div className="flex flex-wrap items-center gap-3 p-4 border border-gray-200 rounded-md bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
+          <div>
+            <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+              Quản lý cấu hình
+            </h4>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Sao chép và dán cấu hình giữa các đợt thu phí
+            </p>
+          </div>
+          <div className="flex gap-2 ml-auto">
+            <button
+              type="button"
+              onClick={handleCopyConfig}
+              disabled={!isFormValid || saving || loading}
+              className={`inline-flex items-center px-3 py-2 text-sm font-medium border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                !isFormValid || saving || loading
+                  ? 'text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed dark:text-gray-500 dark:bg-gray-800 dark:border-gray-600'
+                  : 'text-blue-700 bg-blue-50 border-blue-300 hover:bg-blue-100 focus:ring-blue-500 dark:text-blue-300 dark:bg-blue-900 dark:border-blue-700 dark:hover:bg-blue-800'
+              }`}
+            >
+              {copiedField === 'config' ? (
+                <>
+                  <Check className="w-4 h-4 mr-1" />
+                  Đã sao chép
+                </>
+              ) : (
+                <>
+                  <ClipboardCopy className="w-4 h-4 mr-1" />
+                  Sao chép cấu hình
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handlePasteConfig}
+              disabled={saving || loading}
+              className={`inline-flex items-center px-3 py-2 text-sm font-medium border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                saving || loading
+                  ? 'text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed dark:text-gray-500 dark:bg-gray-800 dark:border-gray-600'
+                  : 'text-green-700 bg-green-50 border-green-300 hover:bg-green-100 focus:ring-green-500 dark:text-green-300 dark:bg-green-900 dark:border-green-700 dark:hover:bg-green-800'
+              }`}
+            >
+              {copiedField === 'paste' ? (
+                <>
+                  <Check className="w-4 h-4 mr-1" />
+                  Đã dán
+                </>
+              ) : (
+                <>
+                  <Clipboard className="w-4 h-4 mr-1" />
+                  Dán cấu hình
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* Client ID */}
         <div>
           <label htmlFor="clientId" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">

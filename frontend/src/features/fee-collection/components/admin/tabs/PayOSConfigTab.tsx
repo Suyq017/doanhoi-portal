@@ -43,12 +43,12 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign }) => {
   // Load existing config
   useEffect(() => {
     loadConfig();
-  }, [campaign.organizationId]);
+  }, [campaign.id]);
 
   const loadConfig = async () => {
     try {
       setLoading(true);
-      const existingConfig = await payosConfigService.getPayOSConfig(campaign.organizationId);
+      const existingConfig = await payosConfigService.getPayOSConfig(campaign.id);
       setConfig(existingConfig);
     } catch (error) {
       console.error('Error loading PayOS config:', error);
