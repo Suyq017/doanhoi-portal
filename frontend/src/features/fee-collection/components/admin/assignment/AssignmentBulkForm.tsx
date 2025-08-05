@@ -69,19 +69,6 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
     setError(null);
   };
 
-  const handleCustomAmountToggle = (useCustom: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      useCustomAmount: useCustom,
-      customAmount: useCustom ? prev.customAmount : (selectedFeeLevel?.amount || 0)
-    }));
-  };
-
-  const handleAmountChange = (amount: number) => {
-    setFormData(prev => ({ ...prev, customAmount: amount }));
-    setError(null);
-  };
-
   const handleNotesChange = (notes: string) => {
     setFormData(prev => ({ ...prev, notes }));
   };
@@ -222,41 +209,6 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
             </div>
           )}
 
-          {/* Custom Amount Option */}
-          <div className="space-y-3">
-            <div className="flex items-center">
-              <input
-                id="useCustomAmount"
-                type="checkbox"
-                checked={formData.useCustomAmount}
-                onChange={(e) => handleCustomAmountToggle(e.target.checked)}
-                disabled={loading}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-blue-400"
-              />
-              <label htmlFor="useCustomAmount" className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Sử dụng số tiền tùy chỉnh
-              </label>
-            </div>
-
-            {formData.useCustomAmount && (
-              <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Số tiền tùy chỉnh (VND)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  value={formData.customAmount || ''}
-                  onChange={(e) => handleAmountChange(Number(e.target.value))}
-                  disabled={loading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="Nhập số tiền..."
-                />
-              </div>
-            )}
-          </div>
-
           {/* Notes Section */}
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -268,7 +220,7 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
               disabled={loading}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              placeholder="Nhập ghi chú cho assignment này..."
+              placeholder="Nhập ghi chú cho đợt phân công này..."
             />
           </div>
         </div>

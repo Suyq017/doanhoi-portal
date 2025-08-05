@@ -307,14 +307,6 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
                             <Edit className="w-4 h-4" />
                           </Link>
                           <button
-                            onClick={() => handleStatusChange(campaign.id, 'activate')}
-                            disabled={actionLoading === `${campaign.id}-activate`}
-                            className="text-green-600 hover:text-green-900 disabled:opacity-50 dark:text-green-400 dark:hover:text-green-300"
-                            title="Kích hoạt"
-                          >
-                            <Play className="w-4 h-4" />
-                          </button>
-                          <button
                             onClick={() => handleDelete(campaign.id)}
                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                             title="Xóa"

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger, Inject, for
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, LessThan } from 'typeorm';
 import { PaymentAssignment, PaymentAssignmentStatus } from '../../entities/payment-assignment.entity';
-import { PaymentCampaign, PaymentCampaignStatus } from '../../entities/payment-campaign.entity';
+import { PaymentCampaign } from '../../entities/payment-campaign.entity';
 import { PaymentFeeLevel } from '../../entities/payment-fee-level.entity';
 import { User } from '../../entities/user.entity';
 import { PaymentHistory } from '../../entities/payment-history.entity';
@@ -30,7 +30,7 @@ export class PaymentAssignmentService {
    * Create payment assignment
    */
   async create(createDto: CreatePaymentAssignmentDto): Promise<PaymentAssignment> {
-    // Verify campaign exists and is active
+    // Verify campaign exists
     const campaign = await this.campaignRepository.findOne({
       where: { id: createDto.campaignId },
       relations: ['organization']
@@ -38,10 +38,6 @@ export class PaymentAssignmentService {
 
     if (!campaign) {
       throw new NotFoundException('Payment campaign not found');
-    }
-
-    if (campaign.status !== PaymentCampaignStatus.ACTIVE) {
-      throw new BadRequestException('Payment campaign is not active');
     }
 
     // Verify user exists

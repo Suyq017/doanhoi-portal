@@ -141,7 +141,6 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
         onExportList={handleExport}
         onBulkCreate={handleBulkCreate}
         campaignEndDate={campaign.endDate}
-        campaignStatus={campaign.status}
         feeLevelsCount={feeLevels.length}
       />
 

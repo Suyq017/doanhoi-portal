@@ -72,21 +72,24 @@ const PaymentCampaignDetailPage: React.FC = () => {
 
   const checkActivationRequirements = async (campaignId: string, currentFeeLevels: PaymentFeeLevel[]) => {
     try {
-      // Check if there are fee levels - this is the only requirement now
-      const hasFeelevels = currentFeeLevels && currentFeeLevels.length > 0;
+      // Check if there are fee levels
+      const hasFeeLevels = currentFeeLevels && currentFeeLevels.length > 0;
       
-      // Still get assignment count for display purposes
+      // Check if there are member assignments
+      let hasAssignments = false;
       try {
-        const assignmentsResponse = await paymentAssignmentService.getAssignmentsByCampaign(campaignId);
-        const assignments = assignmentsResponse.data || [];
+        const assignmentsResponse : any = await paymentAssignmentService.getAssignmentsByCampaign(campaignId);
+        const assignments = assignmentsResponse.data?.assignments || [];
         setAssignmentCount(assignments.length);
+        hasAssignments = assignments.length > 0;
       } catch (err) {
         // If assignments fail to load, just set count to 0
         setAssignmentCount(0);
+        hasAssignments = false;
       }
       
-      // Only fee levels are required for activation
-      setCanActivate(hasFeelevels);
+      // All requirements must be met for activation
+      setCanActivate(hasFeeLevels && hasAssignments);
       
     } catch (err) {
       console.error('Error checking activation requirements:', err);
@@ -103,6 +106,10 @@ const PaymentCampaignDetailPage: React.FC = () => {
       if (!feeLevels || feeLevels.length === 0) {
         missingRequirements.push('Chưa có mức phí nào được tạo');
       }
+      if (_assignmentCount === 0) {
+        missingRequirements.push('Chưa có thành viên nào được phân công');
+      }
+      // Note: PayOS config check would go here if needed
       
       setActivationError(`Không thể kích hoạt đợt thu phí: ${missingRequirements.join(', ')}`);
       return;
@@ -126,9 +133,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
       }
       
       // Handle response properly - it might be response.data or just response
-      console.log('API Response:', response);
       const updatedCampaign = response?.data || response;
-      console.log('Updated Campaign:', updatedCampaign);
       
       if (updatedCampaign) {
         setCampaign(updatedCampaign);
@@ -252,7 +257,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
                       ? 'bg-green-600 hover:bg-green-700' 
                       : 'bg-gray-400'
                   }`}
-                  title={!canActivate ? 'Cần có mức phí trước khi kích hoạt' : ''}
+                  title={!canActivate ? 'Cần có đầy đủ mức phí, thành viên và cấu hình PayOS' : ''}
                 >
                   <Play className="w-4 h-4 mr-1" />
                   Kích hoạt
@@ -265,6 +270,8 @@ const PaymentCampaignDetailPage: React.FC = () => {
                         Cần có:
                         <ul className="mt-1 ml-2 list-disc">
                           {(!feeLevels || feeLevels.length === 0) && <li>Tạo mức phí</li>}
+                          {_assignmentCount === 0 && <li>Phân công thành viên</li>}
+                          <li>Cấu hình PayOS</li>
                         </ul>
                       </div>
                     </div>
@@ -334,7 +341,30 @@ const PaymentCampaignDetailPage: React.FC = () => {
             <div>
               <div className="text-sm text-gray-500 dark:text-gray-400">Thời gian</div>
               <div className="font-medium text-gray-900 dark:text-white">
-                {new Date(campaign.startDate).toLocaleDateString('vi-VN')} - {new Date(campaign.endDate).toLocaleDateString('vi-VN')}
+                <div className="mb-1">
+                  <span className="text-gray-500 text-s dark:text-gray-400">Từ: </span>
+                  {new Date(campaign.startDate).toLocaleDateString('vi-VN', {
+                    day: '2-digit',
+                    month: '2-digit', 
+                    year: 'numeric'
+                  })} - {new Date(campaign.startDate).toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                  })}
+                </div>
+                <div>
+                  <span className="text-gray-500 text-s dark:text-gray-400">Đến: </span>
+                  {new Date(campaign.endDate).toLocaleDateString('vi-VN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                  })} - {new Date(campaign.endDate).toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                  })}
+                </div>
               </div>
             </div>
           </div>

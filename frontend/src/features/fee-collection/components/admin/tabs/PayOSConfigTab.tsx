@@ -64,6 +64,7 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign }) => {
       
       // Convert form data to API request format
       const apiRequest: CreatePayOSConfigRequest = {
+        organizationId: campaign.organizationId,
         clientId: configData.clientId,
         apiKey: configData.apiKey,
         checksumKey: configData.checksumKey
@@ -72,13 +73,15 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign }) => {
       if (config) {
         // Update existing config - use UpdatePayOSConfigRequest
         const updateRequest: UpdatePayOSConfigRequest = {
-          ...apiRequest,
+          clientId: configData.clientId,
+          apiKey: configData.apiKey,
+          checksumKey: configData.checksumKey,
           isActive: configData.isActive
         };
-        savedConfig = await payosConfigService.updatePayOSConfig(campaign.organizationId, updateRequest);
+        savedConfig = await payosConfigService.updatePayOSConfig(campaign.id, updateRequest);
       } else {
         // Create new config
-        savedConfig = await payosConfigService.createPayOSConfig(campaign.organizationId, apiRequest);
+        savedConfig = await payosConfigService.createPayOSConfig(campaign.id, apiRequest);
       }
       
       setConfig(savedConfig);

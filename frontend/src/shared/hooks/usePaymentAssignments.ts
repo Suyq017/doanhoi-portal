@@ -17,6 +17,8 @@ interface PaymentAssignment {
     name: string;
     description?: string;
     status: string;
+    startDate: string;
+    endDate: string;
     organization: {
       id: string;
       name: string;
@@ -36,6 +38,8 @@ interface PaymentAssignment {
   };
   transactions?: any[];
 }
+
+export type { PaymentAssignment };
 
 interface CreatePaymentAssignmentData {
   campaignId: string;

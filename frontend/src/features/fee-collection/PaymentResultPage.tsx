@@ -166,7 +166,7 @@ export const PaymentResultPage: React.FC = () => {
   const statusDisplay = getStatusDisplay(paymentStatus.status);
 
   return (
-    <div className="min-h-screen py-8 bg-gray-50">
+    <div className="min-h-screen py-8">
       <div className="max-w-md px-4 mx-auto">
         <div className="overflow-hidden bg-white rounded-lg shadow-lg">
           {/* Header */}

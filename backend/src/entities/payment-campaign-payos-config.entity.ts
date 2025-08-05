@@ -1,17 +1,33 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { PaymentCampaign } from './payment-campaign.entity';
 import { Organization } from './organization.entity';
+import { User } from './user.entity';
 
-@Entity('organization_payos_configs')
-export class OrganizationPayosConfig {
+@Entity('payment_campaign_payos_configs')
+export class PaymentCampaignPayosConfig {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'organization_id', unique: true })
+  @Column({ name: 'campaign_id' })
+  campaignId: string;
+
+  @ManyToOne(() => PaymentCampaign, { eager: true })
+  @JoinColumn({ name: 'campaign_id' })
+  campaign: PaymentCampaign;
+
+  @Column({ name: 'organization_id' })
   organizationId: string;
 
   @ManyToOne(() => Organization, { eager: true })
   @JoinColumn({ name: 'organization_id' })
   organization: Organization;
+
+  @Column({ name: 'user_id' })
+  userId: string;
+
+  @ManyToOne(() => User, { eager: true })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @Column({ name: 'client_id', length: 255 })
   clientId: string;

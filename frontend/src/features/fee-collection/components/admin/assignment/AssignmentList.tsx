@@ -5,7 +5,6 @@ import { PaymentAssignment } from '../../../types';
 interface AssignmentListProps {
   assignments: PaymentAssignment[];
   campaignEndDate: string;
-  campaignStatus: string;
   onEditAssignment: (assignment: PaymentAssignment) => void;
   onDeleteAssignment: (assignmentId: string) => void;
   onExportList: () => void;
@@ -24,7 +23,6 @@ interface AssignmentFilters {
 const AssignmentList: React.FC<AssignmentListProps> = ({
   assignments,
   campaignEndDate,
-  campaignStatus,
   onEditAssignment,
   onDeleteAssignment,
   onExportList,
@@ -203,9 +201,9 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
           
           <button
             onClick={onBulkCreate}
-            disabled={loading || feeLevelsCount === 0 || campaignStatus !== 'ACTIVE'}
+            disabled={loading || feeLevelsCount === 0}
             className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-indigo-500 dark:hover:bg-indigo-600"
-            title={campaignStatus !== 'ACTIVE' ? 'Cần kích hoạt đợt thu phí trước khi phân công thành viên' : (feeLevelsCount === 0 ? 'Cần có ít nhất một mức phí' : '')}
+            title={feeLevelsCount === 0 ? 'Cần có ít nhất một mức phí' : ''}
           >
             <Plus className="inline w-4 h-4 mr-2" />
             Phân công thành viên
@@ -222,7 +220,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
       </div>
 
       {/* Campaign Status Warning */}
-      {(campaignStatus !== 'ACTIVE' || feeLevelsCount === 0) && !loading && (
+      {feeLevelsCount === 0 && !loading && (
         <div className="p-4 border border-yellow-200 rounded-md bg-yellow-50 dark:bg-yellow-900 dark:border-yellow-800">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -232,13 +230,10 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                {campaignStatus !== 'ACTIVE' ? 'Đợt thu phí chưa được kích hoạt' : 'Chưa có mức phí nào được thiết lập'}
+                Chưa có mức phí nào được thiết lập
               </h3>
               <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
-                {campaignStatus !== 'ACTIVE' 
-                  ? 'Vui lòng kích hoạt đợt thu phí trước khi phân công thành viên.' 
-                  : 'Vui lòng thiết lập ít nhất một mức phí ở tab "Mức Phí" trước khi tạo assignment.'
-                }
+                Vui lòng thiết lập ít nhất một mức phí ở tab "Mức Phí" trước khi tạo assignment.
               </p>
             </div>
           </div>

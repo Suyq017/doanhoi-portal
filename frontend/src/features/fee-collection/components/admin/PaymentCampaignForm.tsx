@@ -1,43 +1,48 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, X } from 'lucide-react';
+import { Save, X, ChevronDown } from 'lucide-react';
 import { 
   PaymentCampaign, 
   CreatePaymentCampaignDto, 
   UpdatePaymentCampaignDto, 
 } from '../../types';
-import { Organization } from '@/shared/types/organization';
 import { paymentCampaignService } from '@/shared/services/fee-collection-service';
+import OrganizationSelector from './OrganizationSelector';
 
 interface PaymentCampaignBasicFormData {
   organizationId: string;
+  organizationName: string;
   name: string;
   description: string;
   startDate: string;
+  startTime: string;
   endDate: string;
+  endTime: string;
 }
 
 interface PaymentCampaignFormProps {
   campaign?: PaymentCampaign;
-  organizations: Organization[];
   mode: 'create' | 'edit';
 }
 
 const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({ 
   campaign, 
-  organizations, 
   mode 
 }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showOrganizationSelector, setShowOrganizationSelector] = useState(false);
   
   const [formData, setFormData] = useState<PaymentCampaignBasicFormData>({
     organizationId: campaign?.organizationId || '',
+    organizationName: campaign?.organization?.name || '',
     name: campaign?.name || '',
     description: campaign?.description || '',
     startDate: campaign?.startDate ? campaign.startDate.split('T')[0] : '',
+    startTime: campaign?.startDate ? campaign.startDate.split('T')[1]?.substring(0, 5) || '00:00' : '00:00',
     endDate: campaign?.endDate ? campaign.endDate.split('T')[0] : '',
+    endTime: campaign?.endDate ? campaign.endDate.split('T')[1]?.substring(0, 5) || '23:59' : '23:59',
   });
 
   const validateForm = (): boolean => {
@@ -56,17 +61,52 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
       return false;
     }
     
+    if (!formData.startTime) {
+      setError('Vui lòng chọn giờ bắt đầu');
+      return false;
+    }
+    
+    // Validate time format for startTime
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(formData.startTime)) {
+      setError('Giờ bắt đầu không đúng định dạng (HH:MM)');
+      return false;
+    }
+    
     if (!formData.endDate) {
       setError('Vui lòng chọn ngày kết thúc');
       return false;
     }
     
-    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-      setError('Ngày bắt đầu phải trước ngày kết thúc');
+    if (!formData.endTime) {
+      setError('Vui lòng chọn giờ kết thúc');
+      return false;
+    }
+    
+    // Validate time format for endTime
+    if (!timeRegex.test(formData.endTime)) {
+      setError('Giờ kết thúc không đúng định dạng (HH:MM)');
+      return false;
+    }
+    
+    const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
+    const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+    
+    if (startDateTime >= endDateTime) {
+      setError('Thời gian bắt đầu phải trước thời gian kết thúc');
       return false;
     }
     
     return true;
+  };
+
+  const handleOrganizationSelect = (organizationId: string, organizationName: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      organizationId, 
+      organizationName 
+    }));
+    setShowOrganizationSelector(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,8 +124,8 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           organizationId: formData.organizationId,
           name: formData.name,
           description: formData.description,
-          startDate: formData.startDate,
-          endDate: formData.endDate
+          startDate: `${formData.startDate}T${formData.startTime}:00`,
+          endDate: `${formData.endDate}T${formData.endTime}:00`
         };
         
         const campaignResponse = await paymentCampaignService.createPaymentCampaign(campaignData);
@@ -98,8 +138,8 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
         const updateData: UpdatePaymentCampaignDto = {
           name: formData.name,
           description: formData.description,
-          startDate: formData.startDate,
-          endDate: formData.endDate
+          startDate: `${formData.startDate}T${formData.startTime}:00`,
+          endDate: `${formData.endDate}T${formData.endTime}:00`
         };
         
         await paymentCampaignService.updatePaymentCampaign(campaign.id, updateData);
@@ -141,23 +181,23 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
         <div className="p-6 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
           <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">Thông Tin Cơ Bản</h2>
           
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Row 1: Tổ chức và Tên đợt đóng phí */}
+          <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Tổ chức <span className="text-red-500">*</span>
               </label>
-              <select
-                value={formData.organizationId}
-                onChange={(e) => setFormData(prev => ({ ...prev, organizationId: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                required
+              <button
+                type="button"
+                onClick={() => setShowOrganizationSelector(true)}
                 disabled={mode === 'edit'} // Don't allow changing organization in edit mode
+                className="w-full px-3 py-2 text-left border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-600"
               >
-                <option value="">Chọn tổ chức</option>
-                {organizations.map(org => (
-                  <option key={org.id} value={org.id}>{org.name}</option>
-                ))}
-              </select>
+                <span className={formData.organizationName ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
+                  {formData.organizationName || 'Chọn tổ chức'}
+                </span>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </button>
             </div>
 
             <div>
@@ -173,7 +213,10 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
                 required
               />
             </div>
+          </div>
 
+          {/* Row 2: Ngày bắt đầu và Giờ bắt đầu */}
+          <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Ngày bắt đầu <span className="text-red-500">*</span>
@@ -189,6 +232,24 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
 
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Giờ bắt đầu <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.startTime}
+                onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                placeholder="HH:MM (VD: 08:00)"
+                pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Row 3: Ngày kết thúc và Giờ kết thúc */}
+          <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Ngày kết thúc <span className="text-red-500">*</span>
               </label>
               <input
@@ -199,9 +260,25 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
                 required
               />
             </div>
+
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Giờ kết thúc <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.endTime}
+                onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                placeholder="HH:MM (VD: 17:30)"
+                pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+                required
+              />
+            </div>
           </div>
 
-          <div className="mt-4">
+          {/* Row 4: Mô tả */}
+          <div>
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
               Mô tả
             </label>
@@ -235,6 +312,16 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           </button>
         </div>
       </form>
+
+      {/* Organization Selector Modal */}
+      {showOrganizationSelector && (
+        <OrganizationSelector
+          selectedOrganizationId={formData.organizationId}
+          onOrganizationSelect={handleOrganizationSelect}
+          onClose={() => setShowOrganizationSelector(false)}
+          disabled={mode === 'edit'}
+        />
+      )}
     </div>
   );
 };

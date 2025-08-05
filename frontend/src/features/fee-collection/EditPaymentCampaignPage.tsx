@@ -3,15 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import PaymentCampaignForm from './components/admin/PaymentCampaignForm';
 import { PaymentCampaign } from './types';
-import { Organization } from '@/shared/types/organization';
 import { paymentCampaignService } from '@/shared/services/fee-collection-service';
-import { organizationService } from '@/shared/services';
 
 const EditPaymentCampaignPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [campaign, setCampaign] = useState<PaymentCampaign | null>(null);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,14 +27,11 @@ const EditPaymentCampaignPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Load campaign and organizations in parallel
-      const [campaignResponse, organizationsResponse] = await Promise.all([
-        paymentCampaignService.getPaymentCampaignById(id),
-        organizationService.getOrganizations() // Get all organizations
-      ]);
-      // Set campaign and organizations
+      // Load campaign
+      const campaignResponse = await paymentCampaignService.getPaymentCampaignById(id);
+      
+      // Set campaign
       setCampaign(campaignResponse);
-      setOrganizations(organizationsResponse);      
       
     } catch (err) {
       console.error('Error loading data:', err);
@@ -130,7 +124,6 @@ const EditPaymentCampaignPage: React.FC = () => {
       {/* Form */}
       <PaymentCampaignForm
         campaign={campaign}
-        organizations={organizations}
         mode="edit"
       />
     </div>

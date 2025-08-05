@@ -32,7 +32,7 @@ export class PaymentController {
         orderCode: orderCode,
         returnUrl: `${YOUR_DOMAIN}/payment-result/${orderCode}`,
         cancelUrl: `${YOUR_DOMAIN}/payment-result/${orderCode}`,
-        organizationId: requestBody.organizationId
+        campaignId: requestBody.campaignId
       };
 
       const paymentLink = await this.payosService.createPaymentLink(order);
@@ -73,14 +73,14 @@ export class PaymentController {
         throw new HttpException('Payment history not found', HttpStatus.NOT_FOUND);
       }
 
-      // Lấy organizationId từ assignment → campaign → organization
-      const organizationId = paymentHistory.assignment?.campaign?.organization?.id;
-      if (!organizationId) {
-        throw new HttpException('Organization not found for this payment', HttpStatus.NOT_FOUND);
+      // Lấy campaignId từ assignment → campaign
+      const campaignId = paymentHistory.assignment?.campaign?.id;
+      if (!campaignId) {
+        throw new HttpException('Campaign not found for this payment', HttpStatus.NOT_FOUND);
       }
 
-      // Gọi PayOS để check status và cập nhật database
-      const paymentInfo = await this.payosService.getPaymentLinkInformation(orderNumber, organizationId);
+      // Gọi PayOS để check status và cập nhật database (sử dụng effective config với fallback)
+      const paymentInfo = await this.payosService.getPaymentLinkInformation(orderNumber, campaignId);
       return paymentInfo;
     } catch (error) {
       console.error(`Error checking status for order ${orderCode}:`, error);

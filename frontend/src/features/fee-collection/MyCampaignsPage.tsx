@@ -1,45 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Clock, CheckCircle, AlertCircle, Search } from 'lucide-react';
-import { usePaymentAssignments } from '../../shared/hooks/usePaymentAssignments';
+import { usePaymentAssignments, PaymentAssignment } from '../../shared/hooks/usePaymentAssignments';
 import { paymentService } from '../../shared/services/fee-collection-service';
-
-// Import the PaymentAssignment type from the hook file
-type PaymentAssignment = {
-  id: string;
-  campaignId: string;
-  userId: string;
-  feeLevelId?: string;
-  customAmount?: number;
-  note?: string;
-  status: 'PENDING' | 'PAID' | 'OVERDUE';
-  dueDate?: string;
-  assignedAt: string;
-  paidAt?: string;
-  assignedById: string;
-  campaign: {
-    id: string;
-    name: string;
-    description?: string;
-    status: string;
-    organization: {
-      id: string;
-      name: string;
-    };
-  };
-  user: {
-    id: string;
-    username: string;
-    fullName: string;
-    email?: string;
-  };
-  feeLevel?: {
-    id: string;
-    levelName: string;
-    amount: number;
-    description?: string;
-  };
-  transactions?: any[];
-};
 
 interface Filters {
   status: string;
@@ -121,12 +83,15 @@ export const MyCampaignsPage: React.FC = () => {
 
   const filteredAndSortedAssignments = assignments
     .filter(assignment => {
+      // Chỉ hiển thị assignments từ campaigns có status ACTIVE hoặc CANCELLED
+      const isValidCampaignStatus = assignment.campaign.status === 'ACTIVE' || assignment.campaign.status === 'CANCELLED';
+      
       const matchesStatus = !filters.status || assignment.status === filters.status;
       const matchesSearch = !filters.search || 
         assignment.campaign.name.toLowerCase().includes(filters.search.toLowerCase()) ||
         assignment.campaign.organization.name.toLowerCase().includes(filters.search.toLowerCase());
       
-      return matchesStatus && matchesSearch;
+      return isValidCampaignStatus && matchesStatus && matchesSearch;
     })
     .sort((a, b) => {
       // Ưu tiên PENDING lên đầu
@@ -154,12 +119,17 @@ export const MyCampaignsPage: React.FC = () => {
       return filters.sortOrder === 'desc' ? -comparison : comparison;
     });
 
+  // Lọc assignments để chỉ tính những assignments từ campaigns có status hợp lệ
+  const validAssignments = assignments.filter(a => 
+    a.campaign.status === 'ACTIVE' || a.campaign.status === 'CANCELLED'
+  );
+
   const summaryStats = {
-    total: assignments.length,
-    pending: assignments.filter(a => a.status === 'PENDING').length,
-    overdue: assignments.filter(a => a.status === 'OVERDUE').length,
-    paid: assignments.filter(a => a.status === 'PAID').length,
-    totalAmount: assignments
+    total: validAssignments.length,
+    pending: validAssignments.filter(a => a.status === 'PENDING').length,
+    overdue: validAssignments.filter(a => a.status === 'OVERDUE').length,
+    paid: validAssignments.filter(a => a.status === 'PAID').length,
+    totalAmount: validAssignments
       .filter(a => a.status === 'PENDING' || a.status === 'OVERDUE')
       .reduce((sum, a) => {
         const amount = Number(a.customAmount) || Number(a.feeLevel?.amount) || 0;
@@ -360,7 +330,10 @@ export const MyCampaignsPage: React.FC = () => {
                   Số tiền
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  Thời gian
+                  Từ ngày
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                  Đến ngày
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-400">
                   Thanh toán
@@ -399,20 +372,48 @@ export const MyCampaignsPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 dark:text-white">
-                      {new Date(assignment.assignedAt).toLocaleDateString('vi-VN')} - {assignment.dueDate 
-                        ? new Date(assignment.dueDate).toLocaleDateString('vi-VN')
-                        : 'Không giới hạn'
-                      }
+                      {new Date(assignment.campaign.startDate).toLocaleDateString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit', 
+                        year: 'numeric'
+                      })} {new Date(assignment.campaign.startDate).toLocaleTimeString('vi-VN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      })}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-white">
+                      {new Date(assignment.campaign.endDate).toLocaleDateString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })} {new Date(assignment.campaign.endDate).toLocaleTimeString('vi-VN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      })}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm font-medium text-center whitespace-nowrap">
-                    {assignment.status === 'PENDING' && (
+                    {assignment.status === 'PENDING' && assignment.campaign.status === 'ACTIVE' && (
                       <button
                         onClick={() => handlePayNow(assignment.id)}
                         className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-all duration-300 bg-blue-600 rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
                       >
                         <CreditCard className="w-4 h-4" />
                         <span>Thanh toán ngay</span>
+                      </button>
+                    )}
+
+                    {assignment.status === 'PENDING' && assignment.campaign.status === 'CANCELLED' && (
+                      <button
+                        disabled
+                        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-red-800 bg-red-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-red-900 dark:text-red-400"
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                        <span>Đã hết hạn thanh toán</span>
                       </button>
                     )}
                     
