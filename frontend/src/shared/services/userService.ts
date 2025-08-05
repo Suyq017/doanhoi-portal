@@ -124,6 +124,25 @@ class UserService {
   async getImportStatus(sessionId: string): Promise<ImportSession> {
     return this.request<ImportSession>(`/users/import/${sessionId}/status`);
   }
+  // Role assignment functionality
+  async assignUserRoles(userId: string, roleAssignments: {
+    roleId: string;
+    organizationId?: string;
+    isActive: boolean;
+  }[]): Promise<void> {
+    await this.request(`/users/${userId}/roles`, {
+      method: 'POST',
+      body: JSON.stringify({ roleAssignments }),
+    });
+  }
+
+  // Organization membership functionality
+  async updateUserOrganizations(userId: string, organizationIds: string[]): Promise<User> {
+    return this.request<User>(`/users/${userId}/organizations`, {
+      method: 'PUT',
+      body: JSON.stringify({ organizationIds }),
+    });
+  }
 }
 
 export const userService = new UserService();

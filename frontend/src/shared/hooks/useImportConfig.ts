@@ -1,19 +1,19 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from './useToast';
-import { 
-  ImportModalConfig, 
-  ImportColumn, 
-  ServerImportSession, 
-  ServerValidationResult, 
-  ServerImportResult 
+import {
+  ImportModalConfig,
+  ImportColumn,
+  ServerImportSession,
+  ServerValidationResult,
+  ServerImportResult
 } from '../types/import';
 
 // Service interface that all import services must implement
 export interface ImportServiceInterface {
   // Template
   getTemplate(params?: string): string;
-  
+
   // Server-side processing (required methods)
   uploadImportFile(file: File, ...extraParams: any[]): Promise<ServerImportSession>;
   validateImportData(sessionId: string): Promise<ServerValidationResult | any>;
@@ -26,18 +26,18 @@ export interface UseImportConfigOptions {
   // Entity information
   entityName: string;
   entityService: ImportServiceInterface;
-  
+
   // Columns definition
   columns: ImportColumn[];
-  
+
   // Template configuration  
   templateParams?: Record<string, any>; // For organizations level, etc.
   templateFileName?: string; // Override default template filename
-  
+
   // Callbacks
   onSuccess?: () => void;
   onError?: (error: Error) => void;
-  
+
   // Advanced options (with sensible defaults)
   processingMode?: 'client' | 'server';
   maxFileSize?: number;
@@ -64,7 +64,7 @@ export const useImportConfig = (options: UseImportConfigOptions): UseImportConfi
   const { showSuccess, showError } = useToast();
   const [isImporting, setIsImporting] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  
+
   const {
     entityName,
     entityService,
@@ -81,7 +81,7 @@ export const useImportConfig = (options: UseImportConfigOptions): UseImportConfi
   // Generate template filename if not provided
   const defaultTemplateFileName = useMemo(() => {
     if (templateFileName) return templateFileName;
-    
+
     const suffix = templateParams?.level ? `_level${templateParams.level}` : '';
     return t(`${entityName}:import.templateFile`, {
       defaultValue: `${entityName}${suffix}_template.xlsx`
@@ -99,19 +99,19 @@ export const useImportConfig = (options: UseImportConfigOptions): UseImportConfi
     templateFileName: defaultTemplateFileName,
     acceptedFileTypes,
     maxFileSize,
-    
+
     // Processing mode
     processingMode,
-    
+
     // Server-side functions with error handling and loading state
     uploadFile: async (file: File) => {
       setIsImporting(true);
       try {
         const result = await entityService.uploadImportFile(
-          file, 
+          file,
           ...(templateParams ? Object.values(templateParams) : [])
         );
-        
+
         // Standardize return format
         return {
           sessionId: result.sessionId,
@@ -124,14 +124,14 @@ export const useImportConfig = (options: UseImportConfigOptions): UseImportConfi
         throw error;
       }
     },
-    
+
     validateServerData: async (sessionId: string) => {
       try {
         const result = await entityService.validateImportData(sessionId);
-        
+
         // Handle different response formats from different services
         let mappedPreviewData: any[] = [];
-        
+
         // Check if result has custom validation structure (like Users service)
         if ((result as any).validationResults) {
           // Format from Users service (complex validation with nested structure)
@@ -146,9 +146,8 @@ export const useImportConfig = (options: UseImportConfigOptions): UseImportConfi
             hasErrors: !item.validation?.isValid,
             hasWarnings: item._warnings && item._warnings.length > 0
           }));
-          
-          // Debug log to check error mapping
-          console.log('Mapped preview data with errors:', mappedPreviewData.filter(item => item.hasErrors));
+
+          // Check error mapping completed
         } else if (result.previewData) {
           // Format from other services (direct preview data)
           mappedPreviewData = result.previewData.map((item: any) => ({
@@ -178,12 +177,12 @@ export const useImportConfig = (options: UseImportConfigOptions): UseImportConfi
         throw error;
       }
     },
-    
+
     executeServerImport: async (sessionId: string, importOptions?: any) => {
       try {
         const result = await entityService.executeImport(sessionId, importOptions);
         setIsImporting(false);
-        
+
         return {
           sessionId: result.sessionId,
           success: result.success,
@@ -198,27 +197,27 @@ export const useImportConfig = (options: UseImportConfigOptions): UseImportConfi
         throw error;
       }
     },
-    
+
     getImportStatus: entityService.getImportStatus.bind(entityService),
-    
+
     // UI Configuration
     columns,
     entityName,
-    
+
     // Callbacks with built-in success/error handling + i18n
     onSuccess: () => {
       setIsImporting(false);
-      showSuccess(t(`${entityName}:import.success`, { 
-        defaultValue: 'Import thành công!' 
+      showSuccess(t(`${entityName}:import.success`, {
+        defaultValue: 'Import thành công!'
       }));
       closeImportModal();
       onSuccess?.();
     },
-    
+
     onError: (error: Error) => {
       setIsImporting(false);
-      showError(error.message || t(`${entityName}:import.error`, { 
-        defaultValue: 'Import thất bại!' 
+      showError(error.message || t(`${entityName}:import.error`, {
+        defaultValue: 'Import thất bại!'
       }));
       onError?.(error);
     }

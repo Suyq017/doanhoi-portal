@@ -253,13 +253,7 @@ const ImportModal = ({
 
   const getDisplayRows = () => {
     // Server-side processing only
-    if (!state.serverValidation) return [];
-
-    let rows = state.serverValidation.previewData || [];
-
-    // Debug log to check error detection
-    console.log('Preview data rows:', rows);
-    console.log('Rows with errors:', rows.filter(row => row.hasErrors || row._hasError));
+    if (!state.serverValidation) return []; let rows = state.serverValidation.previewData || [];
 
     // Apply error filtering - check both hasErrors and _hasError for compatibility
     if (showOnlyErrors) {

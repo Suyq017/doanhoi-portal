@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import LoginForm from '../components/LoginForm';
 import GoogleLoginButton from '../components/GoogleLoginButton';
@@ -9,18 +9,22 @@ import { useAuth } from '../context/AuthContext';
 const LoginPage: React.FC = () => {
   const { t } = useTranslation(['auth', 'common']);
   const navigate = useNavigate();
+  const location = useLocation();
   const { auth } = useAuth();
   const [error, setError] = useState<string | null>(null);
+
+  // Get the return URL from location state
+  const from = location.state?.from?.pathname || '/';
 
   // Redirect if already authenticated
   React.useEffect(() => {
     if (auth.isAuthenticated) {
-      navigate('/');
+      navigate(from, { replace: true });
     }
-  }, [auth.isAuthenticated, navigate]);
+  }, [auth.isAuthenticated, navigate, from]);
 
   const handleSuccess = () => {
-    navigate('/');
+    navigate(from, { replace: true });
   };
 
   const handleError = (errorMessage: string) => {

@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
+import { RolesService } from '../roles/roles.service';
 import { User, AuthProvider } from '../entities/user.entity';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
@@ -11,19 +12,20 @@ import * as bcrypt from 'bcryptjs';
 export class AuthService {
   constructor(
     private usersService: UsersService,
+    private rolesService: RolesService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
-    
+
     if (!user || !user.isActive) {
       return null;
     }
 
     const isPasswordValid = await this.usersService.validatePassword(user, password);
-    
+
     if (!isPasswordValid) {
       return null;
     }
@@ -34,9 +36,9 @@ export class AuthService {
   }
 
   async login(user: User): Promise<AuthResponseDto> {
-    const payload: JwtPayload = { 
-      email: user.email, 
-      sub: user.id 
+    const payload: JwtPayload = {
+      email: user.email,
+      sub: user.id
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -72,14 +74,14 @@ export class AuthService {
       });
 
       const user = await this.usersService.findByEmail(payload.email);
-      
+
       if (!user || !user.isActive || user.refreshToken !== refreshToken) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const newPayload: JwtPayload = { 
-        email: user.email, 
-        sub: user.id 
+      const newPayload: JwtPayload = {
+        email: user.email,
+        sub: user.id
       };
 
       const accessToken = this.jwtService.sign(newPayload, {
@@ -116,5 +118,22 @@ export class AuthService {
     }
 
     return this.login(user);
+  }
+
+  async getUserPermissions(userId: string, organizationId?: string) {
+    // Get user roles with permissions
+    const userRoles = await this.rolesService.getUserRoles(userId, organizationId);
+
+    return {
+      userId,
+      organizationId,
+      roles: userRoles.map(userRole => ({
+        id: userRole.role.id,
+        name: userRole.role.name,
+        displayName: userRole.role.displayName,
+        organizationId: userRole.organizationId,
+        permissions: userRole.role.permissions.filter(p => p.isActive),
+      })),
+    };
   }
 }

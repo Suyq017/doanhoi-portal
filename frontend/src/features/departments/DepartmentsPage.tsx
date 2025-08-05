@@ -13,9 +13,12 @@ import {
   ImportModal,
   AddDropdownButton,
   DropdownOption,
-  useImportConfig,
+  useImportConfig, ConditionalRender,
+  getPermissionBasedEmptyMessage,
+  createPermissionBasedDropdownOptions,
 } from "../../shared";
 import { departmentColumns } from "../../shared/utils/importColumns";
+import { useDepartmentPagePermissions } from "./hooks/useDepartmentPagePermissions";
 import CreateDepartmentModal from "./components/CreateDepartmentModal";
 import ViewDepartmentModal from "./components/ViewDepartmentModal";
 import EditDepartmentModal from "./components/EditDepartmentModal";
@@ -23,6 +26,10 @@ import DeleteConfirmModal from "./components/DeleteConfirmModal";
 
 const Departments: React.FC = () => {
   const { t } = useTranslation(['departments', 'common']);
+
+  // Permission hooks
+  const permissions = useDepartmentPagePermissions();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [departments, setDepartments] = useState<ApiDepartment[]>([]);
@@ -40,11 +47,11 @@ const Departments: React.FC = () => {
   const { toasts, hideToast, showSuccess, showError } = useToast();
 
   // Import configuration using custom hook
-  const { 
-    importConfig, 
-    isImportModalOpen, 
-    openImportModal, 
-    closeImportModal 
+  const {
+    importConfig,
+    isImportModalOpen,
+    openImportModal,
+    closeImportModal
   } = useImportConfig({
     entityName: 'departments',
     entityService: {
@@ -79,24 +86,32 @@ const Departments: React.FC = () => {
     { value: "true", label: t('common:status.active') },
     { value: "false", label: t('common:status.inactive') },
   ];
-
   // Dropdown options for add button
-  const addDropdownOptions: DropdownOption[] = [
+  const addDropdownOptions: DropdownOption[] = createPermissionBasedDropdownOptions([
     {
       key: 'single',
       label: t('departments:addButton.single'),
       icon: <UserPlus className="w-4 h-4" />,
       description: t('departments:addButton.singleDescription'),
-      onClick: () => setIsCreateModalOpen(true)
+      onClick: () => setIsCreateModalOpen(true),
+      requiredPermission: 'departments.create'
     },
     {
       key: 'fromFile',
-      label: t('departments:addButton.fromFile'), 
+      label: t('departments:addButton.fromFile'),
       icon: <Upload className="w-4 h-4" />,
       description: t('departments:addButton.fromFileDescription'),
-      onClick: openImportModal
+      onClick: openImportModal,
+      requiredPermission: 'departments.create'
     }
-  ];
+  ], (permission: string) => {
+    switch (permission) {
+      case 'departments.create':
+        return permissions.canCreate;
+      default:
+        return false;
+    }
+  });
 
   const loadDepartments = async () => {
     try {
@@ -289,13 +304,14 @@ const Departments: React.FC = () => {
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             {t('departments:subtitle')}
           </p>
-        </div>
-        <div className="mt-4 sm:mt-0">
-          <AddDropdownButton 
-            label={t('departments:addButton.dropdown')}
-            options={addDropdownOptions}
-            loading={isCreatingDepartment}
-          />
+        </div>        <div className="mt-4 sm:mt-0">
+          <ConditionalRender condition={permissions.canCreate || permissions.canImport}>
+            <AddDropdownButton
+              label={t('departments:addButton.dropdown')}
+              options={addDropdownOptions}
+              loading={isCreatingDepartment}
+            />
+          </ConditionalRender>
         </div>
       </div>
 
@@ -351,42 +367,42 @@ const Departments: React.FC = () => {
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('departments:fields.description')}
-                </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                </th>                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('common:fields.status')}
                 </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  {t('common:fields.actions')}
-                </th>
+                <ConditionalRender condition={permissions.showActionColumn}>
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                    {t('common:fields.actions')}
+                  </th>
+                </ConditionalRender>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {filteredDepartments.map((department) => (
-                  <tr key={department.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900 dark:text-white">{department.name}</div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 whitespace-nowrap dark:text-gray-400">
-                      {department.code || '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="max-w-xs text-gray-500 truncate dark:text-gray-400">
-                        {department.description || '-'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          department.isActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                <tr key={department.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="font-medium text-gray-900 dark:text-white">{department.name}</div>
+                  </td>
+                  <td className="px-6 py-4 text-gray-500 whitespace-nowrap dark:text-gray-400">
+                    {department.code || '-'}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="max-w-xs text-gray-500 truncate dark:text-gray-400">
+                      {department.description || '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${department.isActive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
                         }`}
-                      >
-                        {department.isActive ? t('common:status.active') : t('common:status.inactive')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
+                    >
+                      {department.isActive ? t('common:status.active') : t('common:status.inactive')}
+                    </span>
+                  </td>                    <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+                    <ConditionalRender condition={permissions.showActionColumn}>
+                      <div className="flex items-center space-x-2">                          <ConditionalRender condition={permissions.canView}>
                         <button
                           onClick={() => handleViewDepartment(department)}
                           className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
@@ -394,32 +410,40 @@ const Departments: React.FC = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handleEditDepartment(department)}
-                          className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
-                          title={t('common:actions.edit')}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteDepartment(department)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                          title={t('common:actions.delete')}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      </ConditionalRender>
+                        <ConditionalRender condition={permissions.canEdit}>
+                          <button
+                            onClick={() => handleEditDepartment(department)}
+                            className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                            title={t('common:actions.edit')}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </ConditionalRender>
+                        <ConditionalRender condition={permissions.canDelete}>
+                          <button
+                            onClick={() => handleDeleteDepartment(department)}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            title={t('common:actions.delete')}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </ConditionalRender>
                       </div>
-                    </td>
-                  </tr>
-                ))}
+                    </ConditionalRender>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
-        </div>
-
-        {filteredDepartments.length === 0 && (
+        </div>        {filteredDepartments.length === 0 && !loading && (
           <div className="py-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">
-              {t('common:messages.empty.noResults')}
+              {getPermissionBasedEmptyMessage(
+                permissions.canView,
+                permissions.canCreate,
+                t('departments:title', { defaultValue: 'phòng ban' })
+              )}
             </div>
           </div>
         )}

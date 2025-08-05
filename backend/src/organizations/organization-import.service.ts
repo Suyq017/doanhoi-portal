@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import * as XLSX from 'xlsx';
 import { Organization } from '../entities/organization.entity';
 import { User } from '../entities/user.entity';
-import { UserOrganization, UserRole } from '../entities/user-organization.entity';
+import { UserOrganization, UserOrgRole } from '../entities/user-organization.entity';
 import { ImportMemberDto, ImportMembersDto } from './dto/import-members.dto';
 
 export interface ImportSession {
@@ -287,7 +287,7 @@ export class OrganizationImportService {
                 const userOrganization = this.userOrganizationsRepository.create({
                     userId: user.id,
                     organizationId: session.organizationId,
-                    role: UserRole.MEMBER,
+                    role: UserOrgRole.MEMBER,
                     joinedAt: new Date()
                 });
 

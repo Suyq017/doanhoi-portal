@@ -65,18 +65,6 @@ export interface UpdateOrganizationRequest extends Partial<CreateOrganizationReq
     id?: string;
 }
 
-export interface UserOrganization {
-    id: string;
-    userId: string;
-    organizationId: string;
-    role: string;
-    isActive: boolean;
-    joinedAt: string;
-    user?: any;
-    organization?: Organization;
-}
-
-
 export interface OrganizationStats {
     doanStats: {
         total: number;

@@ -1,10 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Not, IsNull } from 'typeorm';
-import { User, UserType, MembershipStatus } from '../entities/user.entity';
+import { User, UserType, MembershipStatus, AuthProvider } from '../entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
+import { UserRoleAssignmentDto } from './dto/user-role-assignment.dto';
+import { RolesService } from '../roles/roles.service';
+import { OrganizationsService } from '../organizations/organizations.service';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -12,9 +15,9 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-  ) { }
-
-  async create(createUserDto: CreateUserDto): Promise<User> {
+    private rolesService: RolesService,
+    private organizationsService: OrganizationsService,
+  ) { } async create(createUserDto: CreateUserDto): Promise<User> {
     // Check if user with email or code already exists
     const existingUser = await this.usersRepository.findOne({
       where: [
@@ -28,13 +31,43 @@ export class UsersService {
     }
 
     // Hash password if provided
-    const userData = { ...createUserDto };
+    const { roleId, organizationId, roles, roleAssignments, ...userData } = createUserDto;
     if (userData.password) {
       userData.password = await bcrypt.hash(userData.password, 10);
+    } const user = this.usersRepository.create(userData);
+    const savedUser = await this.usersRepository.save(user);    // Handle organization membership (including parent organizations)
+    if (organizationId && organizationId.trim() !== '') {
+      try {
+        await this.organizationsService.addMemberWithParents(organizationId, savedUser.id);
+      } catch (error) {
+        console.warn('Failed to add user to organization:', error.message);
+        // Don't throw error - user creation should succeed even if organization assignment fails
+      }
     }
 
-    const user = this.usersRepository.create(userData);
-    return this.usersRepository.save(user);
+    // Handle role assignments - Priority order:
+    // 1. New roleAssignments array (preferred)
+    // 2. Legacy roles array + organizationId
+    // 3. Legacy single roleId + organizationId
+
+    if (roleAssignments && Array.isArray(roleAssignments) && roleAssignments.length > 0) {
+      // NEW: Handle multiple role-organization assignments
+      await this.assignMultipleRoles(savedUser.id, roleAssignments);
+    } else if (roles && Array.isArray(roles) && roles.length > 0) {
+      // LEGACY: Handle multiple roles with single organization
+      const cleanOrganizationId = organizationId && organizationId.trim() !== '' ? organizationId : undefined;
+      for (const roleIdToAssign of roles) {
+        if (roleIdToAssign && roleIdToAssign.trim() !== '') {
+          await this.rolesService.assignUserRole(savedUser.id, roleIdToAssign, cleanOrganizationId);
+        }
+      }
+    } else if (roleId && roleId.trim() !== '') {
+      // LEGACY: Single role assignment for backward compatibility
+      const cleanOrganizationId = organizationId && organizationId.trim() !== '' ? organizationId : undefined;
+      await this.rolesService.assignUserRole(savedUser.id, roleId, cleanOrganizationId);
+    }
+
+    return savedUser;
   }
 
   async findAll(query: QueryUserDto): Promise<{ users: User[], total: number }> {
@@ -71,11 +104,20 @@ export class UsersService {
 
     return { users, total };
   }
-
   async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['managementDepartment', 'trainingDepartment', 'class', 'organizations', 'organizations.organization']
+      relations: [
+        'managementDepartment',
+        'trainingDepartment',
+        'class',
+        'organizations',
+        'organizations.organization',
+        'userRoles',
+        'userRoles.role',
+        'userRoles.role.permissions',
+        'userRoles.organization'
+      ]
     });
 
     if (!user) {
@@ -85,30 +127,105 @@ export class UsersService {
     return user;
   }
 
+  /**
+   * Find user by email (required by AuthService)
+   */
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { email },
-      relations: ['organizations', 'organizations.organization']
+      relations: [
+        'managementDepartment',
+        'trainingDepartment',
+        'class',
+        'userRoles',
+        'userRoles.role',
+        'userRoles.organization'
+      ]
     });
   }
 
-  async findByGoogleId(googleId: string): Promise<User | null> {
-    return this.usersRepository.findOne({
-      where: { googleId },
-      relations: ['organizations', 'organizations.organization']
+  /**
+   * Validate user password (required by AuthService)
+   */
+  async validatePassword(user: User, password: string): Promise<boolean> {
+    if (!user.password) {
+      return false;
+    }
+    return bcrypt.compare(password, user.password);
+  }
+
+  /**
+   * Update user's refresh token (required by AuthService)
+   */
+  async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
+    await this.usersRepository.update(userId, {
+      refreshToken,
+      lastLogin: refreshToken ? new Date() : undefined // Update lastLogin when setting refresh token
+    });
+  }
+  /**
+   * Update user's Google ID (required by AuthService)
+   */
+  async updateGoogleId(userId: string, googleId: string): Promise<void> {
+    await this.usersRepository.update(userId, {
+      googleId,
+      authProvider: AuthProvider.GOOGLE
     });
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
 
+    console.log('Updating user:', id, 'with data:', updateUserDto);
+
     // Hash password if provided
     if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 
-    Object.assign(user, updateUserDto);
-    return this.usersRepository.save(user);
+    // Extract role and organization data
+    const { roleId, organizationId, roles, ...userData } = updateUserDto;
+
+    console.log('Extracted roles:', roles, 'roleId:', roleId, 'organizationId:', organizationId);
+
+    // Update user data
+    Object.assign(user, userData);
+    const updatedUser = await this.usersRepository.save(user);    // Handle role assignment
+    if (roles && Array.isArray(roles)) {
+      console.log('Processing multiple roles assignment:', roles);
+      // Handle multiple roles assignment (including empty array to remove all roles)
+      const cleanOrganizationId = organizationId && organizationId.trim() !== '' ? organizationId : undefined;
+
+      // Always remove existing role assignments for this user first
+      console.log('Removing all existing user roles for user:', updatedUser.id);
+      await this.rolesService.removeAllUserRoles(updatedUser.id);
+
+      // Assign all provided roles (if any)
+      if (roles.length > 0) {
+        for (const roleIdToAssign of roles) {
+          if (roleIdToAssign && roleIdToAssign.trim() !== '') {
+            console.log('Assigning role:', roleIdToAssign, 'to user:', updatedUser.id, 'in org:', cleanOrganizationId);
+            await this.rolesService.assignUserRole(updatedUser.id, roleIdToAssign, cleanOrganizationId);
+          }
+        }
+      } else {
+        console.log('No roles to assign - all roles will be removed');
+      }
+    } else if (roleId && roleId.trim() !== '') {
+      console.log('Processing single role assignment:', roleId);
+      // Fallback to single role assignment for backward compatibility
+      const cleanOrganizationId = organizationId && organizationId.trim() !== '' ? organizationId : undefined;
+      // Also remove existing roles for single role assignment
+      console.log('Removing all existing user roles for user:', updatedUser.id);
+      await this.rolesService.removeAllUserRoles(updatedUser.id);
+      console.log('Assigning single role:', roleId, 'to user:', updatedUser.id, 'in org:', cleanOrganizationId);
+      await this.rolesService.assignUserRole(updatedUser.id, roleId, cleanOrganizationId);
+    } else {
+      console.log('No roles provided - keeping existing roles');
+    }
+
+    console.log('User update completed');
+    return updatedUser;
   }
   async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
@@ -134,46 +251,27 @@ export class UsersService {
     await this.usersRepository.remove(users);
   }
 
-  async validatePassword(user: User, password: string): Promise<boolean> {
-    if (!user.password) return false;
-    return bcrypt.compare(password, user.password);
-  }
-
-  async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
-    await this.usersRepository.update(userId, { 
-      refreshToken,
-      lastLogin: refreshToken ? new Date() : undefined
-    });
-  }
-
-  async updateGoogleId(userId: string, googleId: string): Promise<void> {
-    await this.usersRepository.update(userId, { 
-      googleId,
-      authProvider: 'google' as any
-    });
-  }
-
   async getUsersWithDefaultPassword(): Promise<{
     users: { id: string; familyName: string; givenName: string; email: string; hasEmailBasedPassword: boolean; emailBasedPassword?: string }[];
     totalUsersWithEmailBasedPassword: number;
   }> {
-    
+
     // Get all users with passwords
     const users = await this.usersRepository.find({
       select: ['id', 'familyName', 'givenName', 'email', 'password'],
       where: { password: Not(IsNull()) }
     });
-    
+
     const usersWithStatus = [];
-    
+
     for (const user of users) {
       try {
         // Generate expected email-based password
         const emailBasedPassword = this.generatePasswordFromEmail(user.email);
-        
+
         // Check if user has email-based password
         const hasEmailBasedPassword = await bcrypt.compare(emailBasedPassword, user.password);
-        
+
         usersWithStatus.push({
           id: user.id,
           familyName: user.familyName,
@@ -193,9 +291,9 @@ export class UsersService {
         });
       }
     }
-    
+
     const totalUsersWithEmailBasedPassword = usersWithStatus.filter(u => u.hasEmailBasedPassword).length;
-    
+
     return {
       users: usersWithStatus,
       totalUsersWithEmailBasedPassword
@@ -211,5 +309,77 @@ export class UsersService {
     const password = username.replace(/\./g, '');
 
     return password;
+  }
+
+  /**
+   * Assign multiple roles to a user with validation
+   */
+  private async assignMultipleRoles(userId: string, assignments: UserRoleAssignmentDto[]): Promise<void> {
+    // Validate assignments first
+    await this.validateRoleAssignments(assignments);
+
+    // Assign each role-organization pair
+    for (const assignment of assignments) {
+      const cleanOrganizationId = assignment.organizationId && assignment.organizationId.trim() !== ''
+        ? assignment.organizationId
+        : undefined;
+
+      await this.rolesService.assignUserRole(
+        userId,
+        assignment.roleId,
+        cleanOrganizationId
+      );
+    }
+  }
+
+  /**
+   * Validate role assignments for duplicates and existence
+   */
+  private async validateRoleAssignments(assignments: UserRoleAssignmentDto[]): Promise<void> {
+    if (!assignments || assignments.length === 0) {
+      return;
+    }
+
+    // Check for duplicate role-organization pairs
+    const duplicates = this.findDuplicateAssignments(assignments);
+    if (duplicates.length > 0) {
+      throw new BadRequestException(
+        `Duplicate role-organization assignments found: ${duplicates.join(', ')}`
+      );
+    }
+
+    // Validate that roles and organizations exist
+    for (const assignment of assignments) {
+      // Check if role exists
+      try {
+        await this.rolesService.findOne(assignment.roleId);
+      } catch (error) {
+        throw new BadRequestException(`Role with ID ${assignment.roleId} not found`);
+      }
+
+      // Check if organization exists (if provided)
+      if (assignment.organizationId) {
+        // TODO: Add organization validation when organizationService is available
+        // For now, we'll trust the roleService.assignUserRole to handle this
+      }
+    }
+  }
+
+  /**
+   * Find duplicate role-organization assignments
+   */
+  private findDuplicateAssignments(assignments: UserRoleAssignmentDto[]): string[] {
+    const seen = new Set<string>();
+    const duplicates: string[] = [];
+
+    for (const assignment of assignments) {
+      const key = `${assignment.roleId}-${assignment.organizationId || 'global'}`;
+      if (seen.has(key)) {
+        duplicates.push(`Role ${assignment.roleId} with Organization ${assignment.organizationId || 'global'}`);
+      }
+      seen.add(key);
+    }
+
+    return duplicates;
   }
 }

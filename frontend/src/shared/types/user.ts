@@ -1,3 +1,21 @@
+import { UserRole } from './permission';
+
+export interface UserOrganization {
+    id: string;
+    userId: string;
+    organizationId: string;
+    role: 'member' | 'admin' | 'super_admin';
+    isActive: boolean;
+    joinedAt: string;
+    updatedAt: string;
+    organization: {
+        id: string;
+        name: string;
+        code?: string;
+        parentId?: string;
+    };
+}
+
 export interface User {
     id: string;
     code: string;
@@ -16,7 +34,10 @@ export interface User {
     managementDepartment?: any;
     trainingDepartment?: any;
     class?: any;
+    userRoles?: UserRole[];
+    organizations?: UserOrganization[];
 }
+
 export interface UserQueryParams {
     page?: number;
     limit?: number;
@@ -25,6 +46,19 @@ export interface UserQueryParams {
     membershipStatus?: 'doan_vien' | 'hoi_vien' | 'both' | 'none';
 }
 
+// NEW: Interface for role-organization assignments
+export interface UserRoleAssignment {
+    roleId: string;
+    organizationId?: string;
+    isActive?: boolean;
+}
+
+// NEW: Interface for UI state management
+export interface RoleAssignmentItem extends UserRoleAssignment {
+    id: string; // Temporary ID for UI management
+    isValid?: boolean; // For UI validation
+    error?: string; // Error message if invalid
+}
 
 export interface CreateUserRequest {
     code: string;
@@ -38,9 +72,23 @@ export interface CreateUserRequest {
     managementDepartmentId?: string;
     trainingDepartmentId?: string;
     classId?: string;
+
+    // NEW: Multiple role-organization assignments (preferred)
+    roleAssignments?: UserRoleAssignment[];
+    // DEPRECATED: Keep for backward compatibility
+    roleId?: string;
+    roles?: string[]; // Array of role IDs - legacy field
+    organizationId?: string;
 }
 
-export interface UpdateUserRequest extends Partial<CreateUserRequest> { }
+export interface UpdateUserRequest extends Partial<CreateUserRequest> {
+    roles?: string[]; // Array of role IDs
+}
+
+export interface UsersResponse {
+    users: User[];
+    total: number;
+}
 
 // Import types
 export interface ImportUploadResponse {
@@ -87,34 +135,4 @@ export interface ImportSession {
     completedAt?: string;
     errorMessage?: string;
     results?: any;
-}
-
-
-export interface CreateUserRequest {
-    code: string;
-    familyName: string;
-    givenName: string;
-    email: string;
-    phone: string;
-    password?: string;
-    userType?: 'student' | 'staff';
-    membershipStatus?: 'doan_vien' | 'hoi_vien' | 'both' | 'none';
-    managementDepartmentId?: string;
-    trainingDepartmentId?: string;
-    classId?: string;
-}
-
-export interface UpdateUserRequest extends Partial<CreateUserRequest> { }
-
-export interface UsersResponse {
-    users: User[];
-    total: number;
-}
-
-export interface UserQueryParams {
-    page?: number;
-    limit?: number;
-    search?: string;
-    userType?: 'student' | 'staff';
-    membershipStatus?: 'doan_vien' | 'hoi_vien' | 'both' | 'none';
 }

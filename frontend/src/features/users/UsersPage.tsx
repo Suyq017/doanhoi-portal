@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Upload, Download } from "lucide-react";
+import { Plus, Upload, Download, Shield, UserPlus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Toast,
@@ -10,6 +10,12 @@ import {
   UserTableWithFilter,
   useToast,
   useUserManagement,
+  usePermissions,
+  ConditionalRender,
+  createPermissionBasedDropdownOptions,
+  PermissionBasedDropdownOption,
+  createTableActions,
+  CreateUserRequest,
 } from "../../shared";
 import { ExportModal, useExport, USER_EXPORT_FIELDS } from "../../shared/components/export";
 import { userService } from "../../shared/services/userService";
@@ -17,11 +23,17 @@ import CreateUserModal from "./components/CreateUserModal";
 import ViewUserModal from "./components/ViewUserModal";
 import EditUserModal from "./components/EditUserModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
+import UserRoleAssignmentModal from "./components/UserRoleAssignmentModal";
+import GrantRolesModal from "./components/GrantRolesModal";
 import { useUserImportConfig } from "./hooks/useUserImportConfig";
+import { useUserPagePermissions } from "./hooks/useUserPagePermissions";
 
 const Users: React.FC = () => {
   const { t } = useTranslation(['users', 'common']);
+  const permissions = usePermissions();
+  const userPermissions = useUserPagePermissions();
 
+  // All hooks must be called at the top level
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError } = useToast();
 
@@ -48,7 +60,7 @@ const Users: React.FC = () => {
     setCurrentPage,
     refreshUsers,
   } = userListHook;
-  // User management (modals + actions) - ✅ Using shared hook
+  // User management (modals + actions) - Using shared hook
   const userManagement = useUserManagement({
     showSuccess,
     showError,
@@ -57,6 +69,23 @@ const Users: React.FC = () => {
     updateUser: userService.updateUser.bind(userService),
     deleteUser: userService.deleteUser.bind(userService),
   });
+
+  // Custom handleUpdateUser that doesn't auto-close modal or show success message
+  // This allows EditUserModal to handle role assignments and manage success/error states
+  const customHandleUpdateUser = async (userData: CreateUserRequest) => {
+    if (!userManagement.selectedUser) {
+      console.error('selectedUser not provided');
+      return;
+    }
+
+    try {
+      await userService.updateUser(userManagement.selectedUser.id, userData);
+      console.log('User basic info updated successfully');
+    } catch (error) {
+      console.error('Error updating user basic info:', error);
+      throw error;
+    }
+  };
 
   // Export functionality
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -68,13 +97,7 @@ const Users: React.FC = () => {
     onError: (error) => {
       showError(`Lỗi xuất file: ${error}`);
     },
-  });
-
-  const handleExport = async (fields: string[]) => {
-    await exportData(fields, 'users');
-  };
-
-  const {
+  }); const {
     selectedUser,
     isCreateModalOpen,
     isViewModalOpen,
@@ -89,9 +112,38 @@ const Users: React.FC = () => {
     handleEditUser,
     handleDeleteUser,
     handleCreateUser,
-    handleUpdateUser,
     confirmDeleteUser,
-  } = userManagement;
+  } = userManagement;// Import functionality
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isRoleAssignmentModalOpen, setIsRoleAssignmentModalOpen] = useState(false);
+  const [isGrantRolesModalOpen, setIsGrantRolesModalOpen] = useState(false);
+  const { importConfig } = useUserImportConfig({ onRefreshData: refreshUsers });
+
+  // Page-level access control (after all hooks are called)
+  if (!permissions.canAccessUsers()) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            {t('common:errors.accessDenied')}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            {t('common:errors.noPermissionToAccess')}
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+          >
+            {t('common:actions.goBack')}
+          </button>        </div>
+      </div>
+    );
+  }
+
+  const handleExport = async (fields: string[]) => {
+    await exportData(fields, 'users');
+  };
 
   // Bulk delete functionality
   const handleBulkDelete = async (userIds: string[]) => {
@@ -107,39 +159,43 @@ const Users: React.FC = () => {
         defaultValue: 'Có lỗi xảy ra khi xóa người dùng'
       }));
     }
-  };
+  };  // Filter dropdown options based on permissions
+  const getFilteredDropdownOptions = (): DropdownOption[] => {
+    const baseOptions: PermissionBasedDropdownOption[] = [
+      {
+        key: 'single',
+        label: t('users:addButton.single', { defaultValue: t('common:actions.create') }),
+        icon: <Plus className="w-4 h-4" />,
+        description: t('users:addButton.singleDesc', { defaultValue: 'Tạo người dùng mới bằng form' }),
+        onClick: openCreateModal,
+        requiredPermission: 'canCreate'
+      },
+      {
+        key: 'fromFile',
+        label: t('users:addButton.fromFile', { defaultValue: 'Import từ file Excel' }),
+        icon: <Upload className="w-4 h-4" />,
+        description: t('users:addButton.fromFileDesc', { defaultValue: 'Import nhiều người dùng từ file Excel' }),
+        onClick: () => setIsImportModalOpen(true),
+        requiredPermission: 'canCreate'
+      },
+      {
+        key: 'export',
+        label: t('users:addButton.export', { defaultValue: 'Xuất dữ liệu' }),
+        icon: <Download className="w-4 h-4" />,
+        description: t('users:addButton.exportDesc', { defaultValue: 'Xuất danh sách người dùng ra file Excel' }),
+        onClick: () => setIsExportModalOpen(true),
+        requiredPermission: 'canExport'
+      }
+    ];
 
-  // Import configuration
-  const {
-    importConfig,
-    isImportModalOpen,
-    openImportModal,
-    closeImportModal
-  } = useUserImportConfig({ onRefreshData: refreshUsers });
-
-  const addDropdownOptions: DropdownOption[] = [
-    {
-      key: 'single',
-      label: t('users:addButton.single', { defaultValue: t('common:actions.create') }),
-      icon: <Plus className="w-4 h-4" />,
-      description: t('users:addButton.singleDesc', { defaultValue: 'Tạo người dùng mới bằng form' }),
-      onClick: openCreateModal
-    },
-    {
-      key: 'fromFile',
-      label: t('users:addButton.fromFile', { defaultValue: 'Import từ file Excel' }),
-      icon: <Upload className="w-4 h-4" />,
-      description: t('users:addButton.fromFileDesc', { defaultValue: 'Import nhiều người dùng từ file Excel' }),
-      onClick: openImportModal
-    },
-    {
-      key: 'export',
-      label: t('users:addButton.export', { defaultValue: 'Xuất dữ liệu' }),
-      icon: <Download className="w-4 h-4" />,
-      description: t('users:addButton.exportDesc', { defaultValue: 'Xuất danh sách người dùng ra file Excel' }),
-      onClick: () => setIsExportModalOpen(true)
-    }
-  ];
+    return createPermissionBasedDropdownOptions(
+      baseOptions,
+      (permission: string) => {
+        const permissionKey = permission as keyof typeof userPermissions;
+        return userPermissions[permissionKey] === true;
+      }
+    );
+  }; const addDropdownOptions = getFilteredDropdownOptions();
 
   return (
     <div className="space-y-6">
@@ -151,18 +207,38 @@ const Users: React.FC = () => {
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             {t('users:subtitle')}
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0">
-          <AddDropdownButton
-            label={t('users:addButton.dropdown', { defaultValue: t('common:actions.create') })}
-            options={addDropdownOptions}
-            loading={isCreating}
-          />
-        </div>
-      </div>
+          </p>        </div>        <div className="mt-4 sm:mt-0 flex items-center space-x-3">          {/* Grant Roles Button */}
+          <button
+            onClick={() => setIsGrantRolesModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 bg-doan-600 text-white rounded-md hover:bg-doan-700 focus:outline-none focus:ring-2 focus:ring-doan-500 focus:ring-offset-2 transition-colors duration-200"
+          >
+            <Shield className="w-5 h-5 mr-2" />
+            <span className="font-medium">
+              {t('users:actions.grantRoles', { defaultValue: 'Cấp vai trò' })}
+            </span>
+          </button>
 
-      {/* User Table with Filters */}
+          {/* Role Assignment Button */}
+          <ConditionalRender condition={userPermissions.canManageRoles}>
+            <button
+              onClick={() => setIsRoleAssignmentModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 border border-doan-600 text-doan-600 rounded-md hover:bg-doan-50 dark:hover:bg-doan-900/20 transition-colors"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              {t('users:actions.assignRoles')}
+            </button>
+          </ConditionalRender>
+
+          {/* Add User Dropdown */}
+          <ConditionalRender condition={addDropdownOptions.length > 0}>
+            <AddDropdownButton
+              label={t('users:addButton.dropdown', { defaultValue: t('common:actions.create') })}
+              options={addDropdownOptions}
+              loading={isCreating}
+            />
+          </ConditionalRender>
+        </div>
+      </div>      {/* User Table with Filters */}
       <UserTableWithFilter
         users={users}
         loading={loading}
@@ -186,7 +262,14 @@ const Users: React.FC = () => {
           onUserEdit: handleEditUser,
           onUserDelete: handleDeleteUser,
           onBulkDelete: handleBulkDelete,
-          showSelection: true,
+          showSelection: userPermissions.showBulkActions,
+          actions: createTableActions(userPermissions),
+        }}
+        permissions={{
+          canView: userPermissions.canView,
+          canEdit: userPermissions.canEdit,
+          canDelete: userPermissions.canDelete,
+          showBulkActions: userPermissions.showBulkActions,
         }}
         onRetry={refreshUsers}
       />
@@ -197,23 +280,20 @@ const Users: React.FC = () => {
         onClose={closeModal}
         onSubmit={handleCreateUser}
         loading={isCreating}
-      />
-
-      <ViewUserModal
+      />      <ViewUserModal
         isOpen={isViewModalOpen}
         onClose={closeModal}
         user={selectedUser}
-      />
-
-      <EditUserModal
+      />      <EditUserModal
         isOpen={isEditModalOpen}
         onClose={closeModal}
-        onSubmit={handleUpdateUser}
+        onSubmit={customHandleUpdateUser}
         user={selectedUser}
         loading={isUpdating}
-      />
-
-      <DeleteConfirmModal
+        showSuccess={showSuccess}
+        showError={showError}
+        onRefreshData={refreshUsers}
+      /><DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={closeModal}
         onConfirm={confirmDeleteUser}
@@ -223,17 +303,29 @@ const Users: React.FC = () => {
 
       <ImportModal
         isOpen={isImportModalOpen}
-        onClose={closeImportModal}
+        onClose={() => setIsImportModalOpen(false)}
         config={importConfig}
-      />
-
-      <ExportModal
+      />      <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         onExport={handleExport}
         title="Xuất danh sách người dùng"
         description="Chọn các trường dữ liệu bạn muốn xuất ra file Excel"
         availableFields={USER_EXPORT_FIELDS}
+      />      <UserRoleAssignmentModal
+        isOpen={isRoleAssignmentModalOpen}
+        onClose={() => setIsRoleAssignmentModalOpen(false)}
+        onSuccess={() => {
+          showSuccess(t('users:messages.assignRolesSuccess'));
+          refreshUsers();
+        }}
+      />      <GrantRolesModal
+        isOpen={isGrantRolesModalOpen}
+        onClose={() => setIsGrantRolesModalOpen(false)}
+        onSuccess={() => {
+          showSuccess(t('users:messages.grantRolesSuccess', { defaultValue: 'Cấp vai trò thành công' }));
+          refreshUsers();
+        }}
       />
 
       {/* Toast Notifications */}

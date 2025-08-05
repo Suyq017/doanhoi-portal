@@ -32,6 +32,29 @@ export interface RefreshTokenResponse {
   accessToken: string;
 }
 
+export interface UserPermission {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  context: 'system' | 'organization';
+  isActive: boolean;
+}
+
+export interface UserRole {
+  id: string;
+  name: string;
+  displayName: string;
+  organizationId?: string;
+  permissions: UserPermission[];
+}
+
+export interface UserPermissionsResponse {
+  userId: string;
+  organizationId?: string;
+  roles: UserRole[];
+}
+
 class AuthService {
   private async request<T>(
     endpoint: string,
@@ -49,14 +72,14 @@ class AuthService {
     if (!response.ok) {
       const errorText = await response.text();
       let errorMessage = `HTTP error! status: ${response.status}`;
-      
+
       try {
         const errorData = JSON.parse(errorText);
         errorMessage = errorData.message || errorMessage;
       } catch {
         errorMessage = errorText || errorMessage;
       }
-      
+
       throw new Error(errorMessage);
     }
 
@@ -102,6 +125,15 @@ class AuthService {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+  }
+  async getUserPermissions(userId: string, organizationId?: string): Promise<UserPermissionsResponse> {
+    const queryParams = organizationId ? `?organizationId=${organizationId}` : '';
+    return this.request<UserPermissionsResponse>(`/auth/me/permissions${queryParams}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${this.getAccessToken()}`,
       },
     });
   }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, Filter, Eye, Edit, Trash2, Users, Upload } from 'lucide-react';
 import type { Class, ClassQueryParams } from '../../shared/types';
-import { 
+import {
   classService,
   departmentService,
   Toast,
@@ -12,36 +12,40 @@ import {
   AddDropdownButton,
   DropdownOption,
   ImportModal,
-  useImportConfig,
+  useImportConfig, ConditionalRender,
+  getPermissionBasedEmptyMessage,
+  createPermissionBasedDropdownOptions,
 } from '../../shared';
 import { classColumns } from '../../shared/utils/importColumns';
+import { useClassPagePermissions } from './hooks/useClassPagePermissions';
 import CreateClassModal from './components/CreateClassModal';
 import EditClassModal from './components/EditClassModal';
 import ViewClassModal from './components/ViewClassModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
-import BulkDeleteConfirmModal from './components/BulkDeleteConfirmModal';
 
 const ClassesPage: React.FC = () => {
   const { t } = useTranslation(['classes', 'common']);
   const { toasts, hideToast, showSuccess, showError } = useToast();
-  
+
+  // Permission hooks
+  const permissions = useClassPagePermissions();
+
   // State management
   const [classes, setClasses] = useState<Class[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [limit] = useState(10);
-  
+
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [yearFilter, setYearFilter] = useState<number | ''>('');
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<boolean | ''>('');
-  
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -49,18 +53,12 @@ const ClassesPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
 
-  // Bulk delete state
-  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
-  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const [classesWithStudents, setClassesWithStudents] = useState<string[]>([]);
-
   // Import configuration using custom hook
-  const { 
-    importConfig, 
-    isImportModalOpen, 
-    openImportModal, 
-    closeImportModal 
+  const {
+    importConfig,
+    isImportModalOpen,
+    openImportModal,
+    closeImportModal
   } = useImportConfig({
     entityName: 'classes',
     entityService: {
@@ -104,14 +102,14 @@ const ClassesPage: React.FC = () => {
     { value: 'true', label: t('common:status.active') },
     { value: 'false', label: t('common:status.inactive') },
   ];
-
-  const addDropdownOptions: DropdownOption[] = [
+  const addDropdownOptions: DropdownOption[] = createPermissionBasedDropdownOptions([
     {
       key: 'single',
       label: t('classes:addButton.single', { defaultValue: t('common:actions.create') }),
       icon: <Plus className="w-4 h-4" />,
       description: t('classes:addButton.singleDesc', { defaultValue: 'Tạo lớp mới bằng form' }),
-      onClick: () => setShowCreateModal(true)
+      onClick: () => setShowCreateModal(true),
+      requiredPermission: 'classes.create'
     },
     // Import classes from Excel option:
     {
@@ -119,15 +117,17 @@ const ClassesPage: React.FC = () => {
       label: t('classes:addButton.fromFile', { defaultValue: 'Import từ file Excel' }),
       icon: <Upload className="w-4 h-4" />,
       description: t('classes:addButton.fromFileDesc', { defaultValue: 'Import nhiều lớp từ file Excel' }),
-      onClick: openImportModal
+      onClick: openImportModal,
+      requiredPermission: 'classes.create'
     }
-  ];
-
-  // Clear selection when classes data changes
-  useEffect(() => {
-    setSelectedClassIds([]);
-  }, [classes]);
-
+  ], (permission: string) => {
+    switch (permission) {
+      case 'classes.create':
+        return permissions.canCreate;
+      default:
+        return false;
+    }
+  });
   // Load data
   useEffect(() => {
     loadClasses();
@@ -179,7 +179,6 @@ const ClassesPage: React.FC = () => {
       console.error('Error loading departments:', error);
     }
   };
-
   // Event handlers
   const handleEdit = (classItem: Class) => {
     setSelectedClass(classItem);
@@ -227,86 +226,12 @@ const ClassesPage: React.FC = () => {
       showError(t('common:messages.error.delete'));
     }
   };
-
-  // Bulk delete handlers
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedClassIds(classes.map(c => c.id));
-    } else {
-      setSelectedClassIds([]);
-    }
-  };
-
-  const handleSelectClass = (classId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedClassIds(prev => [...prev, classId]);
-    } else {
-      setSelectedClassIds(prev => prev.filter(id => id !== classId));
-    }
-  };
-
-  const handleBulkDelete = () => {
-    if (selectedClassIds.length === 0) {
-      showError(t('classes:bulk.noSelection', { defaultValue: 'Vui lòng chọn ít nhất một lớp học để xóa' }));
-      return;
-    }
-    
-    // Check for classes with students
-    const selectedClasses = classes.filter(c => selectedClassIds.includes(c.id));
-    const classesWithStudents = selectedClasses
-      .filter(c => c.students && c.students.length > 0)
-      .map(c => c.name);
-    
-    // Store this info for the modal
-    setClassesWithStudents(classesWithStudents);
-    setShowBulkDeleteModal(true);
-  };
-
-  const handleBulkDeleteConfirm = async () => {
-    try {
-      setIsBulkDeleting(true);
-      await classService.bulkDeleteClasses(selectedClassIds);
-      setShowBulkDeleteModal(false);
-      setSelectedClassIds([]);
-      setClassesWithStudents([]);
-      await loadClasses();
-      showSuccess(t('classes:bulk.deleteSuccess', { 
-        defaultValue: 'Xóa thành công {{count}} lớp học', 
-        count: selectedClassIds.length 
-      }));
-    } catch (error: any) {
-      console.error('Bulk delete error:', error);
-      // Handle specific error cases
-      if (error.message?.includes('students')) {
-        showError(t('classes:messages.cannotDeleteWithStudents', { 
-          defaultValue: 'Không thể xóa lớp học có sinh viên. Vui lòng chuyển sinh viên trước.' 
-        }));
-      } else if (error.message?.includes('not found')) {
-        showError(t('classes:bulk.notFoundError', { 
-          defaultValue: 'Một số lớp học đã bị xóa hoặc không tồn tại' 
-        }));
-      } else {
-        showError(t('classes:bulk.deleteError', { 
-          defaultValue: 'Có lỗi xảy ra khi xóa lớp học' 
-        }));
-      }
-    } finally {
-      setIsBulkDeleting(false);
-    }
-  };
-
-  const handleClearSelection = () => {
-    setSelectedClassIds([]);
-  };
-
   const handleCloseModals = () => {
     setShowCreateModal(false);
     setShowEditModal(false);
     setShowViewModal(false);
     setShowDeleteModal(false);
-    setShowBulkDeleteModal(false);
     setSelectedClass(null);
-    setClassesWithStudents([]);
   };
 
   // Clear filters
@@ -383,13 +308,14 @@ const ClassesPage: React.FC = () => {
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             {t('classes:subtitle')}
           </p>
-        </div>
-        <div className="mt-4 sm:mt-0">
-          <AddDropdownButton
-            label={t('classes:addButton.dropdown', { defaultValue: t('common:actions.create') })}
-            options={addDropdownOptions}
-            loading={false}
-          />
+        </div>        <div className="mt-4 sm:mt-0">
+          <ConditionalRender condition={permissions.canCreate || permissions.canImport}>
+            <AddDropdownButton
+              label={t('classes:addButton.dropdown', { defaultValue: t('common:actions.create') })}
+              options={addDropdownOptions}
+              loading={false}
+            />
+          </ConditionalRender>
         </div>
       </div>
 
@@ -513,13 +439,14 @@ const ClassesPage: React.FC = () => {
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('classes:fields.studentCount')}
-                </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                </th>                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('common:fields.status')}
                 </th>
-                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  {t('common:fields.actions')}
-                </th>
+                <ConditionalRender condition={permissions.showActionColumn}>
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                    {t('common:fields.actions')}
+                  </th>
+                </ConditionalRender>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
@@ -557,50 +484,57 @@ const ClassesPage: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      classItem.isActive 
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${classItem.isActive
                         ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
                         : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
-                    }`}>
+                      }`}>
                       {classItem.isActive ? t('common:status.active') : t('common:status.inactive')}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleView(classItem)}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                        title={t('common:actions.view')}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(classItem)}
-                        className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
-                        title={t('common:actions.edit')}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(classItem)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        title={t('common:actions.delete')}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                  </td>                  <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+                    <ConditionalRender condition={permissions.showActionColumn}>
+                      <div className="flex items-center space-x-2">                        <ConditionalRender condition={permissions.canView}>
+                        <button
+                          onClick={() => handleView(classItem)}
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                          title={t('common:actions.view')}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </ConditionalRender>
+                        <ConditionalRender condition={permissions.canEdit}>
+                          <button
+                            onClick={() => handleEdit(classItem)}
+                            className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                            title={t('common:actions.edit')}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </ConditionalRender>
+                        <ConditionalRender condition={permissions.canDelete}>
+                          <button
+                            onClick={() => handleDelete(classItem)}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            title={t('common:actions.delete')}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </ConditionalRender>
+                      </div>
+                    </ConditionalRender>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-
-        {/* Empty State */}
-        {classes.length === 0 && (
+        </div>        {/* Empty State */}
+        {classes.length === 0 && !loading && (
           <div className="py-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">
-              {t('common:messages.empty.noResults')}
+              {getPermissionBasedEmptyMessage(
+                permissions.canView,
+                permissions.canCreate,
+                t('classes:title', { defaultValue: 'lớp học' })
+              )}
             </div>
           </div>
         )}
@@ -678,21 +612,7 @@ const ClassesPage: React.FC = () => {
           onClose={handleCloseModals}
           onSuccess={handleDeleteSuccess}
         />
-      )}
-
-      {/* Bulk Delete Modal */}
-      {showBulkDeleteModal && (
-        <BulkDeleteConfirmModal
-          isOpen={showBulkDeleteModal}
-          classCount={selectedClassIds.length}
-          onClose={handleCloseModals}
-          onConfirm={handleBulkDeleteConfirm}
-          loading={isBulkDeleting}
-          classesWithStudents={classesWithStudents}
-        />
-      )}
-
-      {/* Import Modal */}
+      )}      {/* Import Modal */}
       {isImportModalOpen && (
         <ImportModal
           isOpen={isImportModalOpen}

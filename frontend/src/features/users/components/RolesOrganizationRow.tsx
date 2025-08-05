@@ -1,0 +1,112 @@
+import React from 'react';
+import { Trash2 } from 'lucide-react';
+import MultiSelectRoleCombobox from './MultiSelectRoleCombobox';
+import MultiSelectOrganizationCombobox from './MultiSelectOrganizationCombobox';
+
+export interface Organization {
+    id: string;
+    name: string;
+    code: string;
+    parentId?: string;
+    level: number;
+}
+
+interface Role {
+    id: string;
+    name: string;
+    displayName: string;
+    description?: string;
+}
+
+interface RoleAssignment {
+    id: string;
+    roleIds: string[];
+    organizationIds: string[];
+    isGlobal: boolean;
+}
+
+interface RolesOrganizationRowProps {
+    assignment: RoleAssignment;
+    roles: Role[];
+    organizations: Organization[];
+    userOrganizations: Organization[];
+    onUpdate: (updates: Partial<RoleAssignment>) => void;
+    onRemove: () => void;
+    canRemove: boolean;
+    disabled?: boolean;
+}
+
+const RolesOrganizationRow: React.FC<RolesOrganizationRowProps> = ({
+    assignment,
+    roles,
+    organizations,
+    userOrganizations,
+    onUpdate,
+    onRemove,
+    canRemove,
+    disabled = false,
+}) => {
+    const handleRoleChange = (roleIds: string[]) => {
+        onUpdate({ roleIds });
+    };
+
+    const handleOrganizationChange = (organizationIds: string[]) => {
+        onUpdate({
+            organizationIds,
+            isGlobal: organizationIds.length === 0
+        });
+    };
+
+    const availableOrganizations = organizations; return (
+        <div className="relative p-5 border border-gray-200 rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-200">
+            {/* Remove Button - Positioned absolutely in top-right */}
+            {canRemove && (
+                <button
+                    type="button"
+                    onClick={onRemove}
+                    disabled={disabled}
+                    className="absolute top-3 right-3 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                    title="Xóa hàng này"
+                >
+                    <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                </button>
+            )}
+
+            {/* Labels Row - Always aligned */}
+            <div className="grid grid-cols-2 gap-6 pr-12 mb-2">
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    Vai trò
+                </label>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    Tổ chức
+                </label>
+            </div>            {/* Content Row - Equal height with synchronized structure */}
+            <div className="grid grid-cols-2 gap-6 pr-12 items-stretch" style={{ minHeight: '140px' }}>
+                {/* Role Selection */}
+                <div className="flex flex-col h-full">
+                    <MultiSelectRoleCombobox
+                        roles={roles}
+                        selectedRoleIds={assignment.roleIds}
+                        onRoleSelect={handleRoleChange}
+                        disabled={disabled}
+                        placeholder="Chọn vai trò..."
+                    />
+                </div>
+
+                {/* Organization Selection */}                <div className="flex flex-col h-full">
+                    <MultiSelectOrganizationCombobox
+                        organizations={availableOrganizations}
+                        selectedOrganizationIds={assignment.organizationIds}
+                        onOrganizationSelect={handleOrganizationChange}
+                        userOrganizations={userOrganizations}
+                        disabled={disabled}
+                        allowEmpty={true}
+                        placeholder="Chọn tổ chức hoặc để trống cho toàn hệ thống..."
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default RolesOrganizationRow;

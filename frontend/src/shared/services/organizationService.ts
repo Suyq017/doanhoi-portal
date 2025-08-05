@@ -88,7 +88,6 @@ class OrganizationService {
       method: 'DELETE',
     });
   }
-
   async addUserToOrganization(organizationId: string, userId: string, role: string = 'member'): Promise<UserOrganization> {
     return this.request<UserOrganization>(`/organizations/${organizationId}/members/${userId}`, {
       method: 'POST',
@@ -96,8 +95,20 @@ class OrganizationService {
     });
   }
 
+  async addUserToOrganizationWithParents(organizationId: string, userId: string, role: string = 'member'): Promise<UserOrganization[]> {
+    return this.request<UserOrganization[]>(`/organizations/${organizationId}/members/${userId}/with-parents`, {
+      method: 'POST',
+      body: JSON.stringify({ role }),
+    });
+  }
   async removeUserFromOrganization(organizationId: string, userId: string): Promise<void> {
     await this.request(`/organizations/${organizationId}/members/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async removeUserFromOrganizationSafely(organizationId: string, userId: string): Promise<void> {
+    await this.request(`/organizations/${organizationId}/members/${userId}/safely`, {
       method: 'DELETE',
     });
   }

@@ -8,19 +8,20 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { BulkDeleteUserDto } from './dto/bulk-delete-user.dto';
 import { ImportService } from './services/import.service';
+import { RolesService } from '../roles/roles.service';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly importService: ImportService
+    private readonly importService: ImportService,
+    private readonly rolesService: RolesService
   ) { }
-
   @Post()
-  @ApiOperation({ summary: 'Tạo người dùng mới' })
+  @ApiOperation({ summary: 'Tạo người dùng mới với hỗ trợ gán nhiều vai trò-tổ chức' })
   @ApiResponse({ status: 201, description: 'Người dùng đã được tạo thành công' })
-  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ hoặc có vai trò-tổ chức trùng lặp' })
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
@@ -54,12 +55,17 @@ export class UsersController {
       deletedCount: bulkDeleteUserDto.ids.length
     };
   }
-
   @Get('password-status')
   @ApiOperation({ summary: 'Kiểm tra users có mật khẩu mặc định cần thông báo' })
   @ApiResponse({ status: 200, description: 'Danh sách users cần thông báo mật khẩu' })
   async getUsersWithDefaultPassword() {
     return this.usersService.getUsersWithDefaultPassword();
+  }
+
+  @Get('available-roles')
+  @ApiOperation({ summary: 'Get available roles for user assignment' })
+  async getAvailableRoles() {
+    return this.rolesService.getAllRoles();
   }
 
   @Get(':id')
@@ -174,12 +180,33 @@ export class UsersController {
     return this.importService.getBackgroundJobStatus(jobId);
   }
 
-  @Post('import/background-job/:jobId/cancel')
-  @ApiOperation({ summary: 'Hủy background job' })
+  @Post('import/background-job/:jobId/cancel') @ApiOperation({ summary: 'Hủy background job' })
   @ApiResponse({ status: 200, description: 'Job đã được hủy' })
   @ApiResponse({ status: 404, description: 'Job không tồn tại' })
   async cancelBackgroundJob(@Param('jobId') jobId: string) {
     return this.importService.cancelBackgroundJob(jobId);
+  }
+
+  @Get(':id/roles')
+  @ApiOperation({ summary: 'Get user roles' })
+  async getUserRoles(
+    @Param('id') userId: string,
+    @Query('organizationId') organizationId?: string
+  ) {
+    return this.rolesService.getUserRoles(userId, organizationId);
+  }
+
+  @Post(':id/assign-role')
+  @ApiOperation({ summary: 'Assign role to user' })
+  async assignUserRole(
+    @Param('id') userId: string,
+    @Body() assignRoleDto: { roleId: string; organizationId?: string }
+  ) {
+    return this.rolesService.assignUserRole(
+      userId,
+      assignRoleDto.roleId,
+      assignRoleDto.organizationId
+    );
   }
 
   @Get('import/queue-status')

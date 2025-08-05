@@ -13,7 +13,9 @@
     "departments": "Departments",
     "departmentsPhonetic": "Departments",
     "classes": "Classes",
-    "classesPhonetic": "Classes"
+    "classesPhonetic": "Classes",
+    "permissions": "Permissions",
+    "permissionsPhonetic": "Permissions"
   },
   "actions": {
     "create": "Create",
@@ -71,7 +73,9 @@
     "deleting": "Deleting...",
     "deletingPhonetic": "Deleting",
     "processing": "Processing...",
-    "processingPhonetic": "Processing"
+    "processingPhonetic": "Processing",
+    "assigning": "Assigning...",
+    "assigningPhonetic": "Assigning"
   },
   "messages": {
     "success": {
@@ -87,11 +91,13 @@
       "delete": "Error occurred while deleting",
       "load": "Error occurred while loading data",
       "network": "Network connection error",
-      "unknown": "An error occurred"
+      "unknown": "An error occurred",
+      "seedDefaults": "Error occurred while creating default data"
     },
     "confirm": {
-      "delete": "Are you sure you want to delete?",
-      "deleteWarning": "This action cannot be undone."
+      "delete": "Are you sure you want to delete",
+      "deleteWarning": "This action cannot be undone.",
+      "seedDefaults": "Are you sure you want to create default roles and permissions?"
     },
     "empty": {
       "noData": "No data available",
@@ -100,7 +106,10 @@
     "more": "more"
   },
   "pagination": {
-    "showing": "Showing {{start}} - {{end}} of {{total}} results",
+    "showing": "Showing",
+    "to": "to",
+    "of": "of",
+    "results": "results",
     "previous": "Previous",
     "next": "Next",
     "page": "Page {{current}} / {{total}}",
@@ -165,6 +174,11 @@
     "inactivePhonetic": "Inactive",
     "all": "All",
     "allPhonetic": "All"
+  },
+  "labels": {
+    "optional": "optional",
+    "required": "required",
+    "none": "None"
   },
   "import": {
     "downloadTemplate": "Download Template",

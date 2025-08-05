@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Res } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Res, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -12,19 +12,19 @@ import { Response } from 'express';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('login')
   @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: 'Login with email and password' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Login successful',
-    type: AuthResponseDto 
+    type: AuthResponseDto
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Invalid credentials' 
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid credentials'
   })
   async login(@Request() req, @Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(req.user);
@@ -32,13 +32,13 @@ export class AuthController {
 
   @Post('refresh')
   @ApiOperation({ summary: 'Refresh access token' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Token refreshed successfully' 
+  @ApiResponse({
+    status: 200,
+    description: 'Token refreshed successfully'
   })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'Invalid refresh token' 
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid refresh token'
   })
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto): Promise<{ accessToken: string }> {
     return this.authService.refreshToken(refreshTokenDto.refreshToken);
@@ -48,9 +48,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Logout successful' 
+  @ApiResponse({
+    status: 200,
+    description: 'Logout successful'
   })
   async logout(@Request() req): Promise<{ message: string }> {
     await this.authService.logout(req.user.id);
@@ -61,12 +61,28 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Profile retrieved successfully' 
+  @ApiResponse({
+    status: 200,
+    description: 'Profile retrieved successfully'
   })
   async getProfile(@Request() req) {
     return req.user;
+  }
+
+  @Get('me/permissions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user permissions' })
+  @ApiResponse({
+    status: 200,
+    description: 'User permissions retrieved successfully'
+  })
+  async getCurrentUserPermissions(
+    @Request() req: any,
+    @Query('organizationId') organizationId?: string
+  ) {
+    const userId = req.user.id;
+    return this.authService.getUserPermissions(userId, organizationId);
   }
 
   @Get('google')
@@ -83,7 +99,7 @@ export class AuthController {
   async googleAuthRedirect(@Request() req, @Res() res: Response) {
     try {
       console.log('Google OAuth callback received:', req.user);
-      
+
       if (!req.user) {
         console.error('No user data received from Google OAuth');
         const frontendUrl = process.env.FRONTEND_URL;
@@ -92,14 +108,14 @@ export class AuthController {
       }
 
       const { user, accessToken, refreshToken } = req.user;
-      
+
       if (!accessToken || !refreshToken) {
         console.error('Missing tokens from Google OAuth response');
         const frontendUrl = process.env.FRONTEND_URL;
         const errorUrl = `${frontendUrl}/auth/callback?error=missing_tokens`;
         return res.redirect(errorUrl);
       }
-      
+
       // Redirect to frontend with tokens
       const frontendUrl = process.env.FRONTEND_URL;
       const redirectUrl = `${frontendUrl}/auth/callback?token=${accessToken}&refresh_token=${refreshToken}`;
@@ -107,8 +123,19 @@ export class AuthController {
     } catch (error) {
       console.error('Google OAuth callback error:', error);
       const frontendUrl = process.env.FRONTEND_URL;
-      const errorUrl = `${frontendUrl}/auth/callback?error=callback_error`;
-      return res.redirect(errorUrl);
+      const errorUrl = `${frontendUrl}/auth/callback?error=callback_error`; return res.redirect(errorUrl);
     }
+  }
+
+  @Get('me/permissions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user permissions' })
+  @ApiResponse({
+    status: 200,
+    description: 'User permissions retrieved successfully'
+  })
+  async getUserPermissions(@Request() req, @Query('organizationId') organizationId?: string) {
+    return this.authService.getUserPermissions(req.user.id, organizationId);
   }
 }

@@ -21,7 +21,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   onError,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   const { exportData, isLoading, error, clearError } = useExport({
     organizationId,
     organizationName,
@@ -29,8 +29,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       if (onSuccess) {
         onSuccess(fileName);
       }
-      // Show success notification
-      console.log(`Xuất file thành công: ${fileName}`);
+      // File exported successfully
     },
     onError: (errorMessage) => {
       if (onError) {
@@ -50,8 +49,8 @@ const ExportButton: React.FC<ExportButtonProps> = ({
     setIsModalOpen(true);
   };
 
-  const modalTitle = type === 'organization' 
-    ? `Xuất danh sách thành viên${organizationName ? ` - ${organizationName}` : ''}` 
+  const modalTitle = type === 'organization'
+    ? `Xuất danh sách thành viên${organizationName ? ` - ${organizationName}` : ''}`
     : 'Xuất danh sách người dùng';
 
   return (

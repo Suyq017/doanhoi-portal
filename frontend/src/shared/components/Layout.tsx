@@ -1,10 +1,11 @@
 import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight } from 'lucide-react';
+import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
 import { LoginButton } from '../../features/auth';
+import { usePermissions } from '../hooks/usePermissions';
 
 interface LayoutProps {
   children: ReactNode;
@@ -16,6 +17,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['dataManagement']);
   const location = useLocation();
   const { t } = useTranslation('common');
+  const permissions = usePermissions();
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -30,20 +32,100 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     );
   };
 
-  const navigation = [
-    { name: t('navigation.dashboard'), href: '/', icon: Home },
-    { name: t('navigation.users'), href: '/users', icon: Users },
-    { name: t('navigation.organizations'), href: '/organizations', icon: Building },
-    {
-      name: t('navigation.dataManagement'),
-      key: 'dataManagement',
-      icon: Database,
-      children: [
-        { name: t('navigation.departments'), href: '/departments', icon: Building2 },
-        { name: t('navigation.classes'), href: '/classes', icon: GraduationCap },
-      ]
-    },
-  ];
+  // Filter navigation items based on permissions
+  const getFilteredNavigation = () => {
+    const baseNavigation = [
+      {
+        name: t('navigation.dashboard'),
+        href: '/',
+        icon: Home,
+        requiredPermission: 'dashboard.access'
+      },
+      {
+        name: t('navigation.users'),
+        href: '/users',
+        icon: Users,
+        requiredPermission: 'users.access'
+      },
+      {
+        name: t('navigation.organizations'),
+        href: '/organizations',
+        icon: Building,
+        requiredPermission: 'organizations.access'
+      },
+      {
+        name: t('navigation.dataManagement'),
+        key: 'dataManagement',
+        icon: Database,
+        children: [
+          {
+            name: t('navigation.departments'),
+            href: '/departments',
+            icon: Building2,
+            requiredPermission: 'departments.access'
+          },
+          {
+            name: t('navigation.classes'),
+            href: '/classes',
+            icon: GraduationCap,
+            requiredPermission: 'classes.access'
+          },
+        ]
+      },
+      {
+        name: t('navigation.permissions'),
+        href: '/permissions',
+        icon: Shield,
+        requiredPermission: 'permissions.access'
+      },];    // If not authenticated, return empty navigation (pages will handle auth via AuthGuard)
+    if (!permissions.isAuthenticated) {
+      return [];
+    }
+
+    // If permissions are still loading, show all items temporarily
+    if (permissions.permissionsLoading) {
+      return baseNavigation;
+    }
+
+    // Filter items based on permissions
+    const filteredNavigation = baseNavigation.filter(item => {
+      if ('requiredPermission' in item && item.requiredPermission) {
+        const hasAccess = permissions.hasPermission(item.requiredPermission);
+        return hasAccess;
+      }
+
+      if ('children' in item && item.children) {
+        // Filter children and only show parent if at least one child is accessible
+        const accessibleChildren = item.children.filter(child => {
+          if (child.requiredPermission) {
+            const hasAccess = permissions.hasPermission(child.requiredPermission);
+            return hasAccess;
+          }
+          return true;
+        });
+        return accessibleChildren.length > 0;
+      }
+
+      return true;
+    }).map(item => {
+      if ('children' in item && item.children) {
+        return {
+          ...item,
+          children: item.children.filter(child =>
+            child.requiredPermission ? permissions.hasPermission(child.requiredPermission) : true
+          )
+        };
+      }
+      return item;
+    }); return filteredNavigation;
+  };
+
+  const navigation = getFilteredNavigation();
+
+  // Show loading if permissions are still loading
+  if (permissions.permissionsLoading) {
+    return <div>Loading...</div>;
+  }
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
   const isParentActive = (children: any[]) => children.some(child => child.href && isActive(child.href));

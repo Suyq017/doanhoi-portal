@@ -10,7 +10,7 @@ i18n
   .init({
     fallbackLng: 'vi', // Default to Vietnamese
     debug: false, // Disable debugging to see what's happening
-    
+
     interpolation: {
       escapeValue: false, // React already escapes values
     },
@@ -26,7 +26,7 @@ i18n
       caches: ['localStorage', 'cookie'],
     },
 
-    ns: ['common', 'users', 'organizations', 'dashboard', 'classes', 'departments', 'auth'],
+    ns: ['common', 'users', 'organizations', 'dashboard', 'classes', 'departments', 'auth', 'permissions'],
     defaultNS: 'common',
   });
 

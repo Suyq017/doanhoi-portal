@@ -74,17 +74,24 @@ const CreateOrganizationModal: React.FC<CreateOrganizationModalProps> = ({
     }
     // Không set default type cho lien_chi_hoi vì user sẽ chọn từ options
   }, [type]);
-
   // Generate name suggestion when type and code are filled but name is empty
   useEffect(() => {
     if (formData.type && formData.code && !formData.name.trim()) {
-      const typeLabel = getOrganizationTypeOptions().find(opt => opt.value === formData.type)?.label || formData.type;
+      // Tìm label từ options hiện tại
+      let typeLabel = getOrganizationTypeOptions().find(opt => opt.value === formData.type)?.label;
+
+      // Nếu không tìm thấy trong options (trường hợp type được set từ props), 
+      // sử dụng translation key
+      if (!typeLabel) {
+        typeLabel = t(`organizations:types.${formData.type}`);
+      }
+
       const suggestion = `${typeLabel} ${formData.code}`;
       setNamePlaceholder(suggestion);
     } else {
       setNamePlaceholder('');
     }
-  }, [formData.type, formData.code, formData.name]);
+  }, [formData.type, formData.code, formData.name, t]);
   if (!isOpen) return null;
 
   const handleInputChange = (field: keyof CreateOrganizationData, value: string) => {

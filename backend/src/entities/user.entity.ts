@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { UserOrganization } from './user-organization.entity';
 import { Department } from './department.entity';
 import { Class } from './class.entity';
+import { UserRole } from './user-role.entity';
 
 export enum UserType {
   STUDENT = 'student',
@@ -88,9 +89,11 @@ export class User {
   @ManyToOne(() => Class, { nullable: true })
   @JoinColumn({ name: 'classId' })
   class: Class;
-
   @OneToMany('UserOrganization', 'user')
   organizations: UserOrganization[];
+
+  @OneToMany(() => UserRole, 'user')
+  userRoles: UserRole[];
 
   // Getter cho fullName để tương thích với code cũ
   get fullName(): string {

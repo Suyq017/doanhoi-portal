@@ -13,7 +13,9 @@
     "departments": "Đơn vị",
     "departmentsPhonetic": "Đơn vị",
     "classes": "Lớp học",
-    "classesPhonetic": "Lớp học"
+    "classesPhonetic": "Lớp học",
+    "permissions": "Phân quyền",
+    "permissionsPhonetic": "Phân quyền"
   },
   "actions": {
     "create": "Tạo mới",
@@ -72,7 +74,9 @@
     "deleting": "Đang xóa...",
     "deletingPhonetic": "Đang xóa",
     "processing": "Đang xử lý...",
-    "processingPhonetic": "Đang xử lý"
+    "processingPhonetic": "Đang xử lý",
+    "assigning": "Đang gán...",
+    "assigningPhonetic": "Đang gán"
   },
   "messages": {
     "success": {
@@ -88,11 +92,13 @@
       "delete": "Có lỗi xảy ra khi xóa",
       "load": "Có lỗi xảy ra khi tải dữ liệu",
       "network": "Lỗi kết nối mạng",
-      "unknown": "Đã có lỗi xảy ra"
+      "unknown": "Đã có lỗi xảy ra",
+      "seedDefaults": "Có lỗi xảy ra khi tạo dữ liệu mặc định"
     },
     "confirm": {
-      "delete": "Bạn có chắc chắn muốn xóa không?",
-      "deleteWarning": "Hành động này không thể hoàn tác."
+      "delete": "Bạn có chắc chắn muốn xóa",
+      "deleteWarning": "Hành động này không thể hoàn tác.",
+      "seedDefaults": "Bạn có chắc chắn muốn tạo các vai trò và quyền mặc định?"
     },
     "empty": {
       "noData": "Không có dữ liệu",
@@ -101,7 +107,10 @@
     "more": "thêm"
   },
   "pagination": {
-    "showing": "Hiển thị {{start}} - {{end}} của {{total}} kết quả",
+    "showing": "Hiển thị",
+    "to": "đến",
+    "of": "trong tổng",
+    "results": "kết quả",
     "previous": "Trước",
     "next": "Tiếp theo",
     "page": "Trang {{current}} / {{total}}",
@@ -167,6 +176,11 @@
     "all": "Tất cả",
     "allPhonetic": "Tất cả"
   },
+  "labels": {
+    "optional": "tùy chọn",
+    "required": "bắt buộc",
+    "none": "Không chọn"
+  },
   "import": {
     "downloadTemplate": "Tải file mẫu",
     "downloadTemplatePhonetic": "Tải file mẫu",
@@ -208,7 +222,7 @@
     "firstPage": "Đầu",
     "firstPagePhonetic": "Đầu",
     "prevPage": "Trước",
-    "prevPagePhonetic": "Trước", 
+    "prevPagePhonetic": "Trước",
     "nextPage": "Tiếp",
     "nextPagePhonetic": "Tiếp",
     "lastPage": "Cuối",

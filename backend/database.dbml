@@ -27,6 +27,16 @@ Enum "users_usertype_enum" {
   "staff"
 }
 
+Enum "users_authprovider_enum" {
+  "local"
+  "google"
+}
+
+Enum "permissions_context_enum" {
+  "system"
+  "organization"
+}
+
 Table "departments" {
   "id" uuid [pk, not null, default: `uuid_generate_v4()`]
   "name" varchar [not null]
@@ -56,13 +66,11 @@ Table "users" {
   "phone" varchar [not null]
   "password" varchar
   "googleId" varchar
-  "userType" users_usertype_enum [not null, default: 'student']
-  "membershipStatus" users_membershipstatus_enum [not null, default: 'none']
+  "authProvider" users_authprovider_enum [not null, default: 'local']
+  "isActive" bool [not null, default: true]
+  "lastLogin" timestamp
   "createdAt" timestamp [not null, default: `now()`]
   "updatedAt" timestamp [not null, default: `now()`]
-  "managementDepartmentId" uuid
-  "trainingDepartmentId" uuid
-  "classId" uuid
 }
 
 Table "user_organizations" {
@@ -85,6 +93,52 @@ Table "organizations" {
   "createdAt" timestamp [not null, default: `now()`]
   "updatedAt" timestamp [not null, default: `now()`]
   "parentId" uuid
+}
+
+Table "permissions" {
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
+  "code" varchar [unique, not null]
+  "name" varchar [not null]
+  "description" varchar
+  "category" varchar [not null]
+  "context" permissions_context_enum [not null, default: 'organization']
+  "isActive" bool [not null, default: true]
+  "sortOrder" int4 [not null, default: 0]
+  "createdAt" timestamp [not null, default: `now()`]
+  "updatedAt" timestamp [not null, default: `now()`]
+}
+
+Table "roles" {
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
+  "name" varchar [unique, not null]
+  "displayName" varchar [not null]
+  "description" varchar
+  "isSystemRole" bool [not null, default: false]
+  "isActive" bool [not null, default: true]
+  "createdAt" timestamp [not null, default: `now()`]
+  "updatedAt" timestamp [not null, default: `now()`]
+}
+
+Table "role_permissions" {
+  "roleId" uuid [not null]
+  "permissionId" uuid [not null]
+
+  Indexes {
+    (roleId, permissionId) [pk]
+  }
+}
+
+Table "user_roles" {
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
+  "userId" uuid [not null]
+  "roleId" uuid [not null]
+  "organizationId" uuid
+  "isActive" bool [not null, default: true]
+  "assignedAt" timestamp [not null, default: `now()`]
+
+  Indexes {
+    (userId, roleId, organizationId) [unique]
+  }
 }
 
 Table "organizations_closure" {
@@ -110,8 +164,13 @@ Ref "FK_11d4cd5202bd8914464f4bec379":"users"."id" < "user_organizations"."userId
 
 Ref "FK_71997faba4726730e91d514138e":"organizations"."id" < "user_organizations"."organizationId" [delete: cascade]
 
-Ref "FK_1632e044475bf96c3f4cc109490":"departments"."id" < "users"."trainingDepartmentId"
+// Role-based permission relationships
+Ref "FK_role_permissions_role":"roles"."id" < "role_permissions"."roleId" [delete: cascade]
 
-Ref "FK_19d3b765976c09da3446b717fc8":"departments"."id" < "users"."managementDepartmentId"
+Ref "FK_role_permissions_permission":"permissions"."id" < "role_permissions"."permissionId" [delete: cascade]
 
-Ref "FK_d0fed6c2fc25ef43c2f29f5b192":"classes"."id" < "users"."classId"
+Ref "FK_user_roles_user":"users"."id" < "user_roles"."userId" [delete: cascade]
+
+Ref "FK_user_roles_role":"roles"."id" < "user_roles"."roleId" [delete: cascade]
+
+Ref "FK_user_roles_organization":"organizations"."id" < "user_roles"."organizationId" [delete: cascade]

@@ -5,7 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   // Enable CORS
   app.enableCors({
     origin: ['http://localhost:9100', 'http://localhost:3000'],
@@ -27,10 +27,8 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-
-  await app.listen(process.env.PORT || 9200);
-  console.log(`🚀 Backend server is running on http://localhost:${process.env.PORT || 9200}`);
-  console.log(`📖 API Documentation: http://localhost:${process.env.PORT || 9200}/api`);
+  SwaggerModule.setup('api', app, document); await app.listen(process.env.PORT || 9200);
+  console.log(`🚀 Backend server is running on http://localhost:${process.env.PORT || 9202}`);
+  console.log(`📖 API Documentation: http://localhost:${process.env.PORT || 9202}/api`);
 }
 bootstrap();

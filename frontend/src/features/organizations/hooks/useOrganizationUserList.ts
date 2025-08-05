@@ -42,9 +42,7 @@ export const useOrganizationUserList = (organizationId?: string): UseOrganizatio
             setError(null);
 
             // ✅ Sử dụng organization API để lấy members
-            const userOrganizations = await organizationService.getOrganizationMembers(organizationId);
-
-            // ✅ Transform UserOrganization[] thành User[]
+            const userOrganizations = await organizationService.getOrganizationMembers(organizationId);            // ✅ Transform UserOrganization[] thành User[]
             const transformedUsers: User[] = userOrganizations.map(userOrg => ({
                 id: userOrg.user.id,
                 code: userOrg.user.code,
@@ -54,6 +52,7 @@ export const useOrganizationUserList = (organizationId?: string): UseOrganizatio
                 phone: userOrg.user.phone,
                 userType: userOrg.user.userType,
                 membershipStatus: userOrg.user.membershipStatus,
+                isActive: userOrg.user.isActive,
                 createdAt: userOrg.user.createdAt,
                 updatedAt: userOrg.user.updatedAt,
                 // Additional org context info

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
@@ -15,9 +15,16 @@ import { UserBatchProcessingService } from './services/batch-processing.service'
 import { UserTransactionService } from './services/transaction.service';
 import { UserImportMonitoringService } from './services/monitoring.service';
 import { UserBackgroundJobService } from './services/background-job.service';
+import { RolesModule } from '../roles/roles.module';
+import { OrganizationsModule } from '../organizations/organizations.module';
+import { CleanEmptyStringsMiddleware } from '../common/middleware/clean-empty-strings.middleware';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Department, Class, Organization, UserOrganization])],
+  imports: [
+    TypeOrmModule.forFeature([User, Department, Class, Organization, UserOrganization]),
+    RolesModule,
+    OrganizationsModule
+  ],
   controllers: [UsersController],
   providers: [
     UsersService,
@@ -32,4 +39,4 @@ import { UserBackgroundJobService } from './services/background-job.service';
   ],
   exports: [UsersService],
 })
-export class UsersModule {}
+export class UsersModule { }

@@ -1,6 +1,8 @@
-import { IsString, IsEmail, IsOptional, IsEnum, IsUUID } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsEnum, IsUUID, IsArray, ValidateIf, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { UserType, MembershipStatus } from '../../entities/user.entity';
+import { UserRoleAssignmentDto } from './user-role-assignment.dto';
 
 export class CreateUserDto {
   @ApiProperty({ description: 'Mã số sinh viên/cán bộ' })
@@ -51,10 +53,41 @@ export class CreateUserDto {
   @ApiPropertyOptional({ description: 'ID đơn vị đào tạo' })
   @IsOptional()
   @IsUUID()
-  trainingDepartmentId?: string;
-
-  @ApiPropertyOptional({ description: 'ID lớp' })
+  trainingDepartmentId?: string; @ApiPropertyOptional({ description: 'ID lớp' })
   @IsOptional()
   @IsUUID()
   classId?: string;
+
+  // NEW: Multiple role-organization assignments
+  @ApiPropertyOptional({
+    description: 'Danh sách các cặp vai trò-tổ chức để gán cho người dùng',
+    type: [UserRoleAssignmentDto]
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UserRoleAssignmentDto)
+  roleAssignments?: UserRoleAssignmentDto[];
+
+  // DEPRECATED: Single role assignment fields (keep for backward compatibility)
+  @ApiPropertyOptional({ description: 'Role ID to assign to user (deprecated - use roleAssignments)' })
+  @IsOptional()
+  @ValidateIf((o, value) => value !== '' && value !== null)
+  @IsUUID()
+  roleId?: string;
+
+  @ApiPropertyOptional({ description: 'Organization context for role assignment (deprecated - use roleAssignments)' })
+  @IsOptional()
+  @ValidateIf((o, value) => value !== '' && value !== null)
+  @IsUUID()
+  organizationId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Array of role IDs to assign to user (deprecated - use roleAssignments)',
+    type: [String]
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID(4, { each: true })
+  roles?: string[];
 }

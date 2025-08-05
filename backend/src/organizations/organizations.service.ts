@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, TreeRepository, Like, In } from 'typeorm';
 import { Organization, OrganizationType } from '../entities/organization.entity';
-import { UserOrganization, UserRole } from '../entities/user-organization.entity';
+import { UserOrganization, UserOrgRole } from '../entities/user-organization.entity';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 
@@ -167,8 +167,7 @@ export class OrganizationsService {
 
     await this.organizationsRepository.remove(organization);
   }
-
-  async addMember(organizationId: string, userId: string, role: UserRole = UserRole.MEMBER): Promise<UserOrganization> {
+  async addMember(organizationId: string, userId: string, role: UserOrgRole = UserOrgRole.MEMBER): Promise<UserOrganization> {
     // Check if user is already a member
     const existingMembership = await this.userOrganizationsRepository.findOne({
       where: { organizationId, userId }
@@ -186,7 +185,64 @@ export class OrganizationsService {
 
     return this.userOrganizationsRepository.save(membership);
   }
-  async removeMember(organizationId: string, userId: string): Promise<void> {
+
+  async addMemberWithParents(organizationId: string, userId: string, role: UserOrgRole = UserOrgRole.MEMBER): Promise<UserOrganization[]> {
+    // Get the organization with all its ancestors
+    const organization = await this.organizationsRepository.findOne({
+      where: { id: organizationId },
+      relations: ['parent']
+    });
+
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    // Get all ancestor organizations (including the target organization)
+    const ancestorIds = await this.getAncestorIds(organizationId);
+    ancestorIds.push(organizationId); // Include the target organization itself
+
+    const memberships: UserOrganization[] = [];
+
+    // Add user to each ancestor organization if not already a member
+    for (const ancestorId of ancestorIds) {
+      try {
+        const membership = await this.addMember(ancestorId, userId, role);
+        memberships.push(membership);
+      } catch (error) {
+        // If user is already a member, skip this organization
+        if (error.message.includes('already a member')) {
+          console.log(`User ${userId} is already a member of organization ${ancestorId}`);
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    return memberships;
+  }
+
+  private async getAncestorIds(organizationId: string): Promise<string[]> {
+    const ancestorIds: string[] = [];
+    let currentId = organizationId;
+
+    while (currentId) {
+      const org = await this.organizationsRepository.findOne({
+        where: { id: currentId },
+        relations: ['parent']
+      });
+
+      if (!org) break;
+
+      if (org.parent) {
+        ancestorIds.push(org.parent.id);
+        currentId = org.parent.id;
+      } else {
+        break;
+      }
+    }
+
+    return ancestorIds;
+  } async removeMember(organizationId: string, userId: string): Promise<void> {
     const membership = await this.userOrganizationsRepository.findOne({
       where: { organizationId, userId }
     });
@@ -201,6 +257,78 @@ export class OrganizationsService {
 
     for (const child of children) {
       await this.removeMember(child.id, userId);
+    }
+  }
+
+  async removeMemberSafely(organizationId: string, userId: string): Promise<void> {
+    // Get the organization being removed from
+    const organization = await this.organizationsRepository.findOne({
+      where: { id: organizationId },
+      relations: ['parent']
+    });
+
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    // Remove user from this specific organization
+    const membership = await this.userOrganizationsRepository.findOne({
+      where: { organizationId, userId }
+    });
+
+    if (membership) {
+      await this.userOrganizationsRepository.remove(membership);
+    }
+
+    // Remove user from all child organizations (they shouldn't be in child orgs if not in parent)
+    const children = await this.organizationsRepository.find({
+      where: { parent: { id: organizationId } }
+    });
+
+    for (const child of children) {
+      await this.removeMemberSafely(child.id, userId);
+    }
+
+    // Check if user should be removed from parent organizations
+    // Only remove from parent if user is not a member of any other child organizations
+    if (organization.parent) {
+      await this.checkAndRemoveFromParent(organization.parent.id, userId);
+    }
+  }
+
+  private async checkAndRemoveFromParent(parentOrgId: string, userId: string): Promise<void> {
+    // Get all child organizations of the parent
+    const childOrganizations = await this.organizationsRepository.find({
+      where: { parent: { id: parentOrgId } }
+    });
+
+    // Check if user is still a member of any child organization
+    const remainingMemberships = await this.userOrganizationsRepository.find({
+      where: {
+        userId,
+        organizationId: In(childOrganizations.map(child => child.id))
+      }
+    });
+
+    // If user is not a member of any child organization, remove from parent
+    if (remainingMemberships.length === 0) {
+      const parentMembership = await this.userOrganizationsRepository.findOne({
+        where: { organizationId: parentOrgId, userId }
+      });
+
+      if (parentMembership) {
+        await this.userOrganizationsRepository.remove(parentMembership);
+
+        // Recursively check grandparent
+        const parentOrg = await this.organizationsRepository.findOne({
+          where: { id: parentOrgId },
+          relations: ['parent']
+        });
+
+        if (parentOrg && parentOrg.parent) {
+          await this.checkAndRemoveFromParent(parentOrg.parent.id, userId);
+        }
+      }
     }
   } async bulkRemoveMembers(organizationId: string, userIds: string[]): Promise<void> {
     console.log('Starting bulkRemoveMembers:', { organizationId, userIds });
@@ -533,7 +661,7 @@ export class OrganizationsService {
         const membership = this.userOrganizationsRepository.create({
           organizationId: org.id,
           userId: user.id,
-          role: UserRole.MEMBER
+          role: UserOrgRole.MEMBER
         });
         const savedMembership = await this.userOrganizationsRepository.save(membership);
         createdMemberships.push(savedMembership);

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Organization } from '../../entities/organization.entity';
 import { User } from '../../entities/user.entity';
-import { UserOrganization, UserRole } from '../../entities/user-organization.entity';
+import { UserOrganization, UserOrgRole } from '../../entities/user-organization.entity';
 import { OrganizationExcelParserService, OrganizationMemberImportData } from './excel-parser.service';
 import { OrganizationImportValidationService, OrganizationValidationResult } from './import-validation.service';
 import { OrganizationImportSessionService, OrganizationImportSession, OrganizationImportResult } from './import-session.service';
@@ -504,7 +504,7 @@ export class OrganizationImportService {
             const membership = this.userOrganizationsRepository.create({
               organizationId: org.id,
               userId: user.id,
-              role: UserRole.MEMBER,
+              role: UserOrgRole.MEMBER,
               joinedAt: new Date()
             });
 

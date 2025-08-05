@@ -3,6 +3,19 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CreateUserRequest, User as ApiUser } from '../../../shared';
+import { Organization as SharedOrganization } from '../../../shared/types/organization';
+import { roleService, type Role } from '../../permissions/services/roleService';
+import { organizationService } from '../../../shared/services/organizationService';
+import { userService } from '../../../shared/services/userService';
+import RolesOrganizationManager from './RolesOrganizationManager';
+import OrganizationManager from './OrganizationManager';
+import { RoleAssignment } from '../hooks/useGrantRoles';
+
+// Extended Organization type with level for role assignment components
+interface Organization extends Omit<SharedOrganization, 'code'> {
+  code: string; // Make code required
+  level: number;
+}
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -10,6 +23,9 @@ interface EditUserModalProps {
   onSubmit: (userData: CreateUserRequest) => Promise<void>;
   user: ApiUser | null;
   loading?: boolean;
+  showSuccess?: (message: string) => void;
+  showError?: (message: string) => void;
+  onRefreshData?: () => Promise<void>;
 }
 
 const EditUserModal: React.FC<EditUserModalProps> = ({
@@ -18,9 +34,11 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   onSubmit,
   user,
   loading = false,
+  showSuccess,
+  showError,
+  onRefreshData,
 }) => {
-  const { t } = useTranslation(['users', 'common']);
-  const [formData, setFormData] = useState<CreateUserRequest>({
+  const { t } = useTranslation(['users', 'common']); const [formData, setFormData] = useState<CreateUserRequest>({
     code: '',
     familyName: '',
     givenName: '',
@@ -29,34 +47,281 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     password: '',
     userType: 'student',
     membershipStatus: 'none',
-  });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Populate form when user changes
+    organizationId: '',
+  }); const [errors, setErrors] = useState<Record<string, string>>({});
+  const [roles, setRoles] = useState<Role[]>([]); const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [userDetail, setUserDetail] = useState<ApiUser | null>(null);
+  const [loadingUserDetail, setLoadingUserDetail] = useState(false);
+  // Role assignment states
+  const [roleAssignments, setRoleAssignments] = useState<RoleAssignment[]>([]);
+  const [userOrganizations, setUserOrganizations] = useState<Organization[]>([]); const [isSubmitting, setIsSubmitting] = useState(false);// Load full user details when modal opens
   useEffect(() => {
-    if (user) {
-      setFormData({
-        code: user.code,
-        familyName: user.familyName,
-        givenName: user.givenName,
-        email: user.email,
-        phone: user.phone,
-        password: '', // Don't populate password for security
-        userType: user.userType,
-        membershipStatus: user.membershipStatus,
-      });
-      setErrors({});
+    if (isOpen && user) {
+      loadUserDetail();
+      loadRoles();
+      loadOrganizations();
     }
-  }, [user]);
+  }, [isOpen, user]);
 
+  const loadUserDetail = async () => {
+    if (!user) return;
+
+    try {
+      setLoadingUserDetail(true);
+      const detail = await userService.getUserById(user.id);
+      setUserDetail(detail);
+    } catch (error) {
+      console.error('Error loading user detail:', error);
+      // Fallback to original user data if API fails
+      setUserDetail(user);
+    } finally {
+      setLoadingUserDetail(false);
+    }
+  };  // Populate form when user detail changes
+  useEffect(() => {
+    const currentUser = userDetail || user;
+    if (currentUser && organizations.length > 0) {
+      console.log('Populating form with user data:', currentUser);
+      console.log('User organizations field:', currentUser.organizations);
+      console.log('User userRoles field:', currentUser.userRoles);
+      console.log('Available organizations:', organizations.length);
+
+      const organizationId = getUserCurrentOrganizationId(currentUser);
+
+      const newFormData = {
+        code: currentUser.code,
+        familyName: currentUser.familyName,
+        givenName: currentUser.givenName,
+        email: currentUser.email,
+        phone: currentUser.phone,
+        password: '', // Don't populate password for security
+        userType: currentUser.userType,
+        membershipStatus: currentUser.membershipStatus,
+        organizationId,
+      };
+
+      setFormData(newFormData);
+      setErrors({});
+
+      // Set role assignments
+      const assignments = convertUserRolesToAssignments(currentUser);
+      setRoleAssignments(assignments.length > 0 ? assignments : [generateNewAssignment()]);
+
+      // Set user organizations
+      const userOrgs = getUserOrganizations(currentUser);
+      setUserOrganizations(userOrgs);
+    }
+  }, [userDetail, user, organizations]);
+  // Load roles and organizations when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadRoles();
+      loadOrganizations();
+    }
+  }, [isOpen]);
+  // Handle organization membership update
+  const handleOrganizationMembershipUpdate = async () => {
+    if (!user) return;
+
+    // Get original user organizations (from when modal was opened)
+    const currentUser = userDetail || user;
+    const originalUserOrgs = getUserOrganizations(currentUser);
+    const originalOrgIds = originalUserOrgs.map(org => org.id);
+
+    // Get currently selected organizations in the UI
+    const selectedOrgIds = userOrganizations.map(org => org.id);
+
+    // Find organizations to add and remove
+    const orgsToAdd = selectedOrgIds.filter(id => !originalOrgIds.includes(id));
+    const orgsToRemove = originalOrgIds.filter(id => !selectedOrgIds.includes(id));
+
+    console.log('Organization membership changes:', {
+      original: originalOrgIds,
+      selected: selectedOrgIds,
+      toAdd: orgsToAdd,
+      toRemove: orgsToRemove
+    });
+
+    if (orgsToAdd.length === 0 && orgsToRemove.length === 0) {
+      console.log('No organization membership changes needed');
+      return;
+    }
+
+    try {
+      // Keep track of all organizations that will be added (including parents)
+      const allAddedOrgIds = new Set<string>();
+
+      // Add user to new organizations (with parent organizations)
+      for (const orgId of orgsToAdd) {
+        const addedMemberships = await organizationService.addUserToOrganizationWithParents(orgId, user.id, 'member');
+        console.log(`Added user to organization ${orgId} and ${addedMemberships.length - 1} parent organizations`);
+
+        // Collect all organization IDs that were actually added
+        addedMemberships.forEach(membership => {
+          allAddedOrgIds.add(membership.organizationId);
+        });
+      }
+
+      // Remove user from organizations (but only if they weren't just added through parent logic)
+      const orgsToActuallyRemove = orgsToRemove.filter(orgId => !allAddedOrgIds.has(orgId));
+
+      for (const orgId of orgsToActuallyRemove) {
+        await organizationService.removeUserFromOrganizationSafely(orgId, user.id);
+        console.log(`Removed user from organization: ${orgId}`);
+      }
+
+      // Update UI state to reflect all organizations that were actually added
+      if (allAddedOrgIds.size > 0) {
+        const newlyAddedOrgs = organizations.filter(org =>
+          allAddedOrgIds.has(org.id) && !userOrganizations.some(userOrg => userOrg.id === org.id)
+        );
+
+        if (newlyAddedOrgs.length > 0) {
+          console.log(`Updating UI to include ${newlyAddedOrgs.length} additional organizations:`, newlyAddedOrgs.map(org => org.name));
+          setUserOrganizations(prev => [...prev, ...newlyAddedOrgs]);
+        }
+      }
+
+      console.log('Organization membership updated successfully');
+
+      if (showSuccess) {
+        const totalAdded = allAddedOrgIds.size;
+        const totalRemoved = orgsToActuallyRemove.length;
+        showSuccess(`Đã cập nhật thành viên tổ chức: +${totalAdded}, -${totalRemoved}`);
+      }
+    } catch (error) {
+      console.error('Error updating organization membership:', error);
+      if (showError) {
+        showError('Có lỗi xảy ra khi cập nhật thành viên tổ chức');
+      }
+      throw error; // Re-throw to prevent form submission success
+    }
+  };
+
+  const getUserCurrentOrganizationId = (user: ApiUser): string => {
+    // Get the organization ID from the first active role
+    const activeRole = user.userRoles?.find(ur => ur.isActive && ur.role?.isActive);
+    const orgId = activeRole?.organizationId || '';
+    return orgId;
+  };
+
+  // Helper function to convert user roles to role assignments
+  const convertUserRolesToAssignments = (user: ApiUser): RoleAssignment[] => {
+    const userRoles = user.userRoles?.filter(ur => ur.isActive && ur.role?.isActive) || [];
+
+    // Group roles by organization
+    const rolesByOrg = userRoles.reduce((acc, ur) => {
+      const orgId = ur.organizationId || 'global';
+      if (!acc[orgId]) {
+        acc[orgId] = [];
+      }
+      acc[orgId].push(ur.roleId);
+      return acc;
+    }, {} as Record<string, string[]>);
+
+    // Convert to RoleAssignment format
+    return Object.entries(rolesByOrg).map(([orgKey, roleIds], index) => ({
+      id: `assignment-${index}`,
+      roleIds: [...new Set(roleIds)], // Remove duplicates
+      organizationIds: orgKey === 'global' ? [] : [orgKey],
+      isGlobal: orgKey === 'global'
+    }));
+  };  // Helper function to get user's organizations
+  const getUserOrganizations = (user: ApiUser): Organization[] => {
+    const organizationIds = new Set<string>();
+    const organizationsMap = new Map<string, Organization>();
+
+    // Get organizations from userRoles (roles assigned to specific organizations)
+    const userRoleOrgIds = user.userRoles
+      ?.filter(ur => ur.isActive && ur.organizationId)
+      .map(ur => ur.organizationId!)
+      .filter(Boolean) || [];
+
+    userRoleOrgIds.forEach(id => organizationIds.add(id));
+
+    // Get organizations from direct user-organization relationships
+    const directOrgIds = user.organizations
+      ?.filter(org => org.isActive && org.organization)
+      .map(org => org.organizationId)
+      .filter(Boolean) || [];
+
+    directOrgIds.forEach(id => organizationIds.add(id));
+
+    // Build map of available organizations for quick lookup
+    organizations.forEach(org => {
+      organizationsMap.set(org.id, org);
+    });    // Convert organization IDs to Organization objects, ensuring all have level property
+    const userOrgs: Organization[] = [];
+    organizationIds.forEach(orgId => {
+      const org = organizationsMap.get(orgId);
+      if (org && org.id && org.name) { // Ensure org has essential properties
+        // Ensure the organization has all required properties including level
+        const completeOrg: Organization = {
+          ...org,
+          code: org.code || org.id,
+          level: org.level !== undefined ? org.level : 0 // Fallback level if not set
+        };
+        userOrgs.push(completeOrg);
+      }
+    });
+
+    console.log('User organizations found:', {
+      fromUserRoles: userRoleOrgIds,
+      fromDirectRelations: directOrgIds,
+      combined: Array.from(organizationIds),
+      finalOrganizations: userOrgs.map(org => ({ id: org.id, name: org.name, code: org.code }))
+    });
+
+    return userOrgs;
+  }; const loadRoles = async () => {
+    try {
+      const rolesData = await roleService.getAvailableRoles();
+      console.log('Loaded roles for edit modal:', rolesData); // Debug log
+      const activeRoles = rolesData.filter(role => role.isActive);
+      console.log('Active roles:', activeRoles); // Debug log
+      setRoles(activeRoles); // Only show active roles
+    } catch (error) {
+      console.error('Error loading roles:', error);
+      // Fallback: try to get roles from main roles endpoint
+      try {
+        const fallbackRoles = await roleService.getRoles();
+        console.log('Fallback roles:', fallbackRoles); // Debug log
+        const activeRoles = fallbackRoles.data.filter(role => role.isActive);
+        setRoles(activeRoles);
+      } catch (fallbackError) {
+        console.error('Fallback error loading roles:', fallbackError);
+      }
+    }
+  }; const loadOrganizations = async () => {
+    try {
+      const organizationsData = await organizationService.getOrganizations();
+      console.log('Loaded organizations:', organizationsData); // Debug log
+
+      // Add level property and ensure code is a string for compatibility with role assignment components
+      const organizationsWithLevel = organizationsData.map(org => ({
+        ...org,
+        code: org.code || org.id, // Fallback to id if code is not available
+        level: calculateOrganizationLevel(org, organizationsData)
+      })); setOrganizations(organizationsWithLevel);
+    } catch (error) {
+      console.error('Error loading organizations:', error);
+    }
+  };
+
+  // Helper function to calculate organization level
+  const calculateOrganizationLevel = (org: SharedOrganization, allOrgs: SharedOrganization[]): number => {
+    if (!org.parentId) return 0;
+
+    const parent = allOrgs.find(o => o.id === org.parentId);
+    if (!parent) return 1;
+
+    return 1 + calculateOrganizationLevel(parent, allOrgs);
+  };
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when user starts typing
+    setFormData(prev => ({ ...prev, [name]: value }));    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -91,29 +356,94 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  }; const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
+
+    if (!validateForm() || !user) {
       return;
     }
 
     try {
-      // Remove password if empty (don't update password)
-      const updateData = { ...formData };
-      if (!updateData.password?.trim()) {
-        delete updateData.password;
+      setIsSubmitting(true);
+
+      // Clean up the form data before sending
+      const cleanedData = { ...formData };
+
+      // Remove empty string values and convert to undefined/null
+      if (!cleanedData.password || cleanedData.password.trim() === '') {
+        delete cleanedData.password;
       }
-      
-      await onSubmit(updateData);
+
+      if (!cleanedData.organizationId || cleanedData.organizationId.trim() === '') {
+        delete cleanedData.organizationId;
+      }
+
+      console.log('Sending cleaned data for edit:', cleanedData);
+
+      // First update the basic user info
+      await onSubmit(cleanedData);
+
+      // Then handle role assignments separately if there are valid assignments
+      const validRoleAssignments = roleAssignments.filter(assignment => assignment.roleIds.length > 0); if (validRoleAssignments.length > 0) {
+        console.log('Updating role assignments:', validRoleAssignments);
+
+        // Remove frontend-only properties before sending to backend
+        const cleanedRoleAssignments = validRoleAssignments.map(assignment => ({
+          roleIds: assignment.roleIds,
+          organizationIds: assignment.organizationIds || [],
+          isGlobal: assignment.isGlobal || false
+        }));
+
+        const grantRolesPayload = {
+          userId: user.id,
+          roleAssignments: cleanedRoleAssignments
+        };
+
+        console.log('Grant roles payload:', JSON.stringify(grantRolesPayload, null, 2));
+
+        try {
+          await roleService.grantRoles(grantRolesPayload);
+          console.log('Role assignments updated successfully');
+        } catch (roleError) {
+          console.error('Error updating role assignments:', roleError);
+          console.error('Failed payload:', grantRolesPayload);
+          // If role assignment fails, we should inform the user
+          if (showError) {
+            showError('Cập nhật thông tin cơ bản thành công nhưng gán vai trò thất bại. Vui lòng thử lại việc gán vai trò.');
+          }
+          throw roleError;
+        }
+      }      // Handle organization membership changes
+      await handleOrganizationMembershipUpdate();
+
+      // Reload user detail immediately after organization changes to get accurate data
+      await loadUserDetail();
+
+      // If we get here, everything succeeded
+      console.log('User, role assignments, and organization membership updated successfully');      // Show success message and refresh data
+      if (showSuccess) {
+        showSuccess('Cập nhật người dùng thành công');
+      }
+
+      // Refresh data to get updated user information
+      if (onRefreshData) {
+        await onRefreshData();
+      }
+
+      // Reload user detail to reflect changes in the modal
+      await loadUserDetail();
+
+      // Close modal
+      handleClose();
     } catch (error) {
       console.error('Error updating user:', error);
+      if (showError && !(error instanceof Error && error.message?.includes('gán vai trò'))) {
+        showError('Có lỗi xảy ra khi cập nhật người dùng');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-  };
-
-  const handleClose = () => {
+  }; const handleClose = () => {
     setFormData({
       code: '',
       familyName: '',
@@ -123,9 +453,37 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       password: '',
       userType: 'student',
       membershipStatus: 'none',
-    });
+      organizationId: '',
+    }); setRoleAssignments([generateNewAssignment()]);
+    setUserOrganizations([]);
+    setIsSubmitting(false);
     setErrors({});
     onClose();
+  };
+
+  // Helper function to generate new assignment
+  const generateNewAssignment = (): RoleAssignment => ({
+    id: `assignment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    roleIds: [],
+    organizationIds: [],
+    isGlobal: false,
+  });
+
+  // Role assignment handlers
+  const handleAddRoleAssignment = () => {
+    const newAssignment = generateNewAssignment();
+    setRoleAssignments(prev => [...prev, newAssignment]);
+  };
+
+  const handleRemoveRoleAssignment = (id: string) => {
+    setRoleAssignments(prev => prev.filter(assignment => assignment.id !== id));
+  };
+  const handleUpdateRoleAssignment = (id: string, updates: Partial<RoleAssignment>) => {
+    setRoleAssignments(prev =>
+      prev.map(assignment =>
+        assignment.id === id ? { ...assignment, ...updates } : assignment
+      )
+    );
   };
 
   if (!isOpen) return null;
@@ -136,28 +494,32 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     }
   };
 
-  const modalContent = (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] px-4"
-      style={{ margin: 0, top: 0, left: 0, right: 0, bottom: 0 }}
-      onClick={handleOverlayClick}
-    >
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {t('users:titles.edit')}
-          </h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            disabled={loading}
-          >
-            <X className="w-6 h-6" />
-          </button>
+  const modalContent = (<div
+    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] px-4"
+    style={{ margin: 0, top: 0, left: 0, right: 0, bottom: 0 }}
+    onClick={handleOverlayClick}
+  >
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          {t('users:titles.edit')}
+        </h2>
+        <button
+          onClick={handleClose}
+          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" disabled={loading || isSubmitting}
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>        {/* Form */}
+      {loadingUserDetail ? (
+        <div className="p-6 flex items-center justify-center">
+          <div className="flex items-center space-x-2 text-gray-500">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span>Đang tải thông tin người dùng...</span>
+          </div>
         </div>
-
-        {/* Form */}
+      ) : (
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* User Code */}
           <div>
@@ -169,13 +531,11 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               name="code"
               value={formData.code}
               onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                errors.code 
-                  ? 'border-red-500 dark:border-red-500' 
-                  : 'border-gray-300 dark:border-gray-600'
-              }`}
-              placeholder={t('users:placeholders.code')}
-              disabled={loading}
+              className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${errors.code
+                ? 'border-red-500 dark:border-red-500'
+                : 'border-gray-300 dark:border-gray-600'
+                }`}
+              placeholder={t('users:placeholders.code')} disabled={loading || isSubmitting}
             />
             {errors.code && (
               <p className="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -195,11 +555,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 name="familyName"
                 value={formData.familyName}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                  errors.familyName 
-                    ? 'border-red-500 dark:border-red-500' 
-                    : 'border-gray-300 dark:border-gray-600'
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${errors.familyName
+                  ? 'border-red-500 dark:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600'
+                  }`}
                 placeholder={t('users:placeholders.familyName')}
                 disabled={loading}
               />
@@ -219,11 +578,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 name="givenName"
                 value={formData.givenName}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                  errors.givenName 
-                    ? 'border-red-500 dark:border-red-500' 
-                    : 'border-gray-300 dark:border-gray-600'
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${errors.givenName
+                  ? 'border-red-500 dark:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600'
+                  }`}
                 placeholder={t('users:placeholders.givenName')}
                 disabled={loading}
               />
@@ -245,11 +603,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                errors.email 
-                  ? 'border-red-500 dark:border-red-500' 
-                  : 'border-gray-300 dark:border-gray-600'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${errors.email
+                ? 'border-red-500 dark:border-red-500'
+                : 'border-gray-300 dark:border-gray-600'
+                }`}
               placeholder={t('users:placeholders.email')}
               disabled={loading}
             />
@@ -270,11 +627,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
               name="phone"
               value={formData.phone}
               onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                errors.phone 
-                  ? 'border-red-500 dark:border-red-500' 
-                  : 'border-gray-300 dark:border-gray-600'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${errors.phone
+                ? 'border-red-500 dark:border-red-500'
+                : 'border-gray-300 dark:border-gray-600'
+                }`}
               placeholder={t('users:placeholders.phone')}
               disabled={loading}
             />
@@ -333,35 +689,64 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 <option value="none">{t('users:membershipStatus.none')}</option>
                 <option value="doan_vien">{t('users:membershipStatus.doan_vien')}</option>
                 <option value="hoi_vien">{t('users:membershipStatus.hoi_vien')}</option>
-                <option value="both">{t('users:membershipStatus.both')}</option>
-              </select>
-            </div>
+                <option value="both">{t('users:membershipStatus.both')}</option>              </select>            </div>          </div>
+
+          {/* Organization Management */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Quản lý tổ chức của người dùng
+            </label>            <OrganizationManager
+              selectedOrganizations={userOrganizations}
+              availableOrganizations={organizations} onOrganizationChange={async (selectedOrgs) => {
+                // Just update the UI state immediately - don't make API calls here
+                // API calls will be made when form is submitted
+                console.log('Organization selection changed:', selectedOrgs.map(org => ({ id: org.id, name: org.name })));
+
+                setUserOrganizations(selectedOrgs);
+              }}
+              disabled={loading}
+            />            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Chọn các tổ chức mà người dùng thuộc về. Khi thêm tổ chức con, người dùng sẽ tự động được thêm vào các tổ chức cha khi cập nhật.
+            </p>
+          </div>
+
+          {/* Role Assignments Section */}
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Gán vai trò và tổ chức
+            </label>            <RolesOrganizationManager
+              assignments={roleAssignments}
+              roles={roles}
+              organizations={organizations}
+              userOrganizations={userOrganizations}
+              onUpdateAssignment={handleUpdateRoleAssignment}
+              onRemoveAssignment={handleRemoveRoleAssignment}
+              onAddAssignment={handleAddRoleAssignment} disabled={loading} />
           </div>
 
           {/* Buttons */}
           <div className="flex items-center justify-end space-x-3 pt-4">
             <button
-              type="button"
-              onClick={handleClose}
+              type="button" onClick={handleClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              disabled={loading}
+              disabled={loading || isSubmitting}
             >
               {t('common:actions.cancel')}
-            </button>
-            <button
+            </button><button
               type="submit"
-              disabled={loading}
+              disabled={loading || isSubmitting}
               className="px-4 py-2 bg-doan-600 text-white rounded-md hover:bg-doan-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition-colors"
             >
-              {loading && (
+              {(loading || isSubmitting) && (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               )}
-              <span>{loading ? t('common:states.updating') : t('common:actions.update')}</span>
+              <span>{(loading || isSubmitting) ? t('common:states.updating') : t('common:actions.update')}</span>
             </button>
           </div>
         </form>
-      </div>
+      )}
     </div>
+  </div>
   );
 
   return createPortal(modalContent, document.body);

@@ -8,7 +8,7 @@ import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { BulkRemoveMembersDto } from './dto/bulk-remove-members.dto';
 import { OrganizationType } from '../entities/organization.entity';
-import { UserRole } from '../entities/user-organization.entity';
+import { UserOrgRole } from '../entities/user-organization.entity';
 
 @ApiTags('organizations')
 @Controller('organizations')
@@ -101,9 +101,20 @@ export class OrganizationsController {
     addMember(
         @Param('id') id: string,
         @Param('userId') userId: string,
-        @Body('role') role: UserRole = UserRole.MEMBER
+        @Body('role') role: UserOrgRole = UserOrgRole.MEMBER
     ) {
         return this.organizationsService.addMember(id, userId, role);
+    }
+
+    @Post(':id/members/:userId/with-parents')
+    @ApiOperation({ summary: 'Thêm thành viên vào tổ chức và tất cả tổ chức cha' })
+    @ApiResponse({ status: 201, description: 'Thành viên đã được thêm vào tổ chức và các tổ chức cha' })
+    addMemberWithParents(
+        @Param('id') id: string,
+        @Param('userId') userId: string,
+        @Body('role') role: UserOrgRole = UserOrgRole.MEMBER
+    ) {
+        return this.organizationsService.addMemberWithParents(id, userId, role);
     } @Delete(':id/members/bulk-remove')
     @ApiOperation({ summary: 'Loại bỏ nhiều thành viên khỏi tổ chức cùng lúc' })
     @ApiResponse({ status: 200, description: 'Các thành viên đã được loại bỏ thành công' })
@@ -124,13 +135,18 @@ export class OrganizationsController {
             console.error('Error in bulkRemoveMembers controller:', error);
             throw error;
         }
-    }
-
-    @Delete(':id/members/:userId')
+    } @Delete(':id/members/:userId')
     @ApiOperation({ summary: 'Xóa thành viên khỏi tổ chức' })
     @ApiResponse({ status: 200, description: 'Thành viên đã được xóa' })
     removeMember(@Param('id') id: string, @Param('userId') userId: string) {
         return this.organizationsService.removeMember(id, userId);
+    }
+
+    @Delete(':id/members/:userId/safely')
+    @ApiOperation({ summary: 'Xóa thành viên khỏi tổ chức một cách an toàn (kiểm tra tổ chức cha)' })
+    @ApiResponse({ status: 200, description: 'Thành viên đã được xóa an toàn' })
+    removeMemberSafely(@Param('id') id: string, @Param('userId') userId: string) {
+        return this.organizationsService.removeMemberSafely(id, userId);
     }
 
     @Get(':id/members')

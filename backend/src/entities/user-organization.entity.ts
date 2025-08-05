@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { User } from './user.entity';
 import { Organization } from './organization.entity';
 
-export enum UserRole {
+export enum UserOrgRole {
   MEMBER = 'member',
   ADMIN = 'admin',
   SUPER_ADMIN = 'super_admin',
@@ -26,13 +26,12 @@ export class UserOrganization {
 
   @Column()
   organizationId: string;
-
   @Column({
     type: 'enum',
-    enum: UserRole,
-    default: UserRole.MEMBER,
+    enum: UserOrgRole,
+    default: UserOrgRole.MEMBER,
   })
-  role: UserRole;
+  role: UserOrgRole;
 
   @Column({ default: true })
   isActive: boolean;

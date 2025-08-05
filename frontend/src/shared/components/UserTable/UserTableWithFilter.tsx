@@ -19,6 +19,14 @@ export interface UserTableWithFilterProps {
     // Pagination props
     paginationProps?: UserTablePaginationProps;
 
+    // Permission props
+    permissions?: {
+        canView: boolean;
+        canEdit: boolean;
+        canDelete: boolean;
+        showBulkActions: boolean;
+    };
+
     // Layout
     spacing?: 'sm' | 'md' | 'lg';
     showFilters?: boolean;
@@ -35,6 +43,7 @@ export const UserTableWithFilter: React.FC<UserTableWithFilterProps> = ({
     tableProps = {},
     filterProps,
     paginationProps,
+    permissions,
     spacing = 'md',
     showFilters = true,
     showPagination = true,
@@ -77,6 +86,12 @@ export const UserTableWithFilter: React.FC<UserTableWithFilterProps> = ({
             <UserTable
                 users={users}
                 loading={loading}
+                actions={{
+                    showView: permissions?.canView ?? true,
+                    showEdit: permissions?.canEdit ?? true,
+                    showDelete: permissions?.canDelete ?? true,
+                    showSelection: permissions?.showBulkActions ?? true,
+                }}
                 {...tableProps}
             />
 

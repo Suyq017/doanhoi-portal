@@ -11,7 +11,8 @@
     "view": "Thông tin chi tiết người dùng",
     "viewPhonetic": "Thông tin chi tiết người dùng",
     "delete": "Xóa người dùng",
-    "deletePhonetic": "Xóa người dùng"
+    "deletePhonetic": "Xóa người dùng",
+    "assignRoles": "Gán quyền cho người dùng"
   },
   "fields": {
     "email": "Email",
@@ -48,6 +49,12 @@
     "trainingDepartmentPhonetic": "Đơn vị đào tạo",
     "class": "Lớp",
     "classPhonetic": "Lớp",
+    "roles": "Vai trò",
+    "rolesPhonetic": "Vai trò",
+    "permissions": "Quyền hạn",
+    "permissionsPhonetic": "Quyền hạn",
+    "roleManagement": "Quản lý vai trò",
+    "roleManagementPhonetic": "Quản lý vai trò",
     "info": "Thông tin",
     "infoPhonetic": "Thông tin",
     "contact": "Liên hệ",
@@ -55,7 +62,13 @@
     "type": "Loại",
     "typePhonetic": "Loại",
     "created": "Ngày tạo",
-    "createdPhonetic": "Ngày tạo"
+    "createdPhonetic": "Ngày tạo",
+    "role": "Vai trò",
+    "rolePhonetic": "Vai trò",
+    "organization": "Tổ chức",
+    "organizationPhonetic": "Tổ chức",
+    "selectUser": "Chọn người dùng",
+    "roleAssignments": "Gán vai trò"
   },
   "placeholders": {
     "code": "Ví dụ: 2024001, CB001",
@@ -66,7 +79,10 @@
     "password": "Để trống nếu sử dụng đăng nhập Google",
     "newPassword": "Nhập mật khẩu mới",
     "noChangePassword": "Để trống nếu không thay đổi",
-    "search": "Tìm kiếm theo tên, email, mã số..."
+    "search": "Tìm kiếm theo tên, email, mã số...",
+    "selectRole": "Chọn vai trò",
+    "selectOrganization": "Chọn tổ chức (tùy chọn)",
+    "selectUser": "Chọn người dùng để gán quyền"
   },
   "types": {
     "student": "Sinh viên",
@@ -92,20 +108,101 @@
     "noUsers": "Không tìm thấy người dùng nào",
     "deleteWarningMessage": "Việc xóa người dùng sẽ xóa tất cả dữ liệu liên quan bao gồm thành viên tổ chức, lịch sử hoạt động, v.v.",
     "duplicateCode": "Mã số sinh viên/cán bộ đã tồn tại",
-    "userAlreadyExists": "Người dùng đã tồn tại trong hệ thống"
+    "userAlreadyExists": "Người dùng đã tồn tại trong hệ thống",
+    "assignRolesSuccess": "Gán quyền thành công",
+    "assignRolesError": "Có lỗi xảy ra khi gán quyền",
+    "grantRolesSuccess": "Cấp vai trò thành công",
+    "grantRolesError": "Có lỗi xảy ra khi cấp vai trò"
+  },
+  "validation": {
+    "invalidOrganization": "Tổ chức được chọn không hợp lệ",
+    "selectUser": "Vui lòng chọn người dùng",
+    "atLeastOneRole": "Vui lòng gán ít nhất một vai trò"
+  },
+  "help": {
+    "organizationHelp": "Nếu chọn tổ chức, người dùng sẽ được thêm làm thành viên của tổ chức đó và tất cả tổ chức cha"
+  },
+  "warnings": {
+    "noDefaultRole": "Không có vai trò mặc định cho việc gán vào tổ chức"
   },
   "labels": {
     "requiredMark": "*",
     "optional": "(tùy chọn)",
     "passwordOptional": "Mật khẩu (tùy chọn)",
+    "selectedRole": "Vai trò đã chọn",
+    "selectedOrganization": "Tổ chức đã chọn",
     "newPassword": "Mật khẩu mới (để trống nếu không thay đổi)",
     "deleteTitle": "Xác nhận xóa",
-    "organizationalInfo": "Thông tin tổ chức"
+    "organizationalInfo": "Thông tin tổ chức",
+    "rolesAndPermissions": "Vai trò & Quyền hạn",
+    "rolesAndPermissionsPhonetic": "Vai trò và Quyền hạn",
+    "addRole": "Thêm vai trò",
+    "addRolePhonetic": "Thêm vai trò",
+    "assignedRoles": "Vai trò đã gán",
+    "assignedRolesPhonetic": "Vai trò đã gán",
+    "selectRolesToAssign": "Chọn vai trò để gán",
+    "selectRolesToAssignPhonetic": "Chọn vai trò để gán",
+    "noRolesAssigned": "Người dùng chưa được gán vai trò nào",
+    "noRolesAssignedPhonetic": "Chưa có vai trò nào",
+    "allRolesAssigned": "Tất cả vai trò đã được gán",
+    "allRolesAssignedPhonetic": "Tất cả vai trò đã được gán",
+    "rolePermissions": "Quyền truy cập",
+    "rolePermissionsPhonetic": "Quyền truy cập",
+    "loadingRoles": "Đang tải vai trò...",
+    "loadingRolesPhonetic": "Đang tải vai trò",
+    "systemRole": "Hệ thống",
+    "systemRolePhonetic": "Hệ thống",
+    "activeStatus": "Hoạt động",
+    "activeStatusPhonetic": "Hoạt động",
+    "inactiveStatus": "Không hoạt động",
+    "inactiveStatusPhonetic": "Không hoạt động"
   },
   "actions": {
     "view": "Xem chi tiết",
     "edit": "Chỉnh sửa",
-    "delete": "Xóa"
+    "delete": "Xóa",
+    "assignRoles": "Gán quyền",
+    "grantPermissions": "Cấp quyền",
+    "grantRoles": "Cấp vai trò"
+  },
+  "grantPermissions": {
+    "title": "Cấp quyền cho người dùng",
+    "userSearch": "Tìm kiếm người dùng...",
+    "applyToUserOrgs": "Áp dụng cho những tổ chức mà người dùng thuộc",
+    "permissions": "Quyền",
+    "organizations": "Tổ chức (tùy chọn)",
+    "addPermissionRow": "Thêm quyền khác",
+    "removeRow": "Xóa",
+    "submitButton": "Cấp quyền",
+    "globalPermission": "Quyền toàn hệ thống",
+    "organizationPermission": "Quyền theo tổ chức",
+    "selectUser": "Chọn người dùng",
+    "selectPermission": "Chọn quyền",
+    "selectOrganization": "Chọn tổ chức",
+    "noUserSelected": "Vui lòng chọn người dùng",
+    "noPermissionsAdded": "Vui lòng thêm ít nhất một quyền"
+  },
+  "grantRoles": {
+    "title": "Cấp vai trò cho người dùng",
+    "userSearch": "Tìm kiếm người dùng...",
+    "applyToUserOrgs": "Áp dụng cho những tổ chức mà người dùng thuộc",
+    "applyToUserOrganizations": "Áp dụng cho những tổ chức mà người dùng thuộc",
+    "roles": "Vai trò",
+    "organizations": "Tổ chức (tùy chọn)",
+    "addRoleRow": "Thêm vai trò khác",
+    "removeRow": "Xóa",
+    "submitButton": "Cấp vai trò",
+    "grantRoles": "Cấp vai trò",
+    "globalRole": "Vai trò toàn hệ thống",
+    "organizationRole": "Vai trò theo tổ chức",
+    "selectUser": "Chọn người dùng",
+    "userPlaceholder": "Tìm kiếm người dùng...",
+    "selectRole": "Chọn vai trò",
+    "selectOrganization": "Chọn tổ chức",
+    "roleAssignments": "Gán vai trò",
+    "addRole": "Thêm vai trò",
+    "noUserSelected": "Vui lòng chọn người dùng",
+    "noRolesAdded": "Vui lòng thêm ít nhất một vai trò"
   },
   "addButton": {
     "dropdown": "Thêm người dùng",

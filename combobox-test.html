@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combobox Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        .result {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Combobox Debug Test</h1>
+
+        <div class="test-section">
+            <h2>Test Instructions</h2>
+            <ol>
+                <li>Mở CreateUserModal trong ứng dụng</li>
+                <li>Mở Developer Console (F12)</li>
+                <li>Copy và paste script từ test-combobox-create-modal.js</li>
+                <li>Chạy các test bên dưới</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h2>Manual Test Cases</h2>
+
+            <div>
+                <h3>Test 1: Kiểm tra render</h3>
+                <button onclick="testRender()">Test Render</button>
+                <div id="render-result" class="result"></div>
+            </div>
+
+            <div>
+                <h3>Test 2: Click vào Role Combobox</h3>
+                <button onclick="testRoleClick()">Test Role Click</button>
+                <div id="role-result" class="result"></div>
+            </div>
+
+            <div>
+                <h3>Test 3: Click vào Organization Combobox</h3>
+                <button onclick="testOrgClick()">Test Org Click</button>
+                <div id="org-result" class="result"></div>
+            </div>
+
+            <div>
+                <h3>Test 4: Select Option</h3>
+                <button onclick="testSelectOption()">Test Select Option</button>
+                <div id="select-result" class="result"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Debug Info</h2>
+            <button onclick="showDebugInfo()">Show Debug Info</button>
+            <div id="debug-info" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        function testRender() {
+            const result = document.getElementById('render-result');
+            try {
+                // Check if in parent window (main app)
+                const parentDoc = window.parent.document;
+                const roleInput = parentDoc.querySelector('[data-testid="combobox-input"]');
+                const allInputs = parentDoc.querySelectorAll('input');
+
+                if (roleInput) {
+                    result.innerHTML = `<div class="success">✓ Combobox found: ${roleInput.placeholder}</div>`;
+                } else {
+                    result.innerHTML = `<div class="error">✗ Combobox not found. Found ${allInputs.length} inputs total.</div>`;
+                }
+            } catch (e) {
+                result.innerHTML = `<div class="error">Error: ${e.message}</div>`;
+            }
+        }
+
+        function testRoleClick() {
+            const result = document.getElementById('role-result');
+            try {
+                const parentDoc = window.parent.document;
+                const roleInputs = parentDoc.querySelectorAll('[data-testid="combobox-input"]');
+
+                if (roleInputs.length > 0) {
+                    const roleInput = roleInputs[0]; // First combobox should be role
+                    roleInput.click();
+                    roleInput.focus();
+
+                    setTimeout(() => {
+                        const dropdown = parentDoc.querySelector('[data-testid="combobox-dropdown"]');
+                        if (dropdown) {
+                            result.innerHTML = `<div class="success">✓ Role dropdown opened</div>`;
+                        } else {
+                            result.innerHTML = `<div class="error">✗ Role dropdown not opened</div>`;
+                        }
+                    }, 200);
+                } else {
+                    result.innerHTML = `<div class="error">✗ Role input not found</div>`;
+                }
+            } catch (e) {
+                result.innerHTML = `<div class="error">Error: ${e.message}</div>`;
+            }
+        }
+
+        function testOrgClick() {
+            const result = document.getElementById('org-result');
+            try {
+                const parentDoc = window.parent.document;
+                const orgInputs = parentDoc.querySelectorAll('[data-testid="combobox-input"]');
+
+                if (orgInputs.length > 1) {
+                    const orgInput = orgInputs[1]; // Second combobox should be org
+                    orgInput.click();
+                    orgInput.focus();
+
+                    setTimeout(() => {
+                        const dropdown = parentDoc.querySelector('[data-testid="combobox-dropdown"]');
+                        if (dropdown) {
+                            result.innerHTML = `<div class="success">✓ Org dropdown opened</div>`;
+                        } else {
+                            result.innerHTML = `<div class="error">✗ Org dropdown not opened</div>`;
+                        }
+                    }, 200);
+                } else {
+                    result.innerHTML = `<div class="error">✗ Org input not found</div>`;
+                }
+            } catch (e) {
+                result.innerHTML = `<div class="error">Error: ${e.message}</div>`;
+            }
+        }
+
+        function testSelectOption() {
+            const result = document.getElementById('select-result');
+            try {
+                const parentDoc = window.parent.document;
+                const dropdown = parentDoc.querySelector('[data-testid="combobox-dropdown"]');
+
+                if (dropdown) {
+                    const options = dropdown.querySelectorAll('button[type="button"]');
+                    if (options.length > 0) {
+                        const firstOption = options[0];
+                        const optionText = firstOption.textContent.trim();
+
+                        firstOption.click();
+
+                        setTimeout(() => {
+                            const input = parentDoc.querySelector('[data-testid="combobox-input"]');
+                            if (input && input.value) {
+                                result.innerHTML = `<div class="success">✓ Option selected: ${input.value}</div>`;
+                            } else {
+                                result.innerHTML = `<div class="error">✗ Option not set in input</div>`;
+                            }
+                        }, 200);
+                    } else {
+                        result.innerHTML = `<div class="error">✗ No options found in dropdown</div>`;
+                    }
+                } else {
+                    result.innerHTML = `<div class="error">✗ No dropdown open. Click on a combobox first.</div>`;
+                }
+            } catch (e) {
+                result.innerHTML = `<div class="error">Error: ${e.message}</div>`;
+            }
+        }
+
+        function showDebugInfo() {
+            const result = document.getElementById('debug-info');
+            try {
+                const parentDoc = window.parent.document;
+                const inputs = parentDoc.querySelectorAll('[data-testid="combobox-input"]');
+                const dropdowns = parentDoc.querySelectorAll('[data-testid="combobox-dropdown"]');
+
+                let info = `
+                    <strong>Combobox Inputs:</strong> ${inputs.length}<br>
+                    <strong>Open Dropdowns:</strong> ${dropdowns.length}<br>
+                `;
+
+                inputs.forEach((input, index) => {
+                    info += `<strong>Input ${index + 1}:</strong> placeholder="${input.placeholder}", value="${input.value}"<br>`;
+                });
+
+                result.innerHTML = info;
+            } catch (e) {
+                result.innerHTML = `<div class="error">Error: ${e.message}</div>`;
+            }
+        }
+    </script>
+</body>
+
+</html>

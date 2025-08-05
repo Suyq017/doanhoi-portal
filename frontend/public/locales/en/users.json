@@ -11,7 +11,8 @@
     "view": "User Details",
     "viewPhonetic": "User Details",
     "delete": "Delete User",
-    "deletePhonetic": "Delete User"
+    "deletePhonetic": "Delete User",
+    "assignRoles": "Assign Roles to User"
   },
   "fields": {
     "code": "Student/Staff ID",
@@ -55,7 +56,13 @@
     "type": "Type",
     "typePhonetic": "Type",
     "created": "Created Date",
-    "createdPhonetic": "Created Date"
+    "createdPhonetic": "Created Date",
+    "role": "Role",
+    "rolePhonetic": "Role",
+    "organization": "Organization",
+    "organizationPhonetic": "Organization",
+    "selectUser": "Select User",
+    "roleAssignments": "Role Assignments"
   },
   "placeholders": {
     "code": "e.g.: 2024001, CB001",
@@ -66,7 +73,10 @@
     "password": "Leave blank if using Google login",
     "newPassword": "Enter new password",
     "noChangePassword": "Leave blank if no change",
-    "search": "Search by name, email, ID..."
+    "search": "Search by name, email, ID...",
+    "selectRole": "Select a role",
+    "selectOrganization": "Select an organization (optional)",
+    "selectUser": "Select a user to assign roles"
   },
   "types": {
     "student": "Student",
@@ -92,12 +102,29 @@
     "noUsers": "No users found",
     "deleteWarningMessage": "Deleting this user will remove all related data including organization memberships, activity history, etc.",
     "duplicateCode": "Student/Staff ID already exists",
-    "userAlreadyExists": "User already exists in the system"
+    "userAlreadyExists": "User already exists in the system",
+    "assignRolesSuccess": "Roles assigned successfully",
+    "assignRolesError": "An error occurred while assigning roles",
+    "grantRolesSuccess": "Roles granted successfully",
+    "grantRolesError": "An error occurred while granting roles"
+  },
+  "validation": {
+    "invalidOrganization": "Selected organization is not valid",
+    "selectUser": "Please select a user",
+    "atLeastOneRole": "Please assign at least one role"
+  },
+  "help": {
+    "organizationHelp": "If you select an organization, user will be automatically added as a member of that organization and all parent organizations"
+  },
+  "warnings": {
+    "noDefaultRole": "No default role available for organization assignment"
   },
   "labels": {
     "requiredMark": "*",
     "optional": "(optional)",
     "passwordOptional": "Password (optional)",
+    "selectedRole": "Selected Role",
+    "selectedOrganization": "Selected Organization",
     "newPassword": "New Password (leave blank if no change)",
     "deleteTitle": "Confirm Delete",
     "organizationalInfo": "Organizational Information"
@@ -105,7 +132,49 @@
   "actions": {
     "view": "View Details",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "assignRoles": "Assign Roles",
+    "grantPermissions": "Grant Permissions",
+    "grantRoles": "Grant Roles"
+  },
+  "grantPermissions": {
+    "title": "Grant Permissions to User",
+    "userSearch": "Search for user...",
+    "applyToUserOrgs": "Apply to organizations the user belongs to",
+    "permissions": "Permissions",
+    "organizations": "Organizations (optional)",
+    "addPermissionRow": "Add Another Permission",
+    "removeRow": "Remove",
+    "submitButton": "Grant Permissions",
+    "globalPermission": "Global Permission",
+    "organizationPermission": "Organization Permission",
+    "selectUser": "Select User",
+    "selectPermission": "Select Permission",
+    "selectOrganization": "Select Organization",
+    "noUserSelected": "Please select a user",
+    "noPermissionsAdded": "Please add at least one permission"
+  },
+  "grantRoles": {
+    "title": "Grant Roles to User",
+    "userSearch": "Search for user...",
+    "applyToUserOrgs": "Apply to organizations the user belongs to",
+    "applyToUserOrganizations": "Apply to organizations the user belongs to",
+    "roles": "Roles",
+    "organizations": "Organizations (optional)",
+    "addRoleRow": "Add Another Role",
+    "removeRow": "Remove",
+    "submitButton": "Grant Roles",
+    "grantRoles": "Grant Roles",
+    "globalRole": "Global Role",
+    "organizationRole": "Organization Role",
+    "selectUser": "Select User",
+    "userPlaceholder": "Search for user...",
+    "selectRole": "Select Role",
+    "selectOrganization": "Select Organization",
+    "roleAssignments": "Role Assignments",
+    "addRole": "Add Role",
+    "noUserSelected": "Please select a user",
+    "noRolesAdded": "Please add at least one role"
   },
   "addButton": {
     "dropdown": "Add User",

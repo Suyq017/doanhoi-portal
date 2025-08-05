@@ -14,11 +14,22 @@ export interface UserTableProps {
     onBulkDeleteRequest?: (userIds: string[]) => void;
     showActions?: boolean;
     showSelection?: boolean;
+
+    // New actions interface
+    actions?: {
+        showView?: boolean;
+        showEdit?: boolean;
+        showDelete?: boolean;
+        showSelection?: boolean;
+    };
+
+    // Deprecated - keep for backward compatibility
     actionConfig?: {
         showView?: boolean;
         showEdit?: boolean;
         showDelete?: boolean;
     };
+
     emptyMessage?: string;
     className?: string;
     // Expose method to reset selection
@@ -39,11 +50,23 @@ export const UserTable: React.FC<UserTableProps> = ({
     onBulkDeleteRequest,
     showActions = true,
     showSelection = false,
+    actions,
     actionConfig = { showView: true, showEdit: true, showDelete: true },
     emptyMessage,
     className = '',
 }) => {
     const { t } = useTranslation(['users', 'common']);
+
+    // Merge actions with actionConfig for backward compatibility
+    const finalActions = {
+        showView: actions?.showView ?? actionConfig?.showView ?? true,
+        showEdit: actions?.showEdit ?? actionConfig?.showEdit ?? true,
+        showDelete: actions?.showDelete ?? actionConfig?.showDelete ?? true,
+        showSelection: actions?.showSelection ?? showSelection,
+    };
+
+    // Determine if we should show actions column
+    const shouldShowActionsColumn = showActions && (finalActions.showView || finalActions.showEdit || finalActions.showDelete);
 
     // State for multi-selection
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -133,9 +156,8 @@ export const UserTable: React.FC<UserTableProps> = ({
             </div>
         );
     } return (
-        <div className={`overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 ${className}`}>
-            {/* Bulk Actions Toolbar */}
-            {showSelection && isSomeSelected && (
+        <div className={`overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 ${className}`}>            {/* Bulk Actions Toolbar */}
+            {finalActions.showSelection && isSomeSelected && (
                 <div className="flex items-center justify-between px-6 py-3 bg-blue-50 border-b border-gray-200 dark:bg-blue-900/20 dark:border-gray-700">
                     <div className="flex items-center space-x-3">
                         <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
@@ -162,108 +184,106 @@ export const UserTable: React.FC<UserTableProps> = ({
 
             <div className="overflow-x-auto">
                 <table className="w-full table-auto">
-                    <thead className="bg-gray-50 dark:bg-gray-900">
-                        <tr>
-                            {showSelection && (
-                                <th className="px-6 py-3 text-left">
-                                    <input
-                                        type="checkbox"
-                                        checked={isAllSelected}
-                                        onChange={handleSelectAll}
-                                        className="w-4 h-4 text-doan-600 border-gray-300 rounded focus:ring-doan-500 dark:border-gray-600 dark:bg-gray-700"
-                                    />
-                                </th>
-                            )}
-                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                                {t('users:fields.info')}
+                    <thead className="bg-gray-50 dark:bg-gray-900">                        <tr>
+                        {finalActions.showSelection && (
+                            <th className="px-6 py-3 text-left">
+                                <input
+                                    type="checkbox"
+                                    checked={isAllSelected}
+                                    onChange={handleSelectAll}
+                                    className="w-4 h-4 text-doan-600 border-gray-300 rounded focus:ring-doan-500 dark:border-gray-600 dark:bg-gray-700"
+                                />
                             </th>
+                        )}
+                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                            {t('users:fields.info')}
+                        </th>
+                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                            {t('users:fields.contact')}
+                        </th>
+                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                            {t('users:fields.type')}
+                        </th>
+                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                            {t('common:fields.status')}
+                        </th>                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                            {t('users:fields.created')}
+                        </th>
+                        {shouldShowActionsColumn && (
                             <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                                {t('users:fields.contact')}
+                                {t('common:fields.actions')}
                             </th>
-                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                                {t('users:fields.type')}
-                            </th>
-                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                                {t('common:fields.status')}
-                            </th>
-                            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                                {t('users:fields.created')}
-                            </th>
-                            {showActions && (
-                                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                                    {t('common:fields.actions')}
-                                </th>
-                            )}
-                        </tr>
+                        )}
+                    </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                        {users.map((user) => (
-                            <tr
-                                key={user.id}
-                                className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${showSelection && selectedUserIds.includes(user.id)
-                                    ? 'bg-blue-50 dark:bg-blue-900/20'
-                                    : ''
-                                    }`}
-                            >
-                                {showSelection && (
-                                    <td className="px-6 py-4">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedUserIds.includes(user.id)}
-                                            onChange={() => handleSelectUser(user.id)}
-                                            className="w-4 h-4 text-doan-600 border-gray-300 rounded focus:ring-doan-500 dark:border-gray-600 dark:bg-gray-700"
-                                        />
-                                    </td>
-                                )}
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div>
-                                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                            {`${user.familyName} ${user.givenName}`}
-                                        </div>
-                                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                                            {user.code}
-                                        </div>
+                        {users.map((user) => (<tr
+                            key={user.id}
+                            className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${finalActions.showSelection && selectedUserIds.includes(user.id)
+                                ? 'bg-blue-50 dark:bg-blue-900/20'
+                                : ''
+                                }`}
+                        >
+                            {finalActions.showSelection && (
+                                <td className="px-6 py-4">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedUserIds.includes(user.id)}
+                                        onChange={() => handleSelectUser(user.id)}
+                                        className="w-4 h-4 text-doan-600 border-gray-300 rounded focus:ring-doan-500 dark:border-gray-600 dark:bg-gray-700"
+                                    />
+                                </td>
+                            )}
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                <div>
+                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                        {`${user.familyName} ${user.givenName}`}
                                     </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div>
-                                        <div className="text-sm text-gray-900 dark:text-white">
-                                            {user.email}
-                                        </div>
-                                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                                            {user.phone}
-                                        </div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                        {user.code}
                                     </div>
+                                </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                <div>
+                                    <div className="text-sm text-gray-900 dark:text-white">
+                                        {user.email}
+                                    </div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                        {user.phone}
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="text-sm text-gray-900 dark:text-white">
+                                    {getUserTypeText(user.userType)}
+                                </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                <span
+                                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMembershipStatusColor(
+                                        user.membershipStatus
+                                    )}`}
+                                >
+                                    {getMembershipStatusText(user.membershipStatus)}
+                                </span>
+                            </td>                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400">
+                                {new Date(user.createdAt).toLocaleDateString('vi-VN')}
+                            </td>
+                            {shouldShowActionsColumn && (
+                                <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+                                    <UserActionButtons
+                                        user={user}
+                                        onView={onUserView}
+                                        onEdit={onUserEdit}
+                                        onDelete={onUserDelete}
+                                        showView={finalActions.showView}
+                                        showEdit={finalActions.showEdit}
+                                        showDelete={finalActions.showDelete}
+                                    />
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className="text-sm text-gray-900 dark:text-white">
-                                        {getUserTypeText(user.userType)}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span
-                                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMembershipStatusColor(
-                                            user.membershipStatus
-                                        )}`}
-                                    >
-                                        {getMembershipStatusText(user.membershipStatus)}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400">
-                                    {new Date(user.createdAt).toLocaleDateString('vi-VN')}
-                                </td>
-                                {showActions && (
-                                    <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                                        <UserActionButtons
-                                            user={user}
-                                            onView={onUserView}
-                                            onEdit={onUserEdit}
-                                            onDelete={onUserDelete}
-                                            {...actionConfig}
-                                        />
-                                    </td>
-                                )}
-                            </tr>
+                            )}
+                        </tr>
                         ))}
                     </tbody>
                 </table>
