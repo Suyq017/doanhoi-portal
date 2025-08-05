@@ -30,7 +30,7 @@ const AuthCallback: React.FC = () => {
           setTokens(token, refreshToken);
           
           // Get user profile
-          const backendUrl = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:9200';
+          const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
           const response = await fetch(`${backendUrl}/auth/profile`, {
             headers: {
               'Authorization': `Bearer ${token}`

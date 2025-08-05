@@ -10,6 +10,9 @@ import { ClassesModule } from './classes/classes.module';
 import { ExportModule } from './export/export.module';
 import { RolesModule } from './roles/roles.module';
 import { CleanEmptyStringsMiddleware } from './common/middleware/clean-empty-strings.middleware';
+import { PaymentModule } from './payment/payment.module';
+import { PayosModule } from './payos/payos.module';
+
 
 @Module({
   imports: [
@@ -26,7 +29,7 @@ import { CleanEmptyStringsMiddleware } from './common/middleware/clean-empty-str
         password: configService.get('DB_PASSWORD', 'password'),
         database: configService.get('DB_NAME', 'doanhoi'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get('NODE_ENV') !== 'production',
+        synchronize: true,
         logging: configService.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
@@ -38,6 +41,8 @@ import { CleanEmptyStringsMiddleware } from './common/middleware/clean-empty-str
     ClassesModule,
     ExportModule,
     RolesModule,
+    PaymentModule,
+    PayosModule, // Import module PayOS của chúng ta
   ],
 })
 export class AppModule implements NestModule {

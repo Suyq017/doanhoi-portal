@@ -123,8 +123,14 @@ class OrganizationService {
     });
   }
 
-  async getOrganizationMembers(organizationId: string): Promise<UserOrganization[]> {
-    return this.request<UserOrganization[]>(`/organizations/${organizationId}/members`);
+  async getOrganizationMembers(
+    organizationId: string, 
+    page: number = 1, 
+    limit: number = 10
+  ): Promise<{ members: UserOrganization[], total: number, page: number, limit: number, totalPages: number }> {
+    return this.request<{ members: UserOrganization[], total: number, page: number, limit: number, totalPages: number }>(
+      `/organizations/${organizationId}/members?page=${page}&limit=${limit}`
+    );
   }
 
   // Bổ sung các API mới theo kế hoạch

@@ -56,7 +56,6 @@ export class AuthController {
     await this.authService.logout(req.user.id);
     return { message: 'Logout successful' };
   }
-
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -66,6 +65,7 @@ export class AuthController {
     description: 'Profile retrieved successfully'
   })
   async getProfile(@Request() req) {
+    console.log('🔍 AuthController.getProfile - req.user:', { id: req.user?.id, email: req.user?.email });
     return req.user;
   }
 
@@ -76,12 +76,12 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'User permissions retrieved successfully'
-  })
-  async getCurrentUserPermissions(
+  }) async getCurrentUserPermissions(
     @Request() req: any,
     @Query('organizationId') organizationId?: string
   ) {
     const userId = req.user.id;
+    console.log('🔍 AuthController.getCurrentUserPermissions - req.user:', { id: req.user?.id, email: req.user?.email }, 'using userId:', userId);
     return this.authService.getUserPermissions(userId, organizationId);
   }
 

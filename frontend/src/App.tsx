@@ -13,6 +13,13 @@ import { OrganizationMembersPage } from './features/organizations';
 import { ClassesPage } from './features/classes';
 import { PermissionsPage } from './features/permissions';
 import { AuthProvider, AuthCallback, LoginPage, ProtectedRoute, EnhancedProtectedRoute, AuthGuard } from './features/auth';
+import {
+  PaymentCampaignsPage,
+  CreatePaymentCampaignPage,
+  PaymentCampaignDetailPage,
+  PaymentResultPage,
+  MyCampaignsPage
+} from './features/fee-collection';
 import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
 
@@ -133,7 +140,8 @@ function App() {
                           </Layout>
                         </EnhancedProtectedRoute>
                       }
-                    />                <Route
+                    />
+                    <Route
                       path="/permissions"
                       element={
                         <EnhancedProtectedRoute requiredPermissions={['permissions.access']}>
@@ -144,7 +152,74 @@ function App() {
                           </Layout>
                         </EnhancedProtectedRoute>
                       }
+                    />                    {/* Admin Payment Routes */}
+                    <Route
+                      path="/admin/payment-campaigns"
+                      element={
+                        <ProtectedRoute>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <PaymentCampaignsPage />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </ProtectedRoute>
+                      }
                     />
+                    <Route
+                      path="/admin/payment-campaigns/create"
+                      element={
+                        <ProtectedRoute>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <CreatePaymentCampaignPage />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/payment-campaigns/:id"
+                      element={
+                        <ProtectedRoute>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <PaymentCampaignDetailPage />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Member Payment Routes */}
+                    <Route
+                      path="/payment/my-campaigns"
+                      element={
+                        <ProtectedRoute>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <MyCampaignsPage />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/payment-result/:orderCode"
+                      element={
+                        <ProtectedRoute>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <PaymentResultPage />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    { /* Authentication Callback */}
+                    <Route path="/auth/callback" element={<AuthCallback />} />
+
+
                   </Routes>
                 </AuthGuard>
               }

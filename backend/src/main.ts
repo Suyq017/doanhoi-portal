@@ -28,7 +28,7 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document); await app.listen(process.env.PORT || 9200);
-  console.log(`🚀 Backend server is running on http://localhost:${process.env.PORT || 9202}`);
-  console.log(`📖 API Documentation: http://localhost:${process.env.PORT || 9202}/api`);
+  console.log(`🚀 Backend server is running on http://localhost:${process.env.PORT || 9200}`);
+  console.log(`📖 API Documentation: http://localhost:${process.env.PORT || 9200}/api`);
 }
 bootstrap();

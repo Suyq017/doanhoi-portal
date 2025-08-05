@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield } from 'lucide-react';
+import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -77,7 +77,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         href: '/permissions',
         icon: Shield,
         requiredPermission: 'permissions.access'
-      },];    // If not authenticated, return empty navigation (pages will handle auth via AuthGuard)
+      },
+      { name: 'Quản lý đóng phí', href: '/admin/payment-campaigns', icon: CreditCard },
+      { name: 'Đóng phí của tôi', href: '/payment/my-campaigns', icon: CreditCard },];    // If not authenticated, return empty navigation (pages will handle auth via AuthGuard)
     if (!permissions.isAuthenticated) {
       return [];
     }
