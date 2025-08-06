@@ -129,16 +129,18 @@ export class UsersService {
 
   /**
    * Find user by email (required by AuthService)
-   */
-  async findByEmail(email: string): Promise<User | null> {
+   */  async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { email },
       relations: [
         'managementDepartment',
         'trainingDepartment',
         'class',
+        'organizations',
+        'organizations.organization',
         'userRoles',
         'userRoles.role',
+        'userRoles.role.permissions',
         'userRoles.organization'
       ]
     });

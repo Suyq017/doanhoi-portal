@@ -129,12 +129,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check for stored tokens on app start
     const token = authService.getAccessToken();
     const refreshToken = authService.getRefreshToken();
-    const userData = authService.getUser();
-
-    if (token && refreshToken && userData) {
+    const userData = authService.getUser(); if (token && refreshToken && userData) {
       setAuth(prev => ({
         ...prev,
-        user: userData,
+        user: userData as User,
         token,
         refreshToken,
         isAuthenticated: true,
@@ -153,27 +151,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         permissionsLoading: false,
       }));
     }
-  }, []);
-
-  const login = async (email: string, password: string): Promise<AuthResponse> => {
+  }, []); const login = async (email: string, password: string): Promise<AuthResponse> => {
     try {
       setAuth(prev => ({ ...prev, isLoading: true }));
 
       // Use actual auth service
       const response = await authService.login({ email, password });
 
-      // Store tokens and user data
+      // Store tokens first so auth calls work
       authService.setTokens(response.accessToken, response.refreshToken);
-      authService.setUser(response.user);
 
-      setAuth(prev => ({
-        ...prev,
-        user: response.user,
-        token: response.accessToken,
-        refreshToken: response.refreshToken,
-        isAuthenticated: true,
-        isLoading: false,
-      }));
+      // Log current user data to see what we have
+      console.log('🔍 Login response user:', response.user);
+
+      // Try to load full user details with organizations
+      try {
+        const fullUserDetails = await authService.getCurrentUser();
+        console.log('🔍 Full user details from /auth/me:', fullUserDetails);
+
+        // Use full user details if available, fallback to response.user
+        const userToStore = fullUserDetails || response.user;
+        authService.setUser(userToStore);
+
+        setAuth(prev => ({
+          ...prev,
+          user: userToStore as User,
+          token: response.accessToken,
+          refreshToken: response.refreshToken,
+          isAuthenticated: true,
+          isLoading: false,
+        }));
+      } catch (error) {
+        console.warn('Failed to load full user details, using basic user info:', error);
+
+        // Fallback to basic user info
+        authService.setUser(response.user);
+        setAuth(prev => ({
+          ...prev,
+          user: response.user as User,
+          token: response.accessToken,
+          refreshToken: response.refreshToken,
+          isAuthenticated: true,
+          isLoading: false,
+        }));
+      }
 
       // Load user permissions after successful login
       setTimeout(() => loadUserPermissions(), 100);

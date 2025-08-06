@@ -127,10 +127,17 @@ class AuthService {
         'Authorization': `Bearer ${accessToken}`,
       },
     });
-  }
-  async getUserPermissions(userId: string, organizationId?: string): Promise<UserPermissionsResponse> {
+  } async getUserPermissions(userId: string, organizationId?: string): Promise<UserPermissionsResponse> {
     const queryParams = organizationId ? `?organizationId=${organizationId}` : '';
     return this.request<UserPermissionsResponse>(`/auth/me/permissions${queryParams}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${this.getAccessToken()}`,
+      },
+    });
+  }
+  async getCurrentUser(): Promise<any> {
+    return this.request<any>('/auth/profile', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${this.getAccessToken()}`,

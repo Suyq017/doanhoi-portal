@@ -4,6 +4,7 @@ import { Building, Users, ChevronRight, ChevronDown, Edit, Trash2, UserPlus, Eye
 import { useTranslation } from 'react-i18next';
 import { Organization, OrganizationStats } from '../../../shared/types/organization';
 import { getOrgTypeText, getOrgTypeColor } from '../utils/organizationUtils';
+import { useAuth } from '../../auth/context/AuthContext';
 import AddMemberModal from './AddMemberModal';
 import EditOrganizationModal from './EditOrganizationModal';
 import DeleteOrganizationModal from './DeleteOrganizationModal';
@@ -40,13 +41,32 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
     onOrganizationUpdatedError
 }) => {
     const { t } = useTranslation(['organizations', 'common']);
+    const { auth } = useAuth();
     const location = useLocation();
     const hasChildren = org.children && org.children.length > 0;
     const paddingLeft = level * 24;
 
     const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);    // Helper function kiểm tra user có trong user_organization không
+    const isUserInOrganization = (organizationId: string): boolean => {
+        if (!auth.user?.organizations) {
+            console.log(`❌ No user organizations found for org ${org.name}. User:`, {
+                userId: auth.user?.id,
+                email: auth.user?.email,
+                hasOrganizations: !!auth.user?.organizations,
+                organizationsCount: auth.user?.organizations?.length || 0
+            });
+            return false;
+        }
+
+        const isMember = auth.user.organizations.some(userOrg =>
+            userOrg.organizationId === organizationId && userOrg.isActive
+        );
+
+        console.log(`👁️ Eye icon for ${org.name}: ${isMember ? 'SHOW' : 'HIDE'}`);
+        return isMember;
+    };
 
     const handleDeleteSuccess = () => {
         if (onOrganizationDeleted) {
@@ -137,25 +157,20 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
 
         // Mặc định
         return `/organizations/${type}/${code}`;
-    }; const shouldShowDetailLink = () => {
-        if (level === 1 && !isInSubDetailPage) {
-            return true;
-        }
-        if (level === 2 && isInDetailPage) {
-            return true;
-        }
-        return false;
+    };
+
+    const shouldShowDetailLink = () => {
+        // ĐIỀU KIỆN DUY NHẤT: User có trong user_organization của tổ chức này
+        return isUserInOrganization(org.id);
     };
 
     // Create path to organization members page
     const createMembersPath = (type: string, code?: string) => {
         if (!code) return '#';
         return `/organizations/${type}/${code}/members`;
-    };
-
-    // Determine if Users icon should be clickable (when no detail link is shown)
+    };    // Determine if Users icon should be clickable 
     const shouldMakeUsersClickable = () => {
-        return !shouldShowDetailLink() && org.code; // Only if no eye icon and has code
+        return !!org.code; // Always show users icon if org has code, make it clickable
     };
 
     return (
