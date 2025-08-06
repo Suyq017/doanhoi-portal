@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { seedPermissions } from './permissions.seed';
 import { seedRoles } from './roles.seed';
+import { seedDefaultUsers } from './default-users.seed';
 import { config } from 'dotenv';
 
 // Load environment variables
@@ -32,16 +33,20 @@ const runSeeding = async () => {
         await dataSource.initialize();
         console.log('Database connection established');
 
-        // Run seeds
-        console.log('Starting permissions seeding...');
+        // Run seeds in correct order
+        console.log('1. Starting permissions seeding...');
         await seedPermissions(dataSource);
 
-        console.log('Starting roles seeding...');
+        console.log('2. Starting roles seeding...');
         await seedRoles(dataSource);
 
-        console.log('All seeding completed successfully!');
+        console.log('3. Starting default users seeding...');
+        await seedDefaultUsers(dataSource);
+
+        console.log('\n🎉 All seeding completed successfully!');
+        console.log('You can now login with the default credentials shown above.');
     } catch (error) {
-        console.error('Error during seeding:', error);
+        console.error('❌ Error during seeding:', error);
     } finally {
         await dataSource.destroy();
     }

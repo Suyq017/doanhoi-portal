@@ -213,9 +213,7 @@ export const seedPermissions = async (dataSource: DataSource) => {
             category: 'classes',
             context: PermissionContext.ORGANIZATION,
             sortOrder: 44,
-        },
-
-        // Permissions management
+        },        // Permissions management
         {
             code: 'permissions.access',
             name: 'Truy cập quản lý quyền',
@@ -255,6 +253,72 @@ export const seedPermissions = async (dataSource: DataSource) => {
             category: 'permissions',
             context: PermissionContext.SYSTEM,
             sortOrder: 54,
+        },
+
+        // Payment Campaign permissions
+        {
+            code: 'payment-campaigns.access',
+            name: 'Truy cập quản lý đóng phí',
+            description: 'Cho phép truy cập trang quản lý chiến dịch đóng phí',
+            category: 'payments',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 60,
+        },
+        {
+            code: 'payment-campaigns.create',
+            name: 'Tạo chiến dịch đóng phí',
+            description: 'Cho phép tạo chiến dịch đóng phí mới',
+            category: 'payments',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 61,
+        },
+        {
+            code: 'payment-campaigns.read',
+            name: 'Xem thông tin chiến dịch đóng phí',
+            description: 'Cho phép xem thông tin chi tiết chiến dịch đóng phí',
+            category: 'payments',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 62,
+        },
+        {
+            code: 'payment-campaigns.update',
+            name: 'Cập nhật chiến dịch đóng phí',
+            description: 'Cho phép cập nhật thông tin chiến dịch đóng phí',
+            category: 'payments',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 63,
+        },
+        {
+            code: 'payment-campaigns.delete',
+            name: 'Xóa chiến dịch đóng phí',
+            description: 'Cho phép xóa chiến dịch đóng phí',
+            category: 'payments',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 64,
+        },
+        {
+            code: 'payment-campaigns.manage_assignments',
+            name: 'Quản lý phân công đóng phí',
+            description: 'Cho phép phân công và quản lý đối tượng đóng phí',
+            category: 'payments',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 65,
+        },
+        {
+            code: 'payment-campaigns.view_reports',
+            name: 'Xem báo cáo đóng phí',
+            description: 'Cho phép xem báo cáo và thống kê đóng phí',
+            category: 'payments',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 66,
+        },
+        {
+            code: 'payment-campaigns.export',
+            name: 'Xuất báo cáo đóng phí',
+            description: 'Cho phép xuất báo cáo đóng phí',
+            category: 'payments',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 67,
         },
     ];
 
