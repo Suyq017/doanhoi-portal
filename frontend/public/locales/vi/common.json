@@ -15,7 +15,11 @@
     "classes": "Lớp học",
     "classesPhonetic": "Lớp học",
     "permissions": "Phân quyền",
-    "permissionsPhonetic": "Phân quyền"
+    "permissionsPhonetic": "Phân quyền",
+    "paymentAdmin": "Quản lý đóng phí",
+    "paymentAdminPhonetic": "Quản lý đóng phí",
+    "myPayments": "Đóng phí của tôi",
+    "myPaymentsPhonetic": "Đóng phí của tôi"
   },
   "actions": {
     "create": "Tạo mới",

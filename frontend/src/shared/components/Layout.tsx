@@ -71,15 +71,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             requiredPermission: 'classes.access'
           },
         ]
-      },
-      {
+      }, {
         name: t('navigation.permissions'),
         href: '/permissions',
         icon: Shield,
         requiredPermission: 'permissions.access'
       },
-      { name: 'Quản lý đóng phí', href: '/admin/payment-campaigns', icon: CreditCard },
-      { name: 'Đóng phí của tôi', href: '/payment/my-campaigns', icon: CreditCard },];    // If not authenticated, return empty navigation (pages will handle auth via AuthGuard)
+      {
+        name: t('navigation.paymentAdmin'),
+        href: '/admin/payment-campaigns',
+        icon: CreditCard,
+        requiredPermission: 'payment-campaigns.access'
+      },
+      {
+        name: t('navigation.myPayments'),
+        href: '/payment/my-campaigns',
+        icon: CreditCard,
+      }
+    ];// If not authenticated, return empty navigation (pages will handle auth via AuthGuard)
     if (!permissions.isAuthenticated) {
       return [];
     }

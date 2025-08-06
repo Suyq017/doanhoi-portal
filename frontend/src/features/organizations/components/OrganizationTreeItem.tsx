@@ -127,10 +127,29 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
             default:
                 return 0;
         }
-    };
-
-    const isInDetailPage = location.pathname.split('/').length === 4; // /organizations/type/code
+    }; const isInDetailPage = location.pathname.split('/').length === 4; // /organizations/type/code
     const isInSubDetailPage = location.pathname.split('/').length === 6; // /organizations/parentType/parentCode/type/code
+
+    // Check xem organization hiện tại có phải là parent organization trong URL không
+    const isCurrentParentOrganization = () => {
+        const segments = location.pathname.split('/');
+
+        // Trường hợp detail page: /organizations/type/code
+        if (isInDetailPage) {
+            const urlType = segments[2];
+            const urlCode = segments[3];
+            return org.type === urlType && org.code === urlCode;
+        }
+
+        // Trường hợp subdetail page: /organizations/parentType/parentCode/type/code  
+        if (isInSubDetailPage) {
+            const parentType = segments[2];
+            const parentCode = segments[3];
+            return org.type === parentType && org.code === parentCode;
+        }
+
+        return false;
+    };
 
     const createDetailPath = (type: string, code?: string) => {
         if (!code) return '#';
@@ -157,10 +176,13 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
 
         // Mặc định
         return `/organizations/${type}/${code}`;
-    };
+    }; const shouldShowDetailLink = () => {
+        // Không hiển thị eye icon nếu organization này là parent organization trong trang hiện tại
+        if (isCurrentParentOrganization()) {
+            return false;
+        }
 
-    const shouldShowDetailLink = () => {
-        // ĐIỀU KIỆN DUY NHẤT: User có trong user_organization của tổ chức này
+        // ĐIỀU KIỆN: User có trong user_organization của tổ chức này
         return isUserInOrganization(org.id);
     };
 
@@ -196,9 +218,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
                         <div className="w-6 mr-2" />
                     )}
 
-                    <Building className="w-5 h-5 text-gray-400 mr-3" />
-
-                    <div className="flex-1">
+                    <Building className="w-5 h-5 text-gray-400 mr-3" />                    <div className="flex-1">
                         <div className="flex items-center space-x-3">
                             <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                                 {org.name}
@@ -206,6 +226,13 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getOrgTypeColor(org.type)}`}>
                                 {getOrgTypeText(org.type)}
                             </span>
+                            {/* Badge cho organizations mà user thuộc về */}
+                            {isUserInOrganization(org.id) && (
+                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                    <span className="mr-1">👤</span>
+                                    {t('organizations:member_badge', { defaultValue: 'Thành viên' })}
+                                </span>
+                            )}
                         </div>
                         {org.description && (
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

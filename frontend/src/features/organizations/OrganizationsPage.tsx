@@ -1,6 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Organization } from '../../shared/types/organization';
+import { useAuth } from '../auth/context/AuthContext';
 import OrganizationTreeItem from './components/OrganizationTreeItem';
 import OrganizationTreeContainer from './components/OrganizationTreeContainer';
 import OrganizationPageLayout from './components/OrganizationPageLayout';
@@ -10,6 +11,7 @@ import { useBreadcrumbJSX } from './hooks/useBreadcrumbJSX';
 
 const Organizations: React.FC = () => {
   const { t } = useTranslation(['organizations', 'common']);
+  const { auth } = useAuth();
   const level = 2;
   const {
     organizations,
@@ -26,6 +28,50 @@ const Organizations: React.FC = () => {
     toasts,
     hideToast
   } = useOrganizationPage();
+
+  // Helper function để check user có thuộc organization không
+  const isUserInOrganization = useCallback((organizationId: string): boolean => {
+    if (!auth.user?.organizations) return false;
+
+    return auth.user.organizations.some(userOrg =>
+      userOrg.organizationId === organizationId && userOrg.isActive
+    );
+  }, [auth.user?.organizations]);
+  // Sắp xếp organizations để ưu tiên những tổ chức user thuộc về
+  const sortedOrganizations = useMemo(() => {
+    if (!organizations.length) return organizations;
+
+    const sortOrganizations = (orgs: Organization[]): Organization[] => {
+      return [...orgs]
+        .map(org => ({
+          ...org,
+          children: org.children ? sortOrganizations(org.children) : undefined
+        }))
+        .sort((a, b) => {
+          const aIsMember = isUserInOrganization(a.id);
+          const bIsMember = isUserInOrganization(b.id);
+
+          // Ưu tiên organizations mà user thuộc về lên đầu
+          if (aIsMember && !bIsMember) return -1;
+          if (!aIsMember && bIsMember) return 1;
+
+          // Nếu cùng membership status, giữ nguyên thứ tự alphabetical
+          return a.name.localeCompare(b.name);
+        });
+    };
+
+    const sorted = sortOrganizations(organizations);
+
+    // Debug log để xem kết quả sắp xếp
+    console.log('🔄 Organizations sorted by membership:',
+      sorted.map(org => ({
+        name: org.name,
+        isMember: isUserInOrganization(org.id)
+      }))
+    );
+
+    return sorted;
+  }, [organizations, isUserInOrganization]);
 
   // ✅ Use breadcrumb JSX for better navigation
   const breadcrumbTitle = useBreadcrumbJSX({
@@ -88,9 +134,8 @@ const Organizations: React.FC = () => {
     handleOrganizationDeleted,
     handleDeleteError
   ]);
-
   return (<OrganizationPageLayout
-    organizations={organizations}
+    organizations={sortedOrganizations} // Use sorted organizations
     title={breadcrumbTitle}
     subtitle={t('organizations:subtitle')}
     stats={stats}
@@ -114,9 +159,9 @@ const Organizations: React.FC = () => {
     onImportModalClose={handleImportModalClose} // Add import modal close handler
   >
     <OrganizationTreeContainer
-      isEmpty={organizations.length === 0}
+      isEmpty={sortedOrganizations.length === 0} // Use sorted organizations
     >
-      {organizations.map(org => renderOrganization(org))}
+      {sortedOrganizations.map(org => renderOrganization(org))} {/* Use sorted organizations */}
     </OrganizationTreeContainer>
   </OrganizationPageLayout>
   );

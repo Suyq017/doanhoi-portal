@@ -115,7 +115,8 @@
             "organizations": "Organization Management",
             "departments": "Department Management",
             "classes": "Class Management",
-            "permissions": "Permission Management"
+            "permissions": "Permission Management",
+            "payments": "Payment Management"
         }
     }
 }

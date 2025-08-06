@@ -3,6 +3,15 @@ import { Trash2 } from 'lucide-react';
 import MultiSelectRoleCombobox from './MultiSelectRoleCombobox';
 import MultiSelectOrganizationCombobox from './MultiSelectOrganizationCombobox';
 
+/**
+ * RolesOrganizationRow - Single row for role assignment
+ * 
+ * New Logic: 1 Role -> Multiple Organizations
+ * - Each row represents exactly ONE role assigned to MULTIPLE organizations
+ * - Role selection is limited to 1 role per row
+ * - Organization selection allows multiple organizations
+ */
+
 export interface Organization {
     id: string;
     name: string;
@@ -20,7 +29,7 @@ interface Role {
 
 interface RoleAssignment {
     id: string;
-    roleIds: string[];
+    roleIds: string[]; // Will contain exactly 1 role ID with new logic
     organizationIds: string[];
     isGlobal: boolean;
 }
@@ -47,7 +56,10 @@ const RolesOrganizationRow: React.FC<RolesOrganizationRowProps> = ({
     disabled = false,
 }) => {
     const handleRoleChange = (roleIds: string[]) => {
-        onUpdate({ roleIds });
+        // With the new format, each assignment should only have one role
+        // If multiple roles are selected, only take the first one
+        const singleRoleId = roleIds.length > 0 ? [roleIds[0]] : [];
+        onUpdate({ roleIds: singleRoleId });
     };
 
     const handleOrganizationChange = (organizationIds: string[]) => {
@@ -73,10 +85,9 @@ const RolesOrganizationRow: React.FC<RolesOrganizationRowProps> = ({
             )}
 
             {/* Labels Row - Always aligned */}
-            <div className="grid grid-cols-2 gap-6 pr-12 mb-2">
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Vai trò
-                </label>
+            <div className="grid grid-cols-2 gap-6 pr-12 mb-2">                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Vai trò (chọn 1)
+            </label>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
                     Tổ chức
                 </label>

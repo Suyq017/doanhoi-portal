@@ -15,7 +15,11 @@
     "classes": "Classes",
     "classesPhonetic": "Classes",
     "permissions": "Permissions",
-    "permissionsPhonetic": "Permissions"
+    "permissionsPhonetic": "Permissions",
+    "paymentAdmin": "Payment Management",
+    "paymentAdminPhonetic": "Payment Management",
+    "myPayments": "My Payments",
+    "myPaymentsPhonetic": "My Payments"
   },
   "actions": {
     "create": "Create",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Shield, ChevronDown, ChevronRight, Users, Building, LayoutDashboard, Building2, GraduationCap, Check, Minus } from 'lucide-react';
+import { X, Shield, ChevronDown, ChevronRight, Users, Building, LayoutDashboard, Building2, GraduationCap, CreditCard, Check, Minus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { roleService, type CreateRoleRequest, type Permission } from '../services/roleService';
 
@@ -48,6 +48,13 @@ const usePermissionGroups = () => {
       icon: GraduationCap,
       color: 'red',
       description: t('permissions.categories.classes')
+    },
+    {
+      id: 'payments',
+      name: t('permissions.categories.payments'),
+      icon: CreditCard,
+      color: 'teal',
+      description: t('permissions.categories.payments')
     },
     {
       id: 'permissions',
@@ -124,21 +131,24 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
         { id: '13', code: 'departments.create', name: 'Tạo đơn vị mới', category: 'departments', context: 'organization', isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
         { id: '14', code: 'departments.read', name: 'Xem thông tin đơn vị', category: 'departments', context: 'organization', isActive: true, sortOrder: 3, createdAt: '', updatedAt: '' },
         { id: '15', code: 'departments.update', name: 'Cập nhật thông tin đơn vị', category: 'departments', context: 'organization', isActive: true, sortOrder: 4, createdAt: '', updatedAt: '' },
-        { id: '16', code: 'departments.delete', name: 'Xóa đơn vị', category: 'departments', context: 'organization', isActive: true, sortOrder: 5, createdAt: '', updatedAt: '' },
-
-        // Classes permissions
+        { id: '16', code: 'departments.delete', name: 'Xóa đơn vị', category: 'departments', context: 'organization', isActive: true, sortOrder: 5, createdAt: '', updatedAt: '' },        // Classes permissions
         { id: '17', code: 'classes.access', name: 'Truy cập trang lớp học', category: 'classes', context: 'organization', isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
         { id: '18', code: 'classes.create', name: 'Tạo lớp học mới', category: 'classes', context: 'organization', isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
         { id: '19', code: 'classes.read', name: 'Xem thông tin lớp học', category: 'classes', context: 'organization', isActive: true, sortOrder: 3, createdAt: '', updatedAt: '' },
         { id: '20', code: 'classes.update', name: 'Cập nhật thông tin lớp học', category: 'classes', context: 'organization', isActive: true, sortOrder: 4, createdAt: '', updatedAt: '' },
         { id: '21', code: 'classes.delete', name: 'Xóa lớp học', category: 'classes', context: 'organization', isActive: true, sortOrder: 5, createdAt: '', updatedAt: '' },
 
-        // Permissions permissions
-        { id: '22', code: 'permissions.access', name: 'Truy cập trang phân quyền', category: 'permissions', context: 'organization', isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
-        { id: '23', code: 'permissions.create', name: 'Tạo vai trò mới', category: 'permissions', context: 'organization', isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
-        { id: '24', code: 'permissions.read', name: 'Xem thông tin vai trò', category: 'permissions', context: 'organization', isActive: true, sortOrder: 3, createdAt: '', updatedAt: '' },
-        { id: '25', code: 'permissions.update', name: 'Cập nhật vai trò', category: 'permissions', context: 'organization', isActive: true, sortOrder: 4, createdAt: '', updatedAt: '' },
-        { id: '26', code: 'permissions.delete', name: 'Xóa vai trò', category: 'permissions', context: 'organization', isActive: true, sortOrder: 5, createdAt: '', updatedAt: '' },
+        // Payment campaigns permissions
+        { id: '27', code: 'payment-campaigns.access', name: 'Truy cập trang quản lý đóng phí', category: 'payments', context: 'organization', isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
+        { id: '28', code: 'payment-campaigns.create', name: 'Tạo chiến dịch đóng phí mới', category: 'payments', context: 'organization', isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
+        { id: '29', code: 'payment-campaigns.read', name: 'Xem thông tin chiến dịch đóng phí', category: 'payments', context: 'organization', isActive: true, sortOrder: 3, createdAt: '', updatedAt: '' },
+        { id: '30', code: 'payment-campaigns.update', name: 'Cập nhật chiến dịch đóng phí', category: 'payments', context: 'organization', isActive: true, sortOrder: 4, createdAt: '', updatedAt: '' },
+        { id: '31', code: 'payment-campaigns.delete', name: 'Xóa chiến dịch đóng phí', category: 'payments', context: 'organization', isActive: true, sortOrder: 5, createdAt: '', updatedAt: '' },        // Permissions permissions
+        { id: '32', code: 'permissions.access', name: 'Truy cập trang phân quyền', category: 'permissions', context: 'organization', isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
+        { id: '33', code: 'permissions.create', name: 'Tạo vai trò mới', category: 'permissions', context: 'organization', isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
+        { id: '34', code: 'permissions.read', name: 'Xem thông tin vai trò', category: 'permissions', context: 'organization', isActive: true, sortOrder: 3, createdAt: '', updatedAt: '' },
+        { id: '35', code: 'permissions.update', name: 'Cập nhật vai trò', category: 'permissions', context: 'organization', isActive: true, sortOrder: 4, createdAt: '', updatedAt: '' },
+        { id: '36', code: 'permissions.delete', name: 'Xóa vai trò', category: 'permissions', context: 'organization', isActive: true, sortOrder: 5, createdAt: '', updatedAt: '' },
       ]);
     } finally {
       setLoading(false);
@@ -245,15 +255,66 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
     if (selectedCount === groupPermissions.length) return 'all';
     return 'partial';
   };
-
-  const getColorClasses = (_color: string) => {
-    // Simplified gray-based color scheme
-    return {
-      bg: 'bg-gray-50 dark:bg-gray-700',
-      border: 'border-gray-200 dark:border-gray-600',
-      text: 'text-gray-700 dark:text-gray-300',
-      icon: 'text-gray-500 dark:text-gray-400'
-    };
+  const getColorClasses = (color: string) => {
+    // Color classes for different permission groups
+    switch (color) {
+      case 'blue':
+        return {
+          bg: 'bg-blue-50 dark:bg-blue-900/20',
+          border: 'border-blue-200 dark:border-blue-800',
+          text: 'text-blue-700 dark:text-blue-300',
+          icon: 'text-blue-500 dark:text-blue-400'
+        };
+      case 'green':
+        return {
+          bg: 'bg-green-50 dark:bg-green-900/20',
+          border: 'border-green-200 dark:border-green-800',
+          text: 'text-green-700 dark:text-green-300',
+          icon: 'text-green-500 dark:text-green-400'
+        };
+      case 'purple':
+        return {
+          bg: 'bg-purple-50 dark:bg-purple-900/20',
+          border: 'border-purple-200 dark:border-purple-800',
+          text: 'text-purple-700 dark:text-purple-300',
+          icon: 'text-purple-500 dark:text-purple-400'
+        };
+      case 'orange':
+        return {
+          bg: 'bg-orange-50 dark:bg-orange-900/20',
+          border: 'border-orange-200 dark:border-orange-800',
+          text: 'text-orange-700 dark:text-orange-300',
+          icon: 'text-orange-500 dark:text-orange-400'
+        };
+      case 'red':
+        return {
+          bg: 'bg-red-50 dark:bg-red-900/20',
+          border: 'border-red-200 dark:border-red-800',
+          text: 'text-red-700 dark:text-red-300',
+          icon: 'text-red-500 dark:text-red-400'
+        };
+      case 'teal':
+        return {
+          bg: 'bg-teal-50 dark:bg-teal-900/20',
+          border: 'border-teal-200 dark:border-teal-800',
+          text: 'text-teal-700 dark:text-teal-300',
+          icon: 'text-teal-500 dark:text-teal-400'
+        };
+      case 'indigo':
+        return {
+          bg: 'bg-indigo-50 dark:bg-indigo-900/20',
+          border: 'border-indigo-200 dark:border-indigo-800',
+          text: 'text-indigo-700 dark:text-indigo-300',
+          icon: 'text-indigo-500 dark:text-indigo-400'
+        };
+      default:
+        return {
+          bg: 'bg-gray-50 dark:bg-gray-700',
+          border: 'border-gray-200 dark:border-gray-600',
+          text: 'text-gray-700 dark:text-gray-300',
+          icon: 'text-gray-500 dark:text-gray-400'
+        };
+    }
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

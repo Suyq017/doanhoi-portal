@@ -2,6 +2,15 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import RolesOrganizationRow, { Organization } from './RolesOrganizationRow';
 
+/**
+ * RolesOrganizationManager - Manages role assignments grouped by role
+ * 
+ * Logic: Each assignment row represents ONE role with MULTIPLE organizations
+ * - 1 role can be assigned to multiple organizations
+ * - Each row shows: [Single Role] -> [Multiple Organizations]
+ * - If same role needs different organization sets, create separate rows
+ */
+
 interface Role {
     id: string;
     name: string;
@@ -11,7 +20,7 @@ interface Role {
 
 interface RoleAssignment {
     id: string;
-    roleIds: string[];
+    roleIds: string[]; // In practice, will only contain 1 role ID due to new grouping logic
     organizationIds: string[];
     isGlobal: boolean;
 }
@@ -71,7 +80,7 @@ const RolesOrganizationManager: React.FC<RolesOrganizationManagerProps> = ({
                     <div className="p-1 bg-doan-200 rounded-full group-hover:bg-doan-300 transition-colors">
                         <Plus className="w-4 h-4" />
                     </div>
-                    Thêm gán vai trò khác
+                    Thêm vai trò khác
                 </button>
             </div>
         </div>

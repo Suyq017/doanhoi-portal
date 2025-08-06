@@ -142,9 +142,12 @@ const MultiSelectRoleCombobox: React.FC<MultiSelectRoleComboboxProps> = ({
 
         const isSelected = selectedRoleIds.includes(roleId);
         if (isSelected) {
-            onRoleSelect(selectedRoleIds.filter(id => id !== roleId));
+            // If deselecting the current role, clear selection
+            onRoleSelect([]);
         } else {
-            onRoleSelect([...selectedRoleIds, roleId]);
+            // Only allow one role selection at a time
+            onRoleSelect([roleId]);
+            setIsOpen(false); // Close dropdown after selection
         }
 
         // Reset selecting flag

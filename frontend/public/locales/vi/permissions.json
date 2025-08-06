@@ -115,7 +115,8 @@
             "organizations": "Quản lý tổ chức",
             "departments": "Quản lý đơn vị",
             "classes": "Quản lý lớp học",
-            "permissions": "Quản lý phân quyền"
+            "permissions": "Quản lý phân quyền",
+            "payments": "Quản lý đóng phí"
         }
     }
 }

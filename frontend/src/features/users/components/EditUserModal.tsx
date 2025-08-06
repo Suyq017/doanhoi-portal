@@ -118,8 +118,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       loadRoles();
       loadOrganizations();
     }
-  }, [isOpen]);
-  // Handle organization membership update
+  }, [isOpen]);  // Handle organization membership update
   const handleOrganizationMembershipUpdate = async () => {
     if (!user) return;
 
@@ -162,12 +161,22 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         });
       }
 
-      // Remove user from organizations (but only if they weren't just added through parent logic)
+      // Smart removal: Only remove user from organizations that are safe to remove
       const orgsToActuallyRemove = orgsToRemove.filter(orgId => !allAddedOrgIds.has(orgId));
+      const safeToRemoveOrgs = await filterSafeToRemoveOrganizations(orgsToActuallyRemove, selectedOrgIds);
 
-      for (const orgId of orgsToActuallyRemove) {
-        await organizationService.removeUserFromOrganizationSafely(orgId, user.id);
+      for (const orgId of safeToRemoveOrgs) {
+        await organizationService.removeUserFromOrganization(orgId, user.id);
         console.log(`Removed user from organization: ${orgId}`);
+      }
+
+      // Log organizations that were not removed for safety reasons
+      const notRemovedOrgs = orgsToActuallyRemove.filter(orgId => !safeToRemoveOrgs.includes(orgId));
+      if (notRemovedOrgs.length > 0) {
+        const notRemovedOrgNames = organizations
+          .filter(org => notRemovedOrgs.includes(org.id))
+          .map(org => org.name);
+        console.log(`Organizations not removed (still needed as parents): ${notRemovedOrgNames.join(', ')}`);
       }
 
       // Update UI state to reflect all organizations that were actually added
@@ -186,8 +195,14 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
       if (showSuccess) {
         const totalAdded = allAddedOrgIds.size;
-        const totalRemoved = orgsToActuallyRemove.length;
-        showSuccess(`Đã cập nhật thành viên tổ chức: +${totalAdded}, -${totalRemoved}`);
+        const totalRemoved = safeToRemoveOrgs.length;
+        const totalKept = notRemovedOrgs.length;
+
+        let message = `Đã cập nhật thành viên tổ chức: +${totalAdded}, -${totalRemoved}`;
+        if (totalKept > 0) {
+          message += ` (giữ lại ${totalKept} tổ chức cha cần thiết)`;
+        }
+        showSuccess(message);
       }
     } catch (error) {
       console.error('Error updating organization membership:', error);
@@ -198,48 +213,123 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     }
   };
 
+  // Helper function to filter organizations that are safe to remove
+  const filterSafeToRemoveOrganizations = async (
+    orgsToRemove: string[],
+    selectedOrgIds: string[]
+  ): Promise<string[]> => {
+    const safeToRemove: string[] = [];
+
+    for (const orgId of orgsToRemove) {
+      // Check if this organization is a parent of any selected organization
+      const isParentOfSelected = await isParentOfAnyOrganization(orgId, selectedOrgIds);
+
+      if (!isParentOfSelected) {
+        // Safe to remove - this org is not a parent of any remaining selected org
+        safeToRemove.push(orgId);
+      } else {
+        console.log(`Keeping organization ${orgId} as it's a parent of selected organizations`);
+      }
+    }
+
+    return safeToRemove;
+  };
+
+  // Helper function to check if an organization is parent of any organization in the list
+  const isParentOfAnyOrganization = async (parentOrgId: string, childOrgIds: string[]): Promise<boolean> => {
+    for (const childOrgId of childOrgIds) {
+      if (await isParentOfOrganization(parentOrgId, childOrgId)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Helper function to check if orgA is parent (ancestor) of orgB
+  const isParentOfOrganization = async (parentOrgId: string, childOrgId: string): Promise<boolean> => {
+    const childOrg = organizations.find(org => org.id === childOrgId);
+    if (!childOrg) return false;
+
+    // Traverse up the parent chain
+    let currentOrg = childOrg;
+    while (currentOrg.parentId) {
+      if (currentOrg.parentId === parentOrgId) {
+        return true;
+      }
+      // Find parent organization
+      const parentOrg = organizations.find(org => org.id === currentOrg.parentId);
+      if (!parentOrg) break;
+      currentOrg = parentOrg;
+    }
+
+    return false;
+  };
+
   const getUserCurrentOrganizationId = (user: ApiUser): string => {
     // Get the organization ID from the first active role
     const activeRole = user.userRoles?.find(ur => ur.isActive && ur.role?.isActive);
     const orgId = activeRole?.organizationId || '';
     return orgId;
-  };
-
-  // Helper function to convert user roles to role assignments
+  };  // Helper function to convert user roles to role assignments
+  // Now groups by role instead of organization (1 role - many organizations)
   const convertUserRolesToAssignments = (user: ApiUser): RoleAssignment[] => {
     const userRoles = user.userRoles?.filter(ur => ur.isActive && ur.role?.isActive) || [];
 
-    // Group roles by organization
-    const rolesByOrg = userRoles.reduce((acc, ur) => {
-      const orgId = ur.organizationId || 'global';
-      if (!acc[orgId]) {
-        acc[orgId] = [];
+    // Group organizations by role
+    const orgsByRole = userRoles.reduce((acc, ur) => {
+      const roleId = ur.roleId;
+      if (!acc[roleId]) {
+        acc[roleId] = {
+          organizations: [],
+          hasGlobal: false
+        };
       }
-      acc[orgId].push(ur.roleId);
+
+      if (ur.organizationId) {
+        // Specific organization assignment
+        acc[roleId].organizations.push(ur.organizationId);
+      } else {
+        // Global assignment (no specific organization)
+        acc[roleId].hasGlobal = true;
+      }
+
       return acc;
-    }, {} as Record<string, string[]>);
+    }, {} as Record<string, { organizations: string[], hasGlobal: boolean }>);
 
     // Convert to RoleAssignment format
-    return Object.entries(rolesByOrg).map(([orgKey, roleIds], index) => ({
-      id: `assignment-${index}`,
-      roleIds: [...new Set(roleIds)], // Remove duplicates
-      organizationIds: orgKey === 'global' ? [] : [orgKey],
-      isGlobal: orgKey === 'global'
-    }));
-  };  // Helper function to get user's organizations
+    const assignments: RoleAssignment[] = [];
+
+    Object.entries(orgsByRole).forEach(([roleId, data]) => {
+      if (data.hasGlobal) {
+        // If has global assignment, create a separate global assignment
+        assignments.push({
+          id: `assignment-${assignments.length}`,
+          roleIds: [roleId],
+          organizationIds: [],
+          isGlobal: true
+        });
+      }
+
+      // If has specific organization assignments, create assignment for those
+      if (data.organizations.length > 0) {
+        const uniqueOrganizations = [...new Set(data.organizations)]; // Remove duplicates
+        assignments.push({
+          id: `assignment-${assignments.length}`,
+          roleIds: [roleId],
+          organizationIds: uniqueOrganizations,
+          isGlobal: false
+        });
+      }
+    });
+
+    return assignments;
+  };// Helper function to get user's organizations
   const getUserOrganizations = (user: ApiUser): Organization[] => {
     const organizationIds = new Set<string>();
     const organizationsMap = new Map<string, Organization>();
 
-    // Get organizations from userRoles (roles assigned to specific organizations)
-    const userRoleOrgIds = user.userRoles
-      ?.filter(ur => ur.isActive && ur.organizationId)
-      .map(ur => ur.organizationId!)
-      .filter(Boolean) || [];
-
-    userRoleOrgIds.forEach(id => organizationIds.add(id));
-
-    // Get organizations from direct user-organization relationships
+    // ONLY get organizations from direct user-organization relationships (user_organization table)
+    // Do NOT include organizations from userRoles to avoid confusion
     const directOrgIds = user.organizations
       ?.filter(org => org.isActive && org.organization)
       .map(org => org.organizationId)
@@ -250,7 +340,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     // Build map of available organizations for quick lookup
     organizations.forEach(org => {
       organizationsMap.set(org.id, org);
-    });    // Convert organization IDs to Organization objects, ensuring all have level property
+    });
+
+    // Convert organization IDs to Organization objects, ensuring all have level property
     const userOrgs: Organization[] = [];
     organizationIds.forEach(orgId => {
       const org = organizationsMap.get(orgId);
@@ -265,10 +357,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       }
     });
 
-    console.log('User organizations found:', {
-      fromUserRoles: userRoleOrgIds,
+    console.log('User organizations found (from user_organization only):', {
       fromDirectRelations: directOrgIds,
-      combined: Array.from(organizationIds),
       finalOrganizations: userOrgs.map(org => ({ id: org.id, name: org.name, code: org.code }))
     });
 
@@ -689,15 +779,17 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 <option value="none">{t('users:membershipStatus.none')}</option>
                 <option value="doan_vien">{t('users:membershipStatus.doan_vien')}</option>
                 <option value="hoi_vien">{t('users:membershipStatus.hoi_vien')}</option>
-                <option value="both">{t('users:membershipStatus.both')}</option>              </select>            </div>          </div>
-
-          {/* Organization Management */}
+                <option value="both">{t('users:membershipStatus.both')}</option>              </select>            </div>          </div>          {/* Organization Management */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Quản lý tổ chức của người dùng
-            </label>            <OrganizationManager
+              Tổ chức thành viên
+            </label>
+
+            <OrganizationManager
               selectedOrganizations={userOrganizations}
-              availableOrganizations={organizations} onOrganizationChange={async (selectedOrgs) => {
+              availableOrganizations={organizations}
+
+              onOrganizationChange={async (selectedOrgs) => {
                 // Just update the UI state immediately - don't make API calls here
                 // API calls will be made when form is submitted
                 console.log('Organization selection changed:', selectedOrgs.map(org => ({ id: org.id, name: org.name })));
@@ -705,8 +797,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 setUserOrganizations(selectedOrgs);
               }}
               disabled={loading}
-            />            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Chọn các tổ chức mà người dùng thuộc về. Khi thêm tổ chức con, người dùng sẽ tự động được thêm vào các tổ chức cha khi cập nhật.
+            />
+
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Hiển thị các tổ chức mà người dùng là thành viên (user_organization). Khác với vai trò tổ chức ở phần "Gán vai trò và tổ chức" bên dưới.
             </p>
           </div>
 
