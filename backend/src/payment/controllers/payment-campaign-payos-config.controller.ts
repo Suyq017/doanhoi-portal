@@ -8,37 +8,40 @@ import {
   Param, 
   UseGuards,
   HttpCode,
-  HttpStatus
+  HttpStatus,
+  Request
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { 
-  PayosConfigService,
+  PaymentCampaignPayosConfigService,
   CreatePayOSConfigDto,
   UpdatePayOSConfigDto
-} from '../services/payos-config.service';
+} from '../services/payment-campaign-payos-config.service';
 
-@ApiTags('Organization PayOS Configuration')
-@Controller('organizations')
+@ApiTags('Payment Campaign PayOS Configuration')
+@Controller('payment-campaigns')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-export class OrganizationPayOSConfigController {
+export class PaymentCampaignPayOSConfigController {
   constructor(
-    private readonly payosConfigService: PayosConfigService,
+    private readonly payosConfigService: PaymentCampaignPayosConfigService,
   ) {}
 
   @Post(':id/payos-config')
-  @ApiOperation({ summary: 'Create PayOS configuration for organization' })
+  @ApiOperation({ summary: 'Create PayOS configuration for payment campaign' })
   @ApiResponse({ status: 201, description: 'PayOS configuration created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid configuration data' })
-  @ApiResponse({ status: 404, description: 'Organization not found' })
+  @ApiResponse({ status: 404, description: 'Payment campaign not found' })
   async createPayOSConfig(
-    @Param('id') organizationId: string,
-    @Body() createDto: Omit<CreatePayOSConfigDto, 'organizationId'>
+    @Param('id') campaignId: string,
+    @Body() createDto: Omit<CreatePayOSConfigDto, 'campaignId'>,
+    @Request() req: any
   ) {
     const config = await this.payosConfigService.createConfig({
       ...createDto,
-      organizationId
+      campaignId,
+      userId: req.user.id // Get user ID from JWT token
     });
 
     return {
@@ -46,10 +49,12 @@ export class OrganizationPayOSConfigController {
       message: 'Cấu hình PayOS đã được tạo thành công',
       data: {
         id: config.id,
+        campaignId: config.campaignId,
         organizationId: config.organizationId,
+        userId: config.userId,
         clientId: config.clientId,
-        apiKey: config.apiKey, // Không mask, lưu dữ liệu thật
-        checksumKey: config.checksumKey, // Không mask, lưu dữ liệu thật
+        apiKey: config.apiKey,
+        checksumKey: config.checksumKey,
         isActive: config.isActive,
         createdAt: config.createdAt,
         updatedAt: config.updatedAt
@@ -58,16 +63,16 @@ export class OrganizationPayOSConfigController {
   }
 
   @Get(':id/payos-config')
-  @ApiOperation({ summary: 'Get PayOS configuration for organization' })
+  @ApiOperation({ summary: 'Get PayOS configuration for payment campaign' })
   @ApiResponse({ status: 200, description: 'PayOS configuration retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Configuration not found' })
-  async getPayOSConfig(@Param('id') organizationId: string) {
-    const config = await this.payosConfigService.getConfig(organizationId);
+  async getPayOSConfig(@Param('id') campaignId: string) {
+    const config = await this.payosConfigService.getConfig(campaignId);
 
     if (!config) {
       return {
         success: false,
-        message: 'Không tìm thấy cấu hình PayOS cho tổ chức này',
+        message: 'Không tìm thấy cấu hình PayOS cho đợt thanh toán này',
         data: null
       };
     }
@@ -76,10 +81,12 @@ export class OrganizationPayOSConfigController {
       success: true,
       data: {
         id: config.id,
+        campaignId: config.campaignId,
         organizationId: config.organizationId,
+        userId: config.userId,
         clientId: config.clientId,
-        apiKey: config.apiKey, // Không mask, trả về dữ liệu thật
-        checksumKey: config.checksumKey, // Không mask, trả về dữ liệu thật
+        apiKey: config.apiKey,
+        checksumKey: config.checksumKey,
         isActive: config.isActive,
         createdAt: config.createdAt,
         updatedAt: config.updatedAt
@@ -88,16 +95,16 @@ export class OrganizationPayOSConfigController {
   }
 
   @Get(':id/payos-config/effective')
-  @ApiOperation({ summary: 'Get effective PayOS configuration (with inheritance)' })
+  @ApiOperation({ summary: 'Get effective PayOS configuration (with inheritance from organization hierarchy)' })
   @ApiResponse({ status: 200, description: 'Effective PayOS configuration retrieved successfully' })
   @ApiResponse({ status: 404, description: 'No configuration found in hierarchy' })
-  async getEffectivePayOSConfig(@Param('id') organizationId: string) {
-    const config = await this.payosConfigService.getEffectiveConfig(organizationId);
+  async getEffectivePayOSConfig(@Param('id') campaignId: string) {
+    const config = await this.payosConfigService.getEffectiveConfig(campaignId);
 
     if (!config) {
       return {
         success: false,
-        message: 'Không tìm thấy cấu hình PayOS cho tổ chức này hoặc tổ chức cha',
+        message: 'Không tìm thấy cấu hình PayOS cho đợt thanh toán này hoặc các tổ chức cha',
         data: null
       };
     }
@@ -106,38 +113,42 @@ export class OrganizationPayOSConfigController {
       success: true,
       data: {
         id: config.id,
+        campaignId: config.campaignId,
         organizationId: config.organizationId,
+        userId: config.userId,
         clientId: config.clientId,
-        apiKey: config.apiKey, // Không mask, trả về dữ liệu thật
-        checksumKey: config.checksumKey, // Không mask, trả về dữ liệu thật
+        apiKey: config.apiKey,
+        checksumKey: config.checksumKey,
         isActive: config.isActive,
         createdAt: config.createdAt,
         updatedAt: config.updatedAt,
-        isInherited: config.organizationId !== organizationId
+        isInherited: config.campaignId !== campaignId // Indicates if config is inherited from parent
       }
     };
   }
 
   @Put(':id/payos-config')
-  @ApiOperation({ summary: 'Update PayOS configuration for organization' })
+  @ApiOperation({ summary: 'Update PayOS configuration for payment campaign' })
   @ApiResponse({ status: 200, description: 'PayOS configuration updated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid configuration data' })
   @ApiResponse({ status: 404, description: 'Configuration not found' })
   async updatePayOSConfig(
-    @Param('id') organizationId: string,
+    @Param('id') campaignId: string,
     @Body() updateDto: UpdatePayOSConfigDto
   ) {
-    const config = await this.payosConfigService.updateConfig(organizationId, updateDto);
+    const config = await this.payosConfigService.updateConfig(campaignId, updateDto);
 
     return {
       success: true,
       message: 'Cấu hình PayOS đã được cập nhật thành công',
       data: {
         id: config.id,
+        campaignId: config.campaignId,
         organizationId: config.organizationId,
+        userId: config.userId,
         clientId: config.clientId,
-        apiKey: config.apiKey, // Không mask, trả về dữ liệu thật
-        checksumKey: config.checksumKey, // Không mask, trả về dữ liệu thật
+        apiKey: config.apiKey,
+        checksumKey: config.checksumKey,
         isActive: config.isActive,
         createdAt: config.createdAt,
         updatedAt: config.updatedAt
@@ -146,12 +157,12 @@ export class OrganizationPayOSConfigController {
   }
 
   @Delete(':id/payos-config')
-  @ApiOperation({ summary: 'Delete PayOS configuration for organization' })
+  @ApiOperation({ summary: 'Delete PayOS configuration for payment campaign' })
   @ApiResponse({ status: 200, description: 'PayOS configuration deleted successfully' })
   @ApiResponse({ status: 404, description: 'Configuration not found' })
   @HttpCode(HttpStatus.OK)
-  async deletePayOSConfig(@Param('id') organizationId: string) {
-    await this.payosConfigService.deleteConfig(organizationId);
+  async deletePayOSConfig(@Param('id') campaignId: string) {
+    await this.payosConfigService.deleteConfig(campaignId);
 
     return {
       success: true,
@@ -163,15 +174,15 @@ export class OrganizationPayOSConfigController {
   @ApiOperation({ summary: 'Toggle PayOS configuration active status' })
   @ApiResponse({ status: 200, description: 'PayOS configuration status toggled successfully' })
   @ApiResponse({ status: 404, description: 'Configuration not found' })
-  async toggleActiveStatus(@Param('id') organizationId: string) {
-    const config = await this.payosConfigService.toggleActive(organizationId);
+  async toggleActiveStatus(@Param('id') campaignId: string) {
+    const config = await this.payosConfigService.toggleActive(campaignId);
 
     return {
       success: true,
       message: `Cấu hình PayOS đã được ${config.isActive ? 'bật' : 'tắt'}`,
       data: {
         id: config.id,
-        organizationId: config.organizationId,
+        campaignId: config.campaignId,
         isActive: config.isActive,
         updatedAt: config.updatedAt
       }
@@ -179,17 +190,17 @@ export class OrganizationPayOSConfigController {
   }
 
   @Post(':id/payos-config/test-connection')
-  @ApiOperation({ summary: 'Test PayOS connection for organization' })
+  @ApiOperation({ summary: 'Test PayOS connection for payment campaign' })
   @ApiResponse({ status: 200, description: 'PayOS connection test completed' })
   @ApiResponse({ status: 400, description: 'Connection test failed' })
-  async testConnection(@Param('id') organizationId: string) {
+  async testConnection(@Param('id') campaignId: string) {
     try {
-      const config = await this.payosConfigService.getEffectiveConfig(organizationId);
+      const config = await this.payosConfigService.getEffectiveConfig(campaignId);
       
       if (!config) {
         return {
           success: false,
-          message: 'Không tìm thấy cấu hình PayOS cho tổ chức này',
+          message: 'Không tìm thấy cấu hình PayOS cho đợt thanh toán này',
           data: null
         };
       }
@@ -204,7 +215,7 @@ export class OrganizationPayOSConfigController {
         success: isValid,
         message: isValid ? 'Kết nối PayOS thành công' : 'Kết nối PayOS thất bại',
         data: {
-          organizationId,
+          campaignId,
           isConnectionValid: isValid,
           testedAt: new Date().toISOString()
         }

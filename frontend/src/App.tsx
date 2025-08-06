@@ -16,9 +16,10 @@ import { AuthProvider, AuthCallback, LoginPage, ProtectedRoute, EnhancedProtecte
 import {
   PaymentCampaignsPage,
   CreatePaymentCampaignPage,
-  PaymentCampaignDetailPage,
+  EditPaymentCampaignPage,
   PaymentResultPage,
-  MyCampaignsPage
+  MyCampaignsPage,
+  PaymentCampaignDetailPage
 } from './features/fee-collection';
 import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
@@ -215,11 +216,20 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
-
+                    <Route
+                      path="/admin/payment-campaigns/:id/edit"
+                      element={
+                        <ProtectedRoute>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <EditPaymentCampaignPage />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </ProtectedRoute>
+                      }
+                    />
                     { /* Authentication Callback */}
                     <Route path="/auth/callback" element={<AuthCallback />} />
-
-
                   </Routes>
                 </AuthGuard>
               }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
-import { paymentService } from '../../shared/services/fee-collection-service';
+import { paymentService } from '../../../../shared/services/fee-collection-service';
 
 interface PaymentStatus {
   id: string;
@@ -166,7 +166,7 @@ export const PaymentResultPage: React.FC = () => {
   const statusDisplay = getStatusDisplay(paymentStatus.status);
 
   return (
-    <div className="min-h-screen py-8 bg-gray-50">
+    <div className="min-h-screen py-8">
       <div className="max-w-md px-4 mx-auto">
         <div className="overflow-hidden bg-white rounded-lg shadow-lg">
           {/* Header */}

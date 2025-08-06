@@ -16,6 +16,9 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [feeLevels, setFeeLevels] = useState<any[]>([]);
 
+  // Check if campaign is in read-only state
+  const readOnly = campaign.status === 'COMPLETED' || campaign.status === 'CANCELLED';
+
   // Fetch assignments and fee levels
   useEffect(() => {
     fetchAssignments();
@@ -83,8 +86,6 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
 
   const handleBulkCreateSubmit = async (formData: any) => {
     try {
-      console.log('Received form data:', formData);
-      
       // Create array of assignment DTOs for backend
       const assignments = selectedMemberIds.map(userId => ({
         campaignId: campaign.id,
@@ -95,11 +96,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
         dueDate: formData.dueDate,
       }));
 
-      console.log('Sending bulk assignments:', assignments);
-
       const response = await paymentAssignmentService.createMultipleAssignments(assignments);
-      
-      console.log('Bulk assignment response:', response);
       
       // Add new assignments to the list
       const newAssignments = (response as any).data || response || [];
@@ -113,11 +110,6 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
       console.error('Error creating bulk assignments:', error);
       // TODO: Show error message to user
     }
-  };
-
-  const handleAssignmentEdit = (assignment: any) => {
-    // Handle editing logic - could open a modal for editing
-    console.log('Edit assignment:', assignment);
   };
 
   const handleAssignmentDelete = async (assignmentId: string) => {
@@ -134,32 +126,37 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
     <div className="space-y-6">
       {/* Assignment List */}
       <AssignmentList
+        campaign={campaign}
         assignments={assignments}
         loading={loading}
-        onEditAssignment={handleAssignmentEdit}
-        onDeleteAssignment={handleAssignmentDelete}
+        onDeleteAssignment={readOnly ? undefined : handleAssignmentDelete}
         onExportList={handleExport}
-        onBulkCreate={handleBulkCreate}
+        onBulkCreate={readOnly ? undefined : handleBulkCreate}
         campaignEndDate={campaign.endDate}
-        campaignStatus={campaign.status}
         feeLevelsCount={feeLevels.length}
+        readOnly={readOnly}
       />
 
       {/* Bulk Create Modal */}
       {showBulkCreate && (
-        <div className="fixed inset-0 z-50 w-full h-full overflow-y-auto bg-gray-600 bg-opacity-50">
-          <div className="relative w-11/12 max-w-6xl p-5 mx-auto bg-white border rounded-md shadow-lg top-20">
+        <div className="fixed inset-0 z-50 w-full h-full overflow-y-auto bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-75">
+          <div className="relative w-11/12 max-w-6xl p-5 mx-auto bg-white border rounded-md shadow-lg top-20 dark:bg-gray-800 dark:border-gray-700">
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Phân Công Thành Viên Đóng Phí
+                  {readOnly && (
+                    <span className="ml-2 text-orange-600 dark:text-orange-400">
+                      (Chỉ xem - đợt đã {campaign.status === 'COMPLETED' ? 'hoàn thành' : 'hủy'})
+                    </span>
+                  )}
                 </h3>
                 <button
                   onClick={() => {
                     setShowBulkCreate(false);
                     setSelectedMemberIds([]);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
                   <span className="sr-only">Đóng</span>
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -171,7 +168,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Member Selection */}
                 <div>
-                  <h4 className="mb-3 font-medium text-gray-900 text-md">
+                  <h4 className="mb-3 font-medium text-gray-900 text-md dark:text-white">
                     Chọn Thành Viên
                   </h4>
                   <MemberSelector
@@ -183,7 +180,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
 
                 {/* Assignment Form */}
                 <div>
-                  <h4 className="mb-3 font-medium text-gray-900 text-md">
+                  <h4 className="mb-3 font-medium text-gray-900 text-md dark:text-white">
                     Thiết Lập Mức Phí
                   </h4>
                   <AssignmentBulkForm

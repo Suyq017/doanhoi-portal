@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PayosConfigService } from '../payment/services/payos-config.service';
+import { PaymentCampaignPayosConfigService } from '../payment/services/payment-campaign-payos-config.service';
 import { PaymentHistoryService } from '../payment/services/payment-history.service';
 import { PaymentAssignmentService } from '../payment/services/payment-assignment.service';
 import { PaymentHistoryStatus } from '../entities/payment-history.entity';
@@ -9,19 +9,19 @@ import PayOS = require('@payos/node');
 export class SimplePayosService {
 
   constructor(
-    private payosConfigService: PayosConfigService,
+    private payosConfigService: PaymentCampaignPayosConfigService,
     private paymentHistoryService: PaymentHistoryService,
     private paymentAssignmentService: PaymentAssignmentService
   ) {}
 
   /**
    * Gọi SDK để tạo link thanh toán mới.
-   * @param orderData - Đối tượng chứa thông tin đơn hàng (amount, description, orderCode, returnUrl, cancelUrl, organizationId).
+   * @param orderData - Đối tượng chứa thông tin đơn hàng (amount, description, orderCode, returnUrl, cancelUrl, campaignId).
    * @returns Promise chứa đối tượng link thanh toán từ PayOS.
    */
   async createPaymentLink(orderData: any) {
-    // Lấy config từ database theo organizationId
-    const config = await this.payosConfigService.getEffectiveConfig(orderData.organizationId);
+    // Lấy config từ database theo campaignId với fallback hierarchy
+    const config = await this.payosConfigService.getEffectiveConfig(orderData.campaignId);
     
     // Tạo PayOS instance với config động từ database
     const payos = new PayOS(
@@ -29,8 +29,8 @@ export class SimplePayosService {
       config.apiKey,
       config.checksumKey
     );
-    // Xóa organizationId khỏi orderData trước khi gửi đến PayOS
-    // const { organizationId, ...payosOrderData } = orderData;
+    // Xóa campaignId khỏi orderData trước khi gửi đến PayOS
+    // const { campaignId, ...payosOrderData } = orderData;
     
     return payos.createPaymentLink(orderData);
   }
@@ -38,13 +38,13 @@ export class SimplePayosService {
   /**
    * Gọi SDK để lấy thông tin của một link thanh toán đã tạo và cập nhật trạng thái.
    * @param orderCode - Mã đơn hàng cần kiểm tra.
-   * @param organizationId - ID tổ chức để lấy config PayOS.
+   * @param campaignId - ID campaign để lấy config PayOS.
    * @returns Promise chứa thông tin chi tiết của link thanh toán.
    */
-  async getPaymentLinkInformation(orderCode: number, organizationId: string) {
+  async getPaymentLinkInformation(orderCode: number, campaignId: string) {
     try {
-      // Lấy config từ database theo organizationId
-      const config = await this.payosConfigService.getEffectiveConfig(organizationId);
+      // Lấy config từ database theo campaignId với fallback hierarchy
+      const config = await this.payosConfigService.getEffectiveConfig(campaignId);
       
       // Tạo PayOS instance với config động từ database
       const payos = new PayOS(
