@@ -39,7 +39,7 @@ class PaymentCampaignService {
     }
     return response.json();
   }
-  async getPaymentCampaignById(id: string): Promise<ApiResponse<PaymentCampaign>> {
+  async getPaymentCampaignById(id: string): Promise<PaymentCampaign> {
     const response = await fetch(`${API_BASE}/payment-campaigns/${id}`, {
       headers: this.getAuthHeaders()
     });
@@ -73,7 +73,7 @@ class PaymentCampaignService {
   }
   async updatePaymentCampaign(id: string, data: UpdatePaymentCampaignDto): Promise<ApiResponse<PaymentCampaign>> {
     const response = await fetch(`${API_BASE}/payment-campaigns/${id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
     });
@@ -84,7 +84,7 @@ class PaymentCampaignService {
     return response.json();
   }
 
-  async deletePaymentCampaign(id: string): Promise<ApiResponse<void>> {
+  async deletePaymentCampaign(id: string): Promise<void> {
     const response = await fetch(`${API_BASE}/payment-campaigns/${id}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),
@@ -93,7 +93,7 @@ class PaymentCampaignService {
     if (!response.ok) {
       throw new Error('Failed to delete payment campaign');
     }
-    return response.json();
+
   }
   // Status Management
   async activatePaymentCampaign(id: string): Promise<ApiResponse<PaymentCampaign>> {

@@ -177,11 +177,11 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-900">Mức Phí</h3>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Mức Phí</h3>
         {!readOnly && (
           <button
             onClick={startCreate}
-            className="inline-flex items-center px-3 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700"
+            className="inline-flex items-center px-3 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
           >
             <Plus className="w-4 h-4 mr-1" />
             Thêm Mức Phí
@@ -191,68 +191,68 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
 
       {/* Error Message */}
       {error && (
-        <div className="px-4 py-3 text-red-700 border border-red-200 rounded bg-red-50">
+        <div className="px-4 py-3 text-red-700 border border-red-200 rounded bg-red-50 dark:bg-red-900 dark:border-red-800 dark:text-red-200">
           {error}
         </div>
       )}
 
       {/* Create/Edit Form */}
       {(isCreating || editingId) && !readOnly && (
-        <form onSubmit={handleSubmit} className="p-4 border rounded-lg bg-gray-50">
-          <h4 className="mb-3 font-medium text-gray-900">
+        <form onSubmit={handleSubmit} className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+          <h4 className="mb-3 font-medium text-gray-900 dark:text-white">
             {isCreating ? 'Thêm Mức Phí Mới' : 'Chỉnh Sửa Mức Phí'}
           </h4>
           
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Tên mức phí <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.levelName}
                 onChange={(e) => setFormData(prev => ({ ...prev, levelName: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 placeholder="VD: Sinh viên chính quy"
                 required
               />
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Số tiền (VNĐ) <span className="text-red-500">*</span>
               </label>
               <input
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="50.000"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                placeholder="50000"
                 min="1"
                 required
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Mô tả
               </label>
               <input
                 type="text"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 placeholder="Mô tả ngắn gọn về mức phí này"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Ghi chú chi tiết
               </label>
               <textarea
                 value={formData.note}
                 onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 placeholder="Ghi chú chi tiết, điều kiện áp dụng..."
               />
             </div>
@@ -263,9 +263,9 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                   type="checkbox"
                   checked={formData.isDefault}
                   onChange={(e) => setFormData(prev => ({ ...prev, isDefault: e.target.checked }))}
-                  className="text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
                 />
-                <span className="ml-2 text-sm text-gray-700">Đặt làm mức phí mặc định</span>
+                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Đặt làm mức phí mặc định</span>
               </label>
             </div>
           </div>
@@ -274,14 +274,14 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
             <button
               type="button"
               onClick={resetForm}
-              className="px-3 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md hover:bg-gray-50"
+              className="px-3 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
             >
               <X className="inline w-4 h-4 mr-1" />
               Hủy
             </button>
             <button
               type="submit"
-              className="px-3 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700"
+              className="px-3 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
               <Save className="inline w-4 h-4 mr-1" />
               Lưu
@@ -292,37 +292,37 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
 
       {/* Fee Levels List */}
       {feeLevels.length === 0 ? (
-        <div className="py-8 text-center text-gray-500">
+        <div className="py-8 text-center text-gray-500 dark:text-gray-400">
           Chưa có mức phí nào
         </div>
       ) : (
         <div className="space-y-3">
           {feeLevels.map((level) => (
-            <div key={level.id} className="p-4 bg-white border border-gray-200 rounded-lg">
+            <div key={level.id} className="p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
-                    <h4 className="font-medium text-gray-900">{level.levelName}</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-white">{level.levelName}</h4>
                     {level.isDefault && (
-                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">
+                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200">
                         <Star className="w-3 h-3 mr-1" />
                         Mặc định
                       </span>
                     )}
                   </div>
                   
-                  <div className="mt-1 text-lg font-semibold text-blue-600">
+                  <div className="mt-1 text-lg font-semibold text-blue-600 dark:text-blue-400">
                     {formatAmount(level.amount)}
                   </div>
                   
                   {level.description && (
-                    <div className="mt-1 text-sm text-gray-600">
+                    <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                       {level.description}
                     </div>
                   )}
                   
                   {level.note && (
-                    <div className="p-2 mt-2 text-sm text-gray-500 rounded bg-gray-50">
+                    <div className="p-2 mt-2 text-sm text-gray-500 rounded bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                       {level.note}
                     </div>
                   )}
@@ -333,7 +333,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                     {!level.isDefault && (
                       <button
                         onClick={() => handleSetDefault(level.id)}
-                        className="text-yellow-600 hover:text-yellow-800"
+                        className="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300"
                         title="Đặt làm mặc định"
                       >
                         <StarOff className="w-4 h-4" />
@@ -342,7 +342,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                     
                     <button
                       onClick={() => startEdit(level)}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                       title="Chỉnh sửa"
                     >
                       <Edit className="w-4 h-4" />
@@ -350,7 +350,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                     
                     <button
                       onClick={() => handleDelete(level.id)}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                       title="Xóa"
                     >
                       <Trash2 className="w-4 h-4" />

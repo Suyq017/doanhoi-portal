@@ -1,7 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindManyOptions } from 'typeorm';
 import { PaymentCampaign, PaymentCampaignStatus } from '../../entities/payment-campaign.entity';
+import { PaymentAssignment, PaymentAssignmentStatus } from '../../entities/payment-assignment.entity';
+import { PaymentHistory } from '../../entities/payment-history.entity';
+import { PaymentCampaignPayosConfig } from '../../entities/payment-campaign-payos-config.entity';
 import { User } from '../../entities/user.entity';
 import { Organization } from '../../entities/organization.entity';
 import { CreatePaymentCampaignDto } from '../dto/create-payment-campaign.dto';
@@ -9,9 +12,17 @@ import { UpdatePaymentCampaignDto } from '../dto/update-payment-campaign.dto';
 
 @Injectable()
 export class PaymentCampaignService {
+  private readonly logger = new Logger(PaymentCampaignService.name);
+
   constructor(
     @InjectRepository(PaymentCampaign)
     private readonly campaignRepository: Repository<PaymentCampaign>,
+    @InjectRepository(PaymentAssignment)
+    private readonly assignmentRepository: Repository<PaymentAssignment>,
+    @InjectRepository(PaymentHistory)
+    private readonly paymentHistoryRepository: Repository<PaymentHistory>,
+    @InjectRepository(PaymentCampaignPayosConfig)
+    private readonly payosConfigRepository: Repository<PaymentCampaignPayosConfig>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Organization)
@@ -55,10 +66,13 @@ export class PaymentCampaignService {
   async findAll(options?: {
     organizationId?: string;
     status?: PaymentCampaignStatus;
+    search?: string;
+    startDate?: string;
+    endDate?: string;
     page?: number;
     limit?: number;
-  }): Promise<{ campaigns: PaymentCampaign[]; total: number }> {
-    const { organizationId, status, page = 1, limit = 20 } = options || {};
+  }): Promise<{ campaigns: PaymentCampaign[]; page: number; limit: number; total: number; totalPages: number }> {
+    const { organizationId, status, search, startDate, endDate, page = 1, limit = 20 } = options || {};
 
     const queryOptions: FindManyOptions<PaymentCampaign> = {
       relations: ['organization', 'createdByUser', 'feeLevels'],
@@ -67,15 +81,77 @@ export class PaymentCampaignService {
       take: limit
     };
 
-    if (organizationId || status) {
-      queryOptions.where = {};
-      if (organizationId) queryOptions.where.organizationId = organizationId;
-      if (status) queryOptions.where.status = status;
+    // Build where conditions
+    const whereConditions: any = {};
+    
+    if (organizationId) {
+      whereConditions.organizationId = organizationId;
+    }
+    
+    if (status) {
+      whereConditions.status = status;
+    }
+
+    if (Object.keys(whereConditions).length > 0) {
+      queryOptions.where = whereConditions;
+    }
+
+    // Note: For search, startDate, endDate filters, we need to use QueryBuilder for more complex queries
+    // For now, we'll implement basic filtering. Advanced filtering with LIKE queries would need QueryBuilder
+    if (search || startDate || endDate) {
+      const queryBuilder = this.campaignRepository.createQueryBuilder('campaign')
+        .leftJoinAndSelect('campaign.organization', 'organization')
+        .leftJoinAndSelect('campaign.createdByUser', 'createdByUser')
+        .leftJoinAndSelect('campaign.feeLevels', 'feeLevels')
+        .orderBy('campaign.createdAt', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit);
+
+      // Apply basic where conditions
+      if (organizationId) {
+        queryBuilder.andWhere('campaign.organizationId = :organizationId', { organizationId });
+      }
+      
+      if (status) {
+        queryBuilder.andWhere('campaign.status = :status', { status });
+      }
+
+      // Apply search filter
+      if (search) {
+        queryBuilder.andWhere('campaign.name ILIKE :search', { search: `%${search}%` });
+      }
+
+      // Apply date filters
+      if (startDate) {
+        queryBuilder.andWhere('campaign.startDate >= :startDate', { startDate });
+      }
+
+      if (endDate) {
+        queryBuilder.andWhere('campaign.endDate <= :endDate', { endDate });
+      }
+
+      const [campaigns, total] = await queryBuilder.getManyAndCount();
+      const totalPages = Math.ceil(total / limit);
+
+      return { 
+        campaigns, 
+        page, 
+        limit, 
+        total, 
+        totalPages 
+      };
     }
 
     const [campaigns, total] = await this.campaignRepository.findAndCount(queryOptions);
+    const totalPages = Math.ceil(total / limit);
 
-    return { campaigns, total };
+    return { 
+      campaigns, 
+      page, 
+      limit, 
+      total, 
+      totalPages 
+    };
   }
 
   /**
@@ -110,8 +186,50 @@ export class PaymentCampaignService {
       }
     }
 
+    // Check if status is being updated to CANCELLED or COMPLETED
+    const isStatusChangedToFinished = updateDto.status && 
+      (updateDto.status === PaymentCampaignStatus.CANCELLED || updateDto.status === PaymentCampaignStatus.COMPLETED) &&
+      campaign.status !== updateDto.status;
+
     Object.assign(campaign, updateDto);
-    return this.campaignRepository.save(campaign);
+    const updatedCampaign = await this.campaignRepository.save(campaign);
+
+    // If campaign status changed to CANCELLED or COMPLETED, update pending assignments to overdue
+    if (isStatusChangedToFinished) {
+      await this.updatePendingAssignmentsToOverdue(id);
+    }
+
+    return updatedCampaign;
+  }
+
+  /**
+   * Update all pending assignments to overdue for a campaign
+   */
+  private async updatePendingAssignmentsToOverdue(campaignId: string): Promise<void> {
+    this.logger.log(`Updating pending assignments to overdue for campaign ${campaignId}`);
+
+    // Find all pending assignments for this campaign
+    const pendingAssignments = await this.assignmentRepository.find({
+      where: { 
+        campaignId: campaignId,
+        status: PaymentAssignmentStatus.PENDING
+      }
+    });
+
+    if (pendingAssignments.length > 0) {
+      // Update all pending assignments to overdue
+      await this.assignmentRepository.update(
+        { 
+          campaignId: campaignId,
+          status: PaymentAssignmentStatus.PENDING
+        },
+        { status: PaymentAssignmentStatus.OVERDUE }
+      );
+
+      this.logger.log(`Updated ${pendingAssignments.length} pending assignments to overdue for campaign ${campaignId}`);
+    } else {
+      this.logger.log(`No pending assignments found for campaign ${campaignId}`);
+    }
   }
 
   /**
@@ -124,7 +242,103 @@ export class PaymentCampaignService {
       throw new BadRequestException('Cannot delete active campaign');
     }
 
-    await this.campaignRepository.remove(campaign);
+    // Xóa cascade: payment history trước, assignment sau, campaign cuối cùng
+    await this.removeWithCascade(id);
+  }
+
+  /**
+   * Remove campaign with cascade delete of related data
+   */
+  private async removeWithCascade(campaignId: string): Promise<void> {
+    this.logger.log(`Starting cascade delete for campaign ${campaignId}`);
+
+    // Bước 1: Tìm tất cả assignments thuộc campaign này
+    const assignments = await this.assignmentRepository.find({
+      where: { campaignId: campaignId }
+    });
+
+    this.logger.log(`Found ${assignments.length} assignments to delete for campaign ${campaignId}`);
+
+    // Bước 2: Xóa tất cả payment history liên quan đến các assignments
+    for (const assignment of assignments) {
+      const paymentHistories = await this.paymentHistoryRepository.find({
+        where: { assignment_id: assignment.id }
+      });
+
+      if (paymentHistories.length > 0) {
+        await this.paymentHistoryRepository.remove(paymentHistories);
+        this.logger.log(`Deleted ${paymentHistories.length} payment history records for assignment ${assignment.id}`);
+      }
+    }
+
+    // Bước 3: Xóa tất cả assignments
+    if (assignments.length > 0) {
+      await this.assignmentRepository.remove(assignments);
+      this.logger.log(`Deleted ${assignments.length} assignments for campaign ${campaignId}`);
+    }
+
+    // Bước 4: Xóa PayOS config nếu có
+    const payosConfigs = await this.payosConfigRepository.find({
+      where: { campaignId: campaignId }
+    });
+
+    if (payosConfigs.length > 0) {
+      await this.payosConfigRepository.remove(payosConfigs);
+      this.logger.log(`Deleted ${payosConfigs.length} PayOS configs for campaign ${campaignId}`);
+    }
+
+    // Bước 5: Xóa campaign
+    const campaign = await this.campaignRepository.findOne({
+      where: { id: campaignId }
+    });
+
+    if (campaign) {
+      await this.campaignRepository.remove(campaign);
+      this.logger.log(`Deleted campaign ${campaignId}`);
+    }
+  }
+
+  /**
+   * Check if campaign can be safely deleted
+   */
+  async canDelete(id: string): Promise<{ canDelete: boolean; reason?: string; relatedData?: any }> {
+    const campaign = await this.findOne(id);
+
+    // Không thể xóa campaign đang ACTIVE
+    if (campaign.status === PaymentCampaignStatus.ACTIVE) {
+      return {
+        canDelete: false,
+        reason: 'Cannot delete active campaign'
+      };
+    }
+
+    // Đếm assignments và payment histories liên quan
+    const assignments = await this.assignmentRepository.find({
+      where: { campaignId: id }
+    });
+
+    let totalPaymentHistories = 0;
+    let paidHistoryCount = 0;
+
+    for (const assignment of assignments) {
+      const paymentHistories = await this.paymentHistoryRepository.find({
+        where: { assignment_id: assignment.id }
+      });
+
+      totalPaymentHistories += paymentHistories.length;
+      paidHistoryCount += paymentHistories.filter(h => h.status === 'PAID').length;
+    }
+
+    // Có thể xóa campaign ở trạng thái CANCELLED hoặc COMPLETED
+    return {
+      canDelete: true,
+      relatedData: {
+        assignmentCount: assignments.length,
+        totalPaymentHistories,
+        paidHistoryCount,
+        campaignStatus: campaign.status
+      }
+    };
   }
 
   /**
@@ -157,7 +371,12 @@ export class PaymentCampaignService {
     }
 
     campaign.status = PaymentCampaignStatus.COMPLETED;
-    return this.campaignRepository.save(campaign);
+    const updatedCampaign = await this.campaignRepository.save(campaign);
+
+    // Update pending assignments to overdue
+    await this.updatePendingAssignmentsToOverdue(id);
+
+    return updatedCampaign;
   }
 
   /**
@@ -171,7 +390,12 @@ export class PaymentCampaignService {
     }
 
     campaign.status = PaymentCampaignStatus.CANCELLED;
-    return this.campaignRepository.save(campaign);
+    const updatedCampaign = await this.campaignRepository.save(campaign);
+
+    // Update pending assignments to overdue
+    await this.updatePendingAssignmentsToOverdue(id);
+
+    return updatedCampaign;
   }
 
   /**

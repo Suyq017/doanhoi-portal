@@ -28,12 +28,18 @@ export class PaymentCampaignController {
   findAll(
     @Query('organizationId') organizationId?: string,
     @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     return this.campaignService.findAll({
       organizationId,
       status: status as any,
+      search,
+      startDate,
+      endDate,
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
     });
