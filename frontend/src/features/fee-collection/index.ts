@@ -2,8 +2,6 @@
 
 // Admin Pages
 export { default as PaymentCampaignsPage } from './page/admin/PaymentCampaignsPage';
-export { default as CreatePaymentCampaignPage } from './page/admin/CreatePaymentCampaignPage';
-export { default as EditPaymentCampaignPage } from './page/admin/EditPaymentCampaignPage';
 export { default as CreatePaymentFeeLevelPage } from './page/admin/CreatePaymentFeeLevelPage';
 export { default as EditPaymentFeeLevelPage } from './page/admin/EditPaymentFeeLevelPage';
 export { default as PaymentCampaignDetailPage } from './page/admin/PaymentCampaignDetailPage';

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, X, Users, AlertCircle } from 'lucide-react';
 import { PaymentFeeLevel } from '../../../types';
+import SearchableCombobox from '@/shared/components/SearchableCombobox';
 
 interface AssignmentBulkFormProps {
   campaignId: string;
@@ -15,10 +16,8 @@ interface AssignmentBulkFormProps {
 interface BulkAssignmentData {
   campaignId: string;
   userIds: string[];
-  feeLevelId?: string;
-  customAmount?: number;
+  feeLevelId: string;
   notes?: string;
-  useCustomAmount: boolean;
   dueDate: string;
 }
 
@@ -35,9 +34,7 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
     campaignId,
     userIds: selectedMemberIds,
     feeLevelId: '',
-    customAmount: 0,
     notes: '',
-    useCustomAmount: false,
     dueDate: campaignEndDate
   });
 
@@ -56,13 +53,10 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
     if (formData.feeLevelId) {
       const feeLevel = feeLevels.find(level => level.id === formData.feeLevelId);
       setSelectedFeeLevel(feeLevel || null);
-      if (feeLevel && !formData.useCustomAmount) {
-        setFormData(prev => ({ ...prev, customAmount: feeLevel.amount }));
-      }
     } else {
       setSelectedFeeLevel(null);
     }
-  }, [formData.feeLevelId, feeLevels, formData.useCustomAmount]);
+  }, [formData.feeLevelId, feeLevels]);
 
   const handleFeeLevelChange = (feeLevelId: string) => {
     setFormData(prev => ({ ...prev, feeLevelId }));
@@ -79,13 +73,8 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
       return false;
     }
 
-    if (!formData.feeLevelId && !formData.useCustomAmount) {
-      setError('Vui lòng chọn mức phí hoặc nhập số tiền tùy chỉnh');
-      return false;
-    }
-
-    if ((formData.customAmount || 0) <= 0) {
-      setError('Số tiền phải lớn hơn 0');
+    if (!formData.feeLevelId) {
+      setError('Vui lòng chọn mức phí');
       return false;
     }
 
@@ -103,14 +92,8 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
 
     if (!validateForm()) return;
 
-    const submitData = {
-      ...formData,
-      // Chỉ gửi feeLevelId nếu không dùng custom amount
-      feeLevelId: formData.useCustomAmount ? undefined : formData.feeLevelId
-    };
-
-    console.log('Submitting bulk assignment data:', submitData);
-    onSubmit(submitData);
+    console.log('Submitting bulk assignment data:', formData);
+    onSubmit(formData);
   };
 
   const formatAmount = (amount: number) => {
@@ -125,7 +108,7 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
   };
 
   const getTotalAmount = () => {
-    return (formData.customAmount || 0) * formData.userIds.length;
+    return selectedFeeLevel ? selectedFeeLevel.amount * formData.userIds.length : 0;
   };
 
   return (
@@ -148,19 +131,6 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
-        {/* Due Date Info */}
-        <div className="p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900 dark:border-blue-800">
-          <div className="flex items-start space-x-3">
-            <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-medium text-blue-900 dark:text-blue-200">Thông Tin Hạn Thanh Toán</h4>
-              <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
-                Hạn thanh toán sẽ được tự động đặt theo ngày kết thúc của đợt đóng phí: {' '}
-                <span className="font-medium">{formatDate(campaignEndDate)}</span>
-              </p>
-            </div>
-          </div>
-        </div>
 
         {/* Fee Level Selection */}
         <div className="space-y-4">
@@ -168,24 +138,21 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
             <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               Chọn Mức Phí
             </label>
-            <select
+            <SearchableCombobox
               value={formData.feeLevelId}
-              onChange={(e) => handleFeeLevelChange(e.target.value)}
-              disabled={formData.useCustomAmount || loading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:disabled:bg-gray-600"
-            >
-              <option value="">Chọn mức phí có sẵn...</option>
-              {feeLevels.map(level => (
-                <option key={level.id} value={level.id}>
-                  {level.levelName} - {formatAmount(level.amount)}
-                  {level.description && ` (${level.description})`}
-                </option>
-              ))}
-            </select>
+              onChange={handleFeeLevelChange}
+              options={feeLevels.map(level => ({
+                value: level.id,
+                label: `${level.levelName} - ${formatAmount(level.amount)}${level.description ? ` (${level.description})` : ''}`
+              }))}
+              placeholder="Chọn mức phí có sẵn..."
+              disabled={loading}
+              className="w-full"
+            />
           </div>
 
           {/* Selected Fee Level Info */}
-          {selectedFeeLevel && !formData.useCustomAmount && (
+          {selectedFeeLevel && (
             <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
               <h4 className="mb-2 text-sm font-medium text-gray-900 dark:text-white">
                 Thông Tin Mức Phí Đã Chọn
@@ -236,7 +203,9 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
               </div>
               <div className="flex justify-between pt-2 border-t dark:border-gray-600">
                 <span className="text-gray-600 dark:text-gray-400">Số tiền mỗi người:</span>
-                <span className="font-medium text-blue-600 dark:text-blue-400">{formatAmount(formData.customAmount || 0)}</span>
+                <span className="font-medium text-blue-600 dark:text-blue-400">
+                  {selectedFeeLevel ? formatAmount(selectedFeeLevel.amount) : 'Chưa chọn'}
+                </span>
               </div>
             </div>
             <div className="space-y-2">

@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, X, ChevronDown } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { 
   PaymentCampaign, 
   CreatePaymentCampaignDto, 
   UpdatePaymentCampaignDto, 
 } from '../../types';
 import { paymentCampaignService } from '@/shared/services/fee-collection-service';
-import OrganizationSelector from './OrganizationSelector';
+import { organizationService } from '@/shared/services/organizationService';
+import SearchableCombobox from '@/shared/components/SearchableCombobox';
 
 interface PaymentCampaignBasicFormData {
   organizationId: string;
@@ -23,16 +24,21 @@ interface PaymentCampaignBasicFormData {
 interface PaymentCampaignFormProps {
   campaign?: PaymentCampaign;
   mode: 'create' | 'edit';
+  onSave?: () => void;
+  onCancel?: () => void;
 }
 
 const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({ 
   campaign, 
-  mode 
+  mode,
+  onSave,
+  onCancel
 }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showOrganizationSelector, setShowOrganizationSelector] = useState(false);
+  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [loadingOrganizations, setLoadingOrganizations] = useState(false);
   
   const [formData, setFormData] = useState<PaymentCampaignBasicFormData>({
     organizationId: campaign?.organizationId || '',
@@ -44,6 +50,30 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
     endDate: campaign?.endDate ? campaign.endDate.split('T')[0] : '',
     endTime: campaign?.endDate ? campaign.endDate.split('T')[1]?.substring(0, 5) || '23:59' : '23:59',
   });
+
+  useEffect(() => {
+    loadOrganizations();
+  }, []);
+
+  const loadOrganizations = async () => {
+    try {
+      setLoadingOrganizations(true);
+      const orgs = await organizationService.getOrganizations();
+      
+      // Format organizations for searchable combobox
+      const formattedOrgs = orgs.map(org => ({
+        ...org,
+        displayName: org.name
+      }));
+      
+      setOrganizations(formattedOrgs);
+    } catch (err) {
+      console.error('Error loading organizations:', err);
+      setError('Không thể tải danh sách tổ chức');
+    } finally {
+      setLoadingOrganizations(false);
+    }
+  };
 
   const validateForm = (): boolean => {
     if (!formData.organizationId) {
@@ -87,13 +117,15 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
     return true;
   };
 
-  const handleOrganizationSelect = (organizationId: string, organizationName: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      organizationId, 
-      organizationName 
-    }));
-    setShowOrganizationSelector(false);
+  const handleOrganizationSelect = (organizationId: string) => {
+    const selectedOrg = organizations.find(org => org.id === organizationId);
+    if (selectedOrg) {
+      setFormData(prev => ({ 
+        ...prev, 
+        organizationId, 
+        organizationName: selectedOrg.name
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -118,8 +150,13 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
         const campaignResponse = await paymentCampaignService.createPaymentCampaign(campaignData);
         const newCampaign : any = campaignResponse;
         
-        // Navigate to detail page to add fee levels
-        navigate(`/admin/payment-campaigns/${newCampaign.id}`);
+        // Use callback if provided, otherwise navigate
+        if (onSave) {
+          onSave();
+        } else {
+          // Navigate to detail page to add fee levels
+          navigate(`/admin/payment-campaigns/${newCampaign.id}`);
+        }
       } else if (campaign) {
         // Update campaign
         const updateData: UpdatePaymentCampaignDto = {
@@ -130,7 +167,13 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
         };
         
         await paymentCampaignService.updatePaymentCampaign(campaign.id, updateData);
-        navigate(`/admin/payment-campaigns/${campaign.id}`);
+        
+        // Use callback if provided, otherwise navigate
+        if (onSave) {
+          onSave();
+        } else {
+          navigate(`/admin/payment-campaigns/${campaign.id}`);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save campaign');
@@ -140,10 +183,15 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
   };
 
   const handleCancel = () => {
-    if (mode === 'edit' && campaign) {
-      navigate(`/admin/payment-campaigns/${campaign.id}`);
+    // Use callback if provided, otherwise navigate
+    if (onCancel) {
+      onCancel();
     } else {
-      navigate('/admin/payment-campaigns');
+      if (mode === 'edit' && campaign) {
+        navigate(`/admin/payment-campaigns/${campaign.id}`);
+      } else {
+        navigate('/admin/payment-campaigns');
+      }
     }
   };
 
@@ -174,17 +222,20 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Tổ chức <span className="text-red-500">*</span>
               </label>
-              <button
-                type="button"
-                onClick={() => setShowOrganizationSelector(true)}
-                disabled={mode === 'edit'} // Don't allow changing organization in edit mode
-                className="flex items-center justify-between w-full px-3 py-2 text-left border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-600"
-              >
-                <span className={formData.organizationName ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
-                  {formData.organizationName || 'Chọn tổ chức'}
-                </span>
-                <ChevronDown className="w-4 h-4 text-gray-400" />
-              </button>
+              <SearchableCombobox
+                value={formData.organizationId}
+                onChange={handleOrganizationSelect}
+                options={organizations.map(org => ({
+                  value: org.id,
+                  label: org.displayName
+                }))}
+                placeholder="Chọn tổ chức..."
+                disabled={mode === 'edit' || loadingOrganizations}
+                className="w-full"
+              />
+              {loadingOrganizations && (
+                <p className="mt-1 text-xs text-gray-500">Đang tải danh sách tổ chức...</p>
+              )}
             </div>
 
             <div>
@@ -296,15 +347,6 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
         </div>
       </form>
 
-      {/* Organization Selector Modal */}
-      {showOrganizationSelector && (
-        <OrganizationSelector
-          selectedOrganizationId={formData.organizationId}
-          onOrganizationSelect={handleOrganizationSelect}
-          onClose={() => setShowOrganizationSelector(false)}
-          disabled={mode === 'edit'}
-        />
-      )}
     </div>
   );
 };

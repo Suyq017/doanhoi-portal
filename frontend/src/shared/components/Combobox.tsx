@@ -118,7 +118,8 @@ const Combobox: React.FC<ComboboxProps> = ({
         }
 
         return scrollableParents;
-    }; useEffect(() => {
+    }; 
+    useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
             const clickInsideContainer = containerRef.current && containerRef.current.contains(target);

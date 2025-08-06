@@ -4,7 +4,8 @@ import { Edit, ArrowLeft, Play, CheckCircle, X, Users, DollarSign, Calendar, Bui
 import { useToast } from '@/shared/hooks/useToast';
 import { PaymentCampaign, PaymentFeeLevel } from '../../types';
 import { paymentCampaignService, paymentFeeLevelService, paymentAssignmentService } from '@/shared/services/fee-collection-service';
-import Toast from '@/shared/components/Toast';
+import { Toast, ConfirmDialog } from '@/shared/components';
+import PaymentCampaignForm from '../../components/admin/PaymentCampaignForm';
 import TabNavigation from '../../components/admin/tabs/TabNavigation';
 import StatisticsTab from '../../components/admin/tabs/StatisticsTab';
 import FeeLevelTab from '../../components/admin/tabs/FeeLevelTab';
@@ -15,7 +16,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { toasts, showSuccess, showError, hideToast } = useToast();
+  const { toasts, confirmDialog, showSuccess, showError, showConfirm, hideToast } = useToast();
   const [campaign, setCampaign] = useState<PaymentCampaign | null>(null);
   const [feeLevels, setFeeLevels] = useState<PaymentFeeLevel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,12 +25,29 @@ const PaymentCampaignDetailPage: React.FC = () => {
   const [activationError, setActivationError] = useState<string | null>(null);
   const [_assignmentCount, setAssignmentCount] = useState(0); // Keep for future use
   const [canActivate, setCanActivate] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   
   // Tab state
   const currentTab = searchParams.get('tab') || 'statistics';
   
   const handleTabChange = (tabId: string) => {
     setSearchParams({ tab: tabId });
+  };
+
+  const handleEditCampaign = () => {
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+  };
+
+  const handleCampaignUpdated = () => {
+    setShowEditModal(false);
+    // Reload campaign data to reflect changes
+    if (id) {
+      loadCampaignData();
+    }
   };
 
   useEffect(() => {
@@ -75,6 +93,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
     try {
       // Check if there are fee levels
       const hasFeeLevels = currentFeeLevels && currentFeeLevels.length > 0;
+      console.log('Checking activation requirements:', { hasFeeLevels, feeLevelsCount: currentFeeLevels?.length || 0 });
       
       // Check if there are member assignments
       let hasAssignments = false;
@@ -83,14 +102,18 @@ const PaymentCampaignDetailPage: React.FC = () => {
         const assignments = assignmentsResponse.data?.assignments || [];
         setAssignmentCount(assignments.length);
         hasAssignments = assignments.length > 0;
+        console.log('Assignment check result:', { hasAssignments, assignmentCount: assignments.length });
       } catch (err) {
         // If assignments fail to load, just set count to 0
         setAssignmentCount(0);
         hasAssignments = false;
+        console.log('Failed to load assignments:', err);
       }
       
       // All requirements must be met for activation
-      setCanActivate(hasFeeLevels && hasAssignments);
+      const canActivateResult = hasFeeLevels && hasAssignments;
+      console.log('Final activation result:', { hasFeeLevels, hasAssignments, canActivate: canActivateResult });
+      setCanActivate(canActivateResult);
       
     } catch (err) {
       console.error('Error checking activation requirements:', err);
@@ -173,9 +196,15 @@ const PaymentCampaignDetailPage: React.FC = () => {
   const handleDelete = async () => {
     if (!campaign || !id) return;
 
-    // Show custom confirmation dialog
-    const shouldDelete = window.confirm(
-      "Hành động này không thể hoàn tác! Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?"
+    // Use custom confirm dialog
+    const shouldDelete = await showConfirm(
+      'Xóa đợt thu phí',
+      'Hành động này không thể hoàn tác! Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?',
+      {
+        confirmText: 'Xóa',
+        cancelText: 'Hủy',
+        variant: 'danger'
+      }
     );
     
     if (!shouldDelete) return;
@@ -242,7 +271,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="container px-4 py-6 mx-auto space-y-6">
+    <div className="container px-4 py-6 mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
@@ -268,13 +297,13 @@ const PaymentCampaignDetailPage: React.FC = () => {
         <div className="flex items-center space-x-2">
           {campaign.status === 'DRAFT' && (
             <>
-              <Link
-                to={`/admin/payment-campaigns/${campaign.id}/edit`}
+              <button
+                onClick={handleEditCampaign}
                 className="inline-flex items-center px-3 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md hover:bg-gray-50 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
               >
                 <Edit className="w-4 h-4 mr-1" />
                 Chỉnh sửa
-              </Link>
+              </button>
               <div className="relative">
                 <button
                   onClick={() => handleStatusChange('activate')}
@@ -453,11 +482,36 @@ const PaymentCampaignDetailPage: React.FC = () => {
           )}
           
           {currentTab === 'member-assignments' && (
-            <MemberAssignmentTab campaign={campaign} />
+            <MemberAssignmentTab 
+              campaign={campaign} 
+              onAssignmentsChange={async () => {
+                // Refresh activation requirements when assignments change
+                console.log('Assignments changed, refreshing activation requirements...');
+                // Add a small delay to ensure backend has processed the changes
+                setTimeout(() => {
+                  if (id) {
+                    checkActivationRequirements(id, feeLevels);
+                  }
+                }, 500);
+              }}
+            />
           )}
           
           {currentTab === 'payos-config' && (
-            <PayOSConfigTab campaign={campaign} />
+            <PayOSConfigTab 
+              campaign={campaign} 
+              onConfirmDelete={async () => {
+                return await showConfirm(
+                  'Xóa cấu hình PayOS',
+                  'Bạn có chắc chắn muốn xóa cấu hình PayOS này? Hành động này không thể hoàn tác.',
+                  {
+                    confirmText: 'Xóa',
+                    cancelText: 'Hủy',
+                    variant: 'danger'
+                  }
+                );
+              }}
+            />
           )}
         </div>
       </div>
@@ -474,6 +528,38 @@ const PaymentCampaignDetailPage: React.FC = () => {
           />
         ))}
       </div>
+
+      {/* Edit Campaign Modal */}
+      {showEditModal && campaign && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true" onClick={handleCloseEditModal}></div>
+            
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            
+            <div className="inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white border border-gray-300 rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-600">
+              <PaymentCampaignForm 
+                campaign={campaign}
+                mode="edit"
+                onSave={handleCampaignUpdated}
+                onCancel={handleCloseEditModal}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        cancelText={confirmDialog.cancelText}
+        variant={confirmDialog.variant}
+        onConfirm={confirmDialog.onConfirm || (() => {})}
+        onCancel={confirmDialog.onCancel || (() => {})}
+      />
     </div>
   );
 };

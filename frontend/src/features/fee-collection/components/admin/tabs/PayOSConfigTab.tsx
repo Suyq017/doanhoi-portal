@@ -18,9 +18,10 @@ interface FormPayOSConfig {
 
 interface PayOSConfigTabProps {
   campaign: PaymentCampaign;
+  onConfirmDelete?: () => Promise<boolean>;
 }
 
-const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign }) => {
+const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDelete }) => {
   const [config, setConfig] = useState<PayOSConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -230,6 +231,7 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign }) => {
           config={convertToFormConfig(config)}
           onSave={handleSaveConfig}
           onDelete={config ? handleDeleteConfig : undefined}
+          onConfirmDelete={onConfirmDelete}
           loading={loading}
           readOnly={readOnly}
         />

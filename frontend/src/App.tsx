@@ -15,8 +15,7 @@ import { PermissionsPage } from './features/permissions';
 import { AuthProvider, AuthCallback, LoginPage, ProtectedRoute, EnhancedProtectedRoute, AuthGuard } from './features/auth';
 import {
   PaymentCampaignsPage,
-  CreatePaymentCampaignPage,
-  EditPaymentCampaignPage,
+  // Removed: CreatePaymentCampaignPage, EditPaymentCampaignPage (now using modals)
   PaymentResultPage,
   MyCampaignsPage,
   PaymentCampaignDetailPage
@@ -166,18 +165,7 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
-                    <Route
-                      path="/admin/payment-campaigns/create"
-                      element={
-                        <ProtectedRoute>
-                          <Layout>
-                            <OrganizationStatsProvider>
-                              <CreatePaymentCampaignPage />
-                            </OrganizationStatsProvider>
-                          </Layout>
-                        </ProtectedRoute>
-                      }
-                    />
+                    {/* Removed: /admin/payment-campaigns/create and /admin/payment-campaigns/:id/edit (now using modals) */}
                     <Route
                       path="/admin/payment-campaigns/:id"
                       element={
@@ -211,18 +199,6 @@ function App() {
                           <Layout>
                             <OrganizationStatsProvider>
                               <PaymentResultPage />
-                            </OrganizationStatsProvider>
-                          </Layout>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/payment-campaigns/:id/edit"
-                      element={
-                        <ProtectedRoute>
-                          <Layout>
-                            <OrganizationStatsProvider>
-                              <EditPaymentCampaignPage />
                             </OrganizationStatsProvider>
                           </Layout>
                         </ProtectedRoute>

@@ -4,17 +4,21 @@ import MemberSelector from '../assignment/MemberSelector';
 import AssignmentBulkForm from '../assignment/AssignmentBulkForm';
 import AssignmentList from '../assignment/AssignmentList';
 import { paymentAssignmentService, paymentFeeLevelService } from '@/shared/services/fee-collection-service';
+import { useToast } from '@/shared/hooks/useToast';
+import { Toast } from '@/shared/components';
 
 interface MemberAssignmentTabProps {
   campaign: PaymentCampaign;
+  onAssignmentsChange?: () => void; // Callback to notify parent when assignments change
 }
 
-const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) => {
+const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onAssignmentsChange }) => {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBulkCreate, setShowBulkCreate] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [feeLevels, setFeeLevels] = useState<any[]>([]);
+  const { toasts, showSuccess, showError, hideToast } = useToast();
 
   // Check if campaign is in read-only state
   const readOnly = campaign.status === 'COMPLETED' || campaign.status === 'CANCELLED';
@@ -104,11 +108,17 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
       setShowBulkCreate(false);
       setSelectedMemberIds([]);
       
-      // Refresh data
+      // Show success toast
+      showSuccess(`Đã phân công thành công cho ${selectedMemberIds.length} thành viên!`);
+      
+      // Refresh data and notify parent
       await fetchAssignments();
+      if (onAssignmentsChange) {
+        onAssignmentsChange();
+      }
     } catch (error) {
       console.error('Error creating bulk assignments:', error);
-      // TODO: Show error message to user
+      showError('Không thể tạo phân công hàng loạt. Vui lòng thử lại.');
     }
   };
 
@@ -116,14 +126,20 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
     try {
       await paymentAssignmentService.deleteAssignment(assignmentId);
       setAssignments(prev => prev.filter(assignment => assignment.id !== assignmentId));
+      showSuccess('Đã xóa phân công thành công!');
+      
+      // Notify parent about changes
+      if (onAssignmentsChange) {
+        onAssignmentsChange();
+      }
     } catch (error) {
       console.error('Error deleting assignment:', error);
-      // TODO: Show error message to user
+      showError('Không thể xóa phân công. Vui lòng thử lại.');
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Assignment List */}
       <AssignmentList
         campaign={campaign}
@@ -139,7 +155,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
 
       {/* Bulk Create Modal */}
       {showBulkCreate && (
-        <div className="fixed inset-0 z-50 w-full h-full overflow-y-auto bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-75">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-75">
           <div className="relative w-11/12 max-w-6xl p-5 mx-auto bg-white border rounded-md shadow-lg top-20 dark:bg-gray-800 dark:border-gray-700">
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
@@ -200,6 +216,19 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign }) =
           </div>
         </div>
       )}
+
+      {/* Toast Container */}
+      <div className="fixed z-50 space-y-4 top-4 right-4">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            duration={toast.duration}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 };

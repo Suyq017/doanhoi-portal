@@ -2,16 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Eye, Edit, Trash2, Play, CheckCircle, X } from 'lucide-react';
 import { useToast } from '@/shared/hooks/useToast';
-import Toast from '@/shared/components/Toast';
+import { Toast, ConfirmDialog } from '@/shared/components';
 import { PaymentCampaign, PaymentCampaignFilters, Organization } from '../../types';
 import { paymentCampaignService } from '@/shared/services/fee-collection-service';
 
 interface PaymentCampaignListProps {
   organizations: Organization[];
+  onEditCampaign?: (campaign: PaymentCampaign) => void;
+  refreshTrigger?: number;
 }
 
-const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations }) => {
-  const { toasts, showSuccess, showError, hideToast } = useToast();
+const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ 
+  organizations, 
+  onEditCampaign,
+  refreshTrigger 
+}) => {
+  const { toasts, confirmDialog, showSuccess, showError, showConfirm, hideToast } = useToast();
   const [campaigns, setCampaigns] = useState<PaymentCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +36,13 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
   useEffect(() => {
     loadCampaigns();
   }, [filters]);
+
+  // Reload campaigns when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      loadCampaigns();
+    }
+  }, [refreshTrigger]);
 
   const loadCampaigns = async () => {
     try {
@@ -101,13 +114,18 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
   };
 
   const handleDelete = async (id: string) => {
-    // Show custom confirmation dialog instead of default confirm
     const campaign = campaigns.find(c => c.id === id);
     if (!campaign) return;
 
-    // Create a custom confirmation toast/modal
-    const shouldDelete = window.confirm(
-      "Hành động này không thể hoàn tác! Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?"
+    // Use custom confirm dialog
+    const shouldDelete = await showConfirm(
+      'Xóa đợt thu phí',
+      'Hành động này không thể hoàn tác! Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?',
+      {
+        confirmText: 'Xóa',
+        cancelText: 'Hủy',
+        variant: 'danger'
+      }
     );
     
     if (!shouldDelete) return;
@@ -152,7 +170,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Filters */}
       <div className="p-4 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -308,13 +326,13 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
                       
                       {campaign.status === 'DRAFT' && (
                         <>
-                          <Link
-                            to={`/admin/payment-campaigns/${campaign.id}/edit`}
+                          <button
+                            onClick={() => onEditCampaign?.(campaign)}
                             className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
                             title="Chỉnh sửa"
                           >
                             <Edit className="w-4 h-4" />
-                          </Link>
+                          </button>
                           <button
                             onClick={() => handleDelete(campaign.id)}
                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
@@ -445,6 +463,18 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({ organizations
           />
         ))}
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        cancelText={confirmDialog.cancelText}
+        variant={confirmDialog.variant}
+        onConfirm={confirmDialog.onConfirm || (() => {})}
+        onCancel={confirmDialog.onCancel || (() => {})}
+      />
     </div>
   );
 };

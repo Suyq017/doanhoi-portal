@@ -17,6 +17,7 @@ interface PayOSConfigFormProps {
   config?: PayOSConfig | null;
   onSave: (config: Omit<PayOSConfig, 'id'>) => Promise<void>;
   onDelete?: () => Promise<void>;
+  onConfirmDelete?: () => Promise<boolean>;
   loading?: boolean;
   readOnly?: boolean;
 }
@@ -26,6 +27,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
   config, 
   onSave, 
   onDelete,
+  onConfirmDelete,
   loading = false,
   readOnly = false 
 }) => {
@@ -177,11 +179,17 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
   const handleDeleteConfig = async () => {
     if (!config || !onDelete) return;
 
-    const confirmDelete = window.confirm(
-      'Bạn có chắc chắn muốn xóa cấu hình PayOS này? Hành động này không thể hoàn tác.'
-    );
+    // Use custom confirm dialog if available, otherwise fallback to window.confirm
+    let shouldDelete = false;
+    if (onConfirmDelete) {
+      shouldDelete = await onConfirmDelete();
+    } else {
+      shouldDelete = window.confirm(
+        'Bạn có chắc chắn muốn xóa cấu hình PayOS này? Hành động này không thể hoàn tác.'
+      );
+    }
 
-    if (!confirmDelete) return;
+    if (!shouldDelete) return;
 
     try {
       await onDelete();

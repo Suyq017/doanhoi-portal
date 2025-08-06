@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Star, StarOff, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { 
   PaymentFeeLevel, 
   CreatePaymentFeeLevelDto, 
@@ -18,7 +18,6 @@ interface FeeLevelFormData {
   amount: number;
   description: string;
   note: string;
-  isDefault: boolean;
 }
 
 const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly = false, onFeeLevelsChange }) => {
@@ -31,8 +30,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
     levelName: '',
     amount: 0,
     description: '',
-    note: '',
-    isDefault: false
+    note: ''
   });
 
   useEffect(() => {
@@ -62,8 +60,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
       levelName: '',
       amount: 0,
       description: '',
-      note: '',
-      isDefault: false
+      note: ''
     });
     setEditingId(null);
     setIsCreating(false);
@@ -79,8 +76,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
       levelName: feeLevel.levelName,
       amount: feeLevel.amount,
       description: feeLevel.description,
-      note: feeLevel.note,
-      isDefault: feeLevel.isDefault
+      note: feeLevel.note
     });
     setEditingId(feeLevel.id);
     setIsCreating(false);
@@ -114,7 +110,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
           amount: formData.amount,
           description: formData.description,
           note: formData.note,
-          isDefault: formData.isDefault,
           orderIndex: feeLevels.length
         };
         
@@ -124,8 +119,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
           levelName: formData.levelName,
           amount: formData.amount,
           description: formData.description,
-          note: formData.note,
-          isDefault: formData.isDefault
+          note: formData.note
         };
         
         await paymentFeeLevelService.updateFeeLevel(campaignId, editingId, updateData);
@@ -146,15 +140,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
       loadFeeLevels();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete fee level');
-    }
-  };
-
-  const handleSetDefault = async (id: string) => {
-    try {
-      await paymentFeeLevelService.setDefaultFeeLevel(campaignId, id);
-      loadFeeLevels();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to set default fee level');
     }
   };
 
@@ -256,18 +241,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                 placeholder="Ghi chú chi tiết, điều kiện áp dụng..."
               />
             </div>
-
-            <div className="md:col-span-2">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.isDefault}
-                  onChange={(e) => setFormData(prev => ({ ...prev, isDefault: e.target.checked }))}
-                  className="text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-                />
-                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Đặt làm mức phí mặc định</span>
-              </label>
-            </div>
           </div>
 
           <div className="flex items-center justify-end mt-4 space-x-3">
@@ -303,12 +276,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <h4 className="font-medium text-gray-900 dark:text-white">{level.levelName}</h4>
-                    {level.isDefault && (
-                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200">
-                        <Star className="w-3 h-3 mr-1" />
-                        Mặc định
-                      </span>
-                    )}
                   </div>
                   
                   <div className="mt-1 text-lg font-semibold text-blue-600 dark:text-blue-400">
@@ -330,16 +297,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
 
                 {!readOnly && (
                   <div className="flex items-center ml-4 space-x-2">
-                    {!level.isDefault && (
-                      <button
-                        onClick={() => handleSetDefault(level.id)}
-                        className="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300"
-                        title="Đặt làm mặc định"
-                      >
-                        <StarOff className="w-4 h-4" />
-                      </button>
-                    )}
-                    
                     <button
                       onClick={() => startEdit(level)}
                       className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
