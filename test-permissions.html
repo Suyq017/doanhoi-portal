@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Permissions API</title>
+</head>
+
+<body>
+    <h1>Test Permissions API</h1>
+    <button onclick="testPermissions()">Test API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testPermissions() {
+            try {
+                const response = await fetch('http://localhost:9200/roles/available-permissions');
+                const permissions = await response.json();
+
+                console.log('Total permissions:', permissions.length);
+
+                const categories = [...new Set(permissions.map(p => p.category))];
+                console.log('Categories:', categories);
+                console.log('Total categories:', categories.length);
+
+                const myPaymentsPerms = permissions.filter(p => p.category === 'my-payments');
+                console.log('My-payments permissions:', myPaymentsPerms);
+
+                document.getElementById('result').innerHTML = `
+                    <h2>Results:</h2>
+                    <p>Total permissions: ${permissions.length}</p>
+                    <p>Total categories: ${categories.length}</p>
+                    <p>Categories: ${categories.join(', ')}</p>
+                    <p>My-payments permissions: ${myPaymentsPerms.length}</p>
+                    <pre>${JSON.stringify(myPaymentsPerms, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+
+</html>

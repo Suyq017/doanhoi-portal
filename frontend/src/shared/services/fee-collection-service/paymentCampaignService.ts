@@ -4,7 +4,8 @@ import {
   UpdatePaymentCampaignDto,
   PaymentCampaignFilters,
   ApiResponse,
-  PaginatedResponse
+  PaginatedResponse,
+  Organization
 } from '../../../features/fee-collection/types';
 import { authService } from '../../../features/auth/services/authService';
 
@@ -139,6 +140,17 @@ class PaymentCampaignService {
 
     if (!response.ok) {
       throw new Error('Failed to fetch payment campaign statistics');
+    }
+    return response.json();
+  }
+
+  // Get accessible organizations for current user
+  async getAccessibleOrganizations(): Promise<Organization[]> {
+    const response = await fetch(`${API_BASE}/payment-campaigns/accessible-organizations`, {
+      headers: this.getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch accessible organizations');
     }
     return response.json();
   }

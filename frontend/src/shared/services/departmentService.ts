@@ -1,5 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
-
+import { apiClient } from './apiClient';
 import { ServerValidationResult, ServerImportResult, ImportOptions, ValidationError } from '../types/import';
 import {
   Department, CreateDepartmentRequest, UpdateDepartmentRequest,
@@ -8,39 +7,7 @@ import {
   ImportExecuteResponseDepartment
 } from '../types/department';
 
-
 class DepartmentService {
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    // Check if response has content
-    if (response.status === 204 || response.headers.get('content-length') === '0') {
-      return null as T;
-    }
-
-    // Check if response content type is JSON
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      return response.json();
-    }
-
-    return null as T;
-  }
-
   async getDepartments(params: DepartmentQueryParams = {}): Promise<DepartmentsResponse> {
     const searchParams = new URLSearchParams();
 
@@ -52,68 +19,46 @@ class DepartmentService {
     const query = searchParams.toString();
     const endpoint = query ? `/departments?${query}` : '/departments';
 
-    return this.request<DepartmentsResponse>(endpoint);
+    return apiClient.get<DepartmentsResponse>(endpoint);
   }
 
   async getDepartmentById(id: string): Promise<Department> {
-    return this.request<Department>(`/departments/${id}`);
+    return apiClient.get<Department>(`/departments/${id}`);
   }
 
   async createDepartment(departmentData: CreateDepartmentRequest): Promise<Department> {
-    return this.request<Department>('/departments', {
-      method: 'POST',
-      body: JSON.stringify(departmentData),
-    });
+    return apiClient.post<Department>('/departments', departmentData);
   }
 
   async updateDepartment(id: string, departmentData: UpdateDepartmentRequest): Promise<Department> {
-    return this.request<Department>(`/departments/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(departmentData),
-    });
+    return apiClient.patch<Department>(`/departments/${id}`, departmentData);
   }
 
   async deleteDepartment(id: string): Promise<void> {
-    await this.request(`/departments/${id}`, {
-      method: 'DELETE',
-    });
+    await apiClient.delete(`/departments/${id}`);
   }
-
   // Import functionality - Updated for server-side processing
   async getTemplate(): Promise<string> {
-    return `${API_BASE_URL}/departments/template`;
+    return `${apiClient.getBaseURL()}/departments/template`;
   }
 
   async uploadImportFile(file: File): Promise<ImportUploadResponseDepartment> {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_BASE_URL}/departments/import/upload`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Upload failed');
-    }
-
-    return response.json();
+    return apiClient.uploadFile<ImportUploadResponseDepartment>('/departments/import/upload', formData);
   }
 
   async validateImportData(sessionId: string): Promise<ImportValidationResponseDepartment> {
-    return this.request<ImportValidationResponseDepartment>(`/departments/import/${sessionId}/validate`);
+    return apiClient.get<ImportValidationResponseDepartment>(`/departments/import/${sessionId}/validate`);
   }
 
   async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponseDepartment> {
-    return this.request<ImportExecuteResponseDepartment>(`/departments/import/${sessionId}/execute`, {
-      method: 'POST',
-      body: JSON.stringify(options || {}),
-    });
+    return apiClient.post<ImportExecuteResponseDepartment>(`/departments/import/${sessionId}/execute`, options || {});
   }
 
   async getImportStatus(sessionId: string): Promise<any> {
-    return this.request(`/departments/import/${sessionId}/status`);
+    return apiClient.get(`/departments/import/${sessionId}/status`);
   }
 
   // Legacy methods for backward compatibility
@@ -187,18 +132,14 @@ class DepartmentService {
       warnings: allWarnings,
       previewData: validatedData
     };
-  }
-  async importData(
+  } async importData(
     data: DepartmentImportData[],
     options: ImportOptions = { skipErrors: true, updateExisting: false }
   ): Promise<ServerImportResult> {
     // This method is now deprecated in favor of server-side import workflow
     // Keep for backward compatibility
     try {
-      const response = await this.request<ServerImportResult>('/departments/import', {
-        method: 'POST',
-        body: JSON.stringify({ data, options }),
-      });
+      const response = await apiClient.post<ServerImportResult>('/departments/import', { data, options });
       return response;
     } catch (error) {
       return {

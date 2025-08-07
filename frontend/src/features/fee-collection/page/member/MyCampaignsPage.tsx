@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CreditCard, Clock, CheckCircle, AlertCircle, Search } from 'lucide-react';
 import { usePaymentAssignments, PaymentAssignment } from '../../../../shared/hooks/usePaymentAssignments';
 import { paymentService } from '../../../../shared/services/fee-collection-service';
+import { usePermissions } from '../../../../shared/hooks/usePermissions';
 
 interface Filters {
   status: string;
@@ -20,9 +21,22 @@ export const MyCampaignsPage: React.FC = () => {
     sortBy: 'dueDate',
     sortOrder: 'asc'
   });
-
   const { getUserAssignments } = usePaymentAssignments();
+  const {
+    canAccessMyPaymentsInOrg,
+    userRoles,
+    isSuperAdmin,
+    permissionsLoading
+  } = usePermissions();
 
+  // Helper function để lấy tên tổ chức từ assignment hoặc hiển thị organizationId
+  const getOrganizationName = (organizationId?: string) => {
+    if (!organizationId) return 'N/A';
+
+    // Tìm tên tổ chức từ assignments nếu có
+    const assignment = assignments.find(a => a.campaign.organization.id === organizationId);
+    return assignment?.campaign.organization.name || `Tổ chức ${organizationId}`;
+  };
   useEffect(() => {
     fetchAssignments();
   }, []);
@@ -32,7 +46,19 @@ export const MyCampaignsPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const result = await getUserAssignments();
-      setAssignments(result || []);
+
+      // Áp dụng cơ chế phân quyền: chỉ hiển thị assignments từ những tổ chức mà user có quyền truy cập
+      const filteredAssignments = result.filter((assignment: PaymentAssignment) => {
+        // Super admin có thể xem tất cả
+        if (isSuperAdmin()) {
+          return true;
+        }
+
+        // Kiểm tra quyền truy cập theo từng tổ chức
+        return canAccessMyPaymentsInOrg(assignment.campaign.organization.id);
+      });
+
+      setAssignments(filteredAssignments || []);
     } catch (err) {
       setError('Không thể tải danh sách đóng phí');
     } finally {
@@ -67,7 +93,7 @@ export const MyCampaignsPage: React.FC = () => {
       } else {
         throw new Error(paymentResponse.message || 'Không nhận được URL thanh toán từ server');
       }
-      
+
     } catch (error) {
       console.error('Error creating payment:', error);
       alert('Có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.');
@@ -85,21 +111,21 @@ export const MyCampaignsPage: React.FC = () => {
     .filter(assignment => {
       // Chỉ hiển thị assignments từ campaigns có status ACTIVE hoặc CANCELLED
       const isValidCampaignStatus = assignment.campaign.status === 'ACTIVE' || assignment.campaign.status === 'CANCELLED';
-      
+
       const matchesStatus = !filters.status || assignment.status === filters.status;
-      const matchesSearch = !filters.search || 
+      const matchesSearch = !filters.search ||
         assignment.campaign.name.toLowerCase().includes(filters.search.toLowerCase()) ||
         assignment.campaign.organization.name.toLowerCase().includes(filters.search.toLowerCase());
-      
+
       return isValidCampaignStatus && matchesStatus && matchesSearch;
     })
     .sort((a, b) => {
       // Ưu tiên PENDING lên đầu
       if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
       if (b.status === 'PENDING' && a.status !== 'PENDING') return 1;
-      
+
       let comparison = 0;
-      
+
       switch (filters.sortBy) {
         case 'dueDate':
           const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
@@ -115,15 +141,14 @@ export const MyCampaignsPage: React.FC = () => {
           comparison = amountA - amountB;
           break;
       }
-      
+
       return filters.sortOrder === 'desc' ? -comparison : comparison;
     });
 
   // Lọc assignments để chỉ tính những assignments từ campaigns có status hợp lệ
-  const validAssignments = assignments.filter(a => 
+  const validAssignments = assignments.filter(a =>
     a.campaign.status === 'ACTIVE' || a.campaign.status === 'CANCELLED'
   );
-
   const summaryStats = {
     total: validAssignments.length,
     pending: validAssignments
@@ -141,7 +166,7 @@ export const MyCampaignsPage: React.FC = () => {
       }, 0)
   };
 
-  if (loading) {
+  if (loading || permissionsLoading) {
     return (
       <div className="">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -196,8 +221,7 @@ export const MyCampaignsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6">      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -206,6 +230,49 @@ export const MyCampaignsPage: React.FC = () => {
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             Quản lý và thanh toán các khoản phí được phân công
           </p>
+
+          {/* Permission Info */}
+          {!isSuperAdmin() && userRoles && userRoles.length > 0 && (
+            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
+                    Quyền truy cập
+                  </p>                  <div className="mt-1 text-xs text-blue-800 dark:text-blue-300">
+                    Bạn có thể xem đợt đóng phí từ các tổ chức: {' '}
+                    <span className="font-semibold">
+                      {userRoles
+                        .filter(userRole => userRole.organizationId && canAccessMyPaymentsInOrg(userRole.organizationId))
+                        .map(userRole => getOrganizationName(userRole.organizationId))
+                        .join(', ')
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isSuperAdmin() && (
+            <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-green-900 dark:text-green-200">
+                    Quyền Super Admin
+                  </p>
+                  <div className="mt-1 text-xs text-green-800 dark:text-green-300">
+                    Bạn có quyền xem đợt đóng phí từ tất cả các tổ chức
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -378,7 +445,7 @@ export const MyCampaignsPage: React.FC = () => {
                     <div className="text-sm text-gray-900 dark:text-white">
                       {new Date(assignment.campaign.startDate).toLocaleDateString('vi-VN', {
                         day: '2-digit',
-                        month: '2-digit', 
+                        month: '2-digit',
                         year: 'numeric'
                       })} {new Date(assignment.campaign.startDate).toLocaleTimeString('vi-VN', {
                         hour: '2-digit',
@@ -420,7 +487,7 @@ export const MyCampaignsPage: React.FC = () => {
                         <span>Đã hết hạn thanh toán</span>
                       </button>
                     )}
-                    
+
                     {assignment.status === 'OVERDUE' && (
                       <button
                         disabled
@@ -430,7 +497,7 @@ export const MyCampaignsPage: React.FC = () => {
                         <span>Đã hết hạn thanh toán</span>
                       </button>
                     )}
-                    
+
                     {assignment.status === 'PAID' && (
                       <button
                         disabled
@@ -445,20 +512,29 @@ export const MyCampaignsPage: React.FC = () => {
               ))}
             </tbody>
           </table>
-        </div>
-
-        {filteredAndSortedAssignments.length === 0 && (
+        </div>        {filteredAndSortedAssignments.length === 0 && (
           <div className="py-12 text-center">
             <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
             <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
               Không có đợt đóng phí nào
             </h3>
             <div className="text-gray-500 dark:text-gray-400">
-              {filters.search || filters.status 
+              {filters.search || filters.status
                 ? 'Không tìm thấy đợt đóng phí nào phù hợp với bộ lọc'
-                : 'Bạn chưa được phân công đóng phí nào'
+                : isSuperAdmin()
+                  ? 'Bạn chưa được phân công đóng phí nào'
+                  : 'Bạn chưa được phân công đóng phí nào từ các tổ chức bạn có quyền truy cập'
               }
-            </div>
+            </div>            {!isSuperAdmin() && userRoles && userRoles.length > 0 && (
+              <div className="mt-4 text-sm text-gray-400">
+                Các tổ chức bạn có quyền truy cập: {' '}
+                {userRoles
+                  .filter(userRole => userRole.organizationId && canAccessMyPaymentsInOrg(userRole.organizationId))
+                  .map(userRole => getOrganizationName(userRole.organizationId))
+                  .join(', ')
+                }
+              </div>
+            )}
           </div>
         )}
       </div>

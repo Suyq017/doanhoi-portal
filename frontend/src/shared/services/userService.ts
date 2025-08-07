@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+import { apiClient } from './apiClient';
 import { User } from '../../shared';
 import {
   UserQueryParams,
@@ -12,37 +12,6 @@ import {
 } from '../types/user';
 
 class UserService {
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    // Check if response has content
-    if (response.status === 204 || response.headers.get('content-length') === '0') {
-      return null as T;
-    }
-
-    // Check if response content type is JSON
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      return response.json();
-    }
-
-    return null as T;
-  }
-
   async getUsers(params: UserQueryParams = {}): Promise<UsersResponse> {
     const searchParams = new URLSearchParams();
 
@@ -55,93 +24,63 @@ class UserService {
     const query = searchParams.toString();
     const endpoint = query ? `/users?${query}` : '/users';
 
-    return this.request<UsersResponse>(endpoint);
+    return apiClient.get<UsersResponse>(endpoint);
   }
 
   async getUserById(id: string): Promise<User> {
-    return this.request<User>(`/users/${id}`);
+    return apiClient.get<User>(`/users/${id}`);
   }
 
   async createUser(userData: CreateUserRequest): Promise<User> {
-    return this.request<User>('/users', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+    return apiClient.post<User>('/users', userData);
   }
 
   async updateUser(id: string, userData: UpdateUserRequest): Promise<User> {
-    return this.request<User>(`/users/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(userData),
-    });
+    return apiClient.patch<User>(`/users/${id}`, userData);
   }
+
   async deleteUser(id: string): Promise<void> {
-    await this.request(`/users/${id}`, {
-      method: 'DELETE',
-    });
+    await apiClient.delete(`/users/${id}`);
   }
 
   async deleteUsers(ids: string[]): Promise<void> {
-    await this.request('/users/bulk-delete', {
-      method: 'DELETE',
-      body: JSON.stringify({ ids }),
-    });
-  }
-
-  // Import functionality - Server-side processing
+    await apiClient.delete('/users/bulk-delete', { ids });
+  }  // Import functionality - Server-side processing
   getTemplate(): string {
-    return `${API_BASE_URL}/users/template`;
+    return `${apiClient.getBaseURL()}/users/template`;
   }
 
   async uploadImportFile(file: File): Promise<ImportUploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_BASE_URL}/users/import/upload`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
-      throw new Error(error.message || 'Upload failed');
-    }
-
-    return response.json();
+    return apiClient.uploadFile<ImportUploadResponse>('/users/import/upload', formData);
   }
 
   async validateImportData(sessionId: string): Promise<ImportValidationResponse> {
-    return this.request<ImportValidationResponse>(`/users/import/${sessionId}/validate`);
+    return apiClient.get<ImportValidationResponse>(`/users/import/${sessionId}/validate`);
   }
 
   async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponse> {
-    return this.request<ImportExecuteResponse>(`/users/import/${sessionId}/execute`, {
-      method: 'POST',
-      body: JSON.stringify(options || {}),
-    });
+    return apiClient.post<ImportExecuteResponse>(`/users/import/${sessionId}/execute`, options || {});
   }
 
   async getImportStatus(sessionId: string): Promise<ImportSession> {
-    return this.request<ImportSession>(`/users/import/${sessionId}/status`);
+    return apiClient.get<ImportSession>(`/users/import/${sessionId}/status`);
   }
+
   // Role assignment functionality
   async assignUserRoles(userId: string, roleAssignments: {
     roleId: string;
     organizationId?: string;
     isActive: boolean;
   }[]): Promise<void> {
-    await this.request(`/users/${userId}/roles`, {
-      method: 'POST',
-      body: JSON.stringify({ roleAssignments }),
-    });
+    await apiClient.post(`/users/${userId}/roles`, { roleAssignments });
   }
 
   // Organization membership functionality
   async updateUserOrganizations(userId: string, organizationIds: string[]): Promise<User> {
-    return this.request<User>(`/users/${userId}/organizations`, {
-      method: 'PUT',
-      body: JSON.stringify({ organizationIds }),
-    });
+    return apiClient.put<User>(`/users/${userId}/organizations`, { organizationIds });
   }
 }
 

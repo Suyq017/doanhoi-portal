@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindManyOptions } from 'typeorm';
+import { Repository, FindManyOptions, In } from 'typeorm';
 import { PaymentCampaign, PaymentCampaignStatus } from '../../entities/payment-campaign.entity';
 import { PaymentAssignment, PaymentAssignmentStatus } from '../../entities/payment-assignment.entity';
 import { PaymentHistory } from '../../entities/payment-history.entity';
@@ -9,11 +9,11 @@ import { User } from '../../entities/user.entity';
 import { Organization } from '../../entities/organization.entity';
 import { CreatePaymentCampaignDto } from '../dto/create-payment-campaign.dto';
 import { UpdatePaymentCampaignDto } from '../dto/update-payment-campaign.dto';
+import { RolesService } from '../../roles/roles.service';
 
 @Injectable()
 export class PaymentCampaignService {
   private readonly logger = new Logger(PaymentCampaignService.name);
-
   constructor(
     @InjectRepository(PaymentCampaign)
     private readonly campaignRepository: Repository<PaymentCampaign>,
@@ -27,7 +27,8 @@ export class PaymentCampaignService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Organization)
     private readonly organizationRepository: Repository<Organization>,
-  ) { }  /**
+    private readonly rolesService: RolesService,
+  ) { }/**
    * Create new payment campaign
    */
   async create(createDto: CreatePaymentCampaignDto, createdById: string): Promise<PaymentCampaign> {
@@ -62,8 +63,7 @@ export class PaymentCampaignService {
 
   /**
    * Get all campaigns with optional filters
-   */
-  async findAll(options?: {
+   */  async findAll(options?: {
     organizationId?: string;
     status?: PaymentCampaignStatus;
     search?: string;
@@ -71,87 +71,179 @@ export class PaymentCampaignService {
     endDate?: string;
     page?: number;
     limit?: number;
+    accessibleOrgIds?: string[] | null; // Allow null for super admin case
   }): Promise<{ campaigns: PaymentCampaign[]; page: number; limit: number; total: number; totalPages: number }> {
-    const { organizationId, status, search, startDate, endDate, page = 1, limit = 20 } = options || {};
+    const { organizationId, status, search, startDate, endDate, page = 1, limit = 20, accessibleOrgIds } = options || {};
 
-    const queryOptions: FindManyOptions<PaymentCampaign> = {
-      relations: ['organization', 'createdByUser', 'feeLevels'],
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit
-    };
+    const queryBuilder = this.campaignRepository.createQueryBuilder('campaign')
+      .leftJoinAndSelect('campaign.organization', 'organization')
+      .leftJoinAndSelect('campaign.createdByUser', 'createdByUser')
+      .leftJoinAndSelect('campaign.feeLevels', 'feeLevels')
+      .orderBy('campaign.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);    // Apply accessible organizations filter (only if there are specific organizations to filter by)
+    // If accessibleOrgIds is empty array (super admin case), don't apply any filter
+    // If accessibleOrgIds is null/undefined, also don't apply filter
+    // Only apply filter when accessibleOrgIds is a non-empty array
+    if (accessibleOrgIds && accessibleOrgIds.length > 0) {
+      this.logger.log(`Filtering campaigns by accessible organizations: ${accessibleOrgIds.join(', ')}`);
+      queryBuilder.andWhere('campaign.organizationId IN (:...accessibleOrgIds)', { accessibleOrgIds });
+    } else {
+      this.logger.log('No organization filter applied - showing all campaigns (super admin or no filter)');
+    }
 
-    // Build where conditions
-    const whereConditions: any = {};
-    
+    // Apply basic where conditions
     if (organizationId) {
-      whereConditions.organizationId = organizationId;
+      queryBuilder.andWhere('campaign.organizationId = :organizationId', { organizationId });
     }
-    
+
     if (status) {
-      whereConditions.status = status;
+      queryBuilder.andWhere('campaign.status = :status', { status });
     }
 
-    if (Object.keys(whereConditions).length > 0) {
-      queryOptions.where = whereConditions;
+    // Apply search filter
+    if (search) {
+      queryBuilder.andWhere('campaign.name ILIKE :search', { search: `%${search}%` });
     }
 
-    // Note: For search, startDate, endDate filters, we need to use QueryBuilder for more complex queries
-    // For now, we'll implement basic filtering. Advanced filtering with LIKE queries would need QueryBuilder
-    if (search || startDate || endDate) {
-      const queryBuilder = this.campaignRepository.createQueryBuilder('campaign')
-        .leftJoinAndSelect('campaign.organization', 'organization')
-        .leftJoinAndSelect('campaign.createdByUser', 'createdByUser')
-        .leftJoinAndSelect('campaign.feeLevels', 'feeLevels')
-        .orderBy('campaign.createdAt', 'DESC')
-        .skip((page - 1) * limit)
-        .take(limit);
-
-      // Apply basic where conditions
-      if (organizationId) {
-        queryBuilder.andWhere('campaign.organizationId = :organizationId', { organizationId });
-      }
-      
-      if (status) {
-        queryBuilder.andWhere('campaign.status = :status', { status });
-      }
-
-      // Apply search filter
-      if (search) {
-        queryBuilder.andWhere('campaign.name ILIKE :search', { search: `%${search}%` });
-      }
-
-      // Apply date filters
-      if (startDate) {
-        queryBuilder.andWhere('campaign.startDate >= :startDate', { startDate });
-      }
-
-      if (endDate) {
-        queryBuilder.andWhere('campaign.endDate <= :endDate', { endDate });
-      }
-
-      const [campaigns, total] = await queryBuilder.getManyAndCount();
-      const totalPages = Math.ceil(total / limit);
-
-      return { 
-        campaigns, 
-        page, 
-        limit, 
-        total, 
-        totalPages 
-      };
+    // Apply date filters
+    if (startDate) {
+      queryBuilder.andWhere('campaign.startDate >= :startDate', { startDate });
     }
 
-    const [campaigns, total] = await this.campaignRepository.findAndCount(queryOptions);
-    const totalPages = Math.ceil(total / limit);
+    if (endDate) {
+      queryBuilder.andWhere('campaign.endDate <= :endDate', { endDate });
+    }
 
-    return { 
-      campaigns, 
-      page, 
-      limit, 
-      total, 
-      totalPages 
+    const [campaigns, total] = await queryBuilder.getManyAndCount(); const totalPages = Math.ceil(total / limit);
+
+    return {
+      campaigns,
+      page,
+      limit,
+      total,
+      totalPages
     };
+  }
+  /**
+   * Get organizations that user has payment-campaigns permissions in
+   */  async getAccessibleOrganizations(userId: string): Promise<string[]> {
+    try {
+      // Get all user roles (both global and organization-specific)
+      const userRoles = await this.rolesService.getUserRoles(userId);
+      this.logger.log(`User ${userId} has ${userRoles.length} total roles`);
+
+      // Check if user has super admin role or system.access_admin permission globally
+      const hasSuperAdminRole = userRoles.some(userRole =>
+        userRole.organizationId === null && userRole.role.name === 'super_admin'
+      );
+
+      const hasSystemAdminPermission = userRoles.some(userRole =>
+        userRole.organizationId === null &&
+        userRole.role.permissions.some(permission =>
+          permission.code === 'system.access_admin' && permission.isActive
+        )
+      );
+
+      if (hasSuperAdminRole || hasSystemAdminPermission) {
+        this.logger.log(`User ${userId} is super admin or has system admin permission - returning empty array for no filter`);
+        return [];
+      }
+
+      // Get organization-specific roles with payment permissions
+      const accessibleOrgIds = userRoles
+        .filter(userRole => {
+          // Only check organization-specific roles (not global ones)
+          if (!userRole.organizationId) return false;
+
+          const hasPaymentPermission = userRole.role.permissions.some(permission =>
+            permission.code.startsWith('payment-campaigns.') && permission.isActive
+          );
+          if (hasPaymentPermission) {
+            this.logger.log(`User ${userId} has payment permission in organization ${userRole.organizationId} via role ${userRole.role.name}`);
+          }
+          return hasPaymentPermission;
+        })
+        .map(userRole => userRole.organizationId)
+        .filter(Boolean); // Remove null/undefined values
+
+      // Remove duplicates
+      const uniqueOrgIds = [...new Set(accessibleOrgIds)];
+      this.logger.log(`User ${userId} final accessible organization IDs: ${uniqueOrgIds.join(', ')}`);
+      return uniqueOrgIds;
+    } catch (error) {
+      this.logger.error(`Error getting accessible organizations for user ${userId}:`, error);
+      return []; // Return empty array if error - will show no campaigns
+    }
+  }
+
+  /**
+   * Get organization objects that user has payment-campaigns permissions in
+   */  async getAccessibleOrganizationsWithDetails(userId: string): Promise<Organization[]> {
+    try {
+      // Get all user roles (both global and organization-specific)
+      const userRoles = await this.rolesService.getUserRoles(userId);
+      this.logger.log(`User ${userId} has ${userRoles.length} total roles for organizations with details`);
+
+      // Check if user has super admin role or system.access_admin permission globally
+      const hasSuperAdminRole = userRoles.some(userRole =>
+        userRole.organizationId === null && userRole.role.name === 'super_admin'
+      );
+
+      const hasSystemAdminPermission = userRoles.some(userRole =>
+        userRole.organizationId === null &&
+        userRole.role.permissions.some(permission =>
+          permission.code === 'system.access_admin' && permission.isActive
+        )
+      );
+
+      if (hasSuperAdminRole || hasSystemAdminPermission) {
+        // Super admin can access all organizations
+        const allOrgs = await this.organizationRepository.find({
+          where: { isActive: true },
+          order: { name: 'ASC' }
+        });
+        this.logger.log(`Super admin user ${userId} has access to ${allOrgs.length} organizations`);
+        return allOrgs;
+      }
+
+      // Get organization-specific roles with payment permissions
+      const accessibleOrgIds = userRoles
+        .filter(userRole => {
+          // Only check organization-specific roles (not global ones)
+          if (!userRole.organizationId) return false;
+
+          const hasPaymentPermission = userRole.role.permissions.some(permission =>
+            permission.code.startsWith('payment-campaigns.') && permission.isActive
+          );
+          return hasPaymentPermission;
+        })
+        .map(userRole => userRole.organizationId)
+        .filter(Boolean); // Remove null/undefined values
+
+      // Remove duplicates
+      const uniqueOrgIds = [...new Set(accessibleOrgIds)];
+
+      if (uniqueOrgIds.length === 0) {
+        this.logger.log(`User ${userId} has no accessible organizations for payment campaigns`);
+        return [];
+      }
+
+      // Get organization objects
+      const organizations = await this.organizationRepository.find({
+        where: {
+          id: In(uniqueOrgIds),
+          isActive: true
+        },
+        order: { name: 'ASC' }
+      });
+
+      this.logger.log(`User ${userId} has access to ${organizations.length} organizations: ${organizations.map(o => o.name).join(', ')}`);
+      return organizations;
+    } catch (error) {
+      this.logger.error(`Error getting accessible organizations with details for user ${userId}:`, error);
+      return []; // Return empty array if error
+    }
   }
 
   /**
@@ -187,7 +279,7 @@ export class PaymentCampaignService {
     }
 
     // Check if status is being updated to CANCELLED or COMPLETED
-    const isStatusChangedToFinished = updateDto.status && 
+    const isStatusChangedToFinished = updateDto.status &&
       (updateDto.status === PaymentCampaignStatus.CANCELLED || updateDto.status === PaymentCampaignStatus.COMPLETED) &&
       campaign.status !== updateDto.status;
 
@@ -210,7 +302,7 @@ export class PaymentCampaignService {
 
     // Find all pending assignments for this campaign
     const pendingAssignments = await this.assignmentRepository.find({
-      where: { 
+      where: {
         campaignId: campaignId,
         status: PaymentAssignmentStatus.PENDING
       }
@@ -219,7 +311,7 @@ export class PaymentCampaignService {
     if (pendingAssignments.length > 0) {
       // Update all pending assignments to overdue
       await this.assignmentRepository.update(
-        { 
+        {
           campaignId: campaignId,
           status: PaymentAssignmentStatus.PENDING
         },

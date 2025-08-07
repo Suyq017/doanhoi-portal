@@ -1,3 +1,5 @@
+import { apiClient } from '../../../shared/services/apiClient';
+
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
 export interface LoginRequest {
@@ -56,6 +58,7 @@ export interface UserPermissionsResponse {
 }
 
 class AuthService {
+  // Use raw fetch for auth operations to avoid circular dependency with apiClient
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -127,22 +130,16 @@ class AuthService {
         'Authorization': `Bearer ${accessToken}`,
       },
     });
-  } async getUserPermissions(userId: string, organizationId?: string): Promise<UserPermissionsResponse> {
-    const queryParams = organizationId ? `?organizationId=${organizationId}` : '';
-    return this.request<UserPermissionsResponse>(`/auth/me/permissions${queryParams}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${this.getAccessToken()}`,
-      },
-    });
   }
+
+  // These methods can use apiClient since they need token refresh capability
+  async getUserPermissions(userId: string, organizationId?: string): Promise<UserPermissionsResponse> {
+    const queryParams = organizationId ? `?organizationId=${organizationId}` : '';
+    return apiClient.get<UserPermissionsResponse>(`/auth/me/permissions${queryParams}`);
+  }
+
   async getCurrentUser(): Promise<any> {
-    return this.request<any>('/auth/profile', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${this.getAccessToken()}`,
-      },
-    });
+    return apiClient.get<any>('/auth/profile');
   }
 
   // Token management in localStorage

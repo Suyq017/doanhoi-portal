@@ -311,14 +311,23 @@ export const seedPermissions = async (dataSource: DataSource) => {
             category: 'payments',
             context: PermissionContext.ORGANIZATION,
             sortOrder: 66,
-        },
-        {
+        }, {
             code: 'payment-campaigns.export',
             name: 'Xuất báo cáo đóng phí',
             description: 'Cho phép xuất báo cáo đóng phí',
             category: 'payments',
             context: PermissionContext.ORGANIZATION,
             sortOrder: 67,
+        },
+
+        // My Payments permissions (for individual users)
+        {
+            code: 'my-payments.access',
+            name: 'Truy cập trang đóng phí của tôi',
+            description: 'Cho phép truy cập trang xem các khoản phí được phân công cho mình',
+            category: 'my-payments',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 70,
         },
     ];
 

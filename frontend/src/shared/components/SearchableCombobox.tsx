@@ -14,6 +14,8 @@ interface SearchableComboboxProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  loading?: boolean;
+  emptyMessage?: string;
 }
 
 const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
@@ -22,23 +24,30 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
   options,
   placeholder = "Chọn...",
   disabled = false,
-  className = ""
+  className = "",
+  loading = false,
+  emptyMessage = "Không có dữ liệu"
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
-
-  // Filter options based on search term
-  const filteredOptions = options.filter(option =>
+  const listRef = useRef<HTMLUListElement>(null);  // Filter options based on search term - with safety checks
+  const filteredOptions = (options || []).filter(option =>
+    option &&
+    option.label &&
+    typeof option.label === 'string' &&
+    option.value !== undefined &&
+    option.value !== null &&
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Get display value
-  const selectedOption = options.find(option => option.value === value);
-  const displayValue = selectedOption ? selectedOption.label : '';
+  // Get display value - with safety checks
+  const selectedOption = (options || []).find(option =>
+    option && option.value === value
+  );
+  const displayValue = selectedOption && selectedOption.label ? selectedOption.label : '';
 
   // Handle click outside
   useEffect(() => {
@@ -62,13 +71,13 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault();
-          setFocusedIndex(prev => 
+          setFocusedIndex(prev =>
             prev < filteredOptions.length - 1 ? prev + 1 : 0
           );
           break;
         case 'ArrowUp':
           event.preventDefault();
-          setFocusedIndex(prev => 
+          setFocusedIndex(prev =>
             prev > 0 ? prev - 1 : filteredOptions.length - 1
           );
           break;
@@ -105,7 +114,7 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
 
   const handleToggle = () => {
     if (disabled) return;
-    
+
     setIsOpen(!isOpen);
     if (!isOpen) {
       setTimeout(() => inputRef.current?.focus(), 0);
@@ -131,9 +140,8 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full px-3 py-2 text-left border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:disabled:bg-gray-600 ${
-          isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
-        }`}
+        className={`w-full px-3 py-2 text-left border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:disabled:bg-gray-600 ${isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
+          }`}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
@@ -142,9 +150,8 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
             {displayValue || placeholder}
           </span>
           <ChevronDown
-            className={`w-4 h-4 text-gray-400 transition-transform ${
-              isOpen ? 'transform rotate-180' : ''
-            }`}
+            className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'transform rotate-180' : ''
+              }`}
           />
         </div>
       </button>
@@ -165,36 +172,35 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
                 className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:placeholder-gray-400"
               />
             </div>
-          </div>
-
-          {/* Options List */}
+          </div>          {/* Options List */}
           <ul
             ref={listRef}
             className="max-h-60 overflow-auto py-1"
             role="listbox"
           >
-            {filteredOptions.length === 0 ? (
+            {loading ? (
               <li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                Không tìm thấy kết quả
+                Đang tải...
+              </li>
+            ) : filteredOptions.length === 0 ? (
+              <li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                {searchTerm ? 'Không tìm thấy kết quả' : emptyMessage}
               </li>
             ) : (
               filteredOptions.map((option, index) => (
                 <li
                   key={option.value}
                   onClick={() => !option.disabled && handleSelect(option.value)}
-                  className={`px-3 py-2 text-sm cursor-pointer ${
-                    option.disabled
+                  className={`px-3 py-2 text-sm cursor-pointer ${option.disabled
                       ? 'text-gray-400 cursor-not-allowed dark:text-gray-500'
                       : 'text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600'
-                  } ${
-                    option.value === value
+                    } ${option.value === value
                       ? 'bg-blue-100 text-blue-900 dark:bg-blue-600 dark:text-white'
                       : ''
-                  } ${
-                    index === focusedIndex
+                    } ${index === focusedIndex
                       ? 'bg-gray-100 dark:bg-gray-600'
                       : ''
-                  }`}
+                    }`}
                   role="option"
                   aria-selected={option.value === value}
                 >

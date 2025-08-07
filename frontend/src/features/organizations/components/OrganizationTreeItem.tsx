@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Organization, OrganizationStats } from '../../../shared/types/organization';
 import { getOrgTypeText, getOrgTypeColor } from '../utils/organizationUtils';
 import { useAuth } from '../../auth/context/AuthContext';
+import { useOrganizationPagePermissions } from '../hooks/useOrganizationPagePermissions';
 import AddMemberModal from './AddMemberModal';
 import EditOrganizationModal from './EditOrganizationModal';
 import DeleteOrganizationModal from './DeleteOrganizationModal';
@@ -41,14 +42,15 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
     onOrganizationUpdatedError
 }) => {
     const { t } = useTranslation(['organizations', 'common']);
-    const { auth } = useAuth();
+    const { auth, hasPermission } = useAuth();
+    const permissions = useOrganizationPagePermissions();
     const location = useLocation();
     const hasChildren = org.children && org.children.length > 0;
-    const paddingLeft = level * 24;
-
-    const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+    const paddingLeft = level * 24; const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);    // Helper function kiểm tra user có trong user_organization không
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+    // Helper function kiểm tra user có trong user_organization không
     const isUserInOrganization = (organizationId: string): boolean => {
         if (!auth.user?.organizations) {
             console.log(`❌ No user organizations found for org ${org.name}. User:`, {
@@ -66,6 +68,38 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
 
         console.log(`👁️ Eye icon for ${org.name}: ${isMember ? 'SHOW' : 'HIDE'}`);
         return isMember;
+    };
+
+    // Debug logging for permissions
+    console.log(`🔐 Organization ${org.name} permissions:`, {
+        canAddMember: permissions.canAddMember,
+        canEdit: permissions.canEdit,
+        canDelete: permissions.canDelete,
+        canShowUsersIcon: permissions.canShowUsersIcon,
+        canAccessChildren: permissions.canAccessChildren,
+        isSuperAdmin: permissions.isSuperAdmin,
+        hasAnyManagementAction: permissions.hasAnyManagementAction,
+        currentUser: auth.user?.email,
+        userRoles: auth.userRoles?.map(r => ({ name: r.name, orgId: r.organizationId })) || [],
+        isMemberOfOrg: isUserInOrganization(org.id)
+    });
+
+    // Helper functions kiểm tra quyền hành động dựa trên role và organization context
+    const canAddMember = (): boolean => {
+        return permissions.canAddMember;
+    };
+
+    const canEditOrganization = (): boolean => {
+        return permissions.canEdit;
+    };
+
+    const canDeleteOrganization = (): boolean => {
+        return permissions.canDelete;
+    };
+
+    const canViewMembers = (): boolean => {
+        // User có thể xem members nếu có quyền view hoặc manage members
+        return permissions.canShowUsersIcon;
     };
 
     const handleDeleteSuccess = () => {
@@ -179,11 +213,32 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
     }; const shouldShowDetailLink = () => {
         // Không hiển thị eye icon nếu organization này là parent organization trong trang hiện tại
         if (isCurrentParentOrganization()) {
+            console.log(`👁️ Eye icon for ${org.name}: HIDE (Current parent organization)`);
             return false;
         }
 
-        // ĐIỀU KIỆN: User có trong user_organization của tổ chức này
-        return isUserInOrganization(org.id);
+        // ĐIỀU KIỆN HIỂN THỊ ICON CON MẮT:
+        // 1. User là super admin (có thể xem tất cả tổ chức)
+        if (permissions.isSuperAdmin) {
+            console.log(`👁️ Eye icon for ${org.name}: SHOW (Super Admin)`);
+            return true;
+        }
+
+        // 2. User có quyền access_children cho tổ chức này cụ thể
+        if (canAccessSpecificOrganization(org.id)) {
+            console.log(`👁️ Eye icon for ${org.name}: SHOW (Access Children Permission for this organization)`);
+            return true;
+        }
+
+        // 3. User có trong user_organization của tổ chức này (là thành viên)
+        const isMember = isUserInOrganization(org.id);
+        if (isMember) {
+            console.log(`👁️ Eye icon for ${org.name}: SHOW (Organization Member)`);
+            return true;
+        }
+
+        console.log(`👁️ Eye icon for ${org.name}: HIDE (No permission - not super admin, no access_children permission for this org, not a member)`);
+        return false;
     };
 
     // Create path to organization members page
@@ -192,7 +247,41 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         return `/organizations/${type}/${code}/members`;
     };    // Determine if Users icon should be clickable 
     const shouldMakeUsersClickable = () => {
-        return !!org.code; // Always show users icon if org has code, make it clickable
+        return !!org.code && canViewMembers(); // Check both org code existence and permission
+    };    // Helper function để tạo tooltip cho eye icon dựa trên lý do có quyền
+    const getEyeIconTooltip = (): string => {
+        if (permissions.isSuperAdmin) {
+            return t('organizations:tooltips.eye_icon_super_admin', {
+                defaultValue: 'Xem chi tiết tổ chức (Quyền Super Admin)'
+            });
+        }
+
+        if (canAccessSpecificOrganization(org.id)) {
+            return t('organizations:tooltips.eye_icon_access_children_specific', {
+                defaultValue: 'Xem chi tiết tổ chức (Quyền truy cập tổ chức này)'
+            });
+        }
+
+        if (isUserInOrganization(org.id)) {
+            return t('organizations:tooltips.eye_icon_member', {
+                defaultValue: 'Xem chi tiết tổ chức (Bạn là thành viên)'
+            });
+        }
+
+        return t('common:actions.view_details', { defaultValue: 'Xem chi tiết' });
+    };// Helper function kiểm tra quyền access_children cho tổ chức cụ thể
+    const canAccessSpecificOrganization = (organizationId: string): boolean => {
+        // Kiểm tra quyền access_children cho tổ chức này cụ thể
+        const hasDirectPermission = hasPermission('organizations.access_children', organizationId);
+
+        console.log(`🔍 Checking access_children permission for org ${org.name} (${organizationId}):`, {
+            hasDirectPermission,
+            userRoles: auth.userRoles?.filter(role => role.organizationId === organizationId),
+            currentOrganizationId: auth.currentOrganizationId,
+            organizationId
+        });
+
+        return hasDirectPermission;
     };
 
     return (
@@ -247,6 +336,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
                         to={createDetailPath(org.type, org.code)}
                         className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                         aria-label={t('common:actions.view_details')}
+                        title={getEyeIconTooltip()}
                     >
                         <Eye className="w-4 h-4" />
                     </Link>
@@ -270,27 +360,57 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
                     )}
 
                     <div className="flex items-center space-x-2">
-                        <button
-                            className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                            aria-label={t('common:actions.add_member')}
-                            onClick={() => setIsAddMemberModalOpen(true)}
-                        >
-                            <UserPlus className="w-4 h-4" />
-                        </button>
-                        <button
-                            className="p-1 text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300"
-                            aria-label={t('common:actions.edit')}
-                            onClick={() => setIsEditModalOpen(true)}
-                        >
-                            <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                            className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                            aria-label={t('common:actions.delete')}
-                            onClick={() => setIsDeleteModalOpen(true)}
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canAddMember() ? (
+                            <button
+                                className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                aria-label={t('common:actions.add_member')}
+                                onClick={() => setIsAddMemberModalOpen(true)}
+                                title={t('organizations:actions.add_member', { defaultValue: 'Thêm thành viên' })}
+                            >
+                                <UserPlus className="w-4 h-4" />
+                            </button>
+                        ) : (
+                            <div
+                                className="p-1 text-gray-400 cursor-not-allowed"
+                                title={t('organizations:messages.no_permission_add_member', { defaultValue: 'Bạn không có quyền thêm thành viên' })}
+                            >
+                                <UserPlus className="w-4 h-4" />
+                            </div>
+                        )}
+                        {canEditOrganization() ? (
+                            <button
+                                className="p-1 text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300"
+                                aria-label={t('common:actions.edit')}
+                                onClick={() => setIsEditModalOpen(true)}
+                                title={t('organizations:actions.edit', { defaultValue: 'Chỉnh sửa tổ chức' })}
+                            >
+                                <Edit className="w-4 h-4" />
+                            </button>
+                        ) : (
+                            <div
+                                className="p-1 text-gray-400 cursor-not-allowed"
+                                title={t('organizations:messages.no_permission_edit', { defaultValue: 'Bạn không có quyền chỉnh sửa tổ chức' })}
+                            >
+                                <Edit className="w-4 h-4" />
+                            </div>
+                        )}
+                        {canDeleteOrganization() ? (
+                            <button
+                                className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                aria-label={t('common:actions.delete')}
+                                onClick={() => setIsDeleteModalOpen(true)}
+                                title={t('organizations:actions.delete', { defaultValue: 'Xóa tổ chức' })}
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        ) : (
+                            <div
+                                className="p-1 text-gray-400 cursor-not-allowed"
+                                title={t('organizations:messages.no_permission_delete', { defaultValue: 'Bạn không có quyền xóa tổ chức' })}
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
