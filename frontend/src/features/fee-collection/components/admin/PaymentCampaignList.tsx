@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Eye, Edit, Trash2, Play, CheckCircle, X } from 'lucide-react';
 import { useToast } from '@/shared/hooks/useToast';
 import { Toast, ConfirmDialog } from '@/shared/components';
+import SearchableCombobox from '@/shared/components/SearchableCombobox';
 import { PaymentCampaign, PaymentCampaignFilters, Organization } from '../../types';
 import { paymentCampaignService } from '@/shared/services/fee-collection-service';
 
@@ -22,6 +23,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null); // Track which action is loading
+  const [searchTerm, setSearchTerm] = useState(''); // Local search term state
   const [filters, setFilters] = useState<PaymentCampaignFilters>({
     page: 1,
     limit: 10
@@ -32,6 +34,37 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
     total: 0,
     totalPages: 0
   });
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    (searchValue: string) => {
+      const timeoutId = setTimeout(() => {
+        setFilters(prev => ({ 
+          ...prev, 
+          search: searchValue || undefined, 
+          page: 1 
+        }));
+      }, 500); // 500ms delay
+
+      return () => clearTimeout(timeoutId);
+    },
+    []
+  );
+
+  // Handle search term change
+  useEffect(() => {
+    const cleanup = debouncedSearch(searchTerm);
+    return cleanup;
+  }, [searchTerm, debouncedSearch]);
+
+  // Create organization options for SearchableCombobox
+  const organizationOptions = [
+    { value: '', label: 'Tất cả tổ chức' },
+    ...organizations.map(org => ({
+      value: org.id,
+      label: org.name
+    }))
+  ];
 
   useEffect(() => {
     loadCampaigns();
@@ -178,16 +211,13 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
               Tổ chức
             </label>
-            <select
+            <SearchableCombobox
               value={filters.organizationId || ''}
-              onChange={(e) => setFilters(prev => ({ ...prev, organizationId: e.target.value || undefined, page: 1 }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">Tất cả tổ chức</option>
-              {organizations.map(org => (
-                <option key={org.id} value={org.id}>{org.name}</option>
-              ))}
-            </select>
+              onChange={(value) => setFilters(prev => ({ ...prev, organizationId: value || undefined, page: 1 }))}
+              options={organizationOptions}
+              placeholder="Chọn tổ chức..."
+              className="w-full"
+            />
           </div>
 
           <div>
@@ -238,8 +268,8 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
             <input
               type="text"
               placeholder="Tìm kiếm theo tên đợt đóng phí..."
-              value={filters.search || ''}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value || undefined, page: 1 }))}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>

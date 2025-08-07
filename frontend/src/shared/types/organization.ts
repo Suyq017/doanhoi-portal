@@ -1,3 +1,5 @@
+import { User } from "./user";
+
 export type OrganizationType =
     // Đoàn
     | 'doan_truong'
@@ -106,4 +108,17 @@ export interface OrganizationStats {
 export interface OrganizationImportData {
     studentCode: string;
     classOrUnitCode?: string;
+}
+
+export interface UserOrganization {
+  id: string;
+  userId: string;
+  organizationId: string;
+  role: string;
+  isActive: boolean;
+  joinedAt: string;
+  
+  // Relationships
+  user?: User;
+  organization?: Organization;
 }

@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import PaymentCampaignList from "../../components/admin/PaymentCampaignList";
 import PaymentCampaignForm from "../../components/admin/PaymentCampaignForm";
 import { Organization, PaymentCampaign } from "../../types";
+import { organizationService } from "@/shared/services/organizationService";
 
 export const PaymentCampaignsPage = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -10,12 +11,37 @@ export const PaymentCampaignsPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<PaymentCampaign | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [loadingOrganizations, setLoadingOrganizations] = useState(true);
 
   useEffect(() => {
-    // Load organizations if needed
-    // For now, using empty array
-    setOrganizations([]);
+    loadOrganizations();
   }, []);
+
+  const loadOrganizations = async () => {
+    try {
+      setLoadingOrganizations(true);
+      const orgs = await organizationService.getOrganizations();
+      // Map from shared Organization type to fee-collection Organization type
+      const mappedOrgs: Organization[] = (orgs || []).map(org => ({
+        id: org.id,
+        name: org.name,
+        code: org.code || '',
+        type: org.type || '',
+        parentId: org.parentId,
+        level: 1, // Default level if not provided
+        path: org.name, // Use name as path if no path available
+        isActive: true, // Default to true if not provided
+        createdAt: org.createdAt || new Date().toISOString(),
+        updatedAt: org.updatedAt || new Date().toISOString()
+      }));
+      setOrganizations(mappedOrgs);
+    } catch (error) {
+      console.error('Error loading organizations:', error);
+      setOrganizations([]);
+    } finally {
+      setLoadingOrganizations(false);
+    }
+  };
 
   const handleCreateCampaign = () => {
     setShowCreateModal(true);
@@ -62,11 +88,18 @@ export const PaymentCampaignsPage = () => {
         </div>
 
         {/* Payment Campaign List Component */}
-        <PaymentCampaignList 
-          organizations={organizations} 
-          onEditCampaign={handleEditCampaign}
-          refreshTrigger={refreshTrigger}
-        />
+        {loadingOrganizations ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div>
+            <span className="ml-2 text-gray-600 dark:text-gray-400">Đang tải tổ chức...</span>
+          </div>
+        ) : (
+          <PaymentCampaignList 
+            organizations={organizations} 
+            onEditCampaign={handleEditCampaign}
+            refreshTrigger={refreshTrigger}
+          />
+        )}
       </div>
 
       {/* Create Campaign Modal */}
