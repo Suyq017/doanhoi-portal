@@ -6,6 +6,7 @@ import AssignmentList from '../assignment/AssignmentList';
 import { paymentAssignmentService, paymentFeeLevelService } from '@/shared/services/fee-collection-service';
 import { useToast } from '@/shared/hooks/useToast';
 import { Toast } from '@/shared/components';
+import { ExportModal, useExport, ASSIGNMENT_EXPORT_FIELDS } from '@/shared/components/export';
 
 interface MemberAssignmentTabProps {
   campaign: PaymentCampaign;
@@ -18,7 +19,21 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
   const [showBulkCreate, setShowBulkCreate] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [feeLevels, setFeeLevels] = useState<any[]>([]);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const { toasts, showSuccess, showError, hideToast } = useToast();
+
+  // Export functionality
+  const { exportData } = useExport({
+    campaignId: campaign.id,
+    campaignName: campaign.name,
+    onSuccess: (fileName) => {
+      showSuccess(`Xuất file thành công: ${fileName}`);
+      setIsExportModalOpen(false);
+    },
+    onError: (error) => {
+      showError(`Lỗi xuất file: ${error}`);
+    },
+  });
 
   // Check if campaign is in read-only state
   const readOnly = campaign.status === 'COMPLETED' || campaign.status === 'CANCELLED';
@@ -58,30 +73,12 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
     setShowBulkCreate(true);
   };
 
-  const handleExport = async () => {
-    try {
-      // Create export data structure
-      const exportData = {
-        campaign: campaign.name,
-        assignments: assignments
-      };
-      
-      // TODO: Implement actual Excel export
-      console.log('Export data:', exportData);
-      
-      // For now, create a JSON download
-      const dataStr = JSON.stringify(exportData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `assignment-report-${campaign.name}-${new Date().toISOString().split('T')[0]}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error exporting assignments:', error);
-      // TODO: Show error message to user
-    }
+  const handleExport = async (fields: string[]) => {
+    await exportData(fields, 'assignments');
+  };
+
+  const handleOpenExportModal = () => {
+    setIsExportModalOpen(true);
   };
 
   const handleMemberSelect = (memberIds: string[]) => {
@@ -96,7 +93,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
         userId: userId,
         feeLevelId: formData.feeLevelId,
         amount: formData.customAmount,
-        notes: formData.notes || 'Assignment hàng loạt',
+        notes: formData.notes,
         dueDate: formData.dueDate,
       }));
 
@@ -146,7 +143,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
         assignments={assignments}
         loading={loading}
         onDeleteAssignment={readOnly ? undefined : handleAssignmentDelete}
-        onExportList={handleExport}
+        onExportList={handleOpenExportModal}
         onBulkCreate={readOnly ? undefined : handleBulkCreate}
         campaignEndDate={campaign.endDate}
         feeLevelsCount={feeLevels.length}
@@ -229,6 +226,16 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
           />
         ))}
       </div>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        title="Xuất danh sách phân công"
+        description="Chọn các trường dữ liệu bạn muốn xuất ra file Excel"
+        availableFields={ASSIGNMENT_EXPORT_FIELDS}
+      />
     </div>
   );
 };

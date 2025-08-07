@@ -79,7 +79,7 @@ export class PaymentAssignmentService {
       dueDate: createDto.dueDate,
       note: createDto.notes,
       status: PaymentAssignmentStatus.PENDING,
-      assignedById: createDto.userId || 'system' // Temporary fix - should be admin user ID
+      assignedById: campaign.createdById,
     });
 
     const savedAssignment = await this.assignmentRepository.save(assignment);

@@ -11,15 +11,20 @@ export const PaymentCampaignsPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<PaymentCampaign | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [loadingOrganizations, setLoadingOrganizations] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
-    loadOrganizations();
+    const initializePage = async () => {
+      setPageLoading(true);
+      await loadOrganizations();
+      setPageLoading(false);
+    };
+    
+    initializePage();
   }, []);
 
   const loadOrganizations = async () => {
     try {
-      setLoadingOrganizations(true);
       const orgs = await organizationService.getOrganizations();
       // Map from shared Organization type to fee-collection Organization type
       const mappedOrgs: Organization[] = (orgs || []).map(org => ({
@@ -38,8 +43,6 @@ export const PaymentCampaignsPage = () => {
     } catch (error) {
       console.error('Error loading organizations:', error);
       setOrganizations([]);
-    } finally {
-      setLoadingOrganizations(false);
     }
   };
 
@@ -62,6 +65,31 @@ export const PaymentCampaignsPage = () => {
     setRefreshTrigger(prev => prev + 1);
     handleCloseModals();
   };
+
+  if (pageLoading) {
+    return (
+      <div className="">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Quản Lý Thu Phí
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Quản lý các đợt thu phí của hội
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">
+              Đang tải...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -88,18 +116,11 @@ export const PaymentCampaignsPage = () => {
         </div>
 
         {/* Payment Campaign List Component */}
-        {loadingOrganizations ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div>
-            <span className="ml-2 text-gray-600 dark:text-gray-400">Đang tải tổ chức...</span>
-          </div>
-        ) : (
-          <PaymentCampaignList 
-            organizations={organizations} 
-            onEditCampaign={handleEditCampaign}
-            refreshTrigger={refreshTrigger}
-          />
-        )}
+        <PaymentCampaignList 
+          organizations={organizations} 
+          onEditCampaign={handleEditCampaign}
+          refreshTrigger={refreshTrigger}
+        />
       </div>
 
       {/* Create Campaign Modal */}

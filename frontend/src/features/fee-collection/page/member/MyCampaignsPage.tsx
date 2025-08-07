@@ -143,7 +143,7 @@ export const MyCampaignsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -156,7 +156,7 @@ export const MyCampaignsPage: React.FC = () => {
         </div>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="w-12 h-12 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
+            <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
               Đang tải danh sách...
             </p>
@@ -185,7 +185,7 @@ export const MyCampaignsPage: React.FC = () => {
             <p className="text-red-600 dark:text-red-400">{error}</p>
             <button
               onClick={fetchAssignments}
-              className="px-4 py-2 mt-4 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 mt-4 text-white rounded-lg bg-doan-600 hover:bg-doan-700"
             >
               Thử lại
             </button>

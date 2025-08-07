@@ -6,13 +6,15 @@ export interface UseExportOptions {
   onError?: (error: string) => void;
   organizationId?: string;
   organizationName?: string;
+  campaignId?: string;
+  campaignName?: string;
 }
 
 export const useExport = (options: UseExportOptions = {}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const exportData = async (fields: string[], type: 'organization' | 'users' = 'organization') => {
+  const exportData = async (fields: string[], type: 'organization' | 'users' | 'assignments' = 'organization') => {
     if (fields.length === 0) {
       setError('Vui lòng chọn ít nhất một trường để xuất');
       return;
@@ -28,6 +30,9 @@ export const useExport = (options: UseExportOptions = {}) => {
       if (type === 'organization' && options.organizationId) {
         blob = await exportService.exportOrganizationMembers(options.organizationId, fields);
         fileName = exportService.generateFileName('danh_sach_thanh_vien', options.organizationName);
+      } else if (type === 'assignments' && options.campaignId) {
+        blob = await exportService.exportPaymentAssignments(options.campaignId, fields);
+        fileName = exportService.generateFileName('danh_sach_phan_cong', options.campaignName);
       } else {
         blob = await exportService.exportUsers(fields);
         fileName = exportService.generateFileName('danh_sach_nguoi_dung');

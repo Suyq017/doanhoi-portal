@@ -138,6 +138,36 @@ const PaymentCampaignDetailPage: React.FC = () => {
       setActivationError(`Không thể kích hoạt đợt thu phí: ${missingRequirements.join(', ')}`);
       return;
     }
+
+    // Show confirmation dialog for activate action
+    if (action === 'activate') {
+      const shouldActivate = await showConfirm(
+        'Kích hoạt đợt thu phí',
+        'Bạn có chắc chắn muốn kích hoạt đợt thu phí này? Sau khi kích hoạt, thành viên sẽ có thể thực hiện thanh toán.',
+        {
+          confirmText: 'Kích hoạt',
+          cancelText: 'Hủy',
+          variant: 'warning'
+        }
+      );
+      
+      if (!shouldActivate) return;
+    }
+
+    // Show confirmation dialog for cancel action
+    if (action === 'cancel') {
+      const shouldCancel = await showConfirm(
+        'Hủy đợt thu phí',
+        'Bạn có chắc chắn muốn hủy đợt thu phí này? Sau khi hủy, thành viên sẽ không thể thực hiện thanh toán và đợt thu phí sẽ kết thúc.',
+        {
+          confirmText: 'Hủy đợt thu phí',
+          cancelText: 'Không hủy',
+          variant: 'danger'
+        }
+      );
+      
+      if (!shouldCancel) return;
+    }
     
     try {
       setActionLoading(true);
@@ -198,8 +228,8 @@ const PaymentCampaignDetailPage: React.FC = () => {
 
     // Use custom confirm dialog
     const shouldDelete = await showConfirm(
-      'Xóa đợt thu phí',
-      'Hành động này không thể hoàn tác! Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?',
+      'Xóa đợt thu phí - Hành động này không thể hoàn tác!',
+      'Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?',
       {
         confirmText: 'Xóa',
         cancelText: 'Hủy',
@@ -247,25 +277,55 @@ const PaymentCampaignDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-32 h-32 border-b-2 border-blue-600 rounded-full animate-spin"></div>
+      <div className="">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Chi Tiết Đợt Thu Phí
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Thông tin chi tiết và quản lý đợt thu phí
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">
+              Đang tải thông tin đợt thu phí...
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error || !campaign) {
     return (
-      <div className="container px-4 py-6 mx-auto">
-        <div className="px-4 py-3 text-red-700 border border-red-200 rounded bg-red-50 dark:bg-red-900 dark:border-red-800 dark:text-red-200">
-          {error || 'Campaign not found'}
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Chi Tiết Đợt Thu Phí
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Thông tin chi tiết và quản lý đợt thu phí
+            </p>
+          </div>
         </div>
-        <Link
-          to="/admin/payment-campaigns"
-          className="inline-flex items-center mt-4 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Quay lại danh sách
-        </Link>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="mb-4 text-xl text-red-500">⚠️</div>
+            <p className="text-red-600 dark:text-red-400">{error || 'Không tìm thấy đợt thu phí'}</p>
+            <Link
+              to="/admin/payment-campaigns"
+              className="inline-flex items-center px-4 py-2 mt-4 text-white rounded-lg bg-doan-600 hover:bg-doan-700"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Quay lại danh sách
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }

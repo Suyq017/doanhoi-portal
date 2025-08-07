@@ -5,6 +5,8 @@ import * as XLSX from 'xlsx';
 import { User } from '../entities/user.entity';
 import { Organization } from '../entities/organization.entity';
 import { UserOrganization } from '../entities/user-organization.entity';
+import { PaymentAssignment } from '../entities/payment-assignment.entity';
+import { PaymentCampaign } from '../entities/payment-campaign.entity';
 import { ExportRequestDto, ExportFormat } from './dto/export-request.dto';
 
 @Injectable()
@@ -16,6 +18,10 @@ export class ExportService {
     private organizationRepository: Repository<Organization>,
     @InjectRepository(UserOrganization)
     private userOrganizationRepository: Repository<UserOrganization>,
+    @InjectRepository(PaymentAssignment)
+    private paymentAssignmentRepository: Repository<PaymentAssignment>,
+    @InjectRepository(PaymentCampaign)
+    private paymentCampaignRepository: Repository<PaymentCampaign>,
   ) {}
 
   async exportUsers(exportRequest: ExportRequestDto): Promise<Buffer> {
@@ -91,6 +97,78 @@ export class ExportService {
     return buffer;
   }
 
+  async exportPaymentAssignments(
+    campaignId: string,
+    exportRequest: ExportRequestDto,
+  ): Promise<Buffer> {
+    const { fields, format } = exportRequest;
+
+    // Verify campaign exists
+    const campaign = await this.paymentCampaignRepository.findOne({
+      where: { id: campaignId },
+      relations: { organization: true },
+    });
+
+    if (!campaign) {
+      throw new Error('Không tìm thấy đợt thu phí');
+    }
+
+    // Query payment assignments with all related data
+    const assignments = await this.paymentAssignmentRepository.find({
+      where: { campaignId },
+      relations: {
+        user: {
+          managementDepartment: true,
+          trainingDepartment: true,
+          class: true,
+        },
+        feeLevel: true,
+        assignedByUser: true,
+        campaign: true,
+      },
+    });
+
+    if (assignments.length === 0) {
+      throw new Error('Đợt thu phí không có phân công nào');
+    }
+
+    // Transform assignments data for export
+    const assignmentData = assignments.map(assignment => ({
+      // Member information
+      memberCode: assignment.user?.code,
+      memberName: assignment.user ? `${assignment.user.familyName || ''} ${assignment.user.givenName || ''}`.trim() : '',
+      memberEmail: assignment.user?.email,
+      memberPhone: assignment.user?.phone,
+      
+      // Assignment information
+      feeLevelName: assignment.feeLevel?.levelName,
+      amount: assignment.customAmount || assignment.feeLevel?.amount,
+      dueDate: assignment.dueDate,
+      status: assignment.status,
+      notes: assignment.note,
+      
+      // Payment information (these would come from payment records if implemented)
+      paidAmount: null, // TODO: Add relation to payment records
+      paymentDate: assignment.paidAt,
+      paymentMethod: null, // TODO: Add from payment records
+      transactionId: null, // TODO: Add from payment records
+      
+      // System information
+      assignedDate: assignment.assignedAt,
+      assignedBy: assignment.assignedByUser ? `${assignment.assignedByUser.familyName || ''} ${assignment.assignedByUser.givenName || ''}`.trim() : '',
+      lastUpdated: assignment.updatedAt,
+    }));
+
+    // Generate Excel file with safe sheet name
+    const safeSheetName = this.createSafeSheetName(`Phân công - ${campaign.name}`);
+    const buffer = await this.generateExcelFileForAssignments(
+      assignmentData,
+      fields,
+      safeSheetName,
+    );
+    return buffer;
+  }
+
   private async generateExcelFile(
     users: any[],
     fields: string[],
@@ -109,6 +187,43 @@ export class ExportService {
       const row = {};
       fields.forEach((field, index) => {
         row[headers[index]] = this.getFieldValue(user, field);
+      });
+      return row;
+    });
+
+    // Create worksheet
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+
+    // Set column widths
+    const columnWidths = headers.map(header => ({ wch: Math.max(header.length, 15) }));
+    worksheet['!cols'] = columnWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+    // Generate buffer
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    return buffer;
+  }
+
+  private async generateExcelFileForAssignments(
+    assignments: any[],
+    fields: string[],
+    sheetName: string,
+  ): Promise<Buffer> {
+    const workbook = XLSX.utils.book_new();
+
+    // Define field mappings for assignments
+    const fieldMappings = this.getAssignmentFieldMappings();
+
+    // Create headers
+    const headers = fields.map(field => fieldMappings[field]?.label || field);
+
+    // Create data rows
+    const rows = assignments.map(assignment => {
+      const row = {};
+      fields.forEach((field, index) => {
+        row[headers[index]] = this.getAssignmentFieldValue(assignment, field);
       });
       return row;
     });
@@ -212,6 +327,84 @@ export class ExportService {
     // Handle special cases
     if (field === 'fullName') {
       value = user.fullName || `${user.familyName || ''} ${user.givenName || ''}`.trim();
+    }
+    
+    // Apply formatter if available
+    if (mapping?.formatter && value !== null && value !== undefined) {
+      return mapping.formatter(value);
+    }
+    
+    // Return empty string for null/undefined values
+    return value !== null && value !== undefined ? String(value) : '';
+  }
+
+  private getAssignmentFieldMappings(): Record<string, { label: string; formatter?: (value: any) => string }> {
+    return {
+      // Member Information
+      memberCode: { label: 'Mã số thành viên' },
+      memberName: { label: 'Họ và tên thành viên' },
+      memberEmail: { label: 'Email thành viên' },
+      memberPhone: { label: 'Số điện thoại thành viên' },
+      
+      // Assignment Information
+      feeLevelName: { label: 'Tên mức phí' },
+      amount: { 
+        label: 'Số tiền (VNĐ)',
+        formatter: (value: number) => value ? value.toLocaleString('vi-VN') : '',
+      },
+      dueDate: { 
+        label: 'Hạn đóng',
+        formatter: (value: Date) => value ? new Date(value).toLocaleDateString('vi-VN') : '',
+      },
+      status: { 
+        label: 'Trạng thái thanh toán',
+        formatter: (value: string) => {
+          const statuses = {
+            PENDING: 'Chờ thanh toán',
+            PAID: 'Đã thanh toán',
+            OVERDUE: 'Quá hạn',
+            EXEMPTED: 'Được miễn'
+          };
+          return statuses[value] || value;
+        },
+      },
+      notes: { label: 'Ghi chú' },
+      
+      // Payment Information
+      paidAmount: { 
+        label: 'Số tiền đã đóng (VNĐ)',
+        formatter: (value: number) => value ? value.toLocaleString('vi-VN') : '',
+      },
+      paymentDate: { 
+        label: 'Ngày thanh toán',
+        formatter: (value: Date) => value ? new Date(value).toLocaleDateString('vi-VN') : '',
+      },
+      paymentMethod: { label: 'Phương thức thanh toán' },
+      transactionId: { label: 'Mã giao dịch' },
+      
+      // System Information
+      assignedDate: { 
+        label: 'Ngày phân công',
+        formatter: (value: Date) => value ? new Date(value).toLocaleDateString('vi-VN') : '',
+      },
+      assignedBy: { label: 'Người phân công' },
+      lastUpdated: { 
+        label: 'Cập nhật lần cuối',
+        formatter: (value: Date) => value ? new Date(value).toLocaleDateString('vi-VN') : '',
+      },
+    };
+  }
+
+  private getAssignmentFieldValue(assignment: any, field: string): string {
+    const mappings = this.getAssignmentFieldMappings();
+    const mapping = mappings[field];
+    
+    let value = assignment[field];
+    
+    // Handle nested properties
+    if (field.includes('.')) {
+      const parts = field.split('.');
+      value = parts.reduce((obj, part) => obj?.[part], assignment);
     }
     
     // Apply formatter if available

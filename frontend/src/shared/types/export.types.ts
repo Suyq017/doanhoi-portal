@@ -59,3 +59,29 @@ export const USER_EXPORT_FIELDS: ExportField[] = [
   { key: 'updatedAt', label: 'Ngày cập nhật', category: 'system' },
   { key: 'joinedAt', label: 'Ngày tham gia', category: 'system' },
 ];
+
+export const ASSIGNMENT_EXPORT_FIELDS: ExportField[] = [
+  // Member Information
+  { key: 'memberCode', label: 'Mã số thành viên', category: 'basic', description: 'Mã số sinh viên/cán bộ của thành viên' },
+  { key: 'memberName', label: 'Họ và tên thành viên', category: 'basic' },
+  { key: 'memberEmail', label: 'Email thành viên', category: 'basic' },
+  { key: 'memberPhone', label: 'Số điện thoại thành viên', category: 'basic' },
+  
+  // Assignment Information
+  { key: 'feeLevelName', label: 'Tên mức phí', category: 'basic', description: 'Tên của mức phí được phân công' },
+  { key: 'amount', label: 'Số tiền', category: 'basic', description: 'Số tiền cần đóng (VNĐ)' },
+  { key: 'dueDate', label: 'Hạn đóng', category: 'basic', description: 'Ngày hết hạn đóng phí' },
+  { key: 'status', label: 'Trạng thái thanh toán', category: 'basic' },
+  { key: 'notes', label: 'Ghi chú', category: 'basic' },
+  
+  // Payment Information
+  { key: 'paidAmount', label: 'Số tiền đã đóng', category: 'organization', description: 'Số tiền thực tế đã thanh toán' },
+  { key: 'paymentDate', label: 'Ngày thanh toán', category: 'organization' },
+  { key: 'paymentMethod', label: 'Phương thức thanh toán', category: 'organization' },
+  { key: 'transactionId', label: 'Mã giao dịch', category: 'organization' },
+  
+  // System Information
+  { key: 'assignedDate', label: 'Ngày phân công', category: 'system' },
+  { key: 'assignedBy', label: 'Người phân công', category: 'system' },
+  { key: 'lastUpdated', label: 'Cập nhật lần cuối', category: 'system' },
+];

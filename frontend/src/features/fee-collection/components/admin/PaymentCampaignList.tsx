@@ -100,6 +100,51 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
   };
 
   const handleStatusChange = async (id: string, action: 'activate' | 'complete' | 'cancel') => {
+    // Show confirmation dialog for activate action
+    if (action === 'activate') {
+      const shouldActivate = await showConfirm(
+        'Kích hoạt đợt thu phí',
+        'Bạn có chắc chắn muốn kích hoạt đợt thu phí này? Sau khi kích hoạt, thành viên sẽ có thể thực hiện thanh toán.',
+        {
+          confirmText: 'Kích hoạt',
+          cancelText: 'Hủy',
+          variant: 'warning'
+        }
+      );
+      
+      if (!shouldActivate) return;
+    }
+
+    // Show confirmation dialog for complete action
+    if (action === 'complete') {
+      const shouldComplete = await showConfirm(
+        'Hoàn thành đợt thu phí',
+        'Bạn có chắc chắn muốn hoàn thành đợt thu phí này? Sau khi hoàn thành, đợt thu phí sẽ kết thúc và không thể thay đổi.',
+        {
+          confirmText: 'Hoàn thành',
+          cancelText: 'Hủy',
+          variant: 'info'
+        }
+      );
+      
+      if (!shouldComplete) return;
+    }
+
+    // Show confirmation dialog for cancel action
+    if (action === 'cancel') {
+      const shouldCancel = await showConfirm(
+        'Hủy đợt thu phí',
+        'Bạn có chắc chắn muốn hủy đợt thu phí này? Sau khi hủy, thành viên sẽ không thể thực hiện thanh toán và đợt thu phí sẽ kết thúc.',
+        {
+          confirmText: 'Hủy đợt thu phí',
+          cancelText: 'Không hủy',
+          variant: 'danger'
+        }
+      );
+      
+      if (!shouldCancel) return;
+    }
+    
     try {
       setActionLoading(`${id}-${action}`);
       let response;
@@ -152,8 +197,8 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
 
     // Use custom confirm dialog
     const shouldDelete = await showConfirm(
-      'Xóa đợt thu phí',
-      'Hành động này không thể hoàn tác! Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?',
+      'Xóa đợt thu phí - Hành động này không thể hoàn tác!',
+      ` Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?`,
       {
         confirmText: 'Xóa',
         cancelText: 'Hủy',
@@ -196,8 +241,27 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-32 h-32 border-b-2 border-blue-600 rounded-full animate-spin"></div>
+      <div className="space-y-6">
+        {/* Filters placeholder */}
+        <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            {/* Empty filter placeholders */}
+            <div className="h-10 bg-gray-200 rounded animate-pulse dark:bg-gray-700"></div>
+            <div className="h-10 bg-gray-200 rounded animate-pulse dark:bg-gray-700"></div>
+            <div className="h-10 bg-gray-200 rounded animate-pulse dark:bg-gray-700"></div>
+            <div className="h-10 bg-gray-200 rounded animate-pulse dark:bg-gray-700"></div>
+          </div>
+        </div>
+
+        {/* Loading content */}
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">
+              Đang tải danh sách đợt thu phí...
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

@@ -47,6 +47,28 @@ class ExportService {
     return response.blob();
   }
 
+  async exportPaymentAssignments(campaignId: string, fields: string[]): Promise<Blob> {
+    const request: ExportRequest = {
+      fields,
+      format: 'xlsx'
+    };
+
+    const response = await fetch(`${this.baseUrl}/export/payment-assignments/${campaignId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Xuất file danh sách phân công thất bại');
+    }
+
+    return response.blob();
+  }
+
   downloadFile(blob: Blob, fileName: string) {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
