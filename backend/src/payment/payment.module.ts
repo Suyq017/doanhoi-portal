@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Import PayosModule để sử dụng SimplePayosService
 import { PayosModule } from '../payos/payos.module';
+import { RolesModule } from '../roles/roles.module'; // Import RolesModule
 
 // Entities
 import { PaymentCampaign } from '../entities/payment-campaign.entity';
@@ -40,6 +41,7 @@ import { PaymentAdminController } from './payment-admin.controller'; // Import A
       User,
     ]),
     forwardRef(() => PayosModule), // Forward reference để tránh circular dependency
+    forwardRef(() => RolesModule), // Import RolesModule để sử dụng RolesService
   ],
   controllers: [
     PaymentCampaignController,
@@ -64,4 +66,4 @@ import { PaymentAdminController } from './payment-admin.controller'; // Import A
     PaymentCampaignPayosConfigService, // Export để PayosModule có thể sử dụng
   ],
 })
-export class PaymentModule {}
+export class PaymentModule { }

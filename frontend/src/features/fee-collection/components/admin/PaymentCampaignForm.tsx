@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, X } from 'lucide-react';
-import { 
-  PaymentCampaign, 
-  CreatePaymentCampaignDto, 
-  UpdatePaymentCampaignDto, 
+import {
+  PaymentCampaign,
+  CreatePaymentCampaignDto,
+  UpdatePaymentCampaignDto,
+  Organization
 } from '../../types';
 import { paymentCampaignService } from '@/shared/services/fee-collection-service';
 import { organizationService } from '@/shared/services/organizationService';
@@ -26,20 +27,22 @@ interface PaymentCampaignFormProps {
   mode: 'create' | 'edit';
   onSave?: () => void;
   onCancel?: () => void;
+  accessibleOrganizations?: Organization[]; // New prop for accessible organizations
 }
 
-const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({ 
-  campaign, 
+const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
+  campaign,
   mode,
   onSave,
-  onCancel
+  onCancel,
+  accessibleOrganizations
 }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loadingOrganizations, setLoadingOrganizations] = useState(false);
-  
+
   const [formData, setFormData] = useState<PaymentCampaignBasicFormData>({
     organizationId: campaign?.organizationId || '',
     organizationName: campaign?.organization?.name || '',
@@ -49,27 +52,38 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
     startTime: campaign?.startDate ? campaign.startDate.split('T')[1]?.substring(0, 5) || '00:00' : '00:00',
     endDate: campaign?.endDate ? campaign.endDate.split('T')[0] : '',
     endTime: campaign?.endDate ? campaign.endDate.split('T')[1]?.substring(0, 5) || '23:59' : '23:59',
-  });
-
-  useEffect(() => {
-    loadOrganizations();
-  }, []);
-
+  }); useEffect(() => {
+    // Use accessible organizations if provided, otherwise load all organizations
+    if (accessibleOrganizations && accessibleOrganizations.length > 0) {
+      const formattedOrgs = accessibleOrganizations
+        .filter(org => org && org.id && org.name) // Filter out invalid organizations
+        .map(org => ({
+          ...org,
+          displayName: org.name
+        }));
+      setOrganizations(formattedOrgs);
+    } else {
+      loadOrganizations();
+    }
+  }, [accessibleOrganizations]);
   const loadOrganizations = async () => {
     try {
       setLoadingOrganizations(true);
       const orgs = await organizationService.getOrganizations();
-      
-      // Format organizations for searchable combobox
-      const formattedOrgs = orgs.map(org => ({
-        ...org,
-        displayName: org.name
-      }));
-      
+
+      // Format organizations for searchable combobox with safety checks
+      const formattedOrgs = orgs
+        .filter(org => org && org.id && org.name) // Filter out invalid organizations
+        .map(org => ({
+          ...org,
+          displayName: org.name
+        }));
+
       setOrganizations(formattedOrgs);
     } catch (err) {
       console.error('Error loading organizations:', err);
       setError('Không thể tải danh sách tổ chức');
+      setOrganizations([]); // Set empty array on error
     } finally {
       setLoadingOrganizations(false);
     }
@@ -80,49 +94,48 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
       setError('Vui lòng chọn tổ chức');
       return false;
     }
-    
+
     if (!formData.name.trim()) {
       setError('Vui lòng nhập tên đợt đóng phí');
       return false;
     }
-    
+
     if (!formData.startDate) {
       setError('Vui lòng chọn ngày bắt đầu');
       return false;
     }
-    
+
     if (!formData.startTime) {
       setError('Vui lòng chọn giờ bắt đầu');
       return false;
     }
-    
+
     if (!formData.endDate) {
       setError('Vui lòng chọn ngày kết thúc');
       return false;
     }
-    
+
     if (!formData.endTime) {
       setError('Vui lòng chọn giờ kết thúc');
       return false;
     }
-    
+
     const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
     const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
-    
+
     if (startDateTime >= endDateTime) {
       setError('Thời gian bắt đầu phải trước thời gian kết thúc');
       return false;
     }
-    
+
     return true;
   };
-
   const handleOrganizationSelect = (organizationId: string) => {
-    const selectedOrg = organizations.find(org => org.id === organizationId);
-    if (selectedOrg) {
-      setFormData(prev => ({ 
-        ...prev, 
-        organizationId, 
+    const selectedOrg = organizations.find(org => org && org.id === organizationId);
+    if (selectedOrg && selectedOrg.name) {
+      setFormData(prev => ({
+        ...prev,
+        organizationId,
         organizationName: selectedOrg.name
       }));
     }
@@ -130,13 +143,13 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       if (mode === 'create') {
         // Create campaign only
         const campaignData: CreatePaymentCampaignDto = {
@@ -146,10 +159,10 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           startDate: `${formData.startDate}T${formData.startTime}:00`,
           endDate: `${formData.endDate}T${formData.endTime}:00`
         };
-        
+
         const campaignResponse = await paymentCampaignService.createPaymentCampaign(campaignData);
-        const newCampaign : any = campaignResponse;
-        
+        const newCampaign: any = campaignResponse;
+
         // Use callback if provided, otherwise navigate
         if (onSave) {
           onSave();
@@ -165,9 +178,9 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           startDate: `${formData.startDate}T${formData.startTime}:00`,
           endDate: `${formData.endDate}T${formData.endTime}:00`
         };
-        
+
         await paymentCampaignService.updatePaymentCampaign(campaign.id, updateData);
-        
+
         // Use callback if provided, otherwise navigate
         if (onSave) {
           onSave();
@@ -215,22 +228,26 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
         {/* Basic Information */}
         <div className="p-6 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
           <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">Thông Tin Cơ Bản</h2>
-          
+
           {/* Row 1: Tổ chức và Tên đợt đóng phí */}
           <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Tổ chức <span className="text-red-500">*</span>
-              </label>
-              <SearchableCombobox
+              </label>              <SearchableCombobox
                 value={formData.organizationId}
                 onChange={handleOrganizationSelect}
-                options={organizations.map(org => ({
-                  value: org.id,
-                  label: org.displayName
-                }))}
+                options={organizations
+                  .filter(org => org && org.id && org.displayName) // Additional safety filter
+                  .map(org => ({
+                    value: org.id,
+                    label: org.displayName
+                  }))
+                }
                 placeholder="Chọn tổ chức..."
                 disabled={mode === 'edit' || loadingOrganizations}
+                loading={loadingOrganizations}
+                emptyMessage="Không có tổ chức nào có sẵn"
                 className="w-full"
               />
               {loadingOrganizations && (

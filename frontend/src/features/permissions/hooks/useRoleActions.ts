@@ -59,11 +59,17 @@ export const useRoleActions = ({
     const handleEditRole = useCallback((role: Role) => {
         openEditModal(role);
     }, [openEditModal]); const handleEditSuccess = useCallback(async (roleId: string, roleData: any) => {
+        console.log('=== DEBUG useRoleActions.handleEditSuccess ===');
+        console.log('Role ID:', roleId);
+        console.log('Role Data:', roleData);
+
         try {
             await updateRole(roleId, roleData);
             closeModal();
             showSuccess(t('messages.updateSuccess'));
         } catch (error) {
+            console.error('=== ERROR in useRoleActions.handleEditSuccess ===');
+            console.error('Error:', error);
             showError(t('messages.updateError'));
         }
     }, [updateRole, closeModal, showSuccess, showError, t]); const handleDeleteRole = useCallback((role: Role) => {

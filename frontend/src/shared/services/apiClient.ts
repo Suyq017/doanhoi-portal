@@ -8,9 +8,8 @@ class ApiClient {
     resolve: (value?: any) => void;
     reject: (reason?: any) => void;
   }> = [];
-
   constructor() {
-    this.baseURL = '';
+    this.baseURL = import.meta.env.VITE_BACKEND_API_URL || '';
   }
 
   private processQueue(error: any, token: string | null = null) {
@@ -76,7 +75,7 @@ class ApiClient {
         if (refreshToken) {
           const refreshResponse = await authService.refreshToken(refreshToken);
           authService.setTokens(refreshResponse.accessToken, refreshToken);
-          
+
           this.processQueue(null, refreshResponse.accessToken);
 
           // Retry original request with new token
@@ -99,14 +98,14 @@ class ApiClient {
     if (!response.ok) {
       const errorText = await response.text();
       let errorMessage = `HTTP error! status: ${response.status}`;
-      
+
       try {
         const errorData = JSON.parse(errorText);
         errorMessage = errorData.message || errorMessage;
       } catch {
         errorMessage = errorText || errorMessage;
       }
-      
+
       throw new Error(errorMessage);
     }
 
@@ -153,8 +152,57 @@ class ApiClient {
     });
   }
 
-  delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    return this.request<T>(endpoint, { ...options, method: 'DELETE' });
+  delete<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'DELETE',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // Special method for file uploads (uses FormData instead of JSON)
+  uploadFile<T>(endpoint: string, formData: FormData, options?: RequestInit): Promise<T> {
+    // Remove Content-Type header for FormData - let browser set it with boundary
+    const { 'Content-Type': _, ...headersWithoutContentType } = (options?.headers as Record<string, string>) || {};
+
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'POST',
+      body: formData,
+      headers: headersWithoutContentType,
+    });
+  }
+
+  // Method to get the base URL for template downloads and other direct links
+  getBaseURL(): string {
+    return this.baseURL;
+  }
+
+  // Special method for downloading blobs (files)
+  async downloadBlob(endpoint: string, options?: RequestInit): Promise<Blob> {
+    const url = `${this.baseURL}${endpoint}`;
+    const token = authService.getAccessToken();
+
+    // Prepare headers
+    const headers: Record<string, string> = {
+      ...(options?.headers as Record<string, string>),
+    };
+
+    // Add authorization header if token exists
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.blob();
   }
 }
 

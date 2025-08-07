@@ -1,5 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
-
+import { apiClient } from './apiClient';
 import {
   DashboardStats,
   OrganizationStats,
@@ -7,35 +6,15 @@ import {
 } from '../types/dashboard';
 
 class DashboardService {
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
-  }
-
   async getDashboardStats(): Promise<DashboardStats> {
     // Fetch actual stats from multiple endpoints
     const [usersResponse, organizationsResponse] = await Promise.all([
-      this.request<{ users: any[], total: number }>('/users?limit=1'),
-      this.request<any[]>('/organizations')
+      apiClient.get<{ users: any[], total: number }>('/users?limit=1'),
+      apiClient.get<any[]>('/organizations')
     ]);
 
     // Count different types of users
-    const allUsersResponse = await this.request<{ users: any[], total: number }>('/users?limit=10000');
+    const allUsersResponse = await apiClient.get<{ users: any[], total: number }>('/users?limit=10000');
     const users = allUsersResponse.users;
 
     const doanVienCount = users.filter(u => u.membershipStatus === 'doan_vien' || u.membershipStatus === 'both').length;
@@ -52,9 +31,8 @@ class DashboardService {
       organizationGrowth: '+3%',
     };
   }
-
   async getOrganizationStats(): Promise<OrganizationStats> {
-    const organizations = await this.request<any[]>('/organizations');
+    const organizations = await apiClient.get<any[]>('/organizations');
 
     const doanOrganizations = organizations.filter(org =>
       org.type.includes('doan')
@@ -69,7 +47,7 @@ class DashboardService {
     ).length;
 
     // Get total members from all user-organization relationships
-    const allUsersResponse = await this.request<{ users: any[], total: number }>('/users?limit=10000');
+    const allUsersResponse = await apiClient.get<{ users: any[], total: number }>('/users?limit=10000');
 
     return {
       doanOrganizations,

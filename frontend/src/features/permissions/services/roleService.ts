@@ -1,3 +1,5 @@
+import { apiClient } from '../../../shared/services/apiClient';
+
 // Types
 interface Permission {
   id: string;
@@ -66,33 +68,10 @@ interface GrantRolesRequest {
   roleAssignments: RoleAssignment[];
 }
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
-
 export class RoleService {
-  private baseUrl = '/roles';
-
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
-  }
-  async getRoles(params?: RoleQueryParams): Promise<RoleListResponse> {
+  private baseUrl = '/roles'; async getRoles(params?: RoleQueryParams): Promise<RoleListResponse> {
     if (!params) {
-      return this.request<RoleListResponse>(this.baseUrl);
+      return apiClient.get<RoleListResponse>(this.baseUrl);
     }
 
     // Build query string more carefully
@@ -115,71 +94,55 @@ export class RoleService {
     } const queryString = queryParams.toString();
     const endpoint = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;
 
-    return this.request<RoleListResponse>(endpoint);
+    return apiClient.get<RoleListResponse>(endpoint);
   }
   async getUserRoles(userId: string, organizationId?: string): Promise<Role[]> {
     const queryString = organizationId ? `?organizationId=${organizationId}` : '';
-    return this.request<Role[]>(`/users/${userId}/roles${queryString}`);
+    return apiClient.get<Role[]>(`/users/${userId}/roles${queryString}`);
   }
 
   async getAvailableRoles(): Promise<Role[]> {
-    return this.request<Role[]>(`/users/available-roles`);
+    return apiClient.get<Role[]>(`/users/available-roles`);
   }
   async getRoleById(id: string): Promise<Role> {
-    return this.request<Role>(`${this.baseUrl}/${id}`);
+    return apiClient.get<Role>(`${this.baseUrl}/${id}`);
   }
 
   async createRole(data: CreateRoleRequest): Promise<Role> {
-    return this.request<Role>(this.baseUrl, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
+    return apiClient.post<Role>(this.baseUrl, data);
+  } async updateRole(id: string, data: UpdateRoleRequest): Promise<Role> {
+    console.log('=== DEBUG roleService.updateRole ===');
+    console.log('Role ID:', id);
+    console.log('Update data:', data);
+    console.log('Request body:', JSON.stringify(data, null, 2));
 
-  async updateRole(id: string, data: UpdateRoleRequest): Promise<Role> {
-    return this.request<Role>(`${this.baseUrl}/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    return apiClient.put<Role>(`${this.baseUrl}/${id}`, data);
   }
 
   async deleteRole(id: string): Promise<void> {
-    await this.request<void>(`${this.baseUrl}/${id}`, {
-      method: 'DELETE',
-    });
+    await apiClient.delete<void>(`${this.baseUrl}/${id}`);
   }
-
   async bulkDeleteRoles(ids: string[]): Promise<{ message: string; deletedRoles: number; deletedUserRoleAssignments: number; roleNames: string[] }> {
-    return this.request<{ message: string; deletedRoles: number; deletedUserRoleAssignments: number; roleNames: string[] }>(this.baseUrl, {
-      method: 'DELETE',
+    return apiClient.delete<{ message: string; deletedRoles: number; deletedUserRoleAssignments: number; roleNames: string[] }>(this.baseUrl, {
       body: JSON.stringify({ ids }),
     });
   }
 
   async getAvailablePermissions(): Promise<Permission[]> {
-    return this.request<Permission[]>(`${this.baseUrl}/available-permissions`);
+    return apiClient.get<Permission[]>(`${this.baseUrl}/available-permissions`);
   }
   async assignRole(data: AssignRoleRequest): Promise<void> {
-    await this.request<void>(`/users/${data.userId}/assign-role`, {
-      method: 'POST',
-      body: JSON.stringify({
-        roleId: data.roleId,
-        organizationId: data.organizationId
-      }),
+    await apiClient.post<void>(`/users/${data.userId}/assign-role`, {
+      roleId: data.roleId,
+      organizationId: data.organizationId
     });
   }
 
   async seedDefaults(): Promise<void> {
-    await this.request<void>(`${this.baseUrl}/seed-defaults`, {
-      method: 'POST',
-    });
+    await apiClient.post<void>(`${this.baseUrl}/seed-defaults`);
   }
-
   async grantRoles(data: GrantRolesRequest): Promise<void> {
-    await this.request<void>(`${this.baseUrl}/grant-roles`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    await apiClient.post<void>(`${this.baseUrl}/grant-roles`, data);
   }
 }
 

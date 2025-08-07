@@ -33,11 +33,17 @@ export const CLASS_PERMISSIONS = {
 
 // Organization permissions
 export const ORGANIZATION_PERMISSIONS = {
+    ACCESS: 'organizations.access',
     CREATE: 'organizations.create',
+    READ: 'organizations.read',
     VIEW_DETAILS: 'organizations.view_details',
     UPDATE: 'organizations.update',
     DELETE: 'organizations.delete',
     EXPORT: 'organizations.export',
+    VIEW_MEMBER_COUNT: 'organizations.view_member_count',
+    ACCESS_CHILDREN: 'organizations.access_children',
+    ADD_MEMBER: 'organizations.add_member',
+    REMOVE_MEMBER: 'organizations.remove_member',
 } as const;
 
 // Role permissions

@@ -1,5 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
-
+import { apiClient } from './apiClient';
 import {
   Class,
   CreateClassRequest,
@@ -13,39 +12,6 @@ import {
 } from '../types/class';
 
 class ClassService {
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
-        ...options,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      // Check if response has content to parse as JSON
-      const contentType = response.headers.get('content-type');
-      const contentLength = response.headers.get('content-length');
-
-      // If no content-type header with JSON or content-length is 0, return undefined
-      if (!contentType?.includes('application/json') || contentLength === '0') {
-        return undefined as T;
-      }
-
-      // Try to parse JSON, return undefined if empty response
-      const text = await response.text();
-      return text ? JSON.parse(text) : undefined as T;
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
-    }
-  }
-
   async getClasses(params?: ClassQueryParams): Promise<ClassesResponse> {
     const searchParams = new URLSearchParams();
 
@@ -59,75 +25,50 @@ class ClassService {
     const queryString = searchParams.toString();
     const endpoint = `/classes${queryString ? `?${queryString}` : ''}`;
 
-    return this.request<ClassesResponse>(endpoint);
+    return apiClient.get<ClassesResponse>(endpoint);
   }
 
   async getClass(id: string): Promise<Class> {
-    return this.request<Class>(`/classes/${id}`);
+    return apiClient.get<Class>(`/classes/${id}`);
   }
 
   async createClass(classData: CreateClassRequest): Promise<Class> {
-    return this.request<Class>('/classes', {
-      method: 'POST',
-      body: JSON.stringify(classData),
-    });
+    return apiClient.post<Class>('/classes', classData);
   }
 
   async updateClass(id: string, classData: UpdateClassRequest): Promise<Class> {
-    return this.request<Class>(`/classes/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(classData),
-    });
+    return apiClient.patch<Class>(`/classes/${id}`, classData);
   }
 
   async deleteClass(id: string): Promise<void> {
-    await this.request(`/classes/${id}`, {
-      method: 'DELETE',
-    });
+    await apiClient.delete(`/classes/${id}`);
   }
 
   async bulkDeleteClasses(ids: string[]): Promise<void> {
-    await this.request('/classes/bulk', {
-      method: 'DELETE',
-      body: JSON.stringify({ ids }),
-    });
+    await apiClient.delete('/classes/bulk', { ids });
   }
-
   // Import functionality - Server-side processing
   async getTemplate(): Promise<string> {
-    return `${API_BASE_URL}/classes/template`;
+    return `${apiClient.getBaseURL()}/classes/template`;
   }
 
   async uploadImportFile(file: File): Promise<ImportUploadResponseClass> {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_BASE_URL}/classes/import/upload`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Upload failed');
-    }
-
-    return response.json();
+    return apiClient.uploadFile<ImportUploadResponseClass>('/classes/import/upload', formData);
   }
 
   async validateImportData(sessionId: string): Promise<ImportValidationResponseClass> {
-    return this.request<ImportValidationResponseClass>(`/classes/import/${sessionId}/validate`);
+    return apiClient.get<ImportValidationResponseClass>(`/classes/import/${sessionId}/validate`);
   }
 
   async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponseClass> {
-    return this.request<ImportExecuteResponseClass>(`/classes/import/${sessionId}/execute`, {
-      method: 'POST',
-      body: JSON.stringify(options || {}),
-    });
+    return apiClient.post<ImportExecuteResponseClass>(`/classes/import/${sessionId}/execute`, options || {});
   }
 
   async getImportStatus(sessionId: string): Promise<any> {
-    return this.request(`/classes/import/${sessionId}/status`);
+    return apiClient.get(`/classes/import/${sessionId}/status`);
   }
 
   // Legacy methods for backward compatibility (empty implementations)
