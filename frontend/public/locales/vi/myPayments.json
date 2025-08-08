@@ -1,0 +1,104 @@
+{
+  "title": "Đóng phí của tôi",
+  "titlePhonetic": "Đóng phí của tôi",
+  "description": "Quản lý và thanh toán các khoản phí được phân công",
+  "descriptionPhonetic": "Quản lý và thanh toán",
+  "accessRights": "Quyền truy cập",
+  "accessRightsPhonetic": "Quyền truy cập",
+  "organizationAccess": "Bạn có thể xem đợt đóng phí từ các tổ chức:",
+  "organizationAccessPhonetic": "Xem từ tổ chức:",
+  "superAdminRights": "Quyền Super Admin",
+  "superAdminRightsPhonetic": "Quyền Super Admin",
+  "superAdminDescription": "Bạn có quyền xem đợt đóng phí từ tất cả các tổ chức",
+  "superAdminDescriptionPhonetic": "Xem tất cả tổ chức",
+  "stats": {
+    "total": "Tổng số",
+    "totalPhonetic": "Tổng số",
+    "pending": "Chờ thanh toán",
+    "pendingPhonetic": "Chờ thanh toán",
+    "overdue": "Quá hạn",
+    "overduePhonetic": "Quá hạn",
+    "totalAmount": "Tổng tiền cần đóng",
+    "totalAmountPhonetic": "Tổng tiền"
+  },
+  "search": {
+    "placeholder": "Tìm kiếm đợt đóng phí...",
+    "placeholderPhonetic": "Tìm kiếm"
+  },
+  "filters": {
+    "allStatus": "Tất cả trạng thái",
+    "allStatusPhonetic": "Tất cả"
+  },
+  "sort": {
+    "dueDate": "Hạn thanh toán",
+    "dueDatePhonetic": "Hạn thanh toán",
+    "assignedAt": "Ngày phân công",
+    "assignedAtPhonetic": "Ngày phân công",
+    "amount": "Số tiền",
+    "amountPhonetic": "Số tiền",
+    "ascending": "Tăng dần",
+    "ascendingPhonetic": "Tăng dần",
+    "descending": "Giảm dần",
+    "descendingPhonetic": "Giảm dần"
+  },
+  "table": {
+    "campaign": "Đợt đóng phí",
+    "campaignPhonetic": "Đợt đóng phí",
+    "organization": "Tổ chức",
+    "organizationPhonetic": "Tổ chức",
+    "amount": "Số tiền",
+    "amountPhonetic": "Số tiền",
+    "startDate": "Từ ngày",
+    "startDatePhonetic": "Từ ngày",
+    "endDate": "Đến ngày",
+    "endDatePhonetic": "Đến ngày",
+    "payment": "Thanh toán",
+    "paymentPhonetic": "Thanh toán"
+  },
+  "actions": {
+    "payNow": "Thanh toán ngay",
+    "payNowPhonetic": "Thanh toán",
+    "paymentExpired": "Đã hết hạn thanh toán",
+    "paymentExpiredPhonetic": "Hết hạn",
+    "alreadyPaid": "Đã thanh toán",
+    "alreadyPaidPhonetic": "Đã thanh toán",
+    "retry": "Thử lại",
+    "retryPhonetic": "Thử lại"
+  },
+  "loading": {
+    "list": "Đang tải danh sách...",
+    "listPhonetic": "Đang tải"
+  },
+  "errors": {
+    "loadError": "Không thể tải danh sách đóng phí",
+    "loadErrorPhonetic": "Lỗi tải",
+    "assignmentNotFound": "Không tìm thấy thông tin đóng phí",
+    "assignmentNotFoundPhonetic": "Không tìm thấy",
+    "paymentError": "Có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.",
+    "paymentErrorPhonetic": "Lỗi thanh toán"
+  },
+  "empty": {
+    "noCampaigns": "Không có đợt đóng phí nào",
+    "noCampaignsPhonetic": "Không có đợt",
+    "noResults": "Không tìm thấy đợt đóng phí nào phù hợp với bộ lọc",
+    "noResultsPhonetic": "Không tìm thấy",
+    "noAssignmentsSuperAdmin": "Bạn chưa được phân công đóng phí nào",
+    "noAssignmentsSuperAdminPhonetic": "Chưa có phân công",
+    "noAssignmentsRegular": "Bạn chưa được phân công đóng phí nào từ các tổ chức bạn có quyền truy cập",
+    "noAssignmentsRegularPhonetic": "Chưa có phân công",
+    "accessOrganizations": "Các tổ chức bạn có quyền truy cập:",
+    "accessOrganizationsPhonetic": "Tổ chức truy cập:"
+  },
+  "status": {
+    "pending": "Chờ thanh toán",
+    "pendingPhonetic": "Chờ thanh toán",
+    "overdue": "Quá hạn",
+    "overduePhonetic": "Quá hạn",
+    "paid": "Đã thanh toán",
+    "paidPhonetic": "Đã thanh toán",
+    "active": "Hoạt động",
+    "activePhonetic": "Hoạt động",
+    "cancelled": "Đã hủy",
+    "cancelledPhonetic": "Đã hủy"
+  }
+}
