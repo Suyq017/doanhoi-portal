@@ -1,0 +1,54 @@
+{
+  "pageTitle": "PayOS Payment Result",
+  "loading": {
+    "checkingStatus": "Checking payment status..."
+  },
+  "error": {
+    "title": "An error occurred",
+    "tryAgain": "Try again",
+    "backToHome": "Back to home"
+  },
+  "notFound": {
+    "title": "Transaction not found",
+    "message": "Invalid transaction code or has been deleted.",
+    "backToHome": "Back to home"
+  },
+  "status": {
+    "paid": {
+      "title": "Payment successful!",
+      "message": "Your transaction has been processed successfully."
+    },
+    "cancelled": {
+      "title": "Payment cancelled",
+      "message": "Transaction has been cancelled."
+    },
+    "expired": {
+      "title": "Payment expired",
+      "message": "Payment link has expired."
+    },
+    "pending": {
+      "title": "Processing payment",
+      "message": "Transaction is being processed, please wait."
+    }
+  },
+  "details": {
+    "orderCode": "Order code:",
+    "amount": "Amount:",
+    "description": "Description:",
+    "createdAt": "Created at:",
+    "transactionInfo": "Transaction info:",
+    "accountNumber": "Account number:",
+    "transactionTime": "Transaction time:"
+  },
+  "autoRefresh": {
+    "checking": "Checking...",
+    "interval": "Auto-refresh every 5 seconds"
+  },
+  "actions": {
+    "checkAgain": "Check again",
+    "checking": "Checking...",
+    "backToDashboard": "Back to dashboard",
+    "retryPayment": "Try payment again",
+    "backToMyCampaigns": "Back to home"
+  }
+}

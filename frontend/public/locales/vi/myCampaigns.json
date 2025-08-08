@@ -1,0 +1,70 @@
+{
+  "pageTitle": "Đóng Phí Của Tôi",
+  "pageDescription": "Xem và quản lý các đợt đóng phí được phân công cho bạn",
+  "loading": "Đang tải dữ liệu...",
+  "loadingError": "Lỗi khi tải dữ liệu",
+  "retryLoad": "Thử lại",
+  "noAssignments": "Hiện tại bạn chưa được phân công vào đợt đóng phí nào.",
+  "accessDenied": {
+    "title": "Không có quyền truy cập",
+    "message": "Bạn không có quyền truy cập trang đóng phí. Vui lòng liên hệ quản trị viên."
+  },
+  "filters": {
+    "searchPlaceholder": "Tìm kiếm theo tên đợt đóng phí...",
+    "status": "Trạng thái",
+    "allStatuses": "Tất cả trạng thái",
+    "sortBy": "Sắp xếp theo",
+    "dueDate": "Hạn thanh toán",
+    "assignedAt": "Ngày phân công",
+    "amount": "Số tiền",
+    "asc": "Tăng dần",
+    "desc": "Giảm dần"
+  },
+  "table": {
+    "campaign": "Đợt đóng phí",
+    "organization": "Tổ chức",
+    "amount": "Số tiền",
+    "fromDate": "Từ ngày",
+    "toDate": "Đến ngày",
+    "payment": "Thanh toán"
+  },
+  "campaignCard": {
+    "organization": "Tổ chức:",
+    "dueDate": "Hạn thanh toán:",
+    "assignedAt": "Ngày phân công:",
+    "feeLevel": "Mức phí:",
+    "amount": "Số tiền:",
+    "payNow": "Thanh toán ngay",
+    "paid": "Đã thanh toán",
+    "overdue": "Đã hết hạn thanh toán",
+    "processing": "Đang xử lý",
+    "pending": "Chờ thanh toán"
+  },
+  "status": {
+    "PAID": "Đã thanh toán",
+    "PENDING": "Chờ thanh toán",
+    "PROCESSING": "Đang xử lý",
+    "OVERDUE": "Quá hạn",
+    "DRAFT": "Nháp",
+    "CANCELLED": "Đã hủy"
+  },
+  "payment": {
+    "processing": "Đang xử lý thanh toán...",
+    "redirecting": "Đang chuyển hướng...",
+    "error": "Lỗi thanh toán",
+    "errorMessage": "Có lỗi xảy ra khi tạo link thanh toán. Vui lòng thử lại.",
+    "retry": "Thử lại"
+  },
+  "stats": {
+    "total": "Tổng cộng",
+    "paid": "Đã thanh toán",
+    "pending": "Chờ thanh toán",
+    "overdue": "Quá hạn"
+  },
+  "permissions": {
+    "accessTitle": "Quyền truy cập",
+    "accessMessage": "Bạn có thể xem đợt đóng phí từ các tổ chức:",
+    "organizationsAccess": "Các tổ chức bạn có quyền truy cập:",
+    "noAssignmentsFromOrgs": "Bạn chưa được phân công đóng phí nào từ các tổ chức bạn có quyền truy cập"
+  }
+}

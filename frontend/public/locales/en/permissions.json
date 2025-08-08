@@ -105,9 +105,38 @@
     },
     "placeholders": {
         "search": "Search by role name...",
+        "searchPlaceholder": "Search roles...",
         "name": "e.g: admin, manager, editor",
         "displayName": "e.g: Administrator, Manager",
         "description": "Describe this role..."
+    },
+    "pageTitle": "Permissions Management",
+    "pageDescription": "Manage user roles and permissions",
+    "createNewRole": "Create New Role",
+    "bulkDelete": "Delete Selected ({{count}})",
+    "allStatuses": "All Statuses",
+    "activeStatus": "Active",
+    "inactiveStatus": "Inactive", 
+    "clearFilters": "Clear Filters",
+    "permissionCount": "{{count}} permissions",
+    "systemRole": "System Role",
+    "table": {
+        "roleName": "Role Name",
+        "displayName": "Display Name",
+        "permissions": "Permissions", 
+        "status": "Status",
+        "actions": "Actions"
+    },
+    "noRolesFound": "No roles found",
+    "loadingRoles": "Loading roles...",
+    "errorLoadingRoles": "Error loading roles",
+    "retry": "Retry",
+    "modals": {
+        "createTitle": "Create New Role",
+        "editTitle": "Edit Role",
+        "viewTitle": "Role Details", 
+        "deleteTitle": "Confirm Role Deletion",
+        "bulkDeleteTitle": "Confirm Bulk Deletion"
     },
     "permissions": {
         "categories": {

@@ -58,10 +58,10 @@ const usePermissionGroups = () => {
         },
         {
             id: 'my-payments',
-            name: 'Đóng phí của tôi',
+            name: t('permissions.categories.myPayments'),
             icon: CreditCard,
             color: 'emerald',
-            description: 'Quản lý các khoản phí được phân công cho tôi'
+            description: t('permissions.categories.myPayments')
         },
         {
             id: 'permissions',

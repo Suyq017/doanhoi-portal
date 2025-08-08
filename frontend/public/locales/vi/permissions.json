@@ -105,9 +105,38 @@
     },
     "placeholders": {
         "search": "Tìm kiếm theo tên vai trò...",
+        "searchPlaceholder": "Tìm kiếm vai trò...",
         "name": "vd: admin, manager, editor",
         "displayName": "vd: Quản trị viên, Quản lý",
         "description": "Mô tả vai trò này..."
+    },
+    "pageTitle": "Quản lý Phân quyền",
+    "pageDescription": "Quản lý vai trò và phân quyền người dùng",
+    "createNewRole": "Tạo Vai trò Mới",
+    "bulkDelete": "Xóa đã chọn ({{count}})",
+    "allStatuses": "Tất cả trạng thái",
+    "activeStatus": "Hoạt động", 
+    "inactiveStatus": "Không hoạt động",
+    "clearFilters": "Xóa bộ lọc",
+    "permissionCount": "{{count}} quyền",
+    "systemRole": "Vai trò hệ thống",
+    "table": {
+        "roleName": "Tên vai trò",
+        "displayName": "Tên hiển thị", 
+        "permissions": "Quyền hạn",
+        "status": "Trạng thái",
+        "actions": "Thao tác"
+    },
+    "noRolesFound": "Không tìm thấy vai trò nào",
+    "loadingRoles": "Đang tải vai trò...",
+    "errorLoadingRoles": "Lỗi khi tải danh sách vai trò",
+    "retry": "Thử lại",
+    "modals": {
+        "createTitle": "Tạo Vai trò Mới",
+        "editTitle": "Chỉnh sửa Vai trò", 
+        "viewTitle": "Chi tiết Vai trò",
+        "deleteTitle": "Xác nhận xóa vai trò",
+        "bulkDeleteTitle": "Xác nhận xóa nhiều vai trò"
     },
     "permissions": {
         "categories": {

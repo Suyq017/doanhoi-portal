@@ -1,0 +1,114 @@
+{
+  "pageTitle": "Payment Management",
+  "pageDescription": "Manage organization payment campaigns",
+  "createNew": "Create New Campaign",
+  "loading": "Loading...",
+  "loadingDescription": "Loading information...",
+  "accessDeniedTitle": "Access Denied",
+  "accessDeniedMessage": "You don't have permission to access payment management",
+  "listTitle": "Payment Campaigns List",
+  "searchPlaceholder": "Search campaigns...",
+  "noCampaigns": "No payment campaigns yet",
+  "detail": {
+    "title": "Payment Campaign Details",
+    "description": "Detailed information and campaign management",
+    "loadingMessage": "Loading campaign information...",
+    "notFound": "Campaign not found",
+    "backToList": "Back to list",
+    "campaignInfo": "Payment Campaign Information",
+    "organization": "Organization",
+    "timeframe": "Timeframe",
+    "createdBy": "Created by",
+    "feeLevelsCount": "Fee levels count",
+    "descriptionLabel": "Description",
+    "from": "From",
+    "to": "To",
+    "levels": "levels"
+  },
+  "actions": {
+    "edit": "Edit",
+    "activate": "Activate",
+    "complete": "Complete",
+    "cancel": "Cancel",
+    "delete": "Delete Campaign"
+  },
+  "status": {
+    "draft": "Draft",
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "activation": {
+    "requirements": "Need fee levels and member assignments",
+    "cannotActivate": "Cannot activate",
+    "needsTitle": "Required:",
+    "needsFeeLevels": "Create fee levels",
+    "needsMembers": "Assign members",
+    "noFeeLevels": "No fee levels created yet",
+    "noMembers": "No members assigned yet",
+    "error": "Cannot activate payment campaign: {{requirements}}"
+  },
+  "confirmations": {
+    "activate": {
+      "title": "Activate Payment Campaign",
+      "message": "Are you sure you want to activate this payment campaign? After activation, members will be able to make payments.",
+      "confirm": "Activate",
+      "cancel": "Cancel"
+    },
+    "complete": {
+      "title": "Complete Payment Campaign",
+      "message": "Are you sure you want to complete this payment campaign?",
+      "confirm": "Complete",
+      "cancel": "Cancel"
+    },
+    "cancelCampaign": {
+      "title": "Cancel Payment Campaign",
+      "message": "Are you sure you want to cancel this payment campaign? After cancellation, members will not be able to make payments and the campaign will end.",
+      "confirm": "Cancel Campaign",
+      "cancel": "Don't Cancel"
+    },
+    "delete": {
+      "title": "Delete Payment Campaign - This action cannot be undone!",
+      "message": "Are you sure you want to delete this payment campaign? This will also delete all payment history for both members and administrators.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "deletePayOSConfig": {
+      "title": "Delete PayOS Configuration",
+      "message": "Are you sure you want to delete this PayOS configuration? This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    }
+  },
+  "form": {
+    "createTitle": "Create New Payment Campaign",
+    "editTitle": "Edit Payment Campaign",
+    "campaignName": "Campaign Name",
+    "description": "Description",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "targetOrganization": "Target Organization",
+    "amount": "Amount",
+    "currency": "Currency",
+    "save": "Save",
+    "cancel": "Cancel",
+    "update": "Update"
+  },
+  "messages": {
+    "createSuccess": "Campaign created successfully",
+    "updateSuccess": "Campaign updated successfully",
+    "deleteSuccess": "Campaign deleted successfully!",
+    "activateSuccess": "Campaign activated successfully!",
+    "completeSuccess": "Campaign completed successfully!",
+    "cancelSuccess": "Campaign cancelled successfully!",
+    "errorLoading": "Error loading payment campaigns",
+    "errorSaving": "Error saving campaign",
+    "errorStatusUpdate": "Unable to update campaign status. Please try again.",
+    "errorActivate": "Cannot activate: {{error}}",
+    "errorComplete": "Cannot complete: {{error}}",
+    "errorCancel": "Cannot cancel: {{error}}",
+    "errorDelete": "Cannot delete campaign: {{error}}"
+  }
+}

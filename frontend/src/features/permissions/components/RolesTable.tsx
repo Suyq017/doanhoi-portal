@@ -87,7 +87,7 @@ const RolesTable: React.FC<RolesTableProps> = ({
                                             </div>
                                             {role.isSystemRole && (
                                                 <div className="text-xs text-blue-600 dark:text-blue-400">
-                                                    Vai trò hệ thống
+                                                    {t('labels.systemRole')}
                                                 </div>
                                             )}
                                         </div>
@@ -101,12 +101,12 @@ const RolesTable: React.FC<RolesTableProps> = ({
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                        {role.permissions?.length || 0} quyền
+                                        {t('labels.permissionCountLabel', '{{count}} quyền', { count: role.permissions?.length || 0 })}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleStatusColor(role.isActive)}`}>
-                                        {role.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                                        {role.isActive ? t('labels.active') : t('labels.inactive')}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

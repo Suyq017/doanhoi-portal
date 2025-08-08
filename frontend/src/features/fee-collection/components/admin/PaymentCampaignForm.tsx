@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   PaymentCampaign,
   CreatePaymentCampaignDto,
@@ -37,6 +38,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
   onCancel,
   accessibleOrganizations
 }) => {
+  const { t } = useTranslation('paymentCampaigns');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -213,7 +215,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {mode === 'create' ? 'Tạo Đợt Đóng Phí Mới' : 'Chỉnh Sửa Đợt Đóng Phí'}
+          {mode === 'create' ? t('form.createTitle') : t('form.editTitle')}
         </h1>
       </div>
 

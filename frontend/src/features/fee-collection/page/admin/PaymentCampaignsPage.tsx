@@ -1,18 +1,17 @@
 import { useState, useEffect } from "react";
-import { Plus, Shield } from "lucide-react";
+import { Plus } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import PaymentCampaignList from "../../components/admin/PaymentCampaignList";
 import PaymentCampaignForm from "../../components/admin/PaymentCampaignForm";
 import UserPermissionInfo from "../../components/admin/UserPermissionInfo";
 import { Organization, PaymentCampaign } from "../../types";
-import { usePermissions } from "@/shared/hooks/usePermissions";
 import { PermissionGuard } from "@/shared/components/PermissionGuard";
-import { paymentCampaignService } from "@/shared/services/fee-collection-service";
 import { organizationService } from "@/shared/services/organizationService";
 
 export const PaymentCampaignsPage = () => {
-  const permissions = usePermissions();
+  const { t } = useTranslation('paymentCampaigns');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [accessibleOrganizations, setAccessibleOrganizations] = useState<Organization[]>([]);
+  const [accessibleOrganizations] = useState<Organization[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<PaymentCampaign | null>(null);
@@ -78,10 +77,10 @@ export const PaymentCampaignsPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Quản Lý Thu Phí
+              {t('pageTitle')}
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Quản lý các đợt thu phí của hội
+              {t('pageDescription')}
             </p>
           </div>
         </div>
@@ -89,7 +88,7 @@ export const PaymentCampaignsPage = () => {
           <div className="text-center">
             <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
-              Đang tải...
+              {t('loading')}
             </p>
           </div>
         </div>
@@ -107,10 +106,10 @@ export const PaymentCampaignsPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Quản Lý Thu Phí
+              {t('pageTitle')}
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Quản lý các đợt thu phí của hội
+              {t('pageDescription')}
             </p>
           </div>          {/* Create Button - Only show if user has permission */}
           <PermissionGuard permission="payment-campaigns.create">
@@ -120,7 +119,7 @@ export const PaymentCampaignsPage = () => {
                 className="flex items-center gap-2 px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 dark:bg-doan-600 dark:hover:bg-doan-700"
               >
                 <Plus className="w-4 h-4" />
-                Tạo Đợt Mới
+                {t('createNew')}
               </button>
             </div>
           </PermissionGuard>

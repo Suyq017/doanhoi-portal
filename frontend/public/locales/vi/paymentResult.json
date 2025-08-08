@@ -1,0 +1,54 @@
+{
+  "pageTitle": "Kết quả thanh toán PayOS",
+  "loading": {
+    "checkingStatus": "Đang kiểm tra trạng thái thanh toán..."
+  },
+  "error": {
+    "title": "Có lỗi xảy ra",
+    "tryAgain": "Thử lại",
+    "backToHome": "Quay về trang chủ"
+  },
+  "notFound": {
+    "title": "Không tìm thấy giao dịch",
+    "message": "Mã giao dịch không hợp lệ hoặc đã bị xóa.",
+    "backToHome": "Quay về trang chủ"
+  },
+  "status": {
+    "paid": {
+      "title": "Thanh toán thành công!",
+      "message": "Giao dịch của bạn đã được xử lý thành công."
+    },
+    "cancelled": {
+      "title": "Thanh toán đã bị hủy",
+      "message": "Giao dịch đã bị hủy."
+    },
+    "expired": {
+      "title": "Thanh toán đã hết hạn",
+      "message": "Link thanh toán đã hết hạn."
+    },
+    "pending": {
+      "title": "Đang xử lý thanh toán",
+      "message": "Giao dịch đang được xử lý, vui lòng đợi."
+    }
+  },
+  "details": {
+    "orderCode": "Mã giao dịch:",
+    "amount": "Số tiền:",
+    "description": "Mô tả:",
+    "createdAt": "Thời gian tạo:",
+    "transactionInfo": "Thông tin giao dịch:",
+    "accountNumber": "Số tài khoản:",
+    "transactionTime": "Thời gian:"
+  },
+  "autoRefresh": {
+    "checking": "Đang kiểm tra...",
+    "interval": "Tự động cập nhật mỗi 5 giây"
+  },
+  "actions": {
+    "checkAgain": "Kiểm tra lại",
+    "checking": "Đang kiểm tra...",
+    "backToDashboard": "Quay lại trang chủ",
+    "retryPayment": "Thử thanh toán lại",
+    "backToMyCampaigns": "Quay về trang chủ"
+  }
+}

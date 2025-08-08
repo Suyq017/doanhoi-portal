@@ -11,7 +11,6 @@ interface SearchFiltersProps {
 
 const SearchFilters: React.FC<SearchFiltersProps> = ({
     searchFilters,
-    currentPage,
     setCurrentPage
 }) => {
     const { t } = useTranslation('permissions');
@@ -35,7 +34,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                     <input
                         ref={searchInputRef}
                         type="text"
-                        placeholder={t('placeholders.search')}
+                        placeholder={t('placeholders.searchPlaceholder')}
                         value={searchTerm}
                         onChange={handleSearchChange}
                         onFocus={handleSearchFocus}
@@ -72,9 +71,9 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                         setCurrentPage(1); // Reset to first page when filtering
                     }}
                     className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                >                    <option value="">{t('labels.all')} {t('labels.status').toLowerCase()}</option>
-                    <option value="true">{t('labels.active')}</option>
-                    <option value="false">{t('labels.inactive')}</option>
+                >                    <option value="">{t('allStatuses')}</option>
+                    <option value="true">{t('activeStatus')}</option>
+                    <option value="false">{t('inactiveStatus')}</option>
                 </select>
             </div>
         </div>
