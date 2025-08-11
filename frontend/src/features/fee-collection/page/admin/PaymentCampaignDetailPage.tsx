@@ -11,6 +11,7 @@ import TabNavigation from '../../components/admin/tabs/TabNavigation';
 import StatisticsTab from '../../components/admin/tabs/StatisticsTab';
 import FeeLevelTab from '../../components/admin/tabs/FeeLevelTab';
 import MemberAssignmentTab from '../../components/admin/tabs/MemberAssignmentTab';
+import PaymentHistoryTab from '../../components/admin/tabs/PaymentHistoryTab';
 import PayOSConfigTab from '../../components/admin/tabs/PayOSConfigTab';
 
 const PaymentCampaignDetailPage: React.FC = () => {
@@ -558,6 +559,10 @@ const PaymentCampaignDetailPage: React.FC = () => {
                 }, 500);
               }}
             />
+          )}
+          
+          {currentTab === 'payment-history' && (
+            <PaymentHistoryTab campaign={campaign} />
           )}
           
           {currentTab === 'payos-config' && (

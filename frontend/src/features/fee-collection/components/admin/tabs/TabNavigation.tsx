@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, Users, Settings, BarChart3 } from 'lucide-react';
+import { DollarSign, Users, Settings, BarChart3, History } from 'lucide-react';
 
 export interface Tab {
   id: string;
@@ -27,6 +27,11 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
       icon: BarChart3
     },
     {
+      id: 'payment-history',
+      label: 'Lịch sử thu phí',
+      icon: History
+    },
+    {
       id: 'fee-levels',
       label: 'Mức Phí',
       icon: DollarSign
@@ -45,7 +50,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
 
   return (
     <div className={`border-b border-gray-200 dark:border-gray-700 ${className}`}>
-      <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+      <nav className="flex px-6 -mb-px space-x-8" aria-label="Tabs">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;

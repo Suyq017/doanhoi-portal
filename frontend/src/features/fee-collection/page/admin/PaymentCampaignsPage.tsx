@@ -131,7 +131,8 @@ export const PaymentCampaignsPage = () => {
           onEditCampaign={handleEditCampaign}
           refreshTrigger={refreshTrigger}
         />
-      </div>      {/* Create Campaign Modal - Permission guarded */}
+      </div>      
+      {/* Create Campaign Modal - Permission guarded */}
       <PermissionGuard permission="payment-campaigns.create">
         {showCreateModal && (
           <div className="fixed inset-0 z-50 overflow-y-auto">

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Trash2, Download, Search, Filter, User, Clock, CheckCircle, AlertTriangle, Plus } from 'lucide-react';
 import { PaymentAssignment, PaymentCampaign } from '../../../types';
+import { UserTablePagination } from '../../../../../shared/components/UserTable/UserTablePagination';
 
 interface AssignmentListProps {
   assignments: PaymentAssignment[];
@@ -19,6 +20,8 @@ interface AssignmentFilters {
   status: string;
   sortBy: 'createdAt' | 'user' | 'amount' | 'status';
   sortOrder: 'asc' | 'desc';
+  page: number;
+  limit: number;
 }
 
 const AssignmentList: React.FC<AssignmentListProps> = ({
@@ -36,7 +39,9 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
     search: '',
     status: 'all',
     sortBy: 'createdAt',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
+    page: 1,
+    limit: 10
   });
 
   const [showFilters, setShowFilters] = useState(false);
@@ -111,15 +116,18 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
     return result;
   }, [assignments, filters, campaignEndDate]);
 
+  // Pagination calculations
+  const totalFiltered = filteredAssignments.length;
+  const totalPages = Math.ceil(totalFiltered / filters.limit);
+  const startIndex = (filters.page - 1) * filters.limit;
+  const endIndex = startIndex + filters.limit;
+  const paginatedAssignments = filteredAssignments.slice(startIndex, endIndex);
+
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
     }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
   };
 
   const formatDateTime = (dateString: string) => {
@@ -157,7 +165,11 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
   };
 
   const handleFilterChange = (key: keyof AssignmentFilters, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    if (key === 'search' || key === 'status') {
+      setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+    } else {
+      setFilters(prev => ({ ...prev, [key]: value }));
+    }
   };
 
   const clearFilters = () => {
@@ -165,7 +177,9 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
       search: '',
       status: 'all',
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
+      page: 1,
+      limit: 10
     });
   };
 
@@ -360,7 +374,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
           <div className="flex items-center justify-center p-12">
             <div className="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin dark:border-blue-400"></div>
           </div>
-        ) : filteredAssignments.length === 0 ? (
+        ) : totalFiltered === 0 ? (
           <div className="p-12 text-center">
             <User className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
             <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
@@ -386,7 +400,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
 
             {/* Table Body */}
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredAssignments.map((assignment) => (
+              {paginatedAssignments.map((assignment) => (
                 <div key={assignment.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700">
                   <div className="grid items-center grid-cols-6 gap-4">
                     {/* Member Info */}
@@ -459,14 +473,16 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
           </>
         )}
       </div>
-
-      {/* Results Summary */}
-      {filteredAssignments.length > 0 && (
-        <div className="text-sm text-center text-gray-600">
-          Hiển thị {filteredAssignments.length} / {assignments.length} thành viên
-        </div>
-      )}
+      {/* Pagination */}
+      <UserTablePagination
+        currentPage={filters.page}
+        totalPages={totalPages}
+        total={totalFiltered}
+        limit={filters.limit}
+        onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
+      />
     </div>
+    
   );
 };
 

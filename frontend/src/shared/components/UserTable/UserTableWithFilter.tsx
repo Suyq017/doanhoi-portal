@@ -82,7 +82,9 @@ export const UserTableWithFilter: React.FC<UserTableWithFilterProps> = ({
     return (
         <div className={getSpacingClass()}>
             {/* Filters */}
-            {showFilters && <UserTableFilters {...filterProps} />}            {/* Table */}
+            {showFilters && <UserTableFilters {...filterProps} />}            
+            
+            {/* Table */}
             <UserTable
                 users={users}
                 loading={loading}

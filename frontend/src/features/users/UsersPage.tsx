@@ -124,16 +124,16 @@ const Users: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <Shield className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
             {t('common:errors.accessDenied')}
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
+          <p className="mb-4 text-gray-500 dark:text-gray-400">
             {t('common:errors.noPermissionToAccess')}
           </p>
           <button
             onClick={() => window.history.back()}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+            className="px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-md hover:bg-gray-200"
           >
             {t('common:actions.goBack')}
           </button>        </div>
@@ -207,10 +207,10 @@ const Users: React.FC = () => {
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             {t('users:subtitle')}
-          </p>        </div>        <div className="mt-4 sm:mt-0 flex items-center space-x-3">          {/* Grant Roles Button */}
+          </p>        </div>        <div className="flex items-center mt-4 space-x-3 sm:mt-0">          {/* Grant Roles Button */}
           <button
             onClick={() => setIsGrantRolesModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-doan-600 text-white rounded-md hover:bg-doan-700 focus:outline-none focus:ring-2 focus:ring-doan-500 focus:ring-offset-2 transition-colors duration-200"
+            className="inline-flex items-center px-4 py-2 text-white transition-colors duration-200 rounded-md bg-doan-600 hover:bg-doan-700 focus:outline-none focus:ring-2 focus:ring-doan-500 focus:ring-offset-2"
           >
             <Shield className="w-5 h-5 mr-2" />
             <span className="font-medium">
@@ -222,7 +222,7 @@ const Users: React.FC = () => {
           <ConditionalRender condition={userPermissions.canManageRoles}>
             <button
               onClick={() => setIsRoleAssignmentModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 border border-doan-600 text-doan-600 rounded-md hover:bg-doan-50 dark:hover:bg-doan-900/20 transition-colors"
+              className="inline-flex items-center px-4 py-2 transition-colors border rounded-md border-doan-600 text-doan-600 hover:bg-doan-50 dark:hover:bg-doan-900/20"
             >
               <UserPlus className="w-4 h-4 mr-2" />
               {t('users:actions.assignRoles')}
@@ -238,7 +238,8 @@ const Users: React.FC = () => {
             />
           </ConditionalRender>
         </div>
-      </div>      {/* User Table with Filters */}
+      </div>      
+      {/* User Table with Filters */}
       <UserTableWithFilter
         users={users}
         loading={loading}

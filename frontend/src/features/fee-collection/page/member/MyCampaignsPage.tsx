@@ -6,12 +6,15 @@ import { paymentService } from '../../../../shared/services/fee-collection-servi
 import { usePermissions } from '../../../../shared/hooks/usePermissions';
 import { useToast } from '../../../../shared/hooks/useToast';
 import { Toast } from '../../../../shared/components';
+import { UserTablePagination } from '../../../../shared/components/UserTable/UserTablePagination';
 
 interface Filters {
   status: string;
   search: string;
   sortBy: 'dueDate' | 'assignedAt' | 'amount';
   sortOrder: 'asc' | 'desc';
+  page: number;
+  limit: number;
 }
 
 export const MyCampaignsPage: React.FC = () => {
@@ -24,7 +27,9 @@ export const MyCampaignsPage: React.FC = () => {
     status: '',
     search: '',
     sortBy: 'dueDate',
-    sortOrder: 'asc'
+    sortOrder: 'asc',
+    page: 1,
+    limit: 10
   });
   const { getUserAssignments } = usePaymentAssignments();
   const {
@@ -151,6 +156,13 @@ export const MyCampaignsPage: React.FC = () => {
       return filters.sortOrder === 'desc' ? -comparison : comparison;
     });
 
+  // Pagination calculations
+  const totalFiltered = filteredAndSortedAssignments.length;
+  const totalPages = Math.ceil(totalFiltered / filters.limit);
+  const startIndex = (filters.page - 1) * filters.limit;
+  const endIndex = startIndex + filters.limit;
+  const paginatedAssignments = filteredAndSortedAssignments.slice(startIndex, endIndex);
+
   // Lọc assignments để chỉ tính những assignments từ campaigns có status hợp lệ
   const validAssignments = assignments.filter(a =>
     a.campaign.status === 'ACTIVE' || a.campaign.status === 'CANCELLED'
@@ -227,7 +239,8 @@ export const MyCampaignsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">      {/* Header */}
+    <div className="space-y-6">      
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -345,7 +358,7 @@ export const MyCampaignsPage: React.FC = () => {
               type="text"
               placeholder={t('search.placeholder')}
               value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
               className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -354,7 +367,7 @@ export const MyCampaignsPage: React.FC = () => {
           <div>
             <select
               value={filters.status}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             >
               <option value="">{t('filters.allStatus')}</option>
@@ -418,7 +431,7 @@ export const MyCampaignsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-              {filteredAndSortedAssignments.map((assignment) => (
+              {paginatedAssignments.map((assignment) => (
                 <tr key={assignment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
@@ -519,7 +532,7 @@ export const MyCampaignsPage: React.FC = () => {
             </tbody>
           </table>
         </div>        
-        {filteredAndSortedAssignments.length === 0 && (
+        {totalFiltered === 0 && (
           <div className="py-12 text-center">
             <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
             <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
@@ -545,6 +558,14 @@ export const MyCampaignsPage: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Pagination */}
+        <UserTablePagination
+          currentPage={filters.page}
+          totalPages={totalPages}
+          total={totalFiltered}
+          limit={filters.limit}
+          onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
+        />
 
       {/* Toast notifications */}
       {toasts.map((toast) => (

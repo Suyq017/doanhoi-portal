@@ -1,4 +1,4 @@
-import { Controller, Post, Param, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Param, HttpException, HttpStatus, Get, Query } from '@nestjs/common';
 import { PaymentHistoryService } from './services/payment-history.service';
 import { PaymentAssignmentService } from './services/payment-assignment.service';
 
@@ -8,6 +8,52 @@ export class PaymentAdminController {
     private readonly paymentHistoryService: PaymentHistoryService,
     private readonly paymentAssignmentService: PaymentAssignmentService
   ) {}
+
+  /**
+   * Get paginated payment history for a campaign with search and filter
+   */
+  @Get('payment-history/:campaignId')
+  async getPaymentHistory(
+    @Param('campaignId') campaignId: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+    @Query('search') search: string = '',
+    @Query('status') status: string = 'PAID'
+  ) {
+    try {
+      const pageNumber = parseInt(page, 10);
+      const limitNumber = parseInt(limit, 10);
+      
+      if (isNaN(pageNumber) || pageNumber < 1) {
+        throw new HttpException('Invalid page number', HttpStatus.BAD_REQUEST);
+      }
+      
+      if (isNaN(limitNumber) || limitNumber < 1 || limitNumber > 100) {
+        throw new HttpException('Invalid limit (must be 1-100)', HttpStatus.BAD_REQUEST);
+      }
+
+      const result = await this.paymentHistoryService.getPaymentHistoryByCampaign(
+        campaignId,
+        {
+          page: pageNumber,
+          limit: limitNumber,
+          search: search.trim(),
+          status: status === 'all' ? undefined : status
+        }
+      );
+
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error) {
+      console.error(`Error getting payment history for campaign ${campaignId}:`, error);
+      throw new HttpException(
+        error.message || 'Failed to get payment history',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 
   /**
    * Manual endpoint để sync lại assignment status từ payment history

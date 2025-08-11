@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '@/shared/hooks/useToast';
 import { Toast, ConfirmDialog } from '@/shared/components';
 import SearchableCombobox from '@/shared/components/SearchableCombobox';
+import { UserTablePagination } from '@/shared/components/UserTable/UserTablePagination';
 import { PaymentCampaign, PaymentCampaignFilters, Organization } from '../../types';
 import { paymentCampaignService } from '@/shared/services/fee-collection-service';
 import { usePermissions } from '@/shared/hooks/usePermissions';
@@ -371,7 +372,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
       )}
 
       {/* Table */}
-      <div className="mt-6 overflow-hidden bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
+      <div className="mt-6 mb-6 overflow-hidden bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
@@ -513,68 +514,16 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
             </tbody>
           </table>
         </div>
-
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-            <div className="flex justify-between flex-1 sm:hidden">
-              <button
-                onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, pagination.page - 1) }))}
-                disabled={pagination.page === 1}
-                className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
-              >
-                Trước
-              </button>
-              <button
-                onClick={() => setFilters(prev => ({ ...prev, page: Math.min(pagination.totalPages, pagination.page + 1) }))}
-                disabled={pagination.page === pagination.totalPages}
-                className="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
-              >
-                Sau
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  Hiển thị <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> đến{' '}
-                  <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> trong tổng số{' '}
-                  <span className="font-medium">{pagination.total}</span> kết quả
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex -space-x-px rounded-md shadow-sm">
-                  <button
-                    onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, pagination.page - 1) }))}
-                    disabled={pagination.page === 1}
-                    className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700"
-                  >
-                    Trước
-                  </button>
-                  {[...Array(pagination.totalPages)].map((_, i) => (
-                    <button
-                      key={i + 1}
-                      onClick={() => setFilters(prev => ({ ...prev, page: i + 1 }))}
-                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${pagination.page === i + 1
-                        ? 'z-10 bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-900 dark:border-blue-500 dark:text-blue-300'
-                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700'
-                        }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setFilters(prev => ({ ...prev, page: Math.min(pagination.totalPages, pagination.page + 1) }))}
-                    disabled={pagination.page === pagination.totalPages}
-                    className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700"
-                  >
-                    Sau
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+      
+      {/* Pagination */}
+        <UserTablePagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={pagination.limit}
+          onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
+      />
 
       {/* Empty State */}
       {campaigns.length === 0 && !loading && (
