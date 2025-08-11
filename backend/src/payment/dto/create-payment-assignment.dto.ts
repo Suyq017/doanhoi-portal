@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsUUID, IsNumber, IsOptional, IsString, IsDateString, Min } from 'class-validator';
+import { IsNotEmpty, IsUUID, IsNumber, IsOptional, IsString, IsDateString, Min, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreatePaymentAssignmentDto {
   @IsNotEmpty()
@@ -25,4 +26,15 @@ export class CreatePaymentAssignmentDto {
   @IsOptional()
   @IsString()
   notes?: string;
+}
+
+export class CreateBulkPaymentAssignmentDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePaymentAssignmentDto)
+  assignments: CreatePaymentAssignmentDto[];
+
+  @IsNotEmpty()
+  @IsUUID()
+  userId: string;
 }

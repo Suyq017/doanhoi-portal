@@ -10,7 +10,7 @@ import {
   Logger
 } from '@nestjs/common';
 import { PaymentAssignmentService } from './services/payment-assignment.service';
-import { CreatePaymentAssignmentDto } from './dto/create-payment-assignment.dto';
+import { CreatePaymentAssignmentDto, CreateBulkPaymentAssignmentDto } from './dto/create-payment-assignment.dto';
 import { UpdatePaymentAssignmentDto } from './dto/update-payment-assignment.dto';
 import { PaymentAssignmentStatus } from '../entities/payment-assignment.entity';
 
@@ -26,28 +26,30 @@ export class PaymentAssignmentController {
    * Create payment assignment
    * POST /payment/assignments
    */
-  @Post()
-  async create(@Body() createDto: CreatePaymentAssignmentDto) {
-    this.logger.log(`Creating payment assignment for user ${createDto.userId}`);
+  // @Post()
+  // async create(@Body() createDto: CreatePaymentAssignmentDto) {
+  //   this.logger.log(`Creating payment assignment for user ${createDto.userId}`);
     
-    const assignment = await this.assignmentService.create(createDto);
+  //   const assignment = await this.assignmentService.create(createDto);
     
-    return {
-      success: true,
-      message: 'Payment assignment created successfully',
-      data: assignment
-    };
-  }
+  //   return {
+  //     success: true,
+  //     message: 'Payment assignment created successfully',
+  //     data: assignment
+  //   };
+  // }
 
   /**
    * Create bulk assignments
    * POST /payment/assignments/bulk
    */
   @Post('bulk')
-  async createBulk(@Body() assignments: CreatePaymentAssignmentDto[]) {
-    this.logger.log(`Creating ${assignments.length} payment assignments`);
+  async createBulk(@Body() requestBody: CreateBulkPaymentAssignmentDto) {
+    const { assignments, userId } = requestBody;
     
-    const created = await this.assignmentService.createBulk(assignments);
+    this.logger.log(`Creating ${assignments.length} payment assignments by user ${userId}`);
+    
+    const created = await this.assignmentService.createBulk(assignments, userId);
     
     return {
       success: true,

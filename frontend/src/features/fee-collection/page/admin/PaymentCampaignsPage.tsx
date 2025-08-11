@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { Plus, Shield } from "lucide-react";
+import { Plus } from "lucide-react";
 import PaymentCampaignList from "../../components/admin/PaymentCampaignList";
 import PaymentCampaignForm from "../../components/admin/PaymentCampaignForm";
 import UserPermissionInfo from "../../components/admin/UserPermissionInfo";
 import { Organization, PaymentCampaign } from "../../types";
 import { usePermissions } from "@/shared/hooks/usePermissions";
 import { PermissionGuard } from "@/shared/components/PermissionGuard";
-import { paymentCampaignService } from "@/shared/services/fee-collection-service";
 import { organizationService } from "@/shared/services/organizationService";
 
 export const PaymentCampaignsPage = () => {

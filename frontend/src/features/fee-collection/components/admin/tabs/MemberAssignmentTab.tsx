@@ -87,19 +87,33 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
 
   const handleBulkCreateSubmit = async (formData: any) => {
     try {
+      // Get user data from localStorage
+      const userData = localStorage.getItem('user');
+      if (!userData) {
+        throw new Error('User not authenticated');
+      }
+      const user = JSON.parse(userData);
+      if (!user?.id) {
+        throw new Error('User ID not found');
+      }
+
       // Create array of assignment DTOs for backend
       const assignments = selectedMemberIds.map(userId => ({
         campaignId: campaign.id,
         userId: userId,
         feeLevelId: formData.feeLevelId,
-        amount: formData.customAmount,
+        amount: formData.customAmount, // Include custom amount if provided
         notes: formData.notes,
         dueDate: formData.dueDate,
       }));
 
-      const response = await paymentAssignmentService.createMultipleAssignments(assignments);
+      console.log('Creating assignments with user ID:', user.id);
+      console.log('Assignments data:', assignments);
       
-      // Add new assignments to the list
+      // Call the bulk create API with assignments array and userId
+      const response = await paymentAssignmentService.createMultipleAssignments(assignments, user.id);
+      
+      // Handle response
       const newAssignments = (response as any).data || response || [];
       setAssignments(prev => [...prev, ...newAssignments]);
       setShowBulkCreate(false);

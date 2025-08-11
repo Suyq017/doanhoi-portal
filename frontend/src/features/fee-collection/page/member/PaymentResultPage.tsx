@@ -170,7 +170,7 @@ export const PaymentResultPage: React.FC = () => {
       <div className="max-w-md px-4 mx-auto">
         <div className="overflow-hidden bg-white rounded-lg shadow-lg">
           {/* Header */}
-          <div className="px-6 py-4 border-b bg-gray-50">
+          <div className="px-6 py-4 text-center border-b bg-gray-50">
             <h1 className="text-lg font-semibold text-gray-900">
               Kết quả thanh toán PayOS
             </h1>
@@ -178,14 +178,16 @@ export const PaymentResultPage: React.FC = () => {
 
           {/* Status Display */}
           <div className="p-6">
-            <div className="mb-6 text-center">
-              {statusDisplay.icon}
-              <h2 className="mt-4 mb-2 text-xl font-bold text-gray-900">
-                {statusDisplay.title}
-              </h2>
-              <p className="text-gray-600">
-                {statusDisplay.message}
-              </p>
+              <div className="mb-6 text-center">
+                <div className="flex justify-center">
+                  {statusDisplay.icon}
+                </div>
+                <h2 className="mt-4 mb-2 text-xl font-bold text-gray-900">
+                  {statusDisplay.title}
+                </h2>
+                <p className="text-gray-600">
+                  {statusDisplay.message}
+                </p>
             </div>
 
             {/* Transaction Details */}
@@ -204,11 +206,6 @@ export const PaymentResultPage: React.FC = () => {
                       currency: 'VND'
                     }).format(paymentStatus.amount)}
                   </span>
-                </div>
-
-                <div className="flex items-start justify-between">
-                  <span className="text-sm text-gray-600">Mô tả:</span>
-                  <span className="flex-1 ml-2 text-sm text-right">{paymentStatus.description}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -251,26 +248,6 @@ export const PaymentResultPage: React.FC = () => {
 
             {/* Action Buttons */}
             <div className="space-y-3">
-              {paymentStatus.status !== 'PAID' && (
-                <button
-                  onClick={checkPaymentStatus}
-                  disabled={checking}
-                  className="flex items-center justify-center w-full px-4 py-3 space-x-2 font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {checking ? (
-                    <>
-                      <div className="w-4 h-4 border-b-2 border-white rounded-full animate-spin"></div>
-                      <span>Đang kiểm tra...</span>
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-4 h-4" />
-                      <span>Kiểm tra lại</span>
-                    </>
-                  )}
-                </button>
-              )}
-
               {paymentStatus.status === 'PAID' && (
                 <button
                   onClick={() => navigate('/dashboard')}

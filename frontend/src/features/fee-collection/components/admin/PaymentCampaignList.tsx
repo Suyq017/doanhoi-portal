@@ -120,7 +120,6 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
     }
   };
   
-  
   const handleStatusChange = async (id: string, action: 'activate' | 'complete' | 'cancel') => {
     // Show confirmation dialog for activate action
     if (action === 'activate') {
@@ -386,7 +385,8 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   Trạng thái
-                </th>                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   Người tạo
                 </th>
                 {showActionColumn && (
@@ -425,87 +425,84 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                         {campaign.status === 'CANCELLED' && 'Đã hủy'}
                       </span>
                     </div>
-                  </td>                  <td className="px-6 py-4">
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="text-sm text-gray-900 dark:text-white">
                       {campaign.createdByUser?.familyName} {campaign.createdByUser?.givenName}
                     </div>
                   </td>
 
-                  {/* Actions Column - Permission controlled */}
                   {showActionColumn && (
                     <td className="px-6 py-4 text-sm font-medium text-right">
-                      <div className="flex items-center justify-end space-x-2">                        
-                      {canViewCampaign(campaign) && (
-                        <Link
-                          to={`/admin/payment-campaigns/${campaign.id}`}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                          title="Xem chi tiết"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                      )}                        
-                      {campaign.status === 'DRAFT' && (
-                        <>
-                          {canEditCampaign(campaign) && (
-                            <button
-                              onClick={() => onEditCampaign?.(campaign)}
-                              className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
-                              title="Chỉnh sửa"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                          )}
-
-                          {canDeleteCampaign(campaign) && (
-                            <button
-                              onClick={() => handleDelete(campaign.id)}
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                              title="Xóa"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </>
-                      )}                        
-                      {campaign.status === 'ACTIVE' && (
-                        <>
-                          {canEditCampaign(campaign) && (
-                            <button
-                              onClick={() => handleStatusChange(campaign.id, 'complete')}
-                              disabled={actionLoading === `${campaign.id}-complete`}
-                              className="text-blue-600 hover:text-blue-900 disabled:opacity-50 dark:text-blue-400 dark:hover:text-blue-300"
-                              title="Hoàn thành"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
-                          )}
-
-                          {canEditCampaign(campaign) && (
-                            <button
-                              onClick={() => handleStatusChange(campaign.id, 'cancel')}
-                              disabled={actionLoading === `${campaign.id}-cancel`}
-                              className="text-red-600 hover:text-red-900 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
-                              title="Hủy"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          )}
-                        </>
-                      )}                        
-                      {(campaign.status === 'CANCELLED' || campaign.status === 'COMPLETED') && (
-                        <>
-                          {canDeleteCampaign(campaign) && (
-                            <button
-                              onClick={() => handleDelete(campaign.id)}
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                              title="Xóa đợt thu phí"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </>
-                      )}
-
+                      <div className="flex items-center justify-end space-x-2">
+                        {canViewCampaign(campaign) && (
+                          <Link
+                            to={`/admin/payment-campaigns/${campaign.id}`}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            title="Xem chi tiết"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                        )}
+                        {campaign.status === 'DRAFT' && (
+                          <>
+                            {canEditCampaign(campaign) && (
+                              <button
+                                onClick={() => onEditCampaign?.(campaign)}
+                                className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                                title="Chỉnh sửa"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                            )}
+                            {canDeleteCampaign(campaign) && (
+                              <button
+                                onClick={() => handleDelete(campaign.id)}
+                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                title="Xóa"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                        {campaign.status === 'ACTIVE' && (
+                          <>
+                            {canEditCampaign(campaign) && (
+                              <button
+                                onClick={() => handleStatusChange(campaign.id, 'complete')}
+                                disabled={actionLoading === `${campaign.id}-complete`}
+                                className="text-blue-600 hover:text-blue-900 disabled:opacity-50 dark:text-blue-400 dark:hover:text-blue-300"
+                                title="Hoàn thành"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                            )}
+                            {canEditCampaign(campaign) && (
+                              <button
+                                onClick={() => handleStatusChange(campaign.id, 'cancel')}
+                                disabled={actionLoading === `${campaign.id}-cancel`}
+                                className="text-red-600 hover:text-red-900 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
+                                title="Hủy"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                        {(campaign.status === 'CANCELLED' || campaign.status === 'COMPLETED') && (
+                          <>
+                            {canDeleteCampaign(campaign) && (
+                              <button
+                                onClick={() => handleDelete(campaign.id)}
+                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                title="Xóa đợt thu phí"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </>
+                        )}
                       </div>
                     </td>
                   )}

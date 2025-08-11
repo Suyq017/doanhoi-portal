@@ -96,43 +96,18 @@ class PaymentAssignmentService {
     return response.json();
   }
 
-  async createBulkAssignment(data: CreateBulkPaymentAssignmentDto): Promise<ApiResponse<PaymentAssignment[]>> {
+  async createMultipleAssignments(assignments: CreatePaymentAssignmentDto[], userId: string): Promise<ApiResponse<PaymentAssignment[]>> {
+    const requestBody = {
+      assignments: assignments,
+      userId: userId
+    };
+
     const response = await fetch(`${API_BASE}/bulk`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to create bulk assignments');
-    }
-    return response.json();
-  }
-
-  async createMultipleAssignments(assignments: CreatePaymentAssignmentDto[]): Promise<ApiResponse<PaymentAssignment[]>> {
-    const response = await fetch(`${API_BASE}/bulk`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(assignments),
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to create multiple assignments');
-    }
-    return response.json();
-  }
-
-  async createMultipleAssignment(data: CreateMultiplePaymentAssignmentDto): Promise<ApiResponse<PaymentAssignment[]>> {
-    const response = await fetch(`${API_BASE}/multiple`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
+      body: JSON.stringify(requestBody),
     });
     
     if (!response.ok) {

@@ -29,7 +29,7 @@ export class PaymentAssignmentService {
   /**
    * Create payment assignment
    */
-  async create(createDto: CreatePaymentAssignmentDto): Promise<PaymentAssignment> {
+  async create(createDto: CreatePaymentAssignmentDto, userId: string): Promise<PaymentAssignment> {
     // Verify campaign exists
     const campaign = await this.campaignRepository.findOne({
       where: { id: createDto.campaignId },
@@ -79,7 +79,7 @@ export class PaymentAssignmentService {
       dueDate: createDto.dueDate,
       note: createDto.notes,
       status: PaymentAssignmentStatus.PENDING,
-      assignedById: campaign.createdById,
+      assignedById: userId,
     });
 
     const savedAssignment = await this.assignmentRepository.save(assignment);
@@ -92,7 +92,7 @@ export class PaymentAssignmentService {
   /**
    * Create bulk assignments
    */
-  async createBulk(assignments: CreatePaymentAssignmentDto[]): Promise<PaymentAssignment[]> {
+  async createBulk(assignments: CreatePaymentAssignmentDto[], userId: string): Promise<PaymentAssignment[]> {
     const created: PaymentAssignment[] = [];
     const errors: any[] = [];
 
@@ -101,7 +101,7 @@ export class PaymentAssignmentService {
     for (const assignmentDto of assignments) {
       try {
         this.logger.log(`Creating assignment for user ${assignmentDto.userId} in campaign ${assignmentDto.campaignId}`);
-        const assignment = await this.create(assignmentDto);
+        const assignment = await this.create(assignmentDto, userId);
         created.push(assignment);
         this.logger.log(`Successfully created assignment ${assignment.id}`);
       } catch (error) {

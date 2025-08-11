@@ -89,7 +89,7 @@ export const usePaymentCampaign = (id?: string) => {
       setError(null);
       
       const response = await paymentCampaignService.getPaymentCampaignById(id);
-      setCampaign(response.data);
+      setCampaign(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load campaign');
     } finally {
