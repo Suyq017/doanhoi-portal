@@ -91,8 +91,8 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
           bValue = b.user?.givenName || '';
           break;
         case 'amount':
-          aValue = (a.customAmount ? parseFloat(a.customAmount) : 0) || a.feeLevel?.amount || 0;
-          bValue = (b.customAmount ? parseFloat(b.customAmount) : 0) || b.feeLevel?.amount || 0;
+          aValue = a.feeLevel?.amount || 0;
+          bValue = b.feeLevel?.amount || 0;
           break;
         case 'status':
           aValue = a.computedStatus;
@@ -409,11 +409,6 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
                           <div className="font-medium text-gray-900 dark:text-white">
                             {assignment.feeLevel.levelName}
                           </div>
-                          {assignment.customAmount && (
-                            <div className="text-xs text-blue-600 dark:text-blue-400">
-                              (Tùy chỉnh)
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <span className="text-gray-500 dark:text-gray-400">Tùy chỉnh</span>
@@ -422,7 +417,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
 
                     {/* Amount */}
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {formatAmount((assignment.customAmount ? parseFloat(assignment.customAmount) : 0) || assignment.feeLevel?.amount || 0)}
+                      {formatAmount(assignment.feeLevel?.amount || 0)}
                     </div>
 
                     {/* Status */}

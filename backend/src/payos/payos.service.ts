@@ -15,24 +15,37 @@ export class SimplePayosService {
   ) {}
 
   /**
+   * Get PayOS configuration for a campaign
+   * @param campaignId - Campaign ID to get config for
+   * @returns PayOS configuration
+   */
+  async getPayOSConfig(campaignId: string) {
+    return await this.payosConfigService.getEffectiveConfig(campaignId);
+  }
+
+  /**
    * Gọi SDK để tạo link thanh toán mới.
    * @param orderData - Đối tượng chứa thông tin đơn hàng (amount, description, orderCode, returnUrl, cancelUrl, campaignId).
    * @returns Promise chứa đối tượng link thanh toán từ PayOS.
    */
   async createPaymentLink(orderData: any) {
-    // Lấy config từ database theo campaignId với fallback hierarchy
-    const config = await this.payosConfigService.getEffectiveConfig(orderData.campaignId);
-    
-    // Tạo PayOS instance với config động từ database
-    const payos = new PayOS(
-      config.clientId,
-      config.apiKey,
-      config.checksumKey
-    );
-    // Xóa campaignId khỏi orderData trước khi gửi đến PayOS
-    // const { campaignId, ...payosOrderData } = orderData;
-    
-    return payos.createPaymentLink(orderData);
+    try {
+      // Lấy config từ database theo campaignId với fallback hierarchy
+      const config = await this.payosConfigService.getEffectiveConfig(orderData.campaignId);
+      
+      // Tạo PayOS instance với config động từ database
+      const payos = new PayOS(
+        config.clientId,
+        config.apiKey,
+        config.checksumKey
+      );
+      // Xóa campaignId khỏi orderData trước khi gửi đến PayOS
+      const { campaignId, ...payosOrderData } = orderData;
+      return payos.createPaymentLink(payosOrderData);
+    } catch (error) {
+      console.error(`❌ createPaymentLink failed for campaignId ${orderData.campaignId}:`, error.message);
+      throw error;
+    }
   }
 
   /**
@@ -45,7 +58,7 @@ export class SimplePayosService {
     try {
       // Lấy config từ database theo campaignId với fallback hierarchy
       const config = await this.payosConfigService.getEffectiveConfig(campaignId);
-      
+
       // Tạo PayOS instance với config động từ database
       const payos = new PayOS(
         config.clientId,
@@ -106,7 +119,7 @@ export class SimplePayosService {
         }
       };
     } catch (error) {
-      console.error('Error getting payment link information:', error);
+      console.error(`❌ getPaymentLinkInformation failed for orderCode ${orderCode}, campaignId ${campaignId}:`, error.message);
       return {
         success: false,
         message: error.message || 'Failed to get payment information'

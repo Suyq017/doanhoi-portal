@@ -83,12 +83,12 @@ const StatisticsTab: React.FC<StatisticsTabProps> = ({ campaign }) => {
     const totalPaidAmount = assignments
       .filter(a => a.status === 'PAID')
       .reduce((sum, a) => {
-        const amount = (a.customAmount ? parseFloat(a.customAmount) : 0) || a.feeLevel?.amount || 0;
+        const amount = a.feeLevel?.amount || 0;
         return sum + amount;
       }, 0);
 
     const totalAmount = assignments.reduce((sum, a) => {
-      const amount = (a.customAmount ? parseFloat(a.customAmount) : 0) || a.feeLevel?.amount || 0;
+      const amount = a.feeLevel?.amount || 0;
       return sum + amount;
     }, 0);
     const averageAmount = totalAmount / total;

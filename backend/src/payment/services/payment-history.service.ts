@@ -14,12 +14,18 @@ export class PaymentHistoryService {
     assignmentId: string;
     amount: number;
     orderCode: number;
+    clientId?: string;
+    apiKey?: string;
+    checksumKey?: string;
   }): Promise<PaymentHistory> {
     const paymentHistory = this.paymentHistoryRepository.create({
       assignment_id: data.assignmentId,
       amount: data.amount,
       order_code: data.orderCode,
-      status: PaymentHistoryStatus.PENDING
+      status: PaymentHistoryStatus.PENDING,
+      client_id: data.clientId,
+      api_key: data.apiKey,
+      checksum_key: data.checksumKey
     });
 
     return await this.paymentHistoryRepository.save(paymentHistory);

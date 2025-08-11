@@ -136,16 +136,6 @@ export const PaymentValidationRules = {
   assignmentNote: {
     maxLength: 300
   },
-  customAmount: {
-    min: 1000,
-    max: 100000000,
-    custom: (value: number) => {
-      if (value && value % 1000 !== 0) {
-        return 'Số tiền phải là bội số của 1,000 VNĐ';
-      }
-      return null;
-    }
-  },
 
   // User information
   fullName: {
@@ -205,7 +195,6 @@ export const PaymentScenarioValidations = {
 
   // Create assignment
   createAssignment: {
-    customAmount: PaymentValidationRules.customAmount,
     note: PaymentValidationRules.assignmentNote,
     dueDate: {
       custom: (value: string) => {

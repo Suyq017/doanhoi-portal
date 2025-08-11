@@ -168,23 +168,41 @@ export class PaymentCampaignPayosConfigService {
       
       // Try level 2 organization
       const level2Config = await this.findOrgConfig(organization.parent.id);
-      if (level2Config) return level2Config;
+      if (level2Config) {
+        return level2Config;
+      }
       
       // Try level 1 organization
       const level1Config = await this.findOrgConfig(organization.parent.parent.id);
-      if (level1Config) return level1Config;
+      if (level1Config) {
+        return level1Config;
+      }
       
     } else if (organization.parent) {
       // This is level 2 organization
       // Fallback: Campaign (level 2) → Org level 1
       
       const level1Config = await this.findOrgConfig(organization.parent.id);
-      if (level1Config) return level1Config;
+      if (level1Config) {
+        return level1Config;
+      }
       
     } else {
       // This is level 1 organization (root)
-      // No fallback available, should error
-      throw new NotFoundException('Không tìm thấy cấu hình PayOS cho đợt thanh toán này');
+      // For level 1 organizations, no fallback is available
+
+      // Must have direct campaign config or error
+      // Look for any PayOS config within this organization
+      // this.logger.log('Organization is level 1 (root), checking for any config in this organization');
+      // const orgConfig = await this.findOrgConfig(organization.id);
+      // if (orgConfig) {
+      //   this.logger.log(`Found config within level 1 organization: ${organization.id}`);
+      //   return orgConfig;
+      // }
+      
+      // At this time, we assume that level 1 organizations must have a direct PayOS config
+      // If no config found, throw error
+      this.logger.log('Organization is level 1 (root), no fallback available - campaign must have direct PayOS config');
     }
 
     throw new NotFoundException('Không tìm thấy cấu hình PayOS cho đợt thanh toán này hoặc các tổ chức cha');
@@ -194,7 +212,7 @@ export class PaymentCampaignPayosConfigService {
    * Find organization config by looking for any active campaign config in that organization
    */
   private async findOrgConfig(organizationId: string): Promise<PaymentCampaignPayosConfig | null> {
-    return this.payosConfigRepository.findOne({
+    const config = await this.payosConfigRepository.findOne({
       where: { 
         organizationId, 
         isActive: true 
@@ -202,6 +220,8 @@ export class PaymentCampaignPayosConfigService {
       relations: ['campaign', 'organization', 'user'],
       order: { createdAt: 'DESC' } // Get the most recent config
     });
+
+    return config;
   }
 
   /**

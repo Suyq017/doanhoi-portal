@@ -75,7 +75,6 @@ export class PaymentAssignmentService {
       campaignId: createDto.campaignId,
       userId: createDto.userId,
       feeLevelId: createDto.feeLevelId,
-      customAmount: createDto.amount,
       dueDate: createDto.dueDate,
       note: createDto.notes,
       status: PaymentAssignmentStatus.PENDING,
@@ -342,7 +341,7 @@ export class PaymentAssignmentService {
       // If organizationId is provided, we need to filter through campaign
       const queryOptions: any = {
         where: whereConditions,
-        relations: ['campaign']
+        relations: ['campaign', 'feeLevel']
       };
 
       if (organizationId && !campaignId) {
@@ -362,9 +361,9 @@ export class PaymentAssignmentService {
       
       const totalPaidAmount = assignments
         .filter(a => a.status === PaymentAssignmentStatus.PAID)
-        .reduce((sum, a) => sum + (a.customAmount || 0), 0);
+        .reduce((sum, a) => sum + (a.feeLevel?.amount || 0), 0);
       
-      const totalAmount = assignments.reduce((sum, a) => sum + (a.customAmount || 0), 0);
+      const totalAmount = assignments.reduce((sum, a) => sum + (a.feeLevel?.amount || 0), 0);
       const averageAmount = totalAssignments > 0 ? totalAmount / totalAssignments : 0;
       const paymentRate = totalAssignments > 0 ? (paidCount / totalAssignments) * 100 : 0;
 

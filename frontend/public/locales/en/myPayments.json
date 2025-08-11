@@ -75,7 +75,7 @@
     "assignmentNotFound": "Payment assignment not found",
     "assignmentNotFoundPhonetic": "Payment assignment not found",
     "paymentError": "An error occurred while creating payment. Please try again.",
-    "paymentErrorPhonetic": "An error occurred while creating payment. Please try again."
+    "paymentSystemError": "An error occurred while creating payment. This is a system error. Please wait for notification from administrator and try again."
   },
   "empty": {
     "noCampaigns": "No payment campaigns",

@@ -5,7 +5,6 @@ interface PaymentAssignment {
   campaignId: string;
   userId: string;
   feeLevelId?: string;
-  customAmount?: number;
   note?: string;
   status: 'PENDING' | 'PAID' | 'OVERDUE';
   dueDate?: string;

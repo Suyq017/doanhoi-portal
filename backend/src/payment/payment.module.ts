@@ -26,7 +26,7 @@ import { PaymentCampaignController } from './controllers/payment-campaign.contro
 import { PaymentFeeLevelController } from './controllers/payment-fee-level.controller';
 import { PaymentAssignmentController } from './payment-assignment.controller';
 import { PaymentCampaignPayOSConfigController } from './controllers/payment-campaign-payos-config.controller';
-import { PaymentController } from '../payos/payment.controller'; // Import API controller
+import { PayOSController } from '../payos/payos.controller'; // Import API controller
 import { PaymentAdminController } from './payment-admin.controller'; // Import Admin API controller
 
 @Module({
@@ -40,16 +40,16 @@ import { PaymentAdminController } from './payment-admin.controller'; // Import A
       Organization,
       User,
     ]),
-    forwardRef(() => PayosModule), // Forward reference để tránh circular dependency
-    forwardRef(() => RolesModule), // Import RolesModule để sử dụng RolesService
+    forwardRef(() => PayosModule),
+    forwardRef(() => RolesModule), 
   ],
   controllers: [
     PaymentCampaignController,
     PaymentFeeLevelController,
     PaymentAssignmentController,
     PaymentCampaignPayOSConfigController,
-    PaymentController, // Thêm API controller
-    PaymentAdminController, // Thêm Admin API controller
+    PayOSController, 
+    PaymentAdminController, 
   ],
   providers: [
     PaymentCampaignService,

@@ -36,9 +36,6 @@ export class PaymentAssignment {
   @JoinColumn({ name: 'fee_level_id' })
   feeLevel: PaymentFeeLevel;
 
-  @Column({ name: 'custom_amount', type: 'decimal', precision: 10, scale: 2, nullable: true })
-  customAmount: number;
-
   @Column({ type: 'text', nullable: true })
   note: string;
 

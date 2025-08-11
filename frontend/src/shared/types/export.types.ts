@@ -77,9 +77,11 @@ export const ASSIGNMENT_EXPORT_FIELDS: ExportField[] = [
   // Payment Information
   { key: 'paidAmount', label: 'Số tiền đã đóng', category: 'organization', description: 'Số tiền thực tế đã thanh toán' },
   { key: 'paymentDate', label: 'Ngày thanh toán', category: 'organization' },
-  { key: 'paymentMethod', label: 'Phương thức thanh toán', category: 'organization' },
   { key: 'transactionId', label: 'Mã giao dịch', category: 'organization' },
-  
+  { key: 'checksumKey', label: 'Checksum Key', category: 'system', description: 'Khóa bảo mật PayOS' },
+  { key: 'apiKey', label: 'API Key', category: 'system', description: 'Khóa API PayOS' },
+  { key: 'clientId', label: 'Client ID', category: 'system', description: 'ID ứng dụng PayOS' },
+
   // System Information
   { key: 'assignedDate', label: 'Ngày phân công', category: 'system' },
   { key: 'assignedBy', label: 'Người phân công', category: 'system' },

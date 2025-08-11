@@ -10,6 +10,7 @@ export interface CreatePaymentRequest {
 // PayOS API Interfaces
 export interface CreatePaymentLinkRequest {
   assignmentId: string;  // Required for creating payment history
+  campaignId: string;   // Campaign ID for PayOS config
   amount: number;
   description: string;
   organizationId: string;

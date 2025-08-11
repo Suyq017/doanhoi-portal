@@ -365,13 +365,13 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
 
       {/* Error Message */}
       {error && (
-        <div className="px-4 py-3 text-red-700 border border-red-200 rounded bg-red-50 dark:bg-red-900 dark:border-red-800 dark:text-red-200">
+        <div className="px-4 py-3 mt-6 text-red-700 border border-red-200 rounded bg-red-50 dark:bg-red-900 dark:border-red-800 dark:text-red-200">
           {error}
         </div>
       )}
 
       {/* Table */}
-      <div className="overflow-hidden bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
+      <div className="mt-6 overflow-hidden bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
@@ -515,7 +515,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
         </div>
 
         {/* Pagination */}
-        {pagination.totalPages !== 0 && (
+        {pagination.totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
             <div className="flex justify-between flex-1 sm:hidden">
               <button

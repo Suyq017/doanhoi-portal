@@ -78,7 +78,6 @@ export interface PaymentAssignment {
   campaignId: string;
   userId: string;
   feeLevelId?: string;
-  customAmount?: string; // Backend returns string like "20000.00"
   note: string;
   status: 'PENDING' | 'PAID' | 'OVERDUE';
   dueDate?: string;
@@ -99,7 +98,6 @@ export interface CreatePaymentAssignmentDto {
   campaignId: string;
   userId: string;
   feeLevelId?: string;
-  customAmount?: number;
   note?: string;
   dueDate?: string;
 }
@@ -108,7 +106,6 @@ export interface CreateBulkPaymentAssignmentDto {
   campaignId: string;
   userIds: string[];
   feeLevelId?: string;
-  customAmount?: number;
   note?: string;
   dueDate?: string;
 }
@@ -118,7 +115,6 @@ export interface CreateMultiplePaymentAssignmentDto {
   assignments: {
     userId: string;
     feeLevelId?: string;
-    customAmount?: number;
     note?: string;
   }[];
   dueDate?: string;
@@ -268,7 +264,6 @@ export interface PaymentAssignmentFormData {
   campaignId: string;
   selectedUsers: string[];
   feeLevelId?: string;
-  customAmount?: number;
   note?: string;
   dueDate?: string;
 }

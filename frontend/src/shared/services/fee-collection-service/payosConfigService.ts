@@ -34,7 +34,7 @@ export interface PayOSConfigResponse {
   data?: PayOSConfig;
   error?: string;
 }
-const baseURL = '/api/payment-campaigns';
+const baseURL = `/payment-campaigns`;
 
 class PayOSConfigService {
   /**

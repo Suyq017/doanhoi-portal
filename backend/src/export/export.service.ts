@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import * as XLSX from 'xlsx';
 import { User } from '../entities/user.entity';
 import { Organization } from '../entities/organization.entity';
@@ -8,6 +8,8 @@ import { UserOrganization } from '../entities/user-organization.entity';
 import { PaymentAssignment } from '../entities/payment-assignment.entity';
 import { PaymentCampaign } from '../entities/payment-campaign.entity';
 import { ExportRequestDto, ExportFormat } from './dto/export-request.dto';
+import { PaymentCampaignPayosConfig } from '@/entities/payment-campaign-payos-config.entity';
+import { PaymentHistory } from '@/entities/payment-history.entity';
 
 @Injectable()
 export class ExportService {
@@ -22,6 +24,10 @@ export class ExportService {
     private paymentAssignmentRepository: Repository<PaymentAssignment>,
     @InjectRepository(PaymentCampaign)
     private paymentCampaignRepository: Repository<PaymentCampaign>,
+    // @InjectRepository(PaymentCampaignPayosConfig)
+    // private paymentCampaignPayosConfigRepository: Repository<PaymentCampaignPayosConfig>,
+    @InjectRepository(PaymentHistory) 
+    private paymentHistoryRepository: Repository<PaymentHistory>,
   ) {}
 
   async exportUsers(exportRequest: ExportRequestDto): Promise<Buffer> {
@@ -124,7 +130,9 @@ export class ExportService {
         },
         feeLevel: true,
         assignedByUser: true,
-        campaign: true,
+        campaign: {
+          organization: true,
+        },
       },
     });
 
@@ -132,32 +140,58 @@ export class ExportService {
       throw new Error('Đợt thu phí không có phân công nào');
     }
 
+    // Get PayOS config for the campaign
+    // const payosConfig = await this.paymentCampaignPayosConfigRepository.findOne({
+    //   where: { campaignId },
+    // });
+
+    // Get payment histories for all assignments
+    const assignmentIds = assignments.map(a => a.id);
+    const paymentHistories = await this.paymentHistoryRepository.find({
+      where: { assignment_id: In(assignmentIds) },
+      order: { created_at: 'DESC' },
+    });
+
+    // Create a map for quick lookup
+    const paymentHistoryMap = new Map();
+    paymentHistories.forEach(ph => {
+      if (!paymentHistoryMap.has(ph.assignment_id)) {
+        paymentHistoryMap.set(ph.assignment_id, ph);
+      }
+    });
+
     // Transform assignments data for export
-    const assignmentData = assignments.map(assignment => ({
-      // Member information
-      memberCode: assignment.user?.code,
-      memberName: assignment.user ? `${assignment.user.familyName || ''} ${assignment.user.givenName || ''}`.trim() : '',
-      memberEmail: assignment.user?.email,
-      memberPhone: assignment.user?.phone,
+    const assignmentData = assignments.map(assignment => {
+      const paymentHistory = paymentHistoryMap.get(assignment.id);
       
-      // Assignment information
-      feeLevelName: assignment.feeLevel?.levelName,
-      amount: assignment.customAmount || assignment.feeLevel?.amount,
-      dueDate: assignment.dueDate,
-      status: assignment.status,
-      notes: assignment.note,
-      
-      // Payment information (these would come from payment records if implemented)
-      paidAmount: null, // TODO: Add relation to payment records
-      paymentDate: assignment.paidAt,
-      paymentMethod: null, // TODO: Add from payment records
-      transactionId: null, // TODO: Add from payment records
-      
-      // System information
-      assignedDate: assignment.assignedAt,
-      assignedBy: assignment.assignedByUser ? `${assignment.assignedByUser.familyName || ''} ${assignment.assignedByUser.givenName || ''}`.trim() : '',
-      lastUpdated: assignment.updatedAt,
-    }));
+      return {
+        // Member information
+        memberCode: assignment.user?.code,
+        memberName: assignment.user ? `${assignment.user.familyName || ''} ${assignment.user.givenName || ''}`.trim() : '',
+        memberEmail: assignment.user?.email,
+        memberPhone: assignment.user?.phone,
+        
+        // Assignment information
+        feeLevelName: assignment.feeLevel?.levelName,
+        amount: assignment.feeLevel?.amount,
+        dueDate: assignment.dueDate,
+        status: assignment.status,
+        notes: assignment.note || null,
+        
+        // Payment information from PaymentHistory and PayOS config
+        paidAmount: paymentHistory?.amount || null,
+        paymentDate: paymentHistory?.paid_at || null,
+        transactionId: paymentHistory?.order_code || null,
+        checksumKey: paymentHistory?.checksum_key || null,
+        apiKey: paymentHistory?.api_key || null,
+        clientId: paymentHistory?.client_id || null,
+        
+        // System information
+        assignedDate: assignment.assignedAt,
+        assignedBy: assignment.assignedByUser ? `${assignment.assignedByUser.familyName || ''} ${assignment.assignedByUser.givenName || ''}`.trim() : '',
+        lastUpdated: assignment.updatedAt,
+      };
+    });
 
     // Generate Excel file with safe sheet name
     const safeSheetName = this.createSafeSheetName(`Phân công - ${campaign.name}`);
@@ -379,8 +413,13 @@ export class ExportService {
         label: 'Ngày thanh toán',
         formatter: (value: Date) => value ? new Date(value).toLocaleDateString('vi-VN') : '',
       },
-      paymentMethod: { label: 'Phương thức thanh toán' },
-      transactionId: { label: 'Mã giao dịch' },
+      transactionId: { 
+        label: 'Mã giao dịch',
+        formatter: (value: number) => value ? String(value) : '',
+      },
+      checksumKey: { label: 'Checksum Key' },
+      apiKey: { label: 'API Key' },
+      clientId: { label: 'Client ID' },
       
       // System Information
       assignedDate: { 

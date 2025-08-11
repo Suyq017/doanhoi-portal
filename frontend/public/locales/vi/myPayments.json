@@ -75,7 +75,7 @@
     "assignmentNotFound": "Không tìm thấy thông tin đóng phí",
     "assignmentNotFoundPhonetic": "Không tìm thấy",
     "paymentError": "Có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.",
-    "paymentErrorPhonetic": "Lỗi thanh toán"
+    "paymentSystemError": "Có lỗi xảy ra khi tạo thanh toán. Đây là lỗi của hệ thống. Vui lòng đợi thông báo từ quản trị viên và thử lại."
   },
   "empty": {
     "noCampaigns": "Không có đợt đóng phí nào",

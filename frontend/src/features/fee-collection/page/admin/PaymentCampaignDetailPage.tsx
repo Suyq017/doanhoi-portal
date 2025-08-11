@@ -435,7 +435,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
 
       {/* Activation Error Message */}
       {activationError && (
-        <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900 dark:border-red-800">
+        <div className="p-4 mt-6 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900 dark:border-red-800">
           <div className="flex items-start space-x-3">
             <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5 dark:text-red-300" />
             <div>
@@ -453,7 +453,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
       )}
 
       {/* Campaign Info */}
-      <div className="p-6 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
+      <div className="p-6 mt-6 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
         <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">{t('detail.campaignInfo')}</h2>
         
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -524,7 +524,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
       </div>
 
       {/* Tab Navigation and Content */}
-      <div className="bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
+      <div className="mt-6 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
         <TabNavigation 
           activeTab={currentTab} 
           onTabChange={handleTabChange} 

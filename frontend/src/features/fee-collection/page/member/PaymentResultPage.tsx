@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { paymentService } from '../../../../shared/services/fee-collection-service';
 
@@ -62,6 +62,10 @@ export const PaymentResultPage: React.FC = () => {
       setLoading(false);
       setChecking(false);
     }
+  };
+
+  const handlePrintResult = () => {
+    window.print();
   };
 
   const getStatusDisplay = (status: string) => {
@@ -169,8 +173,37 @@ export const PaymentResultPage: React.FC = () => {
 
   return (
     <div className="min-h-screen py-8">
+      {/* Print styles */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            .printable-area, .printable-area * {
+              visibility: visible;
+            }
+            .printable-area {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+            }
+            .no-print {
+              display: none !important;
+            }
+            .print-only {
+              display: block !important;
+            }
+          }
+          .print-only {
+            display: none;
+          }
+        `
+      }} />
+      
       <div className="max-w-md px-4 mx-auto">
-        <div className="overflow-hidden bg-white rounded-lg shadow-lg">
+        <div className="overflow-hidden bg-white rounded-lg shadow-lg printable-area">
           {/* Header */}
           <div className="px-6 py-4 text-center border-b bg-gray-50">
             <h1 className="text-lg font-semibold text-gray-900">
@@ -210,11 +243,6 @@ export const PaymentResultPage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex items-start justify-between">
-                  <span className="text-sm text-gray-600">{t('details.description')}</span>
-                  <span className="flex-1 ml-2 text-sm text-right">{paymentStatus.description}</span>
-                </div>
-
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">{t('details.createdAt')}</span>
                   <span className="text-sm">
@@ -236,6 +264,12 @@ export const PaymentResultPage: React.FC = () => {
                           <span className="text-gray-600">{t('details.transactionTime')}</span>
                           <span>{new Date(tx.transactionDateTime).toLocaleString('vi-VN')}</span>
                         </div>
+                        <div className="flex items-start justify-between">
+                          <span className="text-sm text-gray-600">{t('details.description')}</span>
+                            <span className="flex-1 ml-2 text-sm text-right">
+                            {tx.description}
+                            </span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -245,7 +279,7 @@ export const PaymentResultPage: React.FC = () => {
 
             {/* Auto-refresh indicator */}
             {paymentStatus.status === 'PENDING' && (
-              <div className="flex items-center justify-center mb-6 space-x-2">
+              <div className="flex items-center justify-center mb-6 space-x-2 no-print">
                 <RefreshCw className={`w-4 h-4 text-blue-500 ${checking ? 'animate-spin' : ''}`} />
                 <span className="text-sm text-gray-600">
                   {checking ? t('autoRefresh.checking') : t('autoRefresh.interval')}
@@ -253,28 +287,21 @@ export const PaymentResultPage: React.FC = () => {
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              {paymentStatus.status !== 'PAID' && (
+            {/* Print button - only show when payment is successful */}
+            {(paymentStatus.status === 'PAID' || paymentStatus.status === 'CANCELLED' || paymentStatus.status === 'EXPIRED') && (
+              <div className="mb-4 no-print">
                 <button
-                  onClick={checkPaymentStatus}
-                  disabled={checking}
-                  className="flex items-center justify-center w-full px-4 py-3 space-x-2 font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  onClick={handlePrintResult}
+                  className="flex items-center justify-center w-full px-4 py-3 space-x-2 font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
-                  {checking ? (
-                    <>
-                      <div className="w-4 h-4 border-b-2 border-white rounded-full animate-spin"></div>
-                      <span>Đang kiểm tra...</span>
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-4 h-4" />
-                      <span>Kiểm tra lại</span>
-                    </>
-                  )}
+                  <Printer className="w-4 h-4" />
+                  <span>Lưu kết quả thanh toán</span>
                 </button>
-              )}
+              </div>
+            )}
 
+            {/* Action Buttons */}
+            <div className="space-y-3 no-print">
               {paymentStatus.status === 'PAID' && (
                 <button
                   onClick={() => navigate('/dashboard')}

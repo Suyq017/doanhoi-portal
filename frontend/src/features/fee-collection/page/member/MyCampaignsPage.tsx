@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { usePaymentAssignments, PaymentAssignment } from '../../../../shared/hooks/usePaymentAssignments';
 import { paymentService } from '../../../../shared/services/fee-collection-service';
 import { usePermissions } from '../../../../shared/hooks/usePermissions';
+import { useToast } from '../../../../shared/hooks/useToast';
+import { Toast } from '../../../../shared/components';
 
 interface Filters {
   status: string;
@@ -14,6 +16,7 @@ interface Filters {
 
 export const MyCampaignsPage: React.FC = () => {
   const { t } = useTranslation('myPayments');
+  const { showError, toasts, hideToast } = useToast();
   const [assignments, setAssignments] = useState<PaymentAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,17 +76,18 @@ export const MyCampaignsPage: React.FC = () => {
       // Tìm assignment để lấy thông tin thanh toán
       const assignment = assignments.find(a => a.id === assignmentId);
       if (!assignment) {
-        alert(t('errors.assignmentNotFound'));
+        showError(t('errors.assignmentNotFound'));
         return;
       }
 
       // Lấy số tiền và thông tin cần thiết
-      const amount = Number(assignment.customAmount) || Number(assignment.feeLevel?.amount) || 0;
+      const amount = Number(assignment.feeLevel?.amount) || 0;
       const organizationId = assignment.campaign.organization.id;
 
       // Gọi PayOS service để tạo payment link
       const paymentResponse = await paymentService.createPaymentLink({
-        assignmentId, // Thêm assignmentId vào request
+        assignmentId,
+        campaignId: assignment.campaign.id,
         amount,
         description: `Thanh toán: ${assignment.campaign.name}`,
         organizationId,
@@ -98,7 +102,7 @@ export const MyCampaignsPage: React.FC = () => {
 
     } catch (error) {
       console.error('Error creating payment:', error);
-      alert(t('errors.paymentError'));
+      showError(t('errors.paymentSystemError'));
     }
   };
 
@@ -138,8 +142,8 @@ export const MyCampaignsPage: React.FC = () => {
           comparison = new Date(a.assignedAt).getTime() - new Date(b.assignedAt).getTime();
           break;
         case 'amount':
-          const amountA = Number(a.customAmount) || Number(a.feeLevel?.amount) || 0;
-          const amountB = Number(b.customAmount) || Number(b.feeLevel?.amount) || 0;
+          const amountA = Number(a.feeLevel?.amount) || 0;
+          const amountB = Number(b.feeLevel?.amount) || 0;
           comparison = amountA - amountB;
           break;
       }
@@ -163,7 +167,7 @@ export const MyCampaignsPage: React.FC = () => {
     totalAmount: validAssignments
       .filter(a => a.status === 'PENDING')
       .reduce((sum, a) => {
-        const amount = Number(a.customAmount) || Number(a.feeLevel?.amount) || 0;
+        const amount = Number(a.feeLevel?.amount) || 0;
         return sum + amount;
       }, 0)
   };
@@ -235,10 +239,10 @@ export const MyCampaignsPage: React.FC = () => {
 
           {/* Permission Info */}
           {!isSuperAdmin() && userRoles && userRoles.length > 0 && (
-            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="p-3 mt-3 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <div className="w-2 h-2 mt-2 bg-blue-500 rounded-full"></div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
@@ -259,10 +263,10 @@ export const MyCampaignsPage: React.FC = () => {
           )}
 
           {isSuperAdmin() && (
-            <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <div className="p-3 mt-3 border border-green-200 rounded-lg bg-green-50 dark:bg-green-900/20 dark:border-green-800">
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                  <div className="w-2 h-2 mt-2 bg-green-500 rounded-full"></div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-green-900 dark:text-green-200">
@@ -435,7 +439,7 @@ export const MyCampaignsPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                      {formatAmount(Number(assignment.customAmount) || Number(assignment.feeLevel?.amount) || 0)}
+                      {formatAmount(Number(assignment.feeLevel?.amount) || 0)}
                     </div>
                     {assignment.feeLevel && (
                       <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -514,7 +518,8 @@ export const MyCampaignsPage: React.FC = () => {
               ))}
             </tbody>
           </table>
-        </div>        {filteredAndSortedAssignments.length === 0 && (
+        </div>        
+        {filteredAndSortedAssignments.length === 0 && (
           <div className="py-12 text-center">
             <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
             <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
@@ -540,6 +545,17 @@ export const MyCampaignsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Toast notifications */}
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          type={toast.type}
+          message={toast.message}
+          duration={toast.duration}
+          onClose={() => hideToast(toast.id)}
+        />
+      ))}
     </div>
   );
 };

@@ -102,7 +102,6 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
         campaignId: campaign.id,
         userId: userId,
         feeLevelId: formData.feeLevelId,
-        amount: formData.customAmount, // Include custom amount if provided
         notes: formData.notes,
         dueDate: formData.dueDate,
       }));

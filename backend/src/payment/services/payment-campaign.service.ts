@@ -515,8 +515,8 @@ export class PaymentCampaignService {
         'COUNT(CASE WHEN assignment.status = \'PAID\' THEN 1 END) as paidCount',
         'COUNT(CASE WHEN assignment.status = \'PENDING\' THEN 1 END) as pendingCount',
         'COUNT(CASE WHEN assignment.status = \'OVERDUE\' THEN 1 END) as overdueCount',
-        'SUM(CASE WHEN assignment.status = \'PAID\' THEN COALESCE(assignment.customAmount, fee_level.amount) END) as totalPaid',
-        'SUM(COALESCE(assignment.customAmount, fee_level.amount)) as totalAmount'
+        'SUM(CASE WHEN assignment.status = \'PAID\' THEN fee_level.amount END) as totalPaid',
+        'SUM(fee_level.amount) as totalAmount'
       ])
       .leftJoin('assignment.feeLevel', 'fee_level')
       .where('campaign.id = :id', { id })

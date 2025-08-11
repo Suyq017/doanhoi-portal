@@ -7,6 +7,8 @@ import { Organization } from '../entities/organization.entity';
 import { UserOrganization } from '../entities/user-organization.entity';
 import { PaymentAssignment } from '../entities/payment-assignment.entity';
 import { PaymentCampaign } from '../entities/payment-campaign.entity';
+import { PaymentCampaignPayosConfig } from '../entities/payment-campaign-payos-config.entity';
+import { PaymentHistory } from '../entities/payment-history.entity';
 
 @Module({
   imports: [
@@ -15,7 +17,9 @@ import { PaymentCampaign } from '../entities/payment-campaign.entity';
       Organization, 
       UserOrganization, 
       PaymentAssignment, 
-      PaymentCampaign
+      PaymentCampaign,
+      PaymentCampaignPayosConfig,
+      PaymentHistory
     ]),
   ],
   controllers: [ExportController],

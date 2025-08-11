@@ -3,7 +3,7 @@ import { SimplePayosService } from './payos.service';
 import { PaymentHistoryService } from '../payment/services/payment-history.service';
 
 @Controller('api/payment')
-export class PaymentController {
+export class PayOSController {
   constructor(
     private readonly payosService: SimplePayosService,
     private readonly paymentHistoryService: PaymentHistoryService
@@ -19,16 +19,22 @@ export class PaymentController {
       const YOUR_DOMAIN = process.env.FRONTEND_URL;
       const orderCode = Number(String(Date.now()).slice(-6));
 
+      // Lấy PayOS config để lưu vào payment history
+      const config = await this.payosService.getPayOSConfig(requestBody.campaignId);
+
       // Tạo payment history record trước
       const paymentHistory = await this.paymentHistoryService.createPaymentRecord({
         assignmentId: requestBody.assignmentId,
         amount: requestBody.amount,
-        orderCode: orderCode
+        orderCode: orderCode,
+        clientId: config.clientId,
+        apiKey: config.apiKey,
+        checksumKey: config.checksumKey
       });
 
       const order = {
-        amount: requestBody.amount || 20000,
-        description: `Thanh toán mã ${orderCode}`,
+        amount: requestBody.amount,
+        description: `Thanh toan ma ${orderCode}`,
         orderCode: orderCode,
         returnUrl: `${YOUR_DOMAIN}/payment-result/${orderCode}`,
         cancelUrl: `${YOUR_DOMAIN}/payment-result/${orderCode}`,
@@ -70,12 +76,14 @@ export class PaymentController {
       // Lấy payment history từ orderCode
       const paymentHistory = await this.paymentHistoryService.findByOrderCode(orderNumber);
       if (!paymentHistory) {
+        console.error(`❌ Payment history not found for orderCode: ${orderCode}`);
         throw new HttpException('Payment history not found', HttpStatus.NOT_FOUND);
       }
 
       // Lấy campaignId từ assignment → campaign
       const campaignId = paymentHistory.assignment?.campaign?.id;
       if (!campaignId) {
+        console.error(`❌ Campaign not found for payment history. Assignment: ${paymentHistory.assignment ? 'exists' : 'null'}, Campaign: ${paymentHistory.assignment?.campaign ? 'exists' : 'null'}`);
         throw new HttpException('Campaign not found for this payment', HttpStatus.NOT_FOUND);
       }
 
@@ -83,7 +91,7 @@ export class PaymentController {
       const paymentInfo = await this.payosService.getPaymentLinkInformation(orderNumber, campaignId);
       return paymentInfo;
     } catch (error) {
-      console.error(`Error checking status for order ${orderCode}:`, error);
+      console.error(`❌ Error checking status for order ${orderCode}:`, error.message);
       throw new HttpException('Order not found or failed to check status', HttpStatus.NOT_FOUND);
     }
   }

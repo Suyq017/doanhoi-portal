@@ -32,6 +32,16 @@ export class PaymentHistory {
   @Column('timestamp', { nullable: true })
   paid_at: Date;
 
+  // PayOS Configuration fields
+  @Column('varchar', { length: 255, nullable: true })
+  client_id: string;
+
+  @Column('varchar', { length: 255, nullable: true })
+  api_key: string;
+
+  @Column('varchar', { length: 255, nullable: true })
+  checksum_key: string;
+
   @CreateDateColumn()
   created_at: Date;
 
