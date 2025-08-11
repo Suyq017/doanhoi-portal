@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import RolesOrganizationRow, { Organization } from './RolesOrganizationRow';
 
 /**
@@ -46,6 +47,8 @@ const RolesOrganizationManager: React.FC<RolesOrganizationManagerProps> = ({
     onAddAssignment,
     disabled = false,
 }) => {
+    const { t } = useTranslation(['users', 'common']);
+    
     return (
         <div className="space-y-6">
             {/* Assignment Rows */}
@@ -80,7 +83,7 @@ const RolesOrganizationManager: React.FC<RolesOrganizationManagerProps> = ({
                     <div className="p-1 bg-doan-200 rounded-full group-hover:bg-doan-300 transition-colors">
                         <Plus className="w-4 h-4" />
                     </div>
-                    Thêm vai trò khác
+                    {t('users:grantRoles.addRoleRow', { defaultValue: 'Thêm vai trò khác' })}
                 </button>
             </div>
         </div>

@@ -272,7 +272,9 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
                                     <span className="text-sm font-semibold text-gray-700">
                                         {t('users:grantRoles.globalRole')}
                                     </span>
-                                    <p className="text-xs text-gray-500 mt-0.5">Áp dụng cho toàn hệ thống</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                        {t('users:labels.globalRoleDescription', { defaultValue: 'Áp dụng cho toàn hệ thống' })}
+                                    </p>
                                 </div>
                             </div>
                             {!disabled && (
@@ -280,7 +282,7 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
                                     type="button"
                                     onClick={() => setIsOpen(true)}
                                     className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-150"
-                                    title="Chọn tổ chức cụ thể"
+                                    title={t('users:labels.selectSpecificOrganization', { defaultValue: 'Chọn tổ chức cụ thể' })}
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -291,16 +293,19 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex-1 flex flex-col">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
-                                Tổ chức đã chọn ({selectedOrganizations.length})
+                                {t('users:labels.selectedOrganizations', { 
+                                    count: selectedOrganizations.length, 
+                                    defaultValue: `Tổ chức đã chọn (${selectedOrganizations.length})` 
+                                })}
                             </span>
                             {!disabled && (
                                 <button
                                     type="button"
                                     onClick={() => onOrganizationSelect([])}
                                     className="text-xs text-blue-500 hover:text-red-600 transition-colors"
-                                    title="Xóa tất cả tổ chức"
+                                    title={t('users:labels.removeAllOrganizations', { defaultValue: 'Xóa tất cả tổ chức' })}
                                 >
-                                    Xóa tất cả
+                                    {t('users:labels.removeAll', { defaultValue: 'Xóa tất cả' })}
                                 </button>
                             )}
                         </div>
@@ -320,7 +325,7 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
                                             type="button"
                                             onClick={() => handleOrganizationRemove(org.id)}
                                             className="ml-1 p-0.5 text-blue-200 hover:text-white hover:bg-blue-700 rounded-full transition-all duration-150"
-                                            title="Xóa tổ chức"
+                                            title={t('users:labels.removeOrganization', { defaultValue: 'Xóa tổ chức' })}
                                         >
                                             <X className="w-3 h-3" />
                                         </button>
@@ -442,10 +447,14 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
                                         <Building className="w-4 h-4 mr-3 text-green-600" />
                                         <div>
                                             <span className="font-medium text-green-900">
-                                                Chọn tổ chức của người dùng
+                                                {t('users:labels.selectUserOrganizations', { defaultValue: 'Chọn tổ chức của người dùng' })}
                                             </span>
                                             <div className="text-xs text-green-600 mt-0.5">
-                                                {userOrganizations.length} tổ chức: {userOrganizations.map(org => org.name).join(', ')}
+                                                {t('users:labels.userOrganizationsList', { 
+                                                    count: userOrganizations.length,
+                                                    organizations: userOrganizations.map(org => org.name).join(', '),
+                                                    defaultValue: `${userOrganizations.length} tổ chức: ${userOrganizations.map(org => org.name).join(', ')}`
+                                                })}
                                             </div>
                                         </div>
                                     </div>
@@ -519,8 +528,11 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
                     <Search className="w-5 h-5 mx-auto mb-2 text-gray-400" />
                     <p className="text-sm">
                         {searchTerm
-                            ? `Không tìm thấy tổ chức "${searchTerm}"`
-                            : 'Không có tổ chức nào'
+                            ? t('users:labels.organizationNotFound', { 
+                                searchTerm, 
+                                defaultValue: `Không tìm thấy tổ chức "${searchTerm}"` 
+                            })
+                            : t('users:labels.noOrganizations', { defaultValue: 'Không có tổ chức nào' })
                         }
                     </p>
                 </div>

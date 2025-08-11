@@ -1,0 +1,37 @@
+{
+  "title": "Quản lý mức phí",
+  "addNew": "Thêm mức phí mới",
+  "edit": "Chỉnh sửa mức phí",
+  
+  "form": {
+    "levelName": "Tên mức phí",
+    "amount": "Số tiền (VND)",
+    "description": "Mô tả",
+    "descriptionPlaceholder": "Mô tả ngắn gọn về mức phí này",
+    "detailedNote": "Ghi chú chi tiết",
+    "notePlaceholder": "Ghi chú chi tiết, điều kiện áp dụng..."
+  },
+
+  "validation": {
+    "levelNameRequired": "Tên mức phí là bắt buộc",
+    "amountRequired": "Số tiền là bắt buộc",
+    "amountInvalid": "Số tiền phải lớn hơn 0"
+  },
+
+  "messages": {
+    "createSuccess": "Tạo mức phí thành công",
+    "updateSuccess": "Cập nhật mức phí thành công",
+    "createError": "Lỗi khi tạo mức phí",
+    "updateError": "Lỗi khi cập nhật mức phí"
+  },
+
+  "isDefault": "Đặt làm mức phí mặc định",
+  "defaultNote": "Mức phí mặc định sẽ được tự động chọn khi tạo phân công mới",
+
+  "buttons": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "creating": "Đang tạo...",
+    "updating": "Đang cập nhật..."
+  }
+}

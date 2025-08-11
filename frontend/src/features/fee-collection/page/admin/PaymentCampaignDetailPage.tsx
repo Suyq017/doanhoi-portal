@@ -565,11 +565,11 @@ const PaymentCampaignDetailPage: React.FC = () => {
               campaign={campaign} 
               onConfirmDelete={async () => {
                 return await showConfirm(
-                  'Xóa cấu hình PayOS',
-                  'Bạn có chắc chắn muốn xóa cấu hình PayOS này? Hành động này không thể hoàn tác.',
+                  t('confirmations.deletePayOSConfig.title'),
+                  t('confirmations.deletePayOSConfig.message'),
                   {
-                    confirmText: 'Xóa',
-                    cancelText: 'Hủy',
+                    confirmText: t('confirmations.deletePayOSConfig.confirm'),
+                    cancelText: t('confirmations.deletePayOSConfig.cancel'),
                     variant: 'danger'
                   }
                 );

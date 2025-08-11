@@ -1,5 +1,6 @@
 import React from 'react';
 import { Shield } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Role } from '../../permissions/services/roleService';
 
 interface RoleBadgeProps {
@@ -17,6 +18,8 @@ const RoleBadge: React.FC<RoleBadgeProps> = ({
   removable = false,
   onRemove
 }) => {
+  const { t } = useTranslation(['users', 'common']);
+  
   const sizeClasses = {
     sm: 'px-2 py-1 text-xs',
     md: 'px-2.5 py-0.5 text-xs',
@@ -43,7 +46,7 @@ const RoleBadge: React.FC<RoleBadgeProps> = ({
       
       {role.isSystemRole && (
         <span className={`inline-flex items-center rounded-full font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 ${sizeClasses.sm}`}>
-          Hệ thống
+          {t('users:labels.systemRole', { defaultValue: 'Hệ thống' })}
         </span>
       )}
       
@@ -52,14 +55,14 @@ const RoleBadge: React.FC<RoleBadgeProps> = ({
           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
           : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
       } ${sizeClasses.sm}`}>
-        {role.isActive ? 'Hoạt động' : 'Không hoạt động'}
+        {role.isActive ? t('users:labels.activeStatus', { defaultValue: 'Hoạt động' }) : t('users:labels.inactiveStatus', { defaultValue: 'Không hoạt động' })}
       </span>
 
       {removable && onRemove && (
         <button
           onClick={onRemove}
           className="ml-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-          title="Gỡ vai trò"
+          title={t('users:labels.removeRole', { defaultValue: 'Gỡ vai trò' })}
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

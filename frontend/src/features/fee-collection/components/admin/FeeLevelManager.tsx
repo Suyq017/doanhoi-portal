@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { 
   PaymentFeeLevel, 
@@ -21,6 +22,7 @@ interface FeeLevelFormData {
 }
 
 const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly = false, onFeeLevelsChange }) => {
+  const { t } = useTranslation('feeLevels');
   const [feeLevels, setFeeLevels] = useState<PaymentFeeLevel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +51,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
         onFeeLevelsChange(sortedFeeLevels);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load fee levels');
+      setError(err instanceof Error ? err.message : t('errors.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -84,12 +86,12 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
 
   const validateForm = (): boolean => {
     if (!formData.levelName.trim()) {
-      setError('Vui lòng nhập tên mức phí');
+      setError(t('validation.nameRequired'));
       return false;
     }
     
     if (formData.amount <= 0) {
-      setError('Số tiền phải lớn hơn 0');
+      setError(t('validation.amountGreaterThanZero'));
       return false;
     }
     
@@ -133,7 +135,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa mức phí này?')) return;
+    if (!confirm(t('actions.confirmDelete'))) return;
     
     try {
       await paymentFeeLevelService.deleteFeeLevel(campaignId, id);
@@ -162,14 +164,14 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Mức Phí</h3>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('title')}</h3>
         {!readOnly && (
           <button
             onClick={startCreate}
             className="inline-flex items-center px-3 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
           >
             <Plus className="w-4 h-4 mr-1" />
-            Thêm Mức Phí
+            {t('actions.addFeeLevel')}
           </button>
         )}
       </div>
@@ -185,27 +187,27 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
       {(isCreating || editingId) && !readOnly && (
         <form onSubmit={handleSubmit} className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
           <h4 className="mb-3 font-medium text-gray-900 dark:text-white">
-            {isCreating ? 'Thêm Mức Phí Mới' : 'Chỉnh Sửa Mức Phí'}
+            {isCreating ? t('actions.addNewFeeLevel') : t('actions.editFeeLevel')}
           </h4>
           
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Tên mức phí <span className="text-red-500">*</span>
+                {t('form.levelName')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.levelName}
                 onChange={(e) => setFormData(prev => ({ ...prev, levelName: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                placeholder="VD: Sinh viên chính quy"
+                placeholder={t('form.levelNamePlaceholder')}
                 required
               />
             </div>
 
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Số tiền (VNĐ) <span className="text-red-500">*</span>
+                {t('form.amount')} <span className="text-red-500">*</span>
               </label>
               <input
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
@@ -218,27 +220,27 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
 
             <div className="md:col-span-2">
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Mô tả
+                {t('form.description')}
               </label>
               <input
                 type="text"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                placeholder="Mô tả ngắn gọn về mức phí này"
+                placeholder={t('form.descriptionPlaceholder')}
               />
             </div>
 
             <div className="md:col-span-2">
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Ghi chú chi tiết
+                {t('form.note')}
               </label>
               <textarea
                 value={formData.note}
                 onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                placeholder="Ghi chú chi tiết, điều kiện áp dụng..."
+                placeholder={t('form.notePlaceholder')}
               />
             </div>
           </div>
@@ -250,14 +252,14 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
               className="px-3 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
             >
               <X className="inline w-4 h-4 mr-1" />
-              Hủy
+              {t('actions.cancel')}
             </button>
             <button
               type="submit"
               className="px-3 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
               <Save className="inline w-4 h-4 mr-1" />
-              Lưu
+              {t('actions.save')}
             </button>
           </div>
         </form>
@@ -266,7 +268,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
       {/* Fee Levels List */}
       {feeLevels.length === 0 ? (
         <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-          Chưa có mức phí nào
+          {t('noFeeLevels')}
         </div>
       ) : (
         <div className="space-y-3">
@@ -300,7 +302,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                     <button
                       onClick={() => startEdit(level)}
                       className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                      title="Chỉnh sửa"
+                      title={t('actions.edit')}
                     >
                       <Edit className="w-4 h-4" />
                     </button>
@@ -308,7 +310,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                     <button
                       onClick={() => handleDelete(level.id)}
                       className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                      title="Xóa"
+                      title={t('actions.delete')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

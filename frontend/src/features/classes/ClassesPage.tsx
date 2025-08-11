@@ -13,7 +13,6 @@ import {
   DropdownOption,
   ImportModal,
   useImportConfig, ConditionalRender,
-  getPermissionBasedEmptyMessage,
   createPermissionBasedDropdownOptions,
 } from '../../shared';
 import { classColumns } from '../../shared/utils/importColumns';
@@ -530,11 +529,12 @@ const ClassesPage: React.FC = () => {
         {classes.length === 0 && !loading && (
           <div className="py-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">
-              {getPermissionBasedEmptyMessage(
-                permissions.canView,
-                permissions.canCreate,
-                t('classes:title', { defaultValue: 'lớp học' })
-              )}
+              {!permissions.canView 
+                ? t('common:noPermissionToView', { entity: t('classes:entityName', { defaultValue: 'lớp học' }), defaultValue: `Bạn không có quyền xem danh sách ${t('classes:entityName', { defaultValue: 'lớp học' })}` })
+                : !permissions.canCreate
+                  ? t('common:noItemsContactAdmin', { entity: t('classes:entityName', { defaultValue: 'lớp học' }), defaultValue: `Không có ${t('classes:entityName', { defaultValue: 'lớp học' })} nào. Liên hệ quản trị viên để thêm ${t('classes:entityName', { defaultValue: 'lớp học' })}.` })
+                  : t('common:noItemsCreateFirst', { entity: t('classes:entityName', { defaultValue: 'lớp học' }), defaultValue: `Không có ${t('classes:entityName', { defaultValue: 'lớp học' })} nào. Hãy tạo ${t('classes:entityName', { defaultValue: 'lớp học' })} đầu tiên.` })
+              }
             </div>
           </div>
         )}

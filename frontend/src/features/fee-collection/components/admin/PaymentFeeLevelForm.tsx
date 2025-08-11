@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Save, X, ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { 
   PaymentFeeLevel, 
   CreatePaymentFeeLevelDto, 
@@ -23,6 +24,7 @@ interface FeeLevelFormData {
 }
 
 const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
+  const { t } = useTranslation('feeLevels');
   const { campaignId, id } = useParams<{ campaignId: string; id?: string }>();
   const navigate = useNavigate();
   const [campaign, setCampaign] = useState<PaymentCampaign | null>(null);
@@ -52,11 +54,11 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
     try {
       setLoading(true);
       const campaignResponse = await paymentCampaignService.getPaymentCampaignById(campaignId);
-      setCampaign(campaignResponse.data);
+      setCampaign(campaignResponse);
 
       if (mode === 'edit' && id) {
         const feeLevelResponse = await paymentFeeLevelService.getFeeLevelById(campaignId, id);
-        const levelData = feeLevelResponse.data;
+        const levelData = feeLevelResponse;
         setFeeLevel(levelData);
         setFormData({
           levelName: levelData.levelName,
@@ -71,7 +73,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
         const feeLevelsResponse = await paymentFeeLevelService.getFeeLevelsByCampaign(campaignId);
         setFormData(prev => ({
           ...prev,
-          orderIndex: feeLevelsResponse.data.length
+          orderIndex: feeLevelsResponse.length
         }));
       }
     } catch (err) {
@@ -83,12 +85,12 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
 
   const validateForm = (): boolean => {
     if (!formData.levelName.trim()) {
-      setError('Vui lòng nhập tên mức phí');
+      setError(t('errors.nameRequired'));
       return false;
     }
     
     if (formData.amount <= 0) {
-      setError('Số tiền phải lớn hơn 0');
+      setError(t('errors.amountInvalid'));
       return false;
     }
     
@@ -179,7 +181,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              {mode === 'create' ? 'Thêm Mức Phí' : 'Chỉnh Sửa Mức Phí'}
+              {mode === 'create' ? t('addFeeLevel') : t('editFeeLevel')}
             </h1>
             <p className="text-sm text-gray-600">{campaign?.name}</p>
           </div>
@@ -196,12 +198,12 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
         <div className="p-6 bg-white border rounded-lg">
-          <h2 className="mb-4 text-lg font-medium text-gray-900">Thông Tin Mức Phí</h2>
+          <h2 className="mb-4 text-lg font-medium text-gray-900">{t('title')}</h2>
           
           <div className="space-y-4">
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">
-                Tên mức phí <span className="text-red-500">*</span>
+                {t('levelName')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -215,7 +217,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
 
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">
-                Số tiền (VNĐ) <span className="text-red-500">*</span>
+                {t('amount')} (VNĐ) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -230,27 +232,27 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
 
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">
-                Mô tả
+                {t('description')}
               </label>
               <input
                 type="text"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Mô tả ngắn gọn về mức phí này"
+                placeholder={t('form.descriptionPlaceholder')}
               />
             </div>
 
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">
-                Ghi chú chi tiết
+                {t('form.detailedNote')}
               </label>
               <textarea
                 value={formData.note}
                 onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ghi chú chi tiết, điều kiện áp dụng..."
+                placeholder={t('form.notePlaceholder')}
               />
             </div>
 
@@ -262,10 +264,10 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
                   onChange={(e) => setFormData(prev => ({ ...prev, isDefault: e.target.checked }))}
                   className="text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <span className="ml-2 text-sm text-gray-700">Đặt làm mức phí mặc định</span>
+                <span className="ml-2 text-sm text-gray-700">{t('isDefault')}</span>
               </label>
               <p className="mt-1 text-xs text-gray-500">
-                Mức phí mặc định sẽ được chọn tự động khi tạo phân công mới
+                {t('defaultNote')}
               </p>
             </div>
           </div>
@@ -279,7 +281,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
             className="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md hover:bg-gray-50"
           >
             <X className="inline w-4 h-4 mr-2" />
-            Hủy
+            {t('cancel')}
           </button>
           <button
             type="submit"
@@ -287,7 +289,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
             className="px-4 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
             <Save className="inline w-4 h-4 mr-2" />
-            {saving ? 'Đang lưu...' : 'Lưu'}
+            {saving ? t('saving') : t('save')}
           </button>
         </div>
       </form>

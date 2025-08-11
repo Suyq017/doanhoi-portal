@@ -198,16 +198,27 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         const totalRemoved = safeToRemoveOrgs.length;
         const totalKept = notRemovedOrgs.length;
 
-        let message = `Đã cập nhật thành viên tổ chức: +${totalAdded}, -${totalRemoved}`;
+        let message = t('users:messages.organizationMembershipUpdated', { 
+          added: totalAdded, 
+          removed: totalRemoved,
+          defaultValue: `Đã cập nhật thành viên tổ chức: +${totalAdded}, -${totalRemoved}`
+        });
         if (totalKept > 0) {
-          message += ` (giữ lại ${totalKept} tổ chức cha cần thiết)`;
+          message = t('users:messages.organizationMembershipUpdatedWithKept', {
+            added: totalAdded,
+            removed: totalRemoved, 
+            kept: totalKept,
+            defaultValue: `Đã cập nhật thành viên tổ chức: +${totalAdded}, -${totalRemoved} (giữ lại ${totalKept} tổ chức cha cần thiết)`
+          });
         }
         showSuccess(message);
       }
     } catch (error) {
       console.error('Error updating organization membership:', error);
       if (showError) {
-        showError('Có lỗi xảy ra khi cập nhật thành viên tổ chức');
+        showError(t('users:messages.updateOrganizationMembershipError', {
+          defaultValue: 'Có lỗi xảy ra khi cập nhật thành viên tổ chức'
+        }));
       }
       throw error; // Re-throw to prevent form submission success
     }
@@ -499,7 +510,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           console.error('Failed payload:', grantRolesPayload);
           // If role assignment fails, we should inform the user
           if (showError) {
-            showError('Cập nhật thông tin cơ bản thành công nhưng gán vai trò thất bại. Vui lòng thử lại việc gán vai trò.');
+            showError(t('users:messages.updateRoleAssignmentsError', {
+              defaultValue: 'Cập nhật thông tin cơ bản thành công nhưng gán vai trò thất bại. Vui lòng thử lại việc gán vai trò.'
+            }));
           }
           throw roleError;
         }
@@ -512,7 +525,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       // If we get here, everything succeeded
       console.log('User, role assignments, and organization membership updated successfully');      // Show success message and refresh data
       if (showSuccess) {
-        showSuccess('Cập nhật người dùng thành công');
+        showSuccess(t('users:messages.updateUserSuccess', {
+          defaultValue: 'Cập nhật người dùng thành công'
+        }));
       }
 
       // Refresh data to get updated user information
@@ -528,7 +543,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     } catch (error) {
       console.error('Error updating user:', error);
       if (showError && !(error instanceof Error && error.message?.includes('gán vai trò'))) {
-        showError('Có lỗi xảy ra khi cập nhật người dùng');
+        showError(t('users:messages.updateUserError', {
+          defaultValue: 'Có lỗi xảy ra khi cập nhật người dùng'
+        }));
       }
     } finally {
       setIsSubmitting(false);
@@ -606,7 +623,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         <div className="p-6 flex items-center justify-center">
           <div className="flex items-center space-x-2 text-gray-500">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span>Đang tải thông tin người dùng...</span>
+            <span>{t('users:messages.loadingUserDetails', { defaultValue: 'Đang tải thông tin người dùng...' })}</span>
           </div>
         </div>
       ) : (
@@ -782,7 +799,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 <option value="both">{t('users:membershipStatus.both')}</option>              </select>            </div>          </div>          {/* Organization Management */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tổ chức thành viên
+              {t('users:labels.memberOrganizations', { defaultValue: 'Tổ chức thành viên' })}
             </label>
 
             <OrganizationManager
@@ -800,14 +817,16 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             />
 
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Hiển thị các tổ chức mà người dùng là thành viên (user_organization). Khác với vai trò tổ chức ở phần "Gán vai trò và tổ chức" bên dưới.
+              {t('users:labels.memberOrganizationsDesc', {
+                defaultValue: 'Hiển thị các tổ chức mà người dùng là thành viên (user_organization). Khác với vai trò tổ chức ở phần "Gán vai trò và tổ chức" bên dưới.'
+              })}
             </p>
           </div>
 
           {/* Role Assignments Section */}
           <div className="space-y-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Gán vai trò và tổ chức
+              {t('users:labels.roleAndOrganizationAssignment', { defaultValue: 'Gán vai trò và tổ chức' })}
             </label>            <RolesOrganizationManager
               assignments={roleAssignments}
               roles={roles}

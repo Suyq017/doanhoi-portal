@@ -1,6 +1,7 @@
 {
   "title": "Quản lý Lớp học",
   "titlePhonetic": "Quản lý Lớp học",
+  "entityName": "lớp học",
   "subtitle": "Quản lý thông tin lớp học và sinh viên",
   "subtitlePhonetic": "Quản lý thông tin lớp học",
   "titles": {

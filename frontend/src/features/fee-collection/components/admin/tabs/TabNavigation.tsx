@@ -1,5 +1,6 @@
 import React from 'react';
 import { DollarSign, Users, Settings, BarChart3 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface Tab {
   id: string;
@@ -19,26 +20,28 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
   onTabChange,
   className = ''
 }) => {
+  const { t } = useTranslation(['feeLevels']);
+  
   // Predefined tabs for payment campaign admin
   const tabs: Tab[] = [
     {
       id: 'statistics',
-      label: 'Theo dõi tiến độ thu phí',
+      label: t('feeLevels:tabs.statistics', { defaultValue: 'Theo dõi tiến độ thu phí' }),
       icon: BarChart3
     },
     {
       id: 'fee-levels',
-      label: 'Mức Phí',
+      label: t('feeLevels:tabs.feeLevels', { defaultValue: 'Mức Phí' }),
       icon: DollarSign
     },
     {
       id: 'member-assignments',
-      label: 'Phân Công Thành Viên',
+      label: t('feeLevels:tabs.memberAssignments', { defaultValue: 'Phân Công Thành Viên' }),
       icon: Users
     },
     {
       id: 'payos-config',
-      label: 'Cấu Hình PayOS',
+      label: t('feeLevels:tabs.payosConfig', { defaultValue: 'Cấu Hình PayOS' }),
       icon: Settings
     }
   ];

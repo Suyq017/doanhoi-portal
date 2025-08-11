@@ -219,16 +219,16 @@ const MultiSelectRoleCombobox: React.FC<MultiSelectRoleComboboxProps> = ({
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex-1 flex flex-col">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                                Vai trò đã chọn ({selectedRoles.length})
+                                {t('users:labels.selectedRoles', { count: selectedRoles.length, defaultValue: `Vai trò đã chọn (${selectedRoles.length})` })}
                             </span>
                             {!disabled && (
                                 <button
                                     type="button"
                                     onClick={() => onRoleSelect([])}
                                     className="text-xs text-gray-500 hover:text-red-600 transition-colors"
-                                    title="Xóa tất cả vai trò"
+                                    title={t('users:labels.removeAllRoles', { defaultValue: 'Xóa tất cả vai trò' })}
                                 >
-                                    Xóa tất cả
+                                    {t('users:labels.removeAll', { defaultValue: 'Xóa tất cả' })}
                                 </button>
                             )}
                         </div>
@@ -245,7 +245,7 @@ const MultiSelectRoleCombobox: React.FC<MultiSelectRoleComboboxProps> = ({
                                             type="button"
                                             onClick={() => handleRoleRemove(role.id)}
                                             className="ml-1 p-0.5 text-doan-200 hover:text-white hover:bg-doan-700 rounded-full transition-all duration-150"
-                                            title="Xóa vai trò"
+                                            title={t('users:labels.removeRoleButton', { defaultValue: 'Xóa vai trò' })}
                                         >
                                             <X className="w-3 h-3" />
                                         </button>
@@ -350,8 +350,11 @@ const MultiSelectRoleCombobox: React.FC<MultiSelectRoleComboboxProps> = ({
                         <Search className="w-5 h-5 mx-auto mb-2 text-gray-400" />
                         <p className="text-sm">
                             {searchTerm
-                                ? `Không tìm thấy vai trò "${searchTerm}"`
-                                : 'Không có vai trò nào'
+                                ? t('users:labels.roleNotFound', { 
+                                    defaultValue: `Không tìm thấy vai trò "${searchTerm}"`,
+                                    searchTerm 
+                                })
+                                : t('users:labels.noRoles', { defaultValue: 'Không có vai trò nào' })
                             }
                         </p>
                     </div>

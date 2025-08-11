@@ -161,7 +161,7 @@ const RoleCombobox: React.FC<RoleComboboxProps> = ({
                     ) : (
                         <div className="px-3 py-2 text-center text-gray-500">
                             <Search className="w-4 h-4 mx-auto mb-1" />
-                            Không tìm thấy vai trò
+                            {t('users:labels.noRolesFound', { defaultValue: 'Không tìm thấy vai trò' })}
                         </div>
                     )}
                 </div>,

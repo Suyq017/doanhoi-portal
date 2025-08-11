@@ -1,5 +1,6 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import MultiSelectRoleCombobox from './MultiSelectRoleCombobox';
 import MultiSelectOrganizationCombobox from './MultiSelectOrganizationCombobox';
 
@@ -55,6 +56,8 @@ const RolesOrganizationRow: React.FC<RolesOrganizationRowProps> = ({
     canRemove,
     disabled = false,
 }) => {
+    const { t } = useTranslation(['users', 'common']);
+    
     const handleRoleChange = (roleIds: string[]) => {
         // With the new format, each assignment should only have one role
         // If multiple roles are selected, only take the first one
@@ -78,7 +81,7 @@ const RolesOrganizationRow: React.FC<RolesOrganizationRowProps> = ({
                     onClick={onRemove}
                     disabled={disabled}
                     className="absolute top-3 right-3 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
-                    title="Xóa hàng này"
+                    title={t('users:roleAssignmentRow.removeRow', { defaultValue: 'Xóa hàng này' })}
                 >
                     <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 </button>
@@ -86,10 +89,10 @@ const RolesOrganizationRow: React.FC<RolesOrganizationRowProps> = ({
 
             {/* Labels Row - Always aligned */}
             <div className="grid grid-cols-2 gap-6 pr-12 mb-2">                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Vai trò (chọn 1)
+                {t('users:roleAssignmentRow.roleLabel', { defaultValue: 'Vai trò (chọn 1)' })}
             </label>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Tổ chức
+                    {t('users:roleAssignmentRow.organizationLabel', { defaultValue: 'Tổ chức' })}
                 </label>
             </div>            {/* Content Row - Equal height with synchronized structure */}
             <div className="grid grid-cols-2 gap-6 pr-12 items-stretch" style={{ minHeight: '140px' }}>
@@ -100,7 +103,7 @@ const RolesOrganizationRow: React.FC<RolesOrganizationRowProps> = ({
                         selectedRoleIds={assignment.roleIds}
                         onRoleSelect={handleRoleChange}
                         disabled={disabled}
-                        placeholder="Chọn vai trò..."
+                        placeholder={t('users:roleAssignmentRow.selectRolePlaceholder', { defaultValue: 'Chọn vai trò...' })}
                     />
                 </div>
 
@@ -112,7 +115,9 @@ const RolesOrganizationRow: React.FC<RolesOrganizationRowProps> = ({
                         userOrganizations={userOrganizations}
                         disabled={disabled}
                         allowEmpty={true}
-                        placeholder="Chọn tổ chức hoặc để trống cho toàn hệ thống..."
+                        placeholder={t('users:roleAssignmentRow.selectOrganizationPlaceholder', { 
+                            defaultValue: 'Chọn tổ chức hoặc để trống cho toàn hệ thống...' 
+                        })}
                     />
                 </div>
             </div>

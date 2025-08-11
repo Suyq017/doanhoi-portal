@@ -137,7 +137,7 @@ const RoleManager: React.FC<RoleManagerProps> = ({
               <input
                 type="text"
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-800 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                placeholder="Tìm kiếm vai trò..."
+                placeholder={t('users:labels.searchRoles', { defaultValue: 'Tìm kiếm vai trò...' })}
                 value={roleSearchTerm}
                 onChange={(e) => setRoleSearchTerm(e.target.value)}
               />
@@ -175,7 +175,7 @@ const RoleManager: React.FC<RoleManagerProps> = ({
               ))}
               {filteredAvailableRoles.length === 0 && (
                 <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                  {roleSearchTerm ? 'Không tìm thấy vai trò phù hợp' : t('users:labels.allRolesAssigned')}
+                  {roleSearchTerm ? t('users:labels.noSuitableRoles', { defaultValue: 'Không tìm thấy vai trò phù hợp' }) : t('users:labels.allRolesAssigned')}
                 </div>
               )}
             </div>

@@ -1,0 +1,13 @@
+{
+  "title": "Access Rights Information",
+  "userPermissions": "Your permissions:",
+  "permissions": {
+    "viewDetails": "View payment campaign details",
+    "create": "Create new payment campaigns",
+    "update": "Update payment campaign information",
+    "delete": "Delete payment campaigns"
+  },
+  "organizationAccess": "Organizations with access:",
+  "restriction": "You can only operate on payment campaigns belonging to organizations you have access to",
+  "noPermissions": "You have not been granted any permissions"
+}

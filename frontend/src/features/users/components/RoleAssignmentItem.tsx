@@ -72,11 +72,14 @@ const RoleAssignmentItemComponent: React.FC<RoleAssignmentItemProps> = ({
                         options={roles.map(role => ({
                             id: role.id,
                             label: role.displayName || role.name,
-                            description: role.description || `${role.permissions?.length || 0} quyền`
+                            description: role.description || t('users:labels.permissionsCount', { 
+                                count: role.permissions?.length || 0,
+                                defaultValue: `${role.permissions?.length || 0} quyền`
+                            })
                         }))}
                         value={assignment.roleId}
                         placeholder={t('users:placeholders.selectRole')}
-                        searchPlaceholder="Tìm kiếm vai trò..."
+                        searchPlaceholder={t('users:labels.searchRolesPlaceholder', { defaultValue: 'Tìm kiếm vai trò...' })}
                         loading={loading}
                         disabled={disabled}
                         allowInput={true}
@@ -104,7 +107,7 @@ const RoleAssignmentItemComponent: React.FC<RoleAssignmentItemProps> = ({
                         }))}
                         value={assignment.organizationId || ''}
                         placeholder={t('users:placeholders.selectOrganization')}
-                        searchPlaceholder="Tìm kiếm tổ chức..."
+                        searchPlaceholder={t('users:labels.searchOrganizationsPlaceholder', { defaultValue: 'Tìm kiếm tổ chức...' })}
                         loading={loading}
                         disabled={disabled}
                         allowInput={true}

@@ -112,7 +112,20 @@
     "assignRolesSuccess": "Gán quyền thành công",
     "assignRolesError": "Có lỗi xảy ra khi gán quyền",
     "grantRolesSuccess": "Cấp vai trò thành công",
-    "grantRolesError": "Có lỗi xảy ra khi cấp vai trò"
+    "grantRolesError": "Có lỗi xảy ra khi cấp vai trò",
+    "exportSuccess": "Xuất file thành công: {{fileName}}",
+    "exportError": "Lỗi xuất file: {{error}}",
+    "bulkDeleteSuccess": "Đã xóa {{count}} người dùng thành công",
+    "bulkDeleteError": "Có lỗi xảy ra khi xóa người dùng",
+    "updateUserSuccess": "Cập nhật người dùng thành công",
+    "updateUserError": "Có lỗi xảy ra khi cập nhật người dùng",
+    "updateRoleAssignmentsError": "Cập nhật thông tin cơ bản thành công nhưng gán vai trò thất bại. Vui lòng thử lại việc gán vai trò.",
+    "updateOrganizationMembershipError": "Có lỗi xảy ra khi cập nhật thành viên tổ chức",
+    "organizationMembershipUpdated": "Đã cập nhật thành viên tổ chức: +{{added}}, -{{removed}}",
+    "organizationMembershipUpdatedWithKept": "Đã cập nhật thành viên tổ chức: +{{added}}, -{{removed}} (giữ lại {{kept}} tổ chức cha cần thiết)",
+    "loadingUserDetails": "Đang tải thông tin người dùng...",
+    "roleInOrganization": "Vai trò trong tổ chức",
+    "globalRole": "Vai trò toàn hệ thống"
   },
   "validation": {
     "invalidOrganization": "Tổ chức được chọn không hợp lệ",
@@ -155,7 +168,38 @@
     "activeStatus": "Hoạt động",
     "activeStatusPhonetic": "Hoạt động",
     "inactiveStatus": "Không hoạt động",
-    "inactiveStatusPhonetic": "Không hoạt động"
+    "inactiveStatusPhonetic": "Không hoạt động",
+    "memberOrganizations": "Tổ chức thành viên",
+    "memberOrganizationsDesc": "Hiển thị các tổ chức mà người dùng là thành viên (user_organization). Khác với vai trò tổ chức ở phần \"Gán vai trò và tổ chức\" bên dưới.",
+    "roleAndOrganizationAssignment": "Gán vai trò và tổ chức",
+    "searchRoles": "Tìm kiếm vai trò...",
+    "noSuitableRoles": "Không tìm thấy vai trò phù hợp",
+    "selectRoleToAssign": "Chọn vai trò để gán",
+    "removeRole": "Gỡ vai trò",
+    "noRolesFound": "Không tìm thấy vai trò",
+    "searchRolesPlaceholder": "Tìm kiếm vai trò...",
+    "searchOrganizationsPlaceholder": "Tìm kiếm tổ chức...",
+    "permissionsCount": "{{count}} quyền",
+    "selectedRoles": "Vai trò đã chọn ({{count}})",
+    "removeAllRoles": "Xóa tất cả vai trò",
+    "removeAll": "Xóa tất cả",
+    "removeRoleButton": "Xóa vai trò",
+    "roleNotFound": "Không tìm thấy vai trò \"{{searchTerm}}\"",
+    "noRoles": "Không có vai trò nào",
+    "selectedOrganizations": "Tổ chức đã chọn ({{count}})",
+    "removeAllOrganizations": "Xóa tất cả tổ chức",
+    "removeOrganization": "Xóa tổ chức",
+    "noOrganizationsAssigned": "Người dùng chưa thuộc tổ chức nào",
+    "searchOrganizationsHelp": "Sử dụng ô tìm kiếm bên dưới để thêm tổ chức",
+    "searchAndAddOrganizations": "Tìm kiếm và thêm tổ chức...",
+    "organizationNotFound": "Không tìm thấy tổ chức \"{{searchTerm}}\"",
+    "allOrganizationsAdded": "Tất cả tổ chức đã được thêm",
+    "noOrganizations": "Không có tổ chức nào",
+    "userOrganizations": "Tổ chức của người dùng",
+    "globalRoleDescription": "Áp dụng cho toàn hệ thống",
+    "selectSpecificOrganization": "Chọn tổ chức cụ thể",
+    "selectUserOrganizations": "Chọn tổ chức của người dùng",
+    "userOrganizationsList": "{{count}} tổ chức: {{organizations}}"
   },
   "actions": {
     "view": "Xem chi tiết",
@@ -187,6 +231,7 @@
     "userSearch": "Tìm kiếm người dùng...",
     "applyToUserOrgs": "Áp dụng cho những tổ chức mà người dùng thuộc",
     "applyToUserOrganizations": "Áp dụng cho những tổ chức mà người dùng thuộc",
+    "applyToUserOrganizationsDesc": "Khi được chọn, vai trò sẽ được áp dụng cho tất cả tổ chức mà người dùng thuộc về.",
     "roles": "Vai trò",
     "organizations": "Tổ chức (tùy chọn)",
     "addRoleRow": "Thêm vai trò khác",
@@ -202,7 +247,12 @@
     "roleAssignments": "Gán vai trò",
     "addRole": "Thêm vai trò",
     "noUserSelected": "Vui lòng chọn người dùng",
-    "noRolesAdded": "Vui lòng thêm ít nhất một vai trò"
+    "noRolesAdded": "Vui lòng thêm ít nhất một vai trò",
+    "selectUserPrompt": "Vui lòng chọn người dùng trước",
+    "selectUserToStart": "Chọn người dùng để bắt đầu cấp vai trò",
+    "userOrganizations": "Tổ chức của người dùng",
+    "noOrganizationsAssigned": "Người dùng chưa thuộc tổ chức nào",
+    "inactive": "Không hoạt động"
   },
   "addButton": {
     "dropdown": "Thêm người dùng",
@@ -214,7 +264,9 @@
     "fromFile": "Thêm từ file",
     "fromFilePhonetic": "Thêm từ file",
     "fromFileDesc": "Thêm nhiều người dùng từ file Excel",
-    "fromFileDescPhonetic": "Thêm nhiều người dùng từ file Excel"
+    "fromFileDescPhonetic": "Thêm nhiều người dùng từ file Excel",
+    "export": "Xuất dữ liệu",
+    "exportDesc": "Xuất danh sách người dùng ra file Excel"
   },
   "import": {
     "title": "Nhập danh sách người dùng",
@@ -231,5 +283,16 @@
     "templateLinkTextPhonetic": "tại đây",
     "onlyExcelAllowed": "Chỉ cho phép file Excel (.xlsx, .xls)",
     "onlyExcelAllowedPhonetic": "Chỉ cho phép file Excel"
+  },
+  "export": {
+    "title": "Xuất danh sách người dùng",
+    "description": "Chọn các trường dữ liệu bạn muốn xuất ra file Excel"
+  },
+  "roleAssignmentRow": {
+    "removeRow": "Xóa hàng này",
+    "roleLabel": "Vai trò (chọn 1)",
+    "organizationLabel": "Tổ chức",
+    "selectRolePlaceholder": "Chọn vai trò...",
+    "selectOrganizationPlaceholder": "Chọn tổ chức hoặc để trống cho toàn hệ thống..."
   }
 }

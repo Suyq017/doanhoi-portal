@@ -78,7 +78,7 @@ const GrantRolesModal: React.FC<GrantRolesModalProps> = ({ isOpen, onClose, onSu
               <Shield className="w-6 h-6 text-doan-600" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900">
-              {t('users.grantRoles.title')}
+              {t('users:grantRoles.title')}
             </h2>
           </div>
           <button
@@ -94,13 +94,13 @@ const GrantRolesModal: React.FC<GrantRolesModalProps> = ({ isOpen, onClose, onSu
           <form onSubmit={handleSubmit} className="space-y-6">            {/* User Selection */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                {t('users.grantRoles.selectUser')}
+                {t('users:grantRoles.selectUser')}
               </label>
               <UserSearchCombobox
                 selectedUser={selectedUser}
                 onUserSelect={handleUserSelect}
                 users={users}
-                placeholder={t('users.grantRoles.userPlaceholder')}
+                placeholder={t('users:grantRoles.userPlaceholder')}
               />
               {errors.user && (
                 <p className="text-sm text-red-600">{errors.user}</p>
@@ -121,7 +121,9 @@ const GrantRolesModal: React.FC<GrantRolesModalProps> = ({ isOpen, onClose, onSu
                   </label>
                 </div>
                 <p className="mt-2 text-xs text-gray-600">
-                  Khi được chọn, vai trò sẽ được áp dụng cho tất cả tổ chức mà người dùng thuộc về.
+                  {t('users:grantRoles.applyToUserOrganizationsDesc', {
+                    defaultValue: 'Khi được chọn, vai trò sẽ được áp dụng cho tất cả tổ chức mà người dùng thuộc về.'
+                  })}
                 </p>
               </div>
             )}            {/* Role Assignments Section */}
@@ -136,7 +138,6 @@ const GrantRolesModal: React.FC<GrantRolesModalProps> = ({ isOpen, onClose, onSu
                   roles={roles}
                   organizations={organizations}
                   userOrganizations={userOrganizations}
-                  applyToUserOrgs={applyToUserOrgs}
                   onUpdateAssignment={updateRoleAssignment}
                   onRemoveAssignment={removeRoleAssignment}
                   onAddAssignment={addRoleAssignment}
@@ -145,9 +146,11 @@ const GrantRolesModal: React.FC<GrantRolesModalProps> = ({ isOpen, onClose, onSu
               ) : (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                   <Shield className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">Vui lòng chọn người dùng trước</p>
+                  <p className="text-gray-500 font-medium">
+                    {t('users:grantRoles.selectUserPrompt', { defaultValue: 'Vui lòng chọn người dùng trước' })}
+                  </p>
                   <p className="text-sm text-gray-400 mt-1">
-                    Chọn người dùng để bắt đầu cấp vai trò
+                    {t('users:grantRoles.selectUserToStart', { defaultValue: 'Chọn người dùng để bắt đầu cấp vai trò' })}
                   </p>
                 </div>
               )}
@@ -162,14 +165,14 @@ const GrantRolesModal: React.FC<GrantRolesModalProps> = ({ isOpen, onClose, onSu
                 onClick={handleClose}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500 transition-colors"
               >
-                {t('common.cancel')}
+                {t('common:actions.cancel')}
               </button>
               <button
                 type="submit"
                 disabled={!selectedUser || roleAssignments.length === 0 || submitting}
                 className="px-4 py-2 text-sm font-medium text-white bg-doan-600 border border-transparent rounded-md hover:bg-doan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {submitting ? t('common.saving') : t('users.grantRoles.grantRoles')}
+                {submitting ? t('common:states.saving') : t('users:grantRoles.grantRoles')}
               </button>
             </div>
           </form>

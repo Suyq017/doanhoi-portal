@@ -1,0 +1,13 @@
+{
+  "title": "Thông tin quyền truy cập",
+  "userPermissions": "Quyền hạn của bạn:",
+  "permissions": {
+    "viewDetails": "Xem chi tiết đợt đóng phí",
+    "create": "Tạo đợt đóng phí mới",
+    "update": "Cập nhật thông tin đợt đóng phí",
+    "delete": "Xóa đợt đóng phí"
+  },
+  "organizationAccess": "Tổ chức có quyền truy cập:",
+  "restriction": "Bạn chỉ có thể thao tác với các đợt đóng phí thuộc tổ chức mà bạn có quyền",
+  "noPermissions": "Bạn chưa được cấp quyền nào"
+}

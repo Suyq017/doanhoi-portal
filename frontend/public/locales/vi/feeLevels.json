@@ -1,0 +1,63 @@
+{
+  "title": "Mức Phí",
+  "tabDescription": "Cấu hình các mức phí cho đợt đóng phí \"{{campaignName}}\".",
+  "addFeeLevel": "Thêm Mức Phí",
+  "editFeeLevel": "Chỉnh Sửa Mức Phí",
+  "levelName": "Tên mức phí",
+  "amount": "Số tiền",
+  "description": "Mô tả",
+  "isDefault": "Mức phí mặc định",
+  "defaultNote": "Mức phí mặc định sẽ được chọn tự động khi tạo phân công mới",
+  "save": "Lưu",
+  "saving": "Đang lưu...",
+  "cancel": "Hủy",
+  "delete": "Xóa",
+  "edit": "Sửa",
+  "noFeeLevels": "Chưa có mức phí nào",
+  "createFirst": "Tạo mức phí đầu tiên",
+  "readOnlyMode": "Chỉ xem - đợt đã",
+  "completed": "hoàn thành",
+  "cancelled": "hủy",
+  "form": {
+    "levelName": "Tên mức phí",
+    "levelNamePlaceholder": "VD: Sinh viên chính quy",
+    "amount": "Số tiền (VNĐ)",
+    "description": "Mô tả",
+    "descriptionPlaceholder": "Mô tả ngắn gọn về mức phí này",
+    "note": "Ghi chú chi tiết",
+    "notePlaceholder": "Ghi chú chi tiết, điều kiện áp dụng..."
+  },
+  "actions": {
+    "addFeeLevel": "Thêm Mức Phí",
+    "addNewFeeLevel": "Thêm Mức Phí Mới",
+    "editFeeLevel": "Chỉnh Sửa Mức Phí",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa mức phí này?"
+  },
+  "validation": {
+    "nameRequired": "Vui lòng nhập tên mức phí",
+    "amountGreaterThanZero": "Số tiền phải lớn hơn 0"
+  },
+  "errors": {
+    "nameRequired": "Vui lòng nhập tên mức phí",
+    "amountRequired": "Vui lòng nhập số tiền",
+    "amountInvalid": "Số tiền phải lớn hơn 0",
+    "saveFailed": "Không thể lưu mức phí",
+    "deleteFailed": "Không thể xóa mức phí",
+    "loadFailed": "Không thể tải danh sách mức phí"
+  },
+  "messages": {
+    "saveSuccess": "Mức phí đã được lưu thành công",
+    "deleteSuccess": "Mức phí đã được xóa thành công",
+    "defaultChanged": "Đã thay đổi mức phí mặc định"
+  },
+  "tabs": {
+    "statistics": "Theo dõi tiến độ thu phí",
+    "feeLevels": "Mức Phí",
+    "memberAssignments": "Phân Công Thành Viên",
+    "payosConfig": "Cấu Hình PayOS"
+  }
+}

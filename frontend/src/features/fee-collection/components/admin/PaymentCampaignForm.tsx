@@ -84,7 +84,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
       setOrganizations(formattedOrgs);
     } catch (err) {
       console.error('Error loading organizations:', err);
-      setError('Không thể tải danh sách tổ chức');
+      setError(t('formComponent.errorLoadOrganizations'));
       setOrganizations([]); // Set empty array on error
     } finally {
       setLoadingOrganizations(false);
@@ -93,32 +93,32 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
 
   const validateForm = (): boolean => {
     if (!formData.organizationId) {
-      setError('Vui lòng chọn tổ chức');
+      setError(t('formComponent.errorSelectOrganization'));
       return false;
     }
 
     if (!formData.name.trim()) {
-      setError('Vui lòng nhập tên đợt đóng phí');
+      setError(t('formComponent.errorCampaignName'));
       return false;
     }
 
     if (!formData.startDate) {
-      setError('Vui lòng chọn ngày bắt đầu');
+      setError(t('formComponent.errorStartDate'));
       return false;
     }
 
     if (!formData.startTime) {
-      setError('Vui lòng chọn giờ bắt đầu');
+      setError(t('formComponent.errorStartTime'));
       return false;
     }
 
     if (!formData.endDate) {
-      setError('Vui lòng chọn ngày kết thúc');
+      setError(t('formComponent.errorEndDate'));
       return false;
     }
 
     if (!formData.endTime) {
-      setError('Vui lòng chọn giờ kết thúc');
+      setError(t('formComponent.errorEndTime'));
       return false;
     }
 
@@ -126,7 +126,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
     const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
 
     if (startDateTime >= endDateTime) {
-      setError('Thời gian bắt đầu phải trước thời gian kết thúc');
+      setError(t('formComponent.errorDateRange'));
       return false;
     }
 
@@ -229,13 +229,13 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
         <div className="p-6 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
-          <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">Thông Tin Cơ Bản</h2>
+          <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">{t('formComponent.basicInfo')}</h2>
 
           {/* Row 1: Tổ chức và Tên đợt đóng phí */}
           <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Tổ chức <span className="text-red-500">*</span>
+                {t('formComponent.organizationLabel')} <span className="text-red-500">{t('formComponent.organizationRequired')}</span>
               </label>              <SearchableCombobox
                 value={formData.organizationId}
                 onChange={handleOrganizationSelect}
@@ -246,27 +246,27 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
                     label: org.displayName
                   }))
                 }
-                placeholder="Chọn tổ chức..."
+                placeholder={t('formComponent.selectOrganization')}
                 disabled={mode === 'edit' || loadingOrganizations}
                 loading={loadingOrganizations}
                 emptyMessage="Không có tổ chức nào có sẵn"
                 className="w-full"
               />
               {loadingOrganizations && (
-                <p className="mt-1 text-xs text-gray-500">Đang tải danh sách tổ chức...</p>
+                <p className="mt-1 text-xs text-gray-500">{t('formComponent.loadingOrganizations')}</p>
               )}
             </div>
 
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Tên đợt đóng phí <span className="text-red-500">*</span>
+                {t('formComponent.campaignNameLabel')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                placeholder="VD: Đóng phí học kỳ 1 năm 2024"
+                placeholder={t('formComponent.campaignNamePlaceholder')}
                 required
               />
             </div>
@@ -276,7 +276,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Ngày bắt đầu <span className="text-red-500">*</span>
+                {t('formComponent.startDateLabel')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -289,7 +289,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
 
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Giờ bắt đầu <span className="text-red-500">*</span>
+                {t('formComponent.startTimeLabel')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="time"
@@ -305,7 +305,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Ngày kết thúc <span className="text-red-500">*</span>
+                {t('formComponent.endDateLabel')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -318,7 +318,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
 
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Giờ kết thúc <span className="text-red-500">*</span>
+                {t('formComponent.endTimeLabel')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="time"
@@ -333,14 +333,14 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           {/* Row 4: Mô tả */}
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Mô tả
+              {t('formComponent.descriptionLabel')}
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              placeholder="Mô tả chi tiết về đợt đóng phí này..."
+              placeholder={t('formComponent.descriptionPlaceholder')}
             />
           </div>
         </div>
@@ -353,7 +353,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
             className="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
           >
             <X className="inline w-4 h-4 mr-2" />
-            Hủy
+            {t('formComponent.cancelButton')}
           </button>
           <button
             type="submit"
@@ -361,7 +361,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
             className="px-4 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
           >
             <Save className="inline w-4 h-4 mr-2" />
-            {loading ? 'Đang lưu...' : 'Lưu'}
+            {loading ? t('formComponent.savingButton') : t('formComponent.saveButton')}
           </button>
         </div>
       </form>

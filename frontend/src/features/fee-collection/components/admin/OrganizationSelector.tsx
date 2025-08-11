@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Building, ChevronRight, ChevronDown, X } from 'lucide-react';
 import { organizationService } from '@/shared/services/organizationService';
 import { Organization as BaseOrganization } from '@/shared/types/organization';
@@ -23,6 +24,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
   onClose,
   disabled = false
 }) => {
+  const { t } = useTranslation('common');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -253,7 +255,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Chọn Tổ Chức
+              {t('selectOrganization')}
             </h3>
             <button
               onClick={onClose}
@@ -268,7 +270,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
             <div className="px-4 py-3 border-b bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
               <h4 className="text-sm font-medium text-gray-900 dark:text-white">Danh Sách Tổ Chức</h4>
               <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                Chọn tổ chức để tạo đợt đóng phí
+                {t('selectOrganizationDescription')}
               </p>
             </div>
 
@@ -276,7 +278,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
               {loading ? (
                 <div className="flex items-center justify-center p-8">
                   <div className="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin dark:border-blue-400"></div>
-                  <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">Đang tải tổ chức...</span>
+                  <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">{t('loadingOrganizations')}</span>
                 </div>
               ) : error ? (
                 <div className="p-8 text-center">
@@ -294,7 +296,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
               ) : organizations.length === 0 ? (
                 <div className="p-8 text-center">
                   <Building className="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-500" />
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Không có tổ chức nào</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('noOrganizations')}</p>
                 </div>
               ) : (
                 organizations.map(org => renderOrganizationNode(org))

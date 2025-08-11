@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Copy, Check, Save, ClipboardCopy, Clipboard, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface PayOSConfig {
   id?: string;
@@ -31,6 +32,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
   loading = false,
   readOnly = false 
 }) => {
+  const { t } = useTranslation('payosConfig');
   const [formData, setFormData] = useState({
     clientId: '',
     apiKey: '',
@@ -61,15 +63,15 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
     const newErrors: Record<string, string> = {};
     
     if (!formData.clientId.trim()) {
-      newErrors.clientId = 'Client ID là bắt buộc';
+      newErrors.clientId = t('validation.clientIdRequired');
     }
     
     if (!formData.apiKey.trim()) {
-      newErrors.apiKey = 'API Key là bắt buộc';
+      newErrors.apiKey = t('validation.apiKeyRequired');
     }
     
     if (!formData.checksumKey.trim()) {
-      newErrors.checksumKey = 'Checksum Key là bắt buộc';
+      newErrors.checksumKey = t('validation.checksumKeyRequired');
     }
     
     setErrors(newErrors);
@@ -125,7 +127,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
     }
   };
 
-  // Hàm xử lý khi nhấn nút "Sao chép cấu hình"
+  // Copy configuration function
   const handleCopyConfig = async () => {
     try {
       // Chuyển object thành chuỗi JSON để lưu vào clipboard
@@ -139,8 +141,8 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
       setCopiedField('config');
       setTimeout(() => setCopiedField(null), 2000);
     } catch (err) {
-      console.error('Không thể sao chép cấu hình: ', err);
-      alert('Lỗi: Không thể sao chép dữ liệu cấu hình.');
+      console.error('Cannot copy configuration: ', err);
+      alert(t('errors.copyFailed'));
     }
   };
 
@@ -167,11 +169,11 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
         setCopiedField('paste');
         setTimeout(() => setCopiedField(null), 2000);
       } else {
-        alert('Dữ liệu trong clipboard không phải là cấu hình PayOS hợp lệ.');
+        alert(t('errors.invalidClipboardData'));
       }
     } catch (err) {
       console.error('Không thể dán cấu hình: ', err);
-      alert('Lỗi: Dữ liệu trong clipboard không phải là định dạng hợp lệ hoặc không thể truy cập.');
+      alert(t('errors.clipboardAccessFailed'));
     }
   };
 
@@ -184,9 +186,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
     if (onConfirmDelete) {
       shouldDelete = await onConfirmDelete();
     } else {
-      shouldDelete = window.confirm(
-        'Bạn có chắc chắn muốn xóa cấu hình PayOS này? Hành động này không thể hoàn tác.'
-      );
+      shouldDelete = window.confirm(t('buttons.confirmDelete'));
     }
 
     if (!shouldDelete) return;
@@ -202,7 +202,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
       setErrors({});
     } catch (error) {
       console.error('Error deleting PayOS config:', error);
-      alert('Không thể xóa cấu hình PayOS. Vui lòng thử lại.');
+      alert(t('errors.deleteFailed'));
     }
   };
 
@@ -215,10 +215,10 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
         <div className="flex flex-wrap items-center gap-3 p-4 border border-gray-200 rounded-md bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
           <div>
             <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-              Quản lý cấu hình
+              {t('copySection.managementTitle')}
             </h4>
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              Sao chép và dán cấu hình giữa các đợt thu phí
+              {t('copySection.title')}
             </p>
           </div>
           <div className="flex gap-2 ml-auto">
@@ -235,12 +235,12 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               {copiedField === 'config' ? (
                 <>
                   <Check className="w-4 h-4 mr-1" />
-                  Đã sao chép
+                  {t('copySection.copied')}
                 </>
               ) : (
                 <>
                   <ClipboardCopy className="w-4 h-4 mr-1" />
-                  Sao chép cấu hình
+                  {t('copySection.copyConfig')}
                 </>
               )}
             </button>
@@ -257,12 +257,12 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               {copiedField === 'paste' ? (
                 <>
                   <Check className="w-4 h-4 mr-1" />
-                  Đã dán
+                  {t('copySection.pasted')}
                 </>
               ) : (
                 <>
                   <Clipboard className="w-4 h-4 mr-1" />
-                  Dán cấu hình
+                  {t('copySection.pasteConfig')}
                 </>
               )}
             </button>
@@ -272,7 +272,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
         {/* Client ID */}
         <div>
           <label htmlFor="clientId" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            Client ID <span className="text-red-500">*</span>
+            {t('form.clientId')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -283,7 +283,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${
                 errors.clientId ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
               } ${readOnly ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : ''}`}
-              placeholder="Nhập Client ID từ PayOS"
+              placeholder={t('form.clientIdPlaceholder')}
               disabled={saving || loading || readOnly}
               readOnly={readOnly}
             />
@@ -309,7 +309,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
         {/* API Key */}
         <div>
           <label htmlFor="apiKey" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            API Key <span className="text-red-500">*</span>
+            {t('form.apiKey')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -320,7 +320,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               className={`w-full px-3 py-2 pr-20 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${
                 errors.apiKey ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
               } ${readOnly ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : ''}`}
-              placeholder="Nhập API Key từ PayOS"
+              placeholder={t('form.apiKeyPlaceholder')}
               disabled={saving || loading || readOnly}
               readOnly={readOnly}
             />
@@ -359,7 +359,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
         {/* Checksum Key */}
         <div>
           <label htmlFor="checksumKey" className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            Checksum Key <span className="text-red-500">*</span>
+            {t('form.checksumKey')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -370,7 +370,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               className={`w-full px-3 py-2 pr-20 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${
                 errors.checksumKey ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
               } ${readOnly ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : ''}`}
-              placeholder="Nhập Checksum Key từ PayOS"
+              placeholder={t('form.checksumKeyPlaceholder')}
               disabled={saving || loading || readOnly}
               readOnly={readOnly}
             />
@@ -418,7 +418,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
                 className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-400"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                Xóa Cấu Hình
+                {t('buttons.deleteConfig')}
               </button>
             )}
             
@@ -431,12 +431,12 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               {saving ? (
                 <>
                   <div className="w-4 h-4 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
-                  Đang Lưu...
+                  {t('buttons.saving')}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  {config ? 'Cập Nhật Cấu Hình' : 'Lưu Cấu Hình'}
+                  {config ? t('buttons.updateConfig') : t('buttons.saveConfig')}
                 </>
               )}
             </button>
@@ -447,13 +447,13 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
       {/* Helper Text */}
       <div className="p-4 border border-blue-200 rounded-md bg-blue-50 dark:bg-blue-900 dark:border-blue-800">
         <h4 className="mb-2 text-sm font-medium text-blue-900 dark:text-blue-200">
-          Hướng Dẫn Lấy API Credentials
+          {t('instructions.title')}
         </h4>
         <div className="space-y-1 text-sm text-blue-700 dark:text-blue-300">
-          <p>1. Đăng nhập vào PayOS Dashboard</p>
-          <p>2. Vào phần <strong>Cài đặt</strong> → <strong>API Keys</strong></p>
-          <p>3. Copy các thông tin: Client ID, API Key, và Checksum Key</p>
-          <p>4. Paste vào form này và lưu lại</p>
+          <p>{t('instructions.step1')}</p>
+          <p>{t('instructions.step2')}</p>
+          <p>{t('instructions.step3')}</p>
+          <p>{t('instructions.step4')}</p>
         </div>
       </div>
     </div>

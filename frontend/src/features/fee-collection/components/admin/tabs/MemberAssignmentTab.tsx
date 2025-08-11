@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PaymentCampaign } from '../../../types';
 import MemberSelector from '../assignment/MemberSelector';
 import AssignmentBulkForm from '../assignment/AssignmentBulkForm';
@@ -14,6 +15,7 @@ interface MemberAssignmentTabProps {
 }
 
 const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onAssignmentsChange }) => {
+  const { t } = useTranslation('memberAssignments');
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBulkCreate, setShowBulkCreate] = useState(false);
@@ -27,11 +29,11 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
     campaignId: campaign.id,
     campaignName: campaign.name,
     onSuccess: (fileName) => {
-      showSuccess(`Xuất file thành công: ${fileName}`);
+      showSuccess(t('export.success', { fileName }));
       setIsExportModalOpen(false);
     },
     onError: (error) => {
-      showError(`Lỗi xuất file: ${error}`);
+      showError(t('export.error', { error }));
     },
   });
 
@@ -120,7 +122,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
       setSelectedMemberIds([]);
       
       // Show success toast
-      showSuccess(`Đã phân công thành công cho ${selectedMemberIds.length} thành viên!`);
+      showSuccess(t('bulkAssignment.success', { count: selectedMemberIds.length }));
       
       // Refresh data and notify parent
       await fetchAssignments();
@@ -129,7 +131,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
       }
     } catch (error) {
       console.error('Error creating bulk assignments:', error);
-      showError('Không thể tạo phân công hàng loạt. Vui lòng thử lại.');
+      showError(t('bulkAssignment.error'));
     }
   };
 
@@ -137,7 +139,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
     try {
       await paymentAssignmentService.deleteAssignment(assignmentId);
       setAssignments(prev => prev.filter(assignment => assignment.id !== assignmentId));
-      showSuccess('Đã xóa phân công thành công!');
+      showSuccess(t('deleteAssignment.success'));
       
       // Notify parent about changes
       if (onAssignmentsChange) {
@@ -145,7 +147,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
       }
     } catch (error) {
       console.error('Error deleting assignment:', error);
-      showError('Không thể xóa phân công. Vui lòng thử lại.');
+      showError(t('deleteAssignment.error'));
     }
   };
 
@@ -171,10 +173,10 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Phân Công Thành Viên Đóng Phí
+                  {t('title')}
                   {readOnly && (
                     <span className="ml-2 text-orange-600 dark:text-orange-400">
-                      (Chỉ xem - đợt đã {campaign.status === 'COMPLETED' ? 'hoàn thành' : 'hủy'})
+                      ({t('readOnlyMode')} {campaign.status === 'COMPLETED' ? t('completed') : t('cancelled')})
                     </span>
                   )}
                 </h3>
