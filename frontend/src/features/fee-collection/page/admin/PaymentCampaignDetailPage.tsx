@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Edit, ArrowLeft, Play, CheckCircle, X, Users, DollarSign, Calendar, Building, AlertCircle, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/shared/hooks/useToast';
 import { PaymentCampaign, PaymentFeeLevel } from '../../types';
 import { paymentCampaignService, paymentFeeLevelService, paymentAssignmentService } from '@/shared/services/fee-collection-service';
@@ -13,6 +14,7 @@ import MemberAssignmentTab from '../../components/admin/tabs/MemberAssignmentTab
 import PayOSConfigTab from '../../components/admin/tabs/PayOSConfigTab';
 
 const PaymentCampaignDetailPage: React.FC = () => {
+  const { t } = useTranslation('paymentCampaigns');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -128,25 +130,25 @@ const PaymentCampaignDetailPage: React.FC = () => {
     if (action === 'activate' && !canActivate) {
       const missingRequirements = [];
       if (!feeLevels || feeLevels.length === 0) {
-        missingRequirements.push('Chưa có mức phí nào được tạo');
+        missingRequirements.push(t('activation.noFeeLevels'));
       }
       if (_assignmentCount === 0) {
-        missingRequirements.push('Chưa có thành viên nào được phân công');
+        missingRequirements.push(t('activation.noMembers'));
       }
       // Note: PayOS config check would go here if needed
       
-      setActivationError(`Không thể kích hoạt đợt thu phí: ${missingRequirements.join(', ')}`);
+      setActivationError(t('activation.error', { requirements: missingRequirements.join(', ') }));
       return;
     }
 
     // Show confirmation dialog for activate action
     if (action === 'activate') {
       const shouldActivate = await showConfirm(
-        'Kích hoạt đợt thu phí',
-        'Bạn có chắc chắn muốn kích hoạt đợt thu phí này? Sau khi kích hoạt, thành viên sẽ có thể thực hiện thanh toán.',
+        t('confirmations.activate.title'),
+        t('confirmations.activate.message'),
         {
-          confirmText: 'Kích hoạt',
-          cancelText: 'Hủy',
+          confirmText: t('confirmations.activate.confirm'),
+          cancelText: t('confirmations.activate.cancel'),
           variant: 'warning'
         }
       );
@@ -157,11 +159,11 @@ const PaymentCampaignDetailPage: React.FC = () => {
     // Show confirmation dialog for cancel action
     if (action === 'cancel') {
       const shouldCancel = await showConfirm(
-        'Hủy đợt thu phí',
-        'Bạn có chắc chắn muốn hủy đợt thu phí này? Sau khi hủy, thành viên sẽ không thể thực hiện thanh toán và đợt thu phí sẽ kết thúc.',
+        t('confirmations.cancelCampaign.title'),
+        t('confirmations.cancelCampaign.message'),
         {
-          confirmText: 'Hủy đợt thu phí',
-          cancelText: 'Không hủy',
+          confirmText: t('confirmations.cancelCampaign.confirm'),
+          cancelText: t('confirmations.cancelCampaign.cancel'),
           variant: 'danger'
         }
       );
@@ -194,14 +196,14 @@ const PaymentCampaignDetailPage: React.FC = () => {
         
         // Show success message with toast
         const actionMessages = {
-          activate: 'Đợt thu phí đã được kích hoạt thành công!',
-          complete: 'Đợt thu phí đã được hoàn thành thành công!',
-          cancel: 'Đợt thu phí đã được hủy thành công!'
+          activate: t('messages.activateSuccess'),
+          complete: t('messages.completeSuccess'),
+          cancel: t('messages.cancelSuccess')
         };
         showSuccess(actionMessages[action]);
       } else {
         console.warn('No campaign data received from API response');
-        showError('Không thể cập nhật trạng thái đợt thu phí. Vui lòng thử lại.');
+        showError(t('messages.errorStatusUpdate'));
       }
       
     } catch (err) {
@@ -209,9 +211,10 @@ const PaymentCampaignDetailPage: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : `Failed to ${action} campaign`;
       
       if (action === 'activate') {
-        setActivationError(`Không thể kích hoạt: ${errorMessage}`);
+        setActivationError(t('messages.errorActivate', { error: errorMessage }));
       } else {
-        showError(`Không thể ${action === 'complete' ? 'hoàn thành' : 'hủy'}: ${errorMessage}`);
+        const errorKey = action === 'complete' ? 'messages.errorComplete' : 'messages.errorCancel';
+        showError(t(errorKey, { error: errorMessage }));
       }
       
       // Reload campaign data to ensure UI is in sync
@@ -228,11 +231,11 @@ const PaymentCampaignDetailPage: React.FC = () => {
 
     // Use custom confirm dialog
     const shouldDelete = await showConfirm(
-      'Xóa đợt thu phí - Hành động này không thể hoàn tác!',
-      'Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?',
+      t('confirmations.delete.title'),
+      t('confirmations.delete.message'),
       {
-        confirmText: 'Xóa',
-        cancelText: 'Hủy',
+        confirmText: t('confirmations.delete.confirm'),
+        cancelText: t('confirmations.delete.cancel'),
         variant: 'danger'
       }
     );
@@ -242,14 +245,14 @@ const PaymentCampaignDetailPage: React.FC = () => {
     try {
       setActionLoading(true);
       await paymentCampaignService.deletePaymentCampaign(id);
-      showSuccess('Đợt thu phí đã được xóa thành công!');
+      showSuccess(t('messages.deleteSuccess'));
       
       // Navigate back to campaigns list after successful deletion
       navigate('/admin/payment-campaigns');
     } catch (err) {
       console.error('Error in handleDelete:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete campaign';
-      showError(`Không thể xóa đợt thu phí: ${errorMessage}`);
+      showError(t('messages.errorDelete', { error: errorMessage }));
     } finally {
       setActionLoading(false);
     }
@@ -267,10 +270,10 @@ const PaymentCampaignDetailPage: React.FC = () => {
 
   const getStatusText = (status: PaymentCampaign['status']) => {
     switch (status) {
-      case 'DRAFT': return 'Nháp';
-      case 'ACTIVE': return 'Đang hoạt động';
-      case 'COMPLETED': return 'Hoàn thành';
-      case 'CANCELLED': return 'Đã hủy';
+      case 'DRAFT': return t('status.draft');
+      case 'ACTIVE': return t('status.active');
+      case 'COMPLETED': return t('status.completed');
+      case 'CANCELLED': return t('status.cancelled');
       default: return status;
     }
   };
@@ -281,10 +284,10 @@ const PaymentCampaignDetailPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Chi Tiết Đợt Thu Phí
+              {t('detail.title')}
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Thông tin chi tiết và quản lý đợt thu phí
+              {t('detail.description')}
             </p>
           </div>
         </div>
@@ -292,7 +295,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
           <div className="text-center">
             <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
-              Đang tải thông tin đợt thu phí...
+              {t('detail.loadingMessage')}
             </p>
           </div>
         </div>
@@ -306,23 +309,23 @@ const PaymentCampaignDetailPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Chi Tiết Đợt Thu Phí
+              {t('detail.title')}
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Thông tin chi tiết và quản lý đợt thu phí
+              {t('detail.description')}
             </p>
           </div>
         </div>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="mb-4 text-xl text-red-500">⚠️</div>
-            <p className="text-red-600 dark:text-red-400">{error || 'Không tìm thấy đợt thu phí'}</p>
+            <p className="text-red-600 dark:text-red-400">{error || t('detail.notFound')}</p>
             <Link
               to="/admin/payment-campaigns"
               className="inline-flex items-center px-4 py-2 mt-4 text-white rounded-lg bg-doan-600 hover:bg-doan-700"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
-              Quay lại danh sách
+              {t('detail.backToList')}
             </Link>
           </div>
         </div>
@@ -362,7 +365,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
                 className="inline-flex items-center px-3 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md hover:bg-gray-50 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
               >
                 <Edit className="w-4 h-4 mr-1" />
-                Chỉnh sửa
+                {t('actions.edit')}
               </button>
               <div className="relative">
                 <button
@@ -373,20 +376,20 @@ const PaymentCampaignDetailPage: React.FC = () => {
                       ? 'bg-green-600 hover:bg-green-700' 
                       : 'bg-gray-400'
                   }`}
-                  title={!canActivate ? 'Cần có đầy đủ mức phí, thành viên' : ''}
+                  title={!canActivate ? t('activation.requirements') : ''}
                 >
                   <Play className="w-4 h-4 mr-1" />
-                  Kích hoạt
+                  {t('actions.activate')}
                 </button>
                 {!canActivate && (
                   <div className="absolute right-0 z-10 w-64 p-2 mt-1 text-xs text-yellow-700 bg-yellow-100 border border-yellow-200 rounded-md shadow-lg dark:bg-yellow-900 dark:border-yellow-800 dark:text-yellow-200">
                     <div className="flex items-start space-x-1">
                       <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                       <div>
-                        Cần có:
+                        {t('activation.needsTitle')}
                         <ul className="mt-1 ml-2 list-disc">
-                          {(!feeLevels || feeLevels.length === 0) && <li>Tạo mức phí</li>}
-                          {_assignmentCount === 0 && <li>Phân công thành viên</li>}
+                          {(!feeLevels || feeLevels.length === 0) && <li>{t('activation.needsFeeLevels')}</li>}
+                          {_assignmentCount === 0 && <li>{t('activation.needsMembers')}</li>}
                         </ul>
                       </div>
                     </div>
@@ -404,7 +407,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
                 className="inline-flex items-center px-3 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
                 <CheckCircle className="w-4 h-4 mr-1" />
-                Hoàn thành
+                {t('actions.complete')}
               </button>
               <button
                 onClick={() => handleStatusChange('cancel')}
@@ -412,7 +415,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
                 className="inline-flex items-center px-3 py-2 text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
               >
                 <X className="w-4 h-4 mr-1" />
-                Hủy
+                {t('actions.cancel')}
               </button>
             </>
           )}
@@ -424,7 +427,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
               className="inline-flex items-center px-3 py-2 text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
             >
               <Trash2 className="w-4 h-4 mr-1" />
-              Xóa đợt thu phí
+              {t('actions.delete')}
             </button>
           )}
         </div>
@@ -436,7 +439,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
           <div className="flex items-start space-x-3">
             <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5 dark:text-red-300" />
             <div>
-              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Không thể kích hoạt</h3>
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">{t('activation.cannotActivate')}</h3>
               <p className="mt-1 text-sm text-red-700 dark:text-red-300">{activationError}</p>
             </div>
             <button
@@ -451,13 +454,13 @@ const PaymentCampaignDetailPage: React.FC = () => {
 
       {/* Campaign Info */}
       <div className="p-6 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
-        <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">Thông Tin Đợt Đóng Phí</h2>
+        <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">{t('detail.campaignInfo')}</h2>
         
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="flex items-center space-x-3">
             <Building className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             <div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Tổ chức</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">{t('detail.organization')}</div>
               <div className="font-medium text-gray-900 dark:text-white">{campaign.organization?.name}</div>
             </div>
           </div>
@@ -465,10 +468,10 @@ const PaymentCampaignDetailPage: React.FC = () => {
           <div className="flex items-center space-x-3">
             <Calendar className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             <div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Thời gian</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">{t('detail.timeframe')}</div>
               <div className="font-medium text-gray-900 dark:text-white">
                 <div className="mb-1">
-                  <span className="text-gray-500 text-s dark:text-gray-400">Từ: </span>
+                  <span className="text-gray-500 text-s dark:text-gray-400">{t('detail.from')}: </span>
                   {new Date(campaign.startDate).toLocaleDateString('vi-VN', {
                     day: '2-digit',
                     month: '2-digit', 
@@ -480,7 +483,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
                   })}
                 </div>
                 <div>
-                  <span className="text-gray-500 text-s dark:text-gray-400">Đến: </span>
+                  <span className="text-gray-500 text-s dark:text-gray-400">{t('detail.to')}: </span>
                   {new Date(campaign.endDate).toLocaleDateString('vi-VN', {
                     day: '2-digit',
                     month: '2-digit',
@@ -498,7 +501,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
           <div className="flex items-center space-x-3">
             <Users className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             <div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Người tạo</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">{t('detail.createdBy')}</div>
               <div className="font-medium text-gray-900 dark:text-white">{campaign.createdByUser?.familyName} {campaign.createdByUser?.givenName}</div>
             </div>
           </div>
@@ -506,15 +509,15 @@ const PaymentCampaignDetailPage: React.FC = () => {
           <div className="flex items-center space-x-3">
             <DollarSign className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             <div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Số mức phí</div>
-              <div className="font-medium text-gray-900 dark:text-white">{campaign.feeLevels?.length || 0} mức</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">{t('detail.feeLevelsCount')}</div>
+              <div className="font-medium text-gray-900 dark:text-white">{campaign.feeLevels?.length || 0} {t('detail.levels')}</div>
             </div>
           </div>
         </div>
 
         {campaign.description && (
           <div className="mt-6">
-            <div className="mb-1 text-sm text-gray-500 dark:text-gray-400">Mô tả</div>
+            <div className="mb-1 text-sm text-gray-500 dark:text-gray-400">{t('detail.descriptionLabel')}</div>
             <div className="text-gray-900 dark:text-white">{campaign.description}</div>
           </div>
         )}

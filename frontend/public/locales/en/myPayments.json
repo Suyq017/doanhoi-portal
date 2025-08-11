@@ -1,0 +1,104 @@
+{
+  "title": "My Payments",
+  "titlePhonetic": "My Payments",
+  "description": "Manage and pay assigned fees",
+  "descriptionPhonetic": "Manage and pay fees",
+  "accessRights": "Access Rights",
+  "accessRightsPhonetic": "Access Rights",
+  "organizationAccess": "You can view payment campaigns from organizations:",
+  "organizationAccessPhonetic": "View from organizations:",
+  "superAdminRights": "Super Admin Rights",
+  "superAdminRightsPhonetic": "Super Admin Rights",
+  "superAdminDescription": "You have permission to view payment campaigns from all organizations",
+  "superAdminDescriptionPhonetic": "View all organizations",
+  "stats": {
+    "total": "Total",
+    "totalPhonetic": "Total",
+    "pending": "Pending Payment",
+    "pendingPhonetic": "Pending Payment",
+    "overdue": "Overdue",
+    "overduePhonetic": "Overdue",
+    "totalAmount": "Total Amount Due",
+    "totalAmountPhonetic": "Total Amount"
+  },
+  "search": {
+    "placeholder": "Search payment campaigns...",
+    "placeholderPhonetic": "Search"
+  },
+  "filters": {
+    "allStatus": "All Status",
+    "allStatusPhonetic": "All Status"
+  },
+  "sort": {
+    "dueDate": "Due Date",
+    "dueDatePhonetic": "Due Date",
+    "assignedAt": "Assignment Date",
+    "assignedAtPhonetic": "Assignment Date",
+    "amount": "Amount",
+    "amountPhonetic": "Amount",
+    "ascending": "Ascending",
+    "ascendingPhonetic": "Ascending",
+    "descending": "Descending",
+    "descendingPhonetic": "Descending"
+  },
+  "table": {
+    "campaign": "Payment Campaign",
+    "campaignPhonetic": "Payment Campaign",
+    "organization": "Organization",
+    "organizationPhonetic": "Organization",
+    "amount": "Amount",
+    "amountPhonetic": "Amount",
+    "startDate": "Start Date",
+    "startDatePhonetic": "Start Date",
+    "endDate": "End Date",
+    "endDatePhonetic": "End Date",
+    "payment": "Payment",
+    "paymentPhonetic": "Payment"
+  },
+  "actions": {
+    "payNow": "Pay Now",
+    "payNowPhonetic": "Pay Now",
+    "paymentExpired": "Payment Expired",
+    "paymentExpiredPhonetic": "Payment Expired",
+    "alreadyPaid": "Already Paid",
+    "alreadyPaidPhonetic": "Already Paid",
+    "retry": "Retry",
+    "retryPhonetic": "Retry"
+  },
+  "loading": {
+    "list": "Loading list...",
+    "listPhonetic": "Loading list..."
+  },
+  "errors": {
+    "loadError": "Cannot load payment list",
+    "loadErrorPhonetic": "Cannot load payment list",
+    "assignmentNotFound": "Payment assignment not found",
+    "assignmentNotFoundPhonetic": "Payment assignment not found",
+    "paymentError": "An error occurred while creating payment. Please try again.",
+    "paymentErrorPhonetic": "An error occurred while creating payment. Please try again."
+  },
+  "empty": {
+    "noCampaigns": "No payment campaigns",
+    "noCampaignsPhonetic": "No payment campaigns",
+    "noResults": "No payment campaigns match the filters",
+    "noResultsPhonetic": "No payment campaigns match the filters",
+    "noAssignmentsSuperAdmin": "You have not been assigned any payments",
+    "noAssignmentsSuperAdminPhonetic": "You have not been assigned any payments",
+    "noAssignmentsRegular": "You have not been assigned any payments from organizations you have access to",
+    "noAssignmentsRegularPhonetic": "You have not been assigned any payments from organizations you have access to",
+    "accessOrganizations": "Organizations you have access to:",
+    "accessOrganizationsPhonetic": "Organizations you have access to:"
+  },
+  "status": {
+    "pending": "Pending",
+    "pendingPhonetic": "Pending",
+    "overdue": "Overdue",
+    "overduePhonetic": "Overdue",
+    "paid": "Paid",
+    "paidPhonetic": "Paid",
+    "active": "Active",
+    "activePhonetic": "Active",
+    "cancelled": "Cancelled",
+    "cancelledPhonetic": "Cancelled"
+  }
+}

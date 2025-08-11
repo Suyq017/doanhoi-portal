@@ -1,0 +1,56 @@
+{
+  "pageTitle": "My Payment Campaigns",
+  "pageDescription": "View and manage payment campaigns assigned to you",
+  "loading": "Loading data...",
+  "loadingError": "Error loading data",
+  "retryLoad": "Try again",
+  "noAssignments": "You are not currently assigned to any payment campaigns.",
+  "accessDenied": {
+    "title": "Access Denied",
+    "message": "You don't have permission to access the payment page. Please contact your administrator."
+  },
+  "filters": {
+    "searchPlaceholder": "Search by campaign name...",
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "sortBy": "Sort by",
+    "dueDate": "Due date",
+    "assignedAt": "Assignment date",
+    "amount": "Amount",
+    "asc": "Ascending",
+    "desc": "Descending"
+  },
+  "campaignCard": {
+    "organization": "Organization:",
+    "dueDate": "Due date:",
+    "assignedAt": "Assigned at:",
+    "feeLevel": "Fee level:",
+    "amount": "Amount:",
+    "payNow": "Pay now",
+    "paid": "Paid",
+    "overdue": "Overdue",
+    "processing": "Processing",
+    "pending": "Pending payment"
+  },
+  "status": {
+    "PAID": "Paid",
+    "PENDING": "Pending payment",
+    "PROCESSING": "Processing",
+    "OVERDUE": "Overdue",
+    "DRAFT": "Draft",
+    "CANCELLED": "Cancelled"
+  },
+  "payment": {
+    "processing": "Processing payment...",
+    "redirecting": "Redirecting...",
+    "error": "Payment error",
+    "errorMessage": "An error occurred while creating payment link. Please try again.",
+    "retry": "Try again"
+  },
+  "stats": {
+    "total": "Total",
+    "paid": "Paid",
+    "pending": "Pending",
+    "overdue": "Overdue"
+  }
+}

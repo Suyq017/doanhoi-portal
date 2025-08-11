@@ -1,0 +1,114 @@
+{
+  "pageTitle": "Quản Lý Thu Phí",
+  "pageDescription": "Quản lý các đợt thu phí của hội",
+  "createNew": "Tạo Đợt Mới",
+  "loading": "Đang tải...",
+  "loadingDescription": "Đang tải thông tin...",
+  "accessDeniedTitle": "Không có quyền truy cập",
+  "accessDeniedMessage": "Bạn không có quyền truy cập trang quản lý đóng phí",
+  "listTitle": "Danh sách đợt thu phí",
+  "searchPlaceholder": "Tìm kiếm đợt thu phí...",
+  "noCampaigns": "Chưa có đợt thu phí nào",
+  "detail": {
+    "title": "Chi Tiết Đợt Thu Phí",
+    "description": "Thông tin chi tiết và quản lý đợt thu phí",
+    "loadingMessage": "Đang tải thông tin đợt thu phí...",
+    "notFound": "Không tìm thấy đợt thu phí",
+    "backToList": "Quay lại danh sách",
+    "campaignInfo": "Thông Tin Đợt Đóng Phí",
+    "organization": "Tổ chức",
+    "timeframe": "Thời gian",
+    "createdBy": "Người tạo",
+    "feeLevelsCount": "Số mức phí",
+    "descriptionLabel": "Mô tả",
+    "from": "Từ",
+    "to": "Đến",
+    "levels": "mức"
+  },
+  "actions": {
+    "edit": "Chỉnh sửa",
+    "activate": "Kích hoạt",
+    "complete": "Hoàn thành",
+    "cancel": "Hủy",
+    "delete": "Xóa đợt thu phí"
+  },
+  "status": {
+    "draft": "Nháp",
+    "active": "Đang hoạt động",
+    "inactive": "Không hoạt động",
+    "pending": "Chờ xử lý",
+    "completed": "Hoàn thành",
+    "cancelled": "Đã hủy"
+  },
+  "activation": {
+    "requirements": "Cần có đầy đủ mức phí, thành viên",
+    "cannotActivate": "Không thể kích hoạt",
+    "needsTitle": "Cần có:",
+    "needsFeeLevels": "Tạo mức phí",
+    "needsMembers": "Phân công thành viên",
+    "noFeeLevels": "Chưa có mức phí nào được tạo",
+    "noMembers": "Chưa có thành viên nào được phân công",
+    "error": "Không thể kích hoạt đợt thu phí: {{requirements}}"
+  },
+  "confirmations": {
+    "activate": {
+      "title": "Kích hoạt đợt thu phí",
+      "message": "Bạn có chắc chắn muốn kích hoạt đợt thu phí này? Sau khi kích hoạt, thành viên sẽ có thể thực hiện thanh toán.",
+      "confirm": "Kích hoạt",
+      "cancel": "Hủy"
+    },
+    "complete": {
+      "title": "Hoàn thành đợt thu phí",
+      "message": "Bạn có chắc chắn muốn hoàn thành đợt thu phí này?",
+      "confirm": "Hoàn thành",
+      "cancel": "Hủy"
+    },
+    "cancelCampaign": {
+      "title": "Hủy đợt thu phí",
+      "message": "Bạn có chắc chắn muốn hủy đợt thu phí này? Sau khi hủy, thành viên sẽ không thể thực hiện thanh toán và đợt thu phí sẽ kết thúc.",
+      "confirm": "Hủy đợt thu phí",
+      "cancel": "Không hủy"
+    },
+    "delete": {
+      "title": "Xóa đợt thu phí - Hành động này không thể hoàn tác!",
+      "message": "Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?",
+      "confirm": "Xóa",
+      "cancel": "Hủy"
+    },
+    "deletePayOSConfig": {
+      "title": "Xóa cấu hình PayOS",
+      "message": "Bạn có chắc chắn muốn xóa cấu hình PayOS này? Hành động này không thể hoàn tác.",
+      "confirm": "Xóa",
+      "cancel": "Hủy"
+    }
+  },
+  "form": {
+    "createTitle": "Tạo đợt thu phí mới",
+    "editTitle": "Chỉnh sửa đợt thu phí",
+    "campaignName": "Tên đợt thu phí",
+    "description": "Mô tả",
+    "startDate": "Ngày bắt đầu",
+    "endDate": "Ngày kết thúc",
+    "targetOrganization": "Tổ chức mục tiêu",
+    "amount": "Số tiền",
+    "currency": "Đơn vị tiền tệ",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "update": "Cập nhật"
+  },
+  "messages": {
+    "createSuccess": "Tạo đợt thu phí thành công",
+    "updateSuccess": "Cập nhật đợt thu phí thành công",
+    "deleteSuccess": "Đợt thu phí đã được xóa thành công!",
+    "activateSuccess": "Đợt thu phí đã được kích hoạt thành công!",
+    "completeSuccess": "Đợt thu phí đã được hoàn thành thành công!",
+    "cancelSuccess": "Đợt thu phí đã được hủy thành công!",
+    "errorLoading": "Lỗi khi tải danh sách đợt thu phí",
+    "errorSaving": "Lỗi khi lưu đợt thu phí",
+    "errorStatusUpdate": "Không thể cập nhật trạng thái đợt thu phí. Vui lòng thử lại.",
+    "errorActivate": "Không thể kích hoạt: {{error}}",
+    "errorComplete": "Không thể hoàn thành: {{error}}",
+    "errorCancel": "Không thể hủy: {{error}}",
+    "errorDelete": "Không thể xóa đợt thu phí: {{error}}"
+  }
+}

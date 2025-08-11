@@ -18,12 +18,13 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     const { t } = useTranslation('permissions');
 
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">            <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {t('title')}
+                {t('pageTitle')}
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-                {t('subtitle')}
+                {t('pageDescription')}
             </p>
         </div>
             <div className="mt-4 sm:mt-0 flex space-x-3">
@@ -33,16 +34,18 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                         onClick={onBulkDeleteClick}
                         className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
                         disabled={loading}
-                    >                        <Trash className="w-5 h-5 mr-2" />
-                        {t('actions.delete')} {selectedCount} {selectedCount === 1 ? t('labels.role') : t('labels.roles')}
+                    >
+                        <Trash className="w-5 h-5 mr-2" />
+                        {t('bulkDelete', { count: selectedCount })}
                     </button>
                 )}
                 <button
                     onClick={onCreateClick}
                     className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                     disabled={loading}
-                >                    <Plus className="w-5 h-5 mr-2" />
-                    {t('actions.create')}
+                >
+                    <Plus className="w-5 h-5 mr-2" />
+                    {t('createNewRole')}
                 </button>
             </div>
         </div>

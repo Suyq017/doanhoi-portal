@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { paymentService } from '../../../../shared/services/fee-collection-service';
 
 interface PaymentStatus {
@@ -22,6 +23,7 @@ interface PaymentStatus {
 export const PaymentResultPage: React.FC = () => {
   const { orderCode } = useParams<{ orderCode: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('paymentResult');
   
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ export const PaymentResultPage: React.FC = () => {
       setPaymentStatus(response?.data);
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
+      setError(err instanceof Error ? err.message : t('error.title'));
     } finally {
       setLoading(false);
       setChecking(false);
@@ -67,8 +69,8 @@ export const PaymentResultPage: React.FC = () => {
       case 'PAID':
         return {
           icon: <CheckCircle className="w-16 h-16 text-green-500" />,
-          title: 'Thanh toán thành công!',
-          message: 'Giao dịch của bạn đã được xử lý thành công.',
+          title: t('status.paid.title'),
+          message: t('status.paid.message'),
           bgColor: 'bg-green-50',
           borderColor: 'border-green-200',
           textColor: 'text-green-800'
@@ -76,8 +78,8 @@ export const PaymentResultPage: React.FC = () => {
       case 'CANCELLED':
         return {
           icon: <XCircle className="w-16 h-16 text-red-500" />,
-          title: 'Thanh toán đã bị hủy',
-          message: 'Giao dịch đã bị hủy.',
+          title: t('status.cancelled.title'),
+          message: t('status.cancelled.message'),
           bgColor: 'bg-red-50',
           borderColor: 'border-red-200',
           textColor: 'text-red-800'
@@ -85,8 +87,8 @@ export const PaymentResultPage: React.FC = () => {
       case 'EXPIRED':
         return {
           icon: <AlertTriangle className="w-16 h-16 text-orange-500" />,
-          title: 'Thanh toán đã hết hạn',
-          message: 'Link thanh toán đã hết hạn.',
+          title: t('status.expired.title'),
+          message: t('status.expired.message'),
           bgColor: 'bg-orange-50',
           borderColor: 'border-orange-200',
           textColor: 'text-orange-800'
@@ -94,8 +96,8 @@ export const PaymentResultPage: React.FC = () => {
       default:
         return {
           icon: <Clock className="w-16 h-16 text-blue-500" />,
-          title: 'Đang xử lý thanh toán',
-          message: 'Giao dịch đang được xử lý, vui lòng đợi.',
+          title: t('status.pending.title'),
+          message: t('status.pending.message'),
           bgColor: 'bg-blue-50',
           borderColor: 'border-blue-200',
           textColor: 'text-blue-800'
@@ -108,7 +110,7 @@ export const PaymentResultPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="w-8 h-8 mx-auto mb-4 border-b-2 border-blue-600 rounded-full animate-spin"></div>
-          <p className="text-gray-600">Đang kiểm tra trạng thái thanh toán...</p>
+          <p className="text-gray-600">{t('loading.checkingStatus')}</p>
         </div>
       </div>
     );
@@ -120,7 +122,7 @@ export const PaymentResultPage: React.FC = () => {
         <div className="w-full max-w-md p-8 mx-4 bg-white rounded-lg shadow-lg">
           <div className="text-center">
             <XCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-            <h1 className="mb-2 text-xl font-bold text-gray-900">Có lỗi xảy ra</h1>
+            <h1 className="mb-2 text-xl font-bold text-gray-900">{t('error.title')}</h1>
             <p className="mb-6 text-gray-600">{error}</p>
             <div className="space-y-3">
               <button
@@ -128,13 +130,13 @@ export const PaymentResultPage: React.FC = () => {
                 className="flex items-center justify-center w-full px-4 py-2 space-x-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span>Thử lại</span>
+                <span>{t('error.tryAgain')}</span>
               </button>
               <button
                 onClick={() => navigate('/payment/my-campaigns')}
                 className="w-full px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
               >
-                Quay về trang chủ
+                {t('error.backToHome')}
               </button>
             </div>
           </div>
@@ -149,13 +151,13 @@ export const PaymentResultPage: React.FC = () => {
         <div className="w-full max-w-md p-8 mx-4 bg-white rounded-lg shadow-lg">
           <div className="text-center">
             <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-orange-500" />
-            <h1 className="mb-2 text-xl font-bold text-gray-900">Không tìm thấy giao dịch</h1>
-            <p className="mb-6 text-gray-600">Mã giao dịch không hợp lệ hoặc đã bị xóa.</p>
+            <h1 className="mb-2 text-xl font-bold text-gray-900">{t('notFound.title')}</h1>
+            <p className="mb-6 text-gray-600">{t('notFound.message')}</p>
             <button
               onClick={() => navigate('/payment/my-campaigns')}
               className="w-full px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
             >
-              Quay về trang chủ
+              {t('notFound.backToHome')}
             </button>
           </div>
         </div>
@@ -172,7 +174,7 @@ export const PaymentResultPage: React.FC = () => {
           {/* Header */}
           <div className="px-6 py-4 text-center border-b bg-gray-50">
             <h1 className="text-lg font-semibold text-gray-900">
-              Kết quả thanh toán PayOS
+              {t('pageTitle')}
             </h1>
           </div>
 
@@ -194,12 +196,12 @@ export const PaymentResultPage: React.FC = () => {
             <div className={`${statusDisplay.bgColor} ${statusDisplay.borderColor} border rounded-lg p-4 mb-6`}>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Mã giao dịch:</span>
+                  <span className="text-sm text-gray-600">{t('details.orderCode')}</span>
                   <span className="font-mono text-sm font-medium">{paymentStatus.orderCode}</span>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Số tiền:</span>
+                  <span className="text-sm text-gray-600">{t('details.amount')}</span>
                   <span className="text-lg font-bold text-indigo-600">
                     {new Intl.NumberFormat('vi-VN', {
                       style: 'currency',
@@ -208,8 +210,13 @@ export const PaymentResultPage: React.FC = () => {
                   </span>
                 </div>
 
+                <div className="flex items-start justify-between">
+                  <span className="text-sm text-gray-600">{t('details.description')}</span>
+                  <span className="flex-1 ml-2 text-sm text-right">{paymentStatus.description}</span>
+                </div>
+
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Thời gian tạo:</span>
+                  <span className="text-sm text-gray-600">{t('details.createdAt')}</span>
                   <span className="text-sm">
                     {new Date(paymentStatus.createdAt).toLocaleString('vi-VN')}
                   </span>
@@ -218,15 +225,15 @@ export const PaymentResultPage: React.FC = () => {
                 {/* Payment Transaction Info */}
                 {paymentStatus.transactions && paymentStatus.transactions.length > 0 && (
                   <div className="pt-3 border-t border-gray-200">
-                    <div className="mb-2 text-sm font-medium text-gray-700">Thông tin giao dịch:</div>
+                    <div className="mb-2 text-sm font-medium text-gray-700">{t('details.transactionInfo')}</div>
                     {paymentStatus.transactions.map((tx, index) => (
                       <div key={index} className="space-y-1 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Số tài khoản:</span>
+                          <span className="text-gray-600">{t('details.accountNumber')}</span>
                           <span>{tx.accountNumber}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Thời gian:</span>
+                          <span className="text-gray-600">{t('details.transactionTime')}</span>
                           <span>{new Date(tx.transactionDateTime).toLocaleString('vi-VN')}</span>
                         </div>
                       </div>
@@ -241,19 +248,39 @@ export const PaymentResultPage: React.FC = () => {
               <div className="flex items-center justify-center mb-6 space-x-2">
                 <RefreshCw className={`w-4 h-4 text-blue-500 ${checking ? 'animate-spin' : ''}`} />
                 <span className="text-sm text-gray-600">
-                  {checking ? 'Đang kiểm tra...' : 'Tự động cập nhật mỗi 5 giây'}
+                  {checking ? t('autoRefresh.checking') : t('autoRefresh.interval')}
                 </span>
               </div>
             )}
 
             {/* Action Buttons */}
             <div className="space-y-3">
+              {paymentStatus.status !== 'PAID' && (
+                <button
+                  onClick={checkPaymentStatus}
+                  disabled={checking}
+                  className="flex items-center justify-center w-full px-4 py-3 space-x-2 font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {checking ? (
+                    <>
+                      <div className="w-4 h-4 border-b-2 border-white rounded-full animate-spin"></div>
+                      <span>Đang kiểm tra...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Kiểm tra lại</span>
+                    </>
+                  )}
+                </button>
+              )}
+
               {paymentStatus.status === 'PAID' && (
                 <button
                   onClick={() => navigate('/dashboard')}
                   className="w-full px-4 py-3 font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
                 >
-                  Quay lại trang chủ
+                  {t('actions.backToDashboard')}
                 </button>
               )}
 
@@ -262,7 +289,7 @@ export const PaymentResultPage: React.FC = () => {
                   onClick={() => navigate('/payment/my-campaigns')}
                   className="w-full px-4 py-3 font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                 >
-                  Thử thanh toán lại
+                  {t('actions.retryPayment')}
                 </button>
               )}
 
@@ -270,7 +297,7 @@ export const PaymentResultPage: React.FC = () => {
                 onClick={() => navigate('/payment/my-campaigns')}
                 className="w-full px-4 py-3 font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
               >
-                Quay về trang chủ
+                {t('actions.backToMyCampaigns')}
               </button>
             </div>
           </div>

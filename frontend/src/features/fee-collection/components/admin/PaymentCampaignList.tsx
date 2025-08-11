@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Eye, Edit, Trash2, Play, CheckCircle, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/shared/hooks/useToast';
 import { Toast, ConfirmDialog } from '@/shared/components';
 import SearchableCombobox from '@/shared/components/SearchableCombobox';
@@ -19,6 +20,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
   onEditCampaign,
   refreshTrigger
 }) => {
+  const { t } = useTranslation('paymentCampaigns');
   const permissions = usePermissions();
   const { toasts, confirmDialog, showSuccess, showError, showConfirm, hideToast } = useToast();
   const [campaigns, setCampaigns] = useState<PaymentCampaign[]>([]);
@@ -352,7 +354,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
             <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2 dark:text-gray-500" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên đợt đóng phí..."
+              placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"

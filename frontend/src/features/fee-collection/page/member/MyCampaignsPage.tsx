@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Clock, CheckCircle, AlertCircle, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { usePaymentAssignments, PaymentAssignment } from '../../../../shared/hooks/usePaymentAssignments';
 import { paymentService } from '../../../../shared/services/fee-collection-service';
 import { usePermissions } from '../../../../shared/hooks/usePermissions';
@@ -12,6 +13,7 @@ interface Filters {
 }
 
 export const MyCampaignsPage: React.FC = () => {
+  const { t } = useTranslation('myPayments');
   const [assignments, setAssignments] = useState<PaymentAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export const MyCampaignsPage: React.FC = () => {
 
       setAssignments(filteredAssignments || []);
     } catch (err) {
-      setError('Không thể tải danh sách đóng phí');
+      setError(t('errors.loadError'));
     } finally {
       setLoading(false);
     }
@@ -71,7 +73,7 @@ export const MyCampaignsPage: React.FC = () => {
       // Tìm assignment để lấy thông tin thanh toán
       const assignment = assignments.find(a => a.id === assignmentId);
       if (!assignment) {
-        alert('Không tìm thấy thông tin đóng phí');
+        alert(t('errors.assignmentNotFound'));
         return;
       }
 
@@ -96,7 +98,7 @@ export const MyCampaignsPage: React.FC = () => {
 
     } catch (error) {
       console.error('Error creating payment:', error);
-      alert('Có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.');
+      alert(t('errors.paymentError'));
     }
   };
 
@@ -172,10 +174,10 @@ export const MyCampaignsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Đóng phí của tôi
+              {t('title')}
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Quản lý và thanh toán các khoản phí được phân công
+              {t('description')}
             </p>
           </div>
         </div>
@@ -183,7 +185,7 @@ export const MyCampaignsPage: React.FC = () => {
           <div className="text-center">
             <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
-              Đang tải danh sách...
+              {t('loading.list')}
             </p>
           </div>
         </div>
@@ -197,10 +199,10 @@ export const MyCampaignsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Đóng phí của tôi
+              {t('title')}
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Quản lý và thanh toán các khoản phí được phân công
+              {t('description')}
             </p>
           </div>
         </div>
@@ -212,7 +214,7 @@ export const MyCampaignsPage: React.FC = () => {
               onClick={fetchAssignments}
               className="px-4 py-2 mt-4 text-white rounded-lg bg-doan-600 hover:bg-doan-700"
             >
-              Thử lại
+              {t('actions.retry')}
             </button>
           </div>
         </div>
@@ -225,10 +227,10 @@ export const MyCampaignsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Đóng phí của tôi
+            {t('title')}
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Quản lý và thanh toán các khoản phí được phân công
+            {t('description')}
           </p>
 
           {/* Permission Info */}
@@ -240,9 +242,9 @@ export const MyCampaignsPage: React.FC = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
-                    Quyền truy cập
+                    {t('accessRights')}
                   </p>                  <div className="mt-1 text-xs text-blue-800 dark:text-blue-300">
-                    Bạn có thể xem đợt đóng phí từ các tổ chức: {' '}
+                    {t('organizationAccess')} {' '}
                     <span className="font-semibold">
                       {userRoles
                         .filter(userRole => userRole.organizationId && canAccessMyPaymentsInOrg(userRole.organizationId))
@@ -264,10 +266,10 @@ export const MyCampaignsPage: React.FC = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-green-900 dark:text-green-200">
-                    Quyền Super Admin
+                    {t('superAdminRights')}
                   </p>
                   <div className="mt-1 text-xs text-green-800 dark:text-green-300">
-                    Bạn có quyền xem đợt đóng phí từ tất cả các tổ chức
+                    {t('superAdminDescription')}
                   </div>
                 </div>
               </div>
@@ -281,7 +283,7 @@ export const MyCampaignsPage: React.FC = () => {
         <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng số</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('stats.total')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">{summaryStats.total}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full dark:bg-blue-900">
@@ -293,7 +295,7 @@ export const MyCampaignsPage: React.FC = () => {
         <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Chờ thanh toán</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('stats.pending')}</p>
               <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{summaryStats.pending}</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-full dark:bg-yellow-900">
@@ -305,7 +307,7 @@ export const MyCampaignsPage: React.FC = () => {
         <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Quá hạn</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('stats.overdue')}</p>
               <p className="text-3xl font-bold text-red-600 dark:text-red-400">{summaryStats.overdue}</p>
             </div>
             <div className="p-3 bg-red-100 rounded-full dark:bg-red-900">
@@ -317,7 +319,7 @@ export const MyCampaignsPage: React.FC = () => {
         <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng tiền cần đóng</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('stats.totalAmount')}</p>
               <p className="text-lg font-bold text-gray-900 dark:text-white">
                 {formatAmount(summaryStats.totalAmount)}
               </p>
@@ -337,7 +339,7 @@ export const MyCampaignsPage: React.FC = () => {
             <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
             <input
               type="text"
-              placeholder="Tìm kiếm đợt đóng phí..."
+              placeholder={t('search.placeholder')}
               value={filters.search}
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
               className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -351,10 +353,10 @@ export const MyCampaignsPage: React.FC = () => {
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             >
-              <option value="">Tất cả trạng thái</option>
-              <option value="PENDING">Chờ thanh toán</option>
-              <option value="OVERDUE">Quá hạn</option>
-              <option value="PAID">Đã thanh toán</option>
+              <option value="">{t('filters.allStatus')}</option>
+              <option value="PENDING">{t('status.pending')}</option>
+              <option value="OVERDUE">{t('status.overdue')}</option>
+              <option value="PAID">{t('status.paid')}</option>
             </select>
           </div>
 
@@ -365,9 +367,9 @@ export const MyCampaignsPage: React.FC = () => {
               onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             >
-              <option value="dueDate">Hạn thanh toán</option>
-              <option value="assignedAt">Ngày phân công</option>
-              <option value="amount">Số tiền</option>
+              <option value="dueDate">{t('sort.dueDate')}</option>
+              <option value="assignedAt">{t('sort.assignedAt')}</option>
+              <option value="amount">{t('sort.amount')}</option>
             </select>
           </div>
 
@@ -378,8 +380,8 @@ export const MyCampaignsPage: React.FC = () => {
               onChange={(e) => setFilters(prev => ({ ...prev, sortOrder: e.target.value as any }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             >
-              <option value="asc">Tăng dần</option>
-              <option value="desc">Giảm dần</option>
+              <option value="asc">{t('sort.ascending')}</option>
+              <option value="desc">{t('sort.descending')}</option>
             </select>
           </div>
         </div>
@@ -392,22 +394,22 @@ export const MyCampaignsPage: React.FC = () => {
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  Đợt đóng phí
+                  {t('table.campaign')}
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  Tổ chức
+                  {t('table.organization')}
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  Số tiền
+                  {t('table.amount')}
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  Từ ngày
+                  {t('table.startDate')}
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  Đến ngày
+                  {t('table.endDate')}
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-400">
-                  Thanh toán
+                  {t('table.payment')}
                 </th>
               </tr>
             </thead>
@@ -474,7 +476,7 @@ export const MyCampaignsPage: React.FC = () => {
                         className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-all duration-300 bg-blue-600 rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
                       >
                         <CreditCard className="w-4 h-4" />
-                        <span>Thanh toán ngay</span>
+                        <span>{t('actions.payNow')}</span>
                       </button>
                     )}
 
@@ -484,7 +486,7 @@ export const MyCampaignsPage: React.FC = () => {
                         className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-red-800 bg-red-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-red-900 dark:text-red-400"
                       >
                         <AlertCircle className="w-4 h-4" />
-                        <span>Đã hết hạn thanh toán</span>
+                        <span>{t('actions.paymentExpired')}</span>
                       </button>
                     )}
 
@@ -494,7 +496,7 @@ export const MyCampaignsPage: React.FC = () => {
                         className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-red-800 bg-red-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-red-900 dark:text-red-400"
                       >
                         <AlertCircle className="w-4 h-4" />
-                        <span>Đã hết hạn thanh toán</span>
+                        <span>{t('actions.paymentExpired')}</span>
                       </button>
                     )}
 
@@ -504,7 +506,7 @@ export const MyCampaignsPage: React.FC = () => {
                         className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-green-800 bg-green-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-green-900 dark:text-green-400"
                       >
                         <CheckCircle className="w-4 h-4" />
-                        <span>Đã thanh toán</span>
+                        <span>{t('actions.alreadyPaid')}</span>
                       </button>
                     )}
                   </td>
@@ -516,18 +518,18 @@ export const MyCampaignsPage: React.FC = () => {
           <div className="py-12 text-center">
             <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
             <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
-              Không có đợt đóng phí nào
+              {t('empty.noCampaigns')}
             </h3>
             <div className="text-gray-500 dark:text-gray-400">
               {filters.search || filters.status
-                ? 'Không tìm thấy đợt đóng phí nào phù hợp với bộ lọc'
+                ? t('empty.noResults')
                 : isSuperAdmin()
-                  ? 'Bạn chưa được phân công đóng phí nào'
-                  : 'Bạn chưa được phân công đóng phí nào từ các tổ chức bạn có quyền truy cập'
+                  ? t('empty.noAssignmentsSuperAdmin')
+                  : t('empty.noAssignmentsRegular')
               }
             </div>            {!isSuperAdmin() && userRoles && userRoles.length > 0 && (
               <div className="mt-4 text-sm text-gray-400">
-                Các tổ chức bạn có quyền truy cập: {' '}
+                {t('empty.accessOrganizations')} {' '}
                 {userRoles
                   .filter(userRole => userRole.organizationId && canAccessMyPaymentsInOrg(userRole.organizationId))
                   .map(userRole => getOrganizationName(userRole.organizationId))
