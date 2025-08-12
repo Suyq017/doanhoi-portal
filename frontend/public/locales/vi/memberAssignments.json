@@ -1,0 +1,115 @@
+{
+  "title": "Danh Sách Phân Công",
+  "subtitle": "Quản lý phân công đóng phí cho từng thành viên",
+  "readOnlyMode": "Chỉ xem - đợt đã {{status}}",
+  
+  "status": {
+    "pending": "Chờ đóng",
+    "paid": "Đã đóng", 
+    "overdue": "Quá hạn"
+  },
+
+  "stats": {
+    "total": "Tổng cộng",
+    "pending": "Chờ đóng",
+    "paid": "Đã đóng",
+    "overdue": "Quá hạn"
+  },
+
+  "statistics": {
+    "title": "Thống Kê phân công đóng phí",
+    "subtitle": "Tổng quan về tình hình thu phí và thanh toán",
+    "collectionStatus": "Trạng Thái Thu Phí",
+    "dueDate": "Hạn thanh toán: {{date}}",
+    "overdueDays": "Đã quá hạn {{days}} ngày",
+    "expiringSoon": "Sắp hết hạn (còn {{days}} ngày)",
+    "daysRemaining": "Còn {{days}} ngày",
+    "totalMembers": "Tổng Thành Viên Đóng Phí",
+    "uncollected": "Chưa Thu",
+    "collected": "Đã Thu",
+    "totalExpected": "Tổng Thu Dự Kiến",
+    "statusAnalysis": "Phân Tích Trạng Thái",
+    "collectionProgress": "Tiến độ thu phí"
+  },
+
+  "buttons": {
+    "assignMembers": "Phân công thành viên",
+    "exportExcel": "Xuất Excel"
+  },
+
+  "filters": {
+    "label": "Bộ lọc",
+    "search": "Tìm kiếm",
+    "searchPlaceholder": "Tên, Mã sinh viên/cán bộ...",
+    "status": "Trạng thái",
+    "sortBy": "Sắp xếp theo",
+    "sortOrder": "Thứ tự",
+    "clearFilters": "Xóa bộ lọc",
+    "statusOptions": {
+      "all": "Tất cả",
+      "pending": "Chờ đóng",
+      "paid": "Đã đóng",
+      "overdue": "Quá hạn"
+    },
+    "sortOptions": {
+      "createdAt": "Ngày tạo",
+      "user": "Tên thành viên", 
+      "amount": "Số tiền",
+      "status": "Trạng thái"
+    },
+    "sortOrderOptions": {
+      "desc": "Giảm dần",
+      "asc": "Tăng dần"
+    }
+  },
+
+  "warnings": {
+    "noFeeLevels": "Cần có ít nhất một mức phí",
+    "noFeeLevelsTitle": "Chưa có mức phí nào được thiết lập",
+    "noFeeLevelsMessage": "Vui lòng thiết lập ít nhất một mức phí ở tab \"Mức Phí\" trước khi tạo assignment."
+  },
+  
+  "bulkAssignment": {
+    "success": "Đã tạo thành công {{count}} phân công",
+    "error": "Lỗi khi tạo phân công hàng loạt"
+  },
+
+  "assignmentsList": {
+    "custom": "Tùy chỉnh",
+    "deleteButton": "Xóa",
+    "note": "Ghi chú",
+    "showingResults": "Hiển thị {{showing}} / {{total}} thành viên",
+    "noAssignments": "Chưa phân công thành viên nào",
+    "noMatchingAssignments": "Không có phân công nào phù hợp với bộ lọc",
+    "noAssignmentsYet": "Chưa có thành viên nào được phân công",
+    "tableHeaders": {
+      "member": "Thành viên",
+      "feeLevel": "Mức phí",
+      "amount": "Số tiền",
+      "status": "Trạng thái",
+      "createdDate": "Ngày tạo",
+      "actions": "Thao tác"
+    }
+  },
+
+  "export": {
+    "button": "Xuất file",
+    "success": "Xuất file thành công: {{fileName}}",
+    "error": "Lỗi xuất file: {{error}}"
+  },
+  
+  "deleteAssignment": {
+    "success": "Đã xóa phân công thành công!",
+    "error": "Không thể xóa phân công. Vui lòng thử lại."
+  },
+  
+  "noAssignments": "Chưa có phân công nào",
+  "member": "Thành viên",
+  "feeLevel": "Mức phí",
+  "customAmount": "Số tiền tùy chỉnh",
+  "actions": "Thao tác",
+  "edit": "Sửa",
+  "delete": "Xóa",
+  "completed": "hoàn thành",
+  "cancelled": "hủy"
+}

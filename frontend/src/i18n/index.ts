@@ -26,7 +26,7 @@ i18n
       caches: ['localStorage', 'cookie'],
     },
 
-    ns: ['common', 'users', 'organizations', 'dashboard', 'classes', 'departments', 'auth', 'permissions'],
+    ns: ['common', 'users', 'organizations', 'dashboard', 'classes', 'departments', 'auth', 'permissions', 'paymentCampaigns', 'feeLevels', 'memberAssignments', 'payosConfig', 'userPermissions', 'myPayments'],
     defaultNS: 'common',
   });
 

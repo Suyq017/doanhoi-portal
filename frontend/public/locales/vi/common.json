@@ -178,6 +178,8 @@
     "activePhonetic": "Hoạt động",
     "inactive": "Không hoạt động",
     "inactivePhonetic": "Không hoạt động",
+    "completed": "hoàn thành",
+    "cancelled": "hủy",
     "all": "Tất cả",
     "allPhonetic": "Tất cả"
   },
@@ -295,6 +297,13 @@
       "parseFilePhonetic": "Không thể đọc file"
     }
   },
+  "selectOrganization": "Chọn Tổ Chức",
+  "selectOrganizationDescription": "Chọn tổ chức để tạo đợt đóng phí",
+  "loadingOrganizations": "Đang tải tổ chức...",
+  "noOrganizations": "Không có tổ chức nào",
+  "noPermissionToView": "Bạn không có quyền xem danh sách {{entity}}",
+  "noItemsContactAdmin": "Không tìm thấy {{entity}} nào. Liên hệ quản trị viên để thêm {{entity}}.",
+  "noItemsCreateFirst": "Không tìm thấy {{entity}} nào. Tạo {{entity}} đầu tiên.",
   "footer": {
     "copyright": "ĐHBK TPHCM - 2025"
   }

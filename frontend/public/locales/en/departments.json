@@ -1,6 +1,7 @@
 {
   "title": "Department Management",
   "titlePhonetic": "Department Management",
+  "entityName": "department",
   "subtitle": "Manage information of departments, faculties and units within university",
   "subtitlePhonetic": "Manage department information",
   "titles": {

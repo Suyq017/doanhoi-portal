@@ -293,27 +293,27 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
                   </div>
 
                   {/* Config Information Row */}
-                  <div className="grid grid-cols-3 gap-4 mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                  <div className="grid grid-cols-3 gap-4 p-3 mt-3 rounded-md bg-gray-50 dark:bg-gray-700">
                     {/* Client ID */}
                     <div>
-                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Client ID</div>
-                      <div className="font-mono text-xs text-gray-900 dark:text-white break-all">
+                      <div className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">Client ID</div>
+                      <div className="font-mono text-xs text-gray-900 break-all dark:text-white">
                         {history.client_id || '-'}
                       </div>
                     </div>
 
                     {/* API Key */}
                     <div>
-                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">API Key</div>
-                      <div className="font-mono text-xs text-gray-900 dark:text-white break-all">
+                      <div className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">API Key</div>
+                      <div className="font-mono text-xs text-gray-900 break-all dark:text-white">
                         {history.api_key || '-'}
                       </div>
                     </div>
 
                     {/* Checksum Key */}
                     <div>
-                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Checksum Key</div>
-                      <div className="font-mono text-xs text-gray-900 dark:text-white break-all">
+                      <div className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">Checksum Key</div>
+                      <div className="font-mono text-xs text-gray-900 break-all dark:text-white">
                         {history.checksum_key || '-'}
                       </div>
                     </div>

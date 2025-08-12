@@ -1,6 +1,7 @@
 {
   "title": "Class Management",
   "titlePhonetic": "Class Management",
+  "entityName": "class",
   "subtitle": "Manage class information and students",
   "subtitlePhonetic": "Manage class information",
   "titles": {

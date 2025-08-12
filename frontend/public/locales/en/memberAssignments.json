@@ -1,0 +1,115 @@
+{
+  "title": "Assignment List",
+  "subtitle": "Manage fee assignments for each member",
+  "readOnlyMode": "View only - campaign {{status}}",
+  
+  "status": {
+    "pending": "Pending",
+    "paid": "Paid",
+    "overdue": "Overdue"
+  },
+
+  "stats": {
+    "total": "Total",
+    "pending": "Pending",
+    "paid": "Paid",
+    "overdue": "Overdue"
+  },
+
+  "statistics": {
+    "title": "Fee Assignment Statistics",
+    "subtitle": "Overview of fee collection and payment status",
+    "collectionStatus": "Collection Status",
+    "dueDate": "Due date: {{date}}",
+    "overdueDays": "Overdue by {{days}} days",
+    "expiringSoon": "Expiring soon ({{days}} days left)",
+    "daysRemaining": "{{days}} days remaining",
+    "totalMembers": "Total Fee Paying Members",
+    "uncollected": "Uncollected",
+    "collected": "Collected",
+    "totalExpected": "Total Expected",
+    "statusAnalysis": "Status Analysis",
+    "collectionProgress": "Collection Progress"
+  },
+
+  "buttons": {
+    "assignMembers": "Assign Members",
+    "exportExcel": "Export Excel"
+  },
+
+  "filters": {
+    "label": "Filters",
+    "search": "Search",
+    "searchPlaceholder": "Name, Student/Staff Code...",
+    "status": "Status",
+    "sortBy": "Sort by",
+    "sortOrder": "Sort order",
+    "clearFilters": "Clear filters",
+    "statusOptions": {
+      "all": "All",
+      "pending": "Pending",
+      "paid": "Paid",
+      "overdue": "Overdue"
+    },
+    "sortOptions": {
+      "createdAt": "Created date",
+      "user": "Member name",
+      "amount": "Amount",
+      "status": "Status"
+    },
+    "sortOrderOptions": {
+      "desc": "Descending",
+      "asc": "Ascending"
+    }
+  },
+
+  "warnings": {
+    "noFeeLevels": "At least one fee level is required",
+    "noFeeLevelsTitle": "No fee levels set up yet",
+    "noFeeLevelsMessage": "Please set up at least one fee level in the \"Fee Levels\" tab before creating assignments."
+  },
+  
+  "bulkAssignment": {
+    "success": "Successfully created {{count}} assignments",
+    "error": "Error creating bulk assignments"
+  },
+
+  "assignmentsList": {
+    "custom": "Custom",
+    "deleteButton": "Delete",
+    "note": "Note",
+    "showingResults": "Showing {{showing}} / {{total}} members",
+    "noAssignments": "No member assignments yet",
+    "noMatchingAssignments": "No assignments match the filter criteria",
+    "noAssignmentsYet": "No members have been assigned yet",
+    "tableHeaders": {
+      "member": "Member",
+      "feeLevel": "Fee Level",
+      "amount": "Amount",
+      "status": "Status",
+      "createdDate": "Created Date",
+      "actions": "Actions"
+    }
+  },
+
+  "export": {
+    "button": "Export file",
+    "success": "File exported successfully: {{fileName}}",
+    "error": "Export error: {{error}}"
+  },
+  
+  "deleteAssignment": {
+    "success": "Assignment deleted successfully!",
+    "error": "Cannot delete assignment. Please try again."
+  },
+  
+  "noAssignments": "No assignments yet",
+  "member": "Member",
+  "feeLevel": "Fee level",
+  "customAmount": "Custom amount",
+  "actions": "Actions",
+  "edit": "Edit",
+  "delete": "Delete",
+  "completed": "completed",
+  "cancelled": "cancelled"
+}

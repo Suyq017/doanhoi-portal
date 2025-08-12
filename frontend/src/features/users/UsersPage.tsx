@@ -91,11 +91,11 @@ const Users: React.FC = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const { exportData } = useExport({
     onSuccess: (fileName) => {
-      showSuccess(`Xuất file thành công: ${fileName}`);
+      showSuccess(t('users:messages.exportSuccess', { fileName, defaultValue: `Xuất file thành công: ${fileName}` }));
       setIsExportModalOpen(false);
     },
     onError: (error) => {
-      showError(`Lỗi xuất file: ${error}`);
+      showError(t('users:messages.exportError', { error, defaultValue: `Lỗi xuất file: ${error}` }));
     },
   }); const {
     selectedUser,
@@ -310,8 +310,8 @@ const Users: React.FC = () => {
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         onExport={handleExport}
-        title="Xuất danh sách người dùng"
-        description="Chọn các trường dữ liệu bạn muốn xuất ra file Excel"
+        title={t('users:export.title', { defaultValue: 'Xuất danh sách người dùng' })}
+        description={t('users:export.description', { defaultValue: 'Chọn các trường dữ liệu bạn muốn xuất ra file Excel' })}
         availableFields={USER_EXPORT_FIELDS}
       />      <UserRoleAssignmentModal
         isOpen={isRoleAssignmentModalOpen}

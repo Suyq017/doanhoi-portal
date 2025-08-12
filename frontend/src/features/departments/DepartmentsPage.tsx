@@ -14,7 +14,6 @@ import {
   AddDropdownButton,
   DropdownOption,
   useImportConfig, ConditionalRender,
-  getPermissionBasedEmptyMessage,
   createPermissionBasedDropdownOptions,
 } from "../../shared";
 import { departmentColumns } from "../../shared/utils/importColumns";
@@ -439,11 +438,12 @@ const Departments: React.FC = () => {
         </div>        {filteredDepartments.length === 0 && !loading && (
           <div className="py-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">
-              {getPermissionBasedEmptyMessage(
-                permissions.canView,
-                permissions.canCreate,
-                t('departments:title', { defaultValue: 'phòng ban' })
-              )}
+              {!permissions.canView 
+                ? t('common:noPermissionToView', { entity: t('departments:entityName', { defaultValue: 'đơn vị' }), defaultValue: `Bạn không có quyền xem danh sách ${t('departments:entityName', { defaultValue: 'đơn vị' })}` })
+                : !permissions.canCreate
+                  ? t('common:noItemsContactAdmin', { entity: t('departments:entityName', { defaultValue: 'đơn vị' }), defaultValue: `Không tìm thấy ${t('departments:entityName', { defaultValue: 'đơn vị' })} nào. Liên hệ quản trị viên để thêm ${t('departments:entityName', { defaultValue: 'đơn vị' })}.` })
+                  : t('common:noItemsCreateFirst', { entity: t('departments:entityName', { defaultValue: 'đơn vị' }), defaultValue: `Không tìm thấy ${t('departments:entityName', { defaultValue: 'đơn vị' })} nào. Tạo ${t('departments:entityName', { defaultValue: 'đơn vị' })} đầu tiên.` })
+              }
             </div>
           </div>
         )}

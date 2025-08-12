@@ -177,6 +177,8 @@
     "activePhonetic": "Active",
     "inactive": "Inactive",
     "inactivePhonetic": "Inactive",
+    "completed": "completed",
+    "cancelled": "cancelled",
     "all": "All",
     "allPhonetic": "All"
   },
@@ -293,6 +295,13 @@
       "parseFilePhonetic": "Cannot read file"
     }
   },
+  "selectOrganization": "Select Organization",
+  "selectOrganizationDescription": "Select organization to create fee campaign",
+  "loadingOrganizations": "Loading organizations...",
+  "noOrganizations": "No organizations",
+  "noPermissionToView": "You don't have permission to view {{entity}} list",
+  "noItemsContactAdmin": "No {{entity}} found. Contact administrator to add {{entity}}.",
+  "noItemsCreateFirst": "No {{entity}} found. Create your first {{entity}}.",
   "footer": {
     "copyright": "HCMUT - 2025"
   }

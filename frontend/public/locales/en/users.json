@@ -62,7 +62,9 @@
     "organization": "Organization",
     "organizationPhonetic": "Organization",
     "selectUser": "Select User",
-    "roleAssignments": "Role Assignments"
+    "roleAssignments": "Role Assignments",
+    "rolesAndPermissions": "Roles & Permissions",
+    "rolesAndPermissionsPhonetic": "Roles and Permissions"
   },
   "placeholders": {
     "code": "e.g.: 2024001, CB001",
@@ -106,7 +108,20 @@
     "assignRolesSuccess": "Roles assigned successfully",
     "assignRolesError": "An error occurred while assigning roles",
     "grantRolesSuccess": "Roles granted successfully",
-    "grantRolesError": "An error occurred while granting roles"
+    "grantRolesError": "An error occurred while granting roles",
+    "exportSuccess": "File exported successfully: {{fileName}}",
+    "exportError": "Export error: {{error}}",
+    "bulkDeleteSuccess": "Successfully deleted {{count}} users",
+    "bulkDeleteError": "An error occurred while deleting users",
+    "updateUserSuccess": "User updated successfully",
+    "updateUserError": "An error occurred while updating user",
+    "updateRoleAssignmentsError": "Basic information updated successfully but role assignment failed. Please try assigning roles again.",
+    "updateOrganizationMembershipError": "An error occurred while updating organization membership",
+    "organizationMembershipUpdated": "Organization membership updated: +{{added}}, -{{removed}}",
+    "organizationMembershipUpdatedWithKept": "Organization membership updated: +{{added}}, -{{removed}} (kept {{kept}} necessary parent organizations)",
+    "loadingUserDetails": "Loading user information...",
+    "roleInOrganization": "Role in organization",
+    "globalRole": "Global role"
   },
   "validation": {
     "invalidOrganization": "Selected organization is not valid",
@@ -127,7 +142,41 @@
     "selectedOrganization": "Selected Organization",
     "newPassword": "New Password (leave blank if no change)",
     "deleteTitle": "Confirm Delete",
-    "organizationalInfo": "Organizational Information"
+    "organizationalInfo": "Organizational Information",
+    "rolesAndPermissions": "Roles & Permissions",
+    "rolesAndPermissionsPhonetic": "Roles and Permissions",
+    "memberOrganizations": "Member Organizations",
+    "memberOrganizationsDesc": "Shows organizations where the user is a member (user_organization). Different from organization roles in the \"Role and Organization Assignment\" section below.",
+    "roleAndOrganizationAssignment": "Role and Organization Assignment",
+    "searchRoles": "Search roles...",
+    "noSuitableRoles": "No suitable roles found",
+    "selectRoleToAssign": "Select role to assign",
+    "removeRole": "Remove role",
+    "noRolesFound": "No roles found",
+    "searchRolesPlaceholder": "Search roles...",
+    "searchOrganizationsPlaceholder": "Search organizations...",
+    "permissionsCount": "{{count}} permissions",
+    "selectedRoles": "Selected roles ({{count}})",
+    "removeAllRoles": "Remove all roles",
+    "removeAll": "Remove all",
+    "removeRoleButton": "Remove role",
+    "roleNotFound": "Role \"{{searchTerm}}\" not found",
+    "noRoles": "No roles available",
+    "selectedOrganizations": "Selected organizations ({{count}})",
+    "removeAllOrganizations": "Remove all organizations",
+    "removeOrganization": "Remove organization",
+    "noOrganizationsAssigned": "User is not assigned to any organization",
+    "searchOrganizationsHelp": "Use the search box below to add organizations",
+    "searchAndAddOrganizations": "Search and add organizations...",
+    "organizationNotFound": "Organization \"{{searchTerm}}\" not found",
+    "allOrganizationsAdded": "All organizations have been added",
+    "noOrganizations": "No organizations available",
+    "noRolesAssigned": "User has not been assigned any roles",
+    "userOrganizations": "User Organizations",
+    "globalRoleDescription": "Applies to entire system",
+    "selectSpecificOrganization": "Select specific organization",
+    "selectUserOrganizations": "Select user's organizations",
+    "userOrganizationsList": "{{count}} organizations: {{organizations}}"
   },
   "actions": {
     "view": "View Details",
@@ -159,6 +208,7 @@
     "userSearch": "Search for user...",
     "applyToUserOrgs": "Apply to organizations the user belongs to",
     "applyToUserOrganizations": "Apply to organizations the user belongs to",
+    "applyToUserOrganizationsDesc": "When selected, roles will be applied to all organizations the user belongs to.",
     "roles": "Roles",
     "organizations": "Organizations (optional)",
     "addRoleRow": "Add Another Role",
@@ -174,7 +224,12 @@
     "roleAssignments": "Role Assignments",
     "addRole": "Add Role",
     "noUserSelected": "Please select a user",
-    "noRolesAdded": "Please add at least one role"
+    "noRolesAdded": "Please add at least one role",
+    "selectUserPrompt": "Please select a user first",
+    "selectUserToStart": "Select a user to start granting roles",
+    "userOrganizations": "User Organizations",
+    "noOrganizationsAssigned": "User is not assigned to any organization",
+    "inactive": "Inactive"
   },
   "addButton": {
     "dropdown": "Add User",
@@ -186,7 +241,9 @@
     "fromFile": "Import from Excel",
     "fromFilePhonetic": "Import from Excel",
     "fromFileDesc": "Import multiple users from Excel file",
-    "fromFileDescPhonetic": "Import multiple users from Excel file"
+    "fromFileDescPhonetic": "Import multiple users from Excel file",
+    "export": "Export Data",
+    "exportDesc": "Export users list to Excel file"
   },
   "import": {
     "title": "Import Users List",
@@ -203,5 +260,16 @@
     "templateLinkTextPhonetic": "here",
     "onlyExcelAllowed": "Only Excel files (.xlsx, .xls) are allowed",
     "onlyExcelAllowedPhonetic": "Only Excel files allowed"
+  },
+  "export": {
+    "title": "Export Users List",
+    "description": "Select the data fields you want to export to Excel file"
+  },
+  "roleAssignmentRow": {
+    "removeRow": "Remove this row",
+    "roleLabel": "Role (select 1)",
+    "organizationLabel": "Organization",
+    "selectRolePlaceholder": "Select role...",
+    "selectOrganizationPlaceholder": "Select organization or leave empty for global system..."
   }
 }

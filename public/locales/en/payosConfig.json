@@ -1,0 +1,45 @@
+{
+  "title": "PayOS Configuration",
+  "subtitle": "Set up PayOS authentication information to process payments",
+  "notConfigured": "PayOS not configured",
+  "configured": "PayOS has been configured",
+  
+  "validation": {
+    "clientIdRequired": "Client ID is required",
+    "apiKeyRequired": "API Key is required", 
+    "checksumKeyRequired": "Checksum Key is required"
+  },
+
+  "errors": {
+    "copyFailed": "Error: Unable to copy configuration data."
+  },
+
+  "copySection": {
+    "title": "Copy and paste configuration between fee collection campaigns",
+    "copied": "Copied",
+    "copyConfig": "Copy Configuration"
+  },
+
+  "form": {
+    "clientId": "Client ID",
+    "clientIdPlaceholder": "Enter Client ID from PayOS",
+    "apiKey": "API Key", 
+    "apiKeyPlaceholder": "Enter API Key from PayOS",
+    "checksumKey": "Checksum Key",
+    "checksumKeyPlaceholder": "Enter Checksum Key from PayOS"
+  },
+
+  "buttons": {
+    "saving": "Saving...",
+    "saveConfig": "Save Configuration",
+    "updateConfig": "Update Configuration"
+  },
+
+  "instructions": {
+    "title": "Guide to Get API Credentials",
+    "step1": "1. Login to PayOS Dashboard",
+    "step2": "2. Go to Settings → API Keys",
+    "step3": "3. Copy the information: Client ID, API Key, and Checksum Key",
+    "step4": "4. Paste into this form and save"
+  }
+}

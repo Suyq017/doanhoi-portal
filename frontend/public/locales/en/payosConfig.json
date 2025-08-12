@@ -1,0 +1,82 @@
+{
+  "title": "PayOS Configuration",
+  "subtitle": "Configure PayOS information to receive payments",
+  "readOnlyMode": "Read-only - campaign",
+  "completed": "completed",
+  "cancelled": "cancelled",
+  "status": {
+    "configured": "Configured",
+    "notConfigured": "Not Configured"
+  },
+  "success": {
+    "title": "Configuration Successful!",
+    "message": "PayOS credentials have been saved successfully. You can now start receiving payments.",
+    "buttonText": "Continue managing payment campaign"
+  },
+  "setup": {
+    "title": "Set Up PayOS",
+    "description": "To start receiving payments through PayOS, please configure the API credentials below.",
+    "buttonText": "Configure PayOS now"
+  },
+  "configured": {
+    "title": "PayOS Already Configured",
+    "line1": "PayOS credentials have been configured successfully.",
+    "line2": "You can update them if needed.",
+    "updateButton": "Update PayOS configuration"
+  },
+  "copySection": {
+    "title": "Quick copy or paste configuration",
+    "managementTitle": "Configuration Management",
+    "copyConfig": "Copy Configuration",
+    "pasteConfig": "Paste Configuration",
+    "copied": "Copied",
+    "pasted": "Pasted"
+  },
+  "form": {
+    "clientId": "Client ID",
+    "clientIdPlaceholder": "Enter Client ID from PayOS",
+    "apiKey": "API Key", 
+    "apiKeyPlaceholder": "Enter API Key from PayOS",
+    "checksumKey": "Checksum Key",
+    "checksumKeyPlaceholder": "Enter Checksum Key from PayOS",
+    "credentialsTitle": "API Credentials",
+    "save": "Save configuration",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "copyConfig": "Copy configuration",
+    "testConnection": "Test connection"
+  },
+  "validation": {
+    "clientIdRequired": "Client ID is required",
+    "apiKeyRequired": "API Key is required",
+    "checksumKeyRequired": "Checksum Key is required"
+  },
+  "buttons": {
+    "saving": "Saving...",
+    "saveConfig": "Save Configuration",
+    "updateConfig": "Update Configuration",
+    "deleteConfig": "Delete Configuration",
+    "confirmDelete": "Are you sure you want to delete this PayOS configuration? This action cannot be undone."
+  },
+  "errors": {
+    "loadFailed": "Cannot load PayOS configuration",
+    "saveFailed": "Cannot save PayOS configuration",
+    "copyFailed": "Error: Cannot copy configuration data.",
+    "testFailed": "Connection test failed",
+    "invalidClipboardData": "Clipboard data is not a valid PayOS configuration.",
+    "clipboardAccessFailed": "Error: Clipboard data is not in valid format or cannot be accessed.",
+    "deleteFailed": "Cannot delete PayOS configuration. Please try again."
+  },
+  "instructions": {
+    "title": "How to get PayOS information",
+    "step1": "1. Login to PayOS Dashboard at https://payos.vn/",
+    "step2": "2. Go to \"API Management\" -> \"Settings\" section to get required information",
+    "step3": "3. Copy Client ID, API Key and Checksum Key from the dashboard",
+    "step4": "4. Paste this information into the form above and click \"Save Configuration\""
+  },
+  "messages": {
+    "copySuccess": "Configuration copied to clipboard",
+    "saveSuccess": "PayOS configuration saved successfully",
+    "testSuccess": "PayOS connection successful"
+  }
+}

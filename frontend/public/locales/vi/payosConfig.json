@@ -1,0 +1,82 @@
+{
+  "title": "Cấu hình PayOS",
+  "subtitle": "Cấu hình thông tin PayOS để nhận thanh toán",
+  "readOnlyMode": "Chỉ xem - đợt đã",
+  "completed": "hoàn thành",
+  "cancelled": "hủy",
+  "status": {
+    "configured": "Đã Cấu Hình",
+    "notConfigured": "Chưa Cấu Hình"
+  },
+  "success": {
+    "title": "Cấu Hình Thành Công!",
+    "message": "PayOS credentials đã được lưu thành công. Bây giờ bạn có thể bắt đầu nhận thanh toán.",
+    "buttonText": "Tiếp tục quản lý đợt đóng phí"
+  },
+  "setup": {
+    "title": "Thiết Lập PayOS",
+    "description": "Để bắt đầu nhận thanh toán qua PayOS, vui lòng cấu hình API credentials bên dưới.",
+    "buttonText": "Cấu hình PayOS ngay"
+  },
+  "configured": {
+    "title": "PayOS Đã Được Cấu Hình",
+    "line1": "PayOS credentials đã được cấu hình thành công.",
+    "line2": "Bạn có thể cập nhật lại nếu cần thiết.",
+    "updateButton": "Cập nhật cấu hình PayOS"
+  },
+  "copySection": {
+    "title": "Sao chép hoặc dán cấu hình nhanh chóng",
+    "managementTitle": "Quản lý cấu hình",
+    "copyConfig": "Sao chép cấu hình",
+    "pasteConfig": "Dán cấu hình",
+    "copied": "Đã sao chép",
+    "pasted": "Đã dán"
+  },
+  "form": {
+    "clientId": "Client ID",
+    "clientIdPlaceholder": "Nhập Client ID từ PayOS",
+    "apiKey": "API Key", 
+    "apiKeyPlaceholder": "Nhập API Key từ PayOS",
+    "checksumKey": "Checksum Key",
+    "checksumKeyPlaceholder": "Nhập Checksum Key từ PayOS",
+    "credentialsTitle": "API Credentials",
+    "save": "Lưu cấu hình",
+    "saving": "Đang lưu...",
+    "cancel": "Hủy",
+    "copyConfig": "Sao chép cấu hình",
+    "testConnection": "Kiểm tra kết nối"
+  },
+  "validation": {
+    "clientIdRequired": "Client ID là bắt buộc",
+    "apiKeyRequired": "API Key là bắt buộc",
+    "checksumKeyRequired": "Checksum Key là bắt buộc"
+  },
+  "buttons": {
+    "saving": "Đang lưu...",
+    "saveConfig": "Lưu cấu hình",
+    "updateConfig": "Cập nhật cấu hình",
+    "deleteConfig": "Xóa Cấu Hình",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa cấu hình PayOS này? Hành động này không thể hoàn tác."
+  },
+  "errors": {
+    "loadFailed": "Không thể tải cấu hình PayOS",
+    "saveFailed": "Không thể lưu cấu hình PayOS",
+    "copyFailed": "Lỗi: Không thể sao chép dữ liệu cấu hình.",
+    "testFailed": "Kiểm tra kết nối thất bại",
+    "invalidClipboardData": "Dữ liệu trong clipboard không phải là cấu hình PayOS hợp lệ.",
+    "clipboardAccessFailed": "Lỗi: Dữ liệu trong clipboard không phải là định dạng hợp lệ hoặc không thể truy cập.",
+    "deleteFailed": "Không thể xóa cấu hình PayOS. Vui lòng thử lại."
+  },
+  "instructions": {
+    "title": "Hướng dẫn lấy thông tin PayOS",
+    "step1": "1. Đăng nhập vào PayOS Dashboard tại https://payos.vn/",
+    "step2": "2. Vào phần \"Quản lý API\" -> \"Settings\" để lấy các thông tin cần thiết",
+    "step3": "3. Sao chép Client ID, API Key và Checksum Key từ dashboard",
+    "step4": "4. Dán các thông tin này vào form bên trên và nhấn \"Lưu cấu hình\""
+  },
+  "messages": {
+    "copySuccess": "Đã sao chép cấu hình vào clipboard",
+    "saveSuccess": "Cấu hình PayOS đã được lưu thành công",
+    "testSuccess": "Kết nối PayOS thành công"
+  }
+}

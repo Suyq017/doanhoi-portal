@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Trash2, Download, Search, Filter, User, Clock, CheckCircle, AlertTriangle, Plus } from 'lucide-react';
 import { PaymentAssignment, PaymentCampaign } from '../../../types';
 import { UserTablePagination } from '../../../../../shared/components/UserTable/UserTablePagination';
@@ -35,6 +36,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
   feeLevelsCount = 0,
   readOnly = false
 }) => {
+  const { t } = useTranslation('memberAssignments');
   const [filters, setFilters] = useState<AssignmentFilters>({
     search: '',
     status: 'all',
@@ -147,9 +149,9 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'PAID': return 'Đã đóng';
-      case 'OVERDUE': return 'Quá hạn';
-      default: return 'Chờ đóng';
+      case 'PAID': return t('status.paid');
+      case 'OVERDUE': return t('status.overdue');
+      default: return t('status.pending');
     }
   };
 
@@ -200,15 +202,15 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-            Danh Sách Phân Công
+            {t('title')}
             {readOnly && (
               <span className="ml-2 text-orange-600 dark:text-orange-400">
-                (Chỉ xem - đợt đã {campaign.status === 'COMPLETED' ? 'hoàn thành' : 'hủy'})
+                ({t('readOnlyMode', { status: campaign.status === 'COMPLETED' ? t('common:status.completed') : t('common:status.cancelled') })})
               </span>
             )}
           </h3>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Quản lý phân công đóng phí cho từng thành viên
+            {t('subtitle')}
           </p>
         </div>
         
@@ -220,7 +222,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
             }`}
           >
             <Filter className="w-4 h-4" />
-            <span>Bộ lọc</span>
+            <span>{t('filters.label')}</span>
           </button>
           
           {!readOnly && onBulkCreate && (
@@ -228,10 +230,10 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
               onClick={onBulkCreate}
               disabled={loading || feeLevelsCount === 0}
               className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-indigo-500 dark:hover:bg-indigo-600"
-              title={feeLevelsCount === 0 ? 'Cần có ít nhất một mức phí' : ''}
+              title={feeLevelsCount === 0 ? t('warnings.noFeeLevels') : ''}
             >
               <Plus className="inline w-4 h-4 mr-2" />
-              Phân công thành viên
+              {t('buttons.assignMembers')}
             </button>
           )}
           
@@ -240,7 +242,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
             className="flex items-center px-3 py-2 space-x-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"
           >
             <Download className="w-4 h-4" />
-            <span>Xuất Excel</span>
+            <span>{t('buttons.exportExcel')}</span>
           </button>
         </div>
       </div>
@@ -256,10 +258,10 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                Chưa có mức phí nào được thiết lập
+                {t('warnings.noFeeLevelsTitle')}
               </h3>
               <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
-                Vui lòng thiết lập ít nhất một mức phí ở tab "Mức Phí" trước khi tạo assignment.
+                {t('warnings.noFeeLevelsMessage')}
               </p>
             </div>
           </div>
@@ -270,19 +272,19 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <div className="p-4 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
           <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Tổng cộng</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">{t('stats.total')}</div>
         </div>
         <div className="p-4 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
           <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Chờ đóng</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">{t('stats.pending')}</div>
         </div>
         <div className="p-4 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.paid}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Đã đóng</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">{t('stats.paid')}</div>
         </div>
         <div className="p-4 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.overdue}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Quá hạn</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">{t('stats.overdue')}</div>
         </div>
       </div>
 
@@ -293,13 +295,13 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
             {/* Search */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Tìm kiếm
+                {t('filters.search')}
               </label>
               <div className="relative">
                 <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 dark:text-gray-500 left-3 top-1/2" />
                 <input
                   type="text"
-                  placeholder="Tên, Mã sinh viên/cán bộ..."
+                  placeholder={t('filters.searchPlaceholder')}
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
                   className="w-full py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
@@ -310,49 +312,49 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
             {/* Status Filter */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Trạng thái
+                {t('filters.status')}
               </label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
-                <option value="all">Tất cả</option>
-                <option value="PENDING">Chờ đóng</option>
-                <option value="PAID">Đã đóng</option>
-                <option value="OVERDUE">Quá hạn</option>
+                <option value="all">{t('filters.statusOptions.all')}</option>
+                <option value="PENDING">{t('filters.statusOptions.pending')}</option>
+                <option value="PAID">{t('filters.statusOptions.paid')}</option>
+                <option value="OVERDUE">{t('filters.statusOptions.overdue')}</option>
               </select>
             </div>
 
             {/* Sort By */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Sắp xếp theo
+                {t('filters.sortBy')}
               </label>
               <select
                 value={filters.sortBy}
                 onChange={(e) => handleFilterChange('sortBy', e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
-                <option value="createdAt">Ngày tạo</option>
-                <option value="user">Tên thành viên</option>
-                <option value="amount">Số tiền</option>
-                <option value="status">Trạng thái</option>
+                <option value="createdAt">{t('filters.sortOptions.createdAt')}</option>
+                <option value="user">{t('filters.sortOptions.user')}</option>
+                <option value="amount">{t('filters.sortOptions.amount')}</option>
+                <option value="status">{t('filters.sortOptions.status')}</option>
               </select>
             </div>
 
             {/* Sort Order */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Thứ tự
+                {t('filters.sortOrder')}
               </label>
               <select
                 value={filters.sortOrder}
                 onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
-                <option value="desc">Giảm dần</option>
-                <option value="asc">Tăng dần</option>
+                <option value="desc">{t('filters.sortOrderOptions.desc')}</option>
+                <option value="asc">{t('filters.sortOrderOptions.asc')}</option>
               </select>
             </div>
           </div>
@@ -362,7 +364,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
               onClick={clearFilters}
               className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
             >
-              Xóa bộ lọc
+              {t('filters.clearFilters')}
             </button>
           </div>
         </div>
@@ -378,10 +380,10 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
           <div className="p-12 text-center">
             <User className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
             <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
-              Chưa phân công thành viên nào
+              {t('assignmentsList.noAssignments')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
-              {filters.search || filters.status !== 'all' ? 'Không có phân công nào phù hợp với bộ lọc' : 'Chưa có thành viên nào được phân công'}
+              {filters.search || filters.status !== 'all' ? t('assignmentsList.noMatchingAssignments') : t('assignmentsList.noAssignmentsYet')}
             </p>
           </div>
         ) : (
@@ -389,12 +391,12 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
             {/* Table Header */}
             <div className="px-6 py-3 border-b bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
               <div className="grid grid-cols-6 gap-4 text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                <div>Thành viên</div>
-                <div>Mức phí</div>
-                <div>Số tiền</div>
-                <div>Trạng thái</div>
-                <div>Ngày tạo</div>
-                <div className="text-right">Thao tác</div>
+                <div>{t('assignmentsList.tableHeaders.member')}</div>
+                <div>{t('assignmentsList.tableHeaders.feeLevel')}</div>
+                <div>{t('assignmentsList.tableHeaders.amount')}</div>
+                <div>{t('assignmentsList.tableHeaders.status')}</div>
+                <div>{t('assignmentsList.tableHeaders.createdDate')}</div>
+                <div className="text-right">{t('assignmentsList.tableHeaders.actions')}</div>
               </div>
             </div>
 
@@ -425,7 +427,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
                           </div>
                         </div>
                       ) : (
-                        <span className="text-gray-500 dark:text-gray-400">Tùy chỉnh</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t('assignmentsList.custom')}</span>
                       )}
                     </div>
 
@@ -453,7 +455,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
                         <button
                           onClick={() => onDeleteAssignment(assignment.id)}
                           className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                          title="Xóa"
+                          title={t('assignmentsList.deleteButton')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -464,7 +466,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
                   {/* Notes */}
                   {assignment.note && (
                     <div className="mt-2 text-sm text-gray-600">
-                      <span className="font-medium">Ghi chú:</span> {assignment.note}
+                      <span className="font-medium">{t('assignmentsList.note')}:</span> {assignment.note}
                     </div>
                   )}
                 </div>

@@ -83,7 +83,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
 
   // Create organization options for SearchableCombobox
   const organizationOptions = [
-    { value: '', label: 'Tất cả tổ chức' },
+    { value: '', label: t('listComponent.allOrganizations') },
     ...organizations.map(org => ({
       value: org.id,
       label: org.name
@@ -117,7 +117,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
       console.error('Error loading campaigns:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load campaigns';
       setError(errorMessage);
-      showError(`Không thể tải danh sách đợt thu phí: ${errorMessage}`);
+      showError(t('messages.errorLoading') + `: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -127,11 +127,11 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
     // Show confirmation dialog for activate action
     if (action === 'activate') {
       const shouldActivate = await showConfirm(
-        'Kích hoạt đợt thu phí',
-        'Bạn có chắc chắn muốn kích hoạt đợt thu phí này? Sau khi kích hoạt, thành viên sẽ có thể thực hiện thanh toán.',
+        t('confirmations.activate.title'),
+        t('confirmations.activate.message'),
         {
-          confirmText: 'Kích hoạt',
-          cancelText: 'Hủy',
+          confirmText: t('confirmations.activate.confirm'),
+          cancelText: t('confirmations.activate.cancel'),
           variant: 'warning'
         }
       );
@@ -142,11 +142,11 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
     // Show confirmation dialog for complete action
     if (action === 'complete') {
       const shouldComplete = await showConfirm(
-        'Hoàn thành đợt thu phí',
-        'Bạn có chắc chắn muốn hoàn thành đợt thu phí này? Sau khi hoàn thành, đợt thu phí sẽ kết thúc và không thể thay đổi.',
+        t('confirmations.complete.title'),
+        t('confirmations.complete.message'),
         {
-          confirmText: 'Hoàn thành',
-          cancelText: 'Hủy',
+          confirmText: t('confirmations.complete.confirm'),
+          cancelText: t('confirmations.complete.cancel'),
           variant: 'info'
         }
       );
@@ -157,11 +157,11 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
     // Show confirmation dialog for cancel action
     if (action === 'cancel') {
       const shouldCancel = await showConfirm(
-        'Hủy đợt thu phí',
-        'Bạn có chắc chắn muốn hủy đợt thu phí này? Sau khi hủy, thành viên sẽ không thể thực hiện thanh toán và đợt thu phí sẽ kết thúc.',
+        t('confirmations.cancelCampaign.title'),
+        t('confirmations.cancelCampaign.message'),
         {
-          confirmText: 'Hủy đợt thu phí',
-          cancelText: 'Không hủy',
+          confirmText: t('confirmations.cancelCampaign.confirm'),
+          cancelText: t('confirmations.cancelCampaign.cancel'),
           variant: 'danger'
         }
       );
@@ -195,18 +195,21 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
 
         // Show success toast
         const actionMessages = {
-          activate: 'Đợt thu phí đã được kích hoạt thành công!',
-          complete: 'Đợt thu phí đã được hoàn thành thành công!',
-          cancel: 'Đợt thu phí đã được hủy thành công!'
+          activate: t('messages.activateSuccess'),
+          complete: t('messages.completeSuccess'),
+          cancel: t('messages.cancelSuccess')
         };
         showSuccess(actionMessages[action]);
       } else {
-        showError('Không thể cập nhật trạng thái đợt thu phí. Vui lòng thử lại.');
+        showError(t('messages.errorStatusUpdate'));
       }
     } catch (err) {
       console.error('Error in handleStatusChange:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update campaign status';
-      showError(`Không thể ${action === 'activate' ? 'kích hoạt' : action === 'complete' ? 'hoàn thành' : 'hủy'}: ${errorMessage}`);
+      const actionText = action === 'activate' ? t('actions.activate').toLowerCase() : 
+                        action === 'complete' ? t('actions.complete').toLowerCase() : 
+                        t('actions.cancel').toLowerCase();
+      showError(t('messages.errorActivate', { error: errorMessage }).replace('kích hoạt', actionText));
 
       // Reload campaigns to ensure UI is in sync
       await loadCampaigns();
@@ -221,11 +224,11 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
 
     // Use custom confirm dialog
     const shouldDelete = await showConfirm(
-      'Xóa đợt thu phí - Hành động này không thể hoàn tác!',
-      ` Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?`,
+      t('confirmations.delete.title'),
+      t('confirmations.delete.message'),
       {
-        confirmText: 'Xóa',
-        cancelText: 'Hủy',
+        confirmText: t('confirmations.delete.confirm'),
+        cancelText: t('confirmations.delete.cancel'),
         variant: 'danger'
       }
     );
@@ -235,11 +238,11 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
     try {
       await paymentCampaignService.deletePaymentCampaign(id);
       setCampaigns(prev => prev.filter(campaign => campaign.id !== id));
-      showSuccess('Đợt thu phí đã được xóa thành công!');
+      showSuccess(t('messages.deleteSuccess'));
     } catch (err) {
       console.error('Error in handleDelete:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete campaign';
-      showError(`Không thể xóa đợt thu phí: ${errorMessage}`);
+      showError(t('messages.errorDelete', { error: errorMessage }));
     }
   };
 
@@ -282,7 +285,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
           <div className="text-center">
             <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
-              Đang tải danh sách đợt thu phí...
+              {t('listComponent.loadingList')}
             </p>
           </div>
         </div>
@@ -297,37 +300,37 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Tổ chức
+              {t('listComponent.organization')}
             </label>
             <SearchableCombobox
               value={filters.organizationId || ''}
               onChange={(value) => setFilters(prev => ({ ...prev, organizationId: value || undefined, page: 1 }))}
               options={organizationOptions}
-              placeholder="Chọn tổ chức..."
+              placeholder={t('listComponent.selectOrganization', { defaultValue: 'Chọn tổ chức...' })}
               className="w-full"
             />
           </div>
 
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Trạng thái
+              {t('listComponent.status')}
             </label>
             <select
               value={filters.status || ''}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value as PaymentCampaign['status'] || undefined, page: 1 }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             >
-              <option value="">Tất cả trạng thái</option>
-              <option value="DRAFT">Nháp</option>
-              <option value="ACTIVE">Đang hoạt động</option>
-              <option value="COMPLETED">Hoàn thành</option>
-              <option value="CANCELLED">Đã hủy</option>
+              <option value="">{t('listComponent.allStatus')}</option>
+              <option value="DRAFT">{t('listComponent.draft')}</option>
+              <option value="ACTIVE">{t('listComponent.active')}</option>
+              <option value="COMPLETED">{t('listComponent.completed')}</option>
+              <option value="CANCELLED">{t('listComponent.cancelled')}</option>
             </select>
           </div>
 
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Từ ngày
+              {t('listComponent.fromDate')}
             </label>
             <input
               type="date"
@@ -339,7 +342,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
 
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Đến ngày
+              {t('listComponent.toDate')}
             </label>
             <input
               type="date"
@@ -378,23 +381,23 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  Đợt đóng phí
+                  {t('listComponent.campaignColumn')}
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  Tổ chức
+                  {t('listComponent.organizationColumn')}
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  Thời gian
+                  {t('listComponent.timeframeColumn')}
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  Trạng thái
+                  {t('listComponent.statusColumn')}
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                  Người tạo
+                  {t('listComponent.createdByColumn')}
                 </th>
                 {showActionColumn && (
                   <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">
-                    Thao tác
+                    {t('listComponent.actionsColumn')}
                   </th>
                 )}
               </tr>
@@ -422,10 +425,10 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                     <div className="flex items-center">
                       {getStatusIcon(campaign.status)}
                       <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(campaign.status)}`}>
-                        {campaign.status === 'DRAFT' && 'Nháp'}
-                        {campaign.status === 'ACTIVE' && 'Đang hoạt động'}
-                        {campaign.status === 'COMPLETED' && 'Hoàn thành'}
-                        {campaign.status === 'CANCELLED' && 'Đã hủy'}
+                        {campaign.status === 'DRAFT' && t('listComponent.draft')}
+                        {campaign.status === 'ACTIVE' && t('listComponent.active')}
+                        {campaign.status === 'COMPLETED' && t('listComponent.completed')}
+                        {campaign.status === 'CANCELLED' && t('listComponent.cancelled')}
                       </span>
                     </div>
                   </td>
@@ -442,7 +445,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                           <Link
                             to={`/admin/payment-campaigns/${campaign.id}`}
                             className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                            title="Xem chi tiết"
+                            title={t('listComponent.viewDetail')}
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
@@ -453,7 +456,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                               <button
                                 onClick={() => onEditCampaign?.(campaign)}
                                 className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
-                                title="Chỉnh sửa"
+                                title={t('listComponent.edit')}
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
@@ -462,7 +465,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                               <button
                                 onClick={() => handleDelete(campaign.id)}
                                 className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                title="Xóa"
+                                title={t('listComponent.delete')}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -476,7 +479,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                                 onClick={() => handleStatusChange(campaign.id, 'complete')}
                                 disabled={actionLoading === `${campaign.id}-complete`}
                                 className="text-blue-600 hover:text-blue-900 disabled:opacity-50 dark:text-blue-400 dark:hover:text-blue-300"
-                                title="Hoàn thành"
+                                title={t('listComponent.complete')}
                               >
                                 <CheckCircle className="w-4 h-4" />
                               </button>
@@ -486,7 +489,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                                 onClick={() => handleStatusChange(campaign.id, 'cancel')}
                                 disabled={actionLoading === `${campaign.id}-cancel`}
                                 className="text-red-600 hover:text-red-900 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
-                                title="Hủy"
+                                title={t('listComponent.cancel')}
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -499,7 +502,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                               <button
                                 onClick={() => handleDelete(campaign.id)}
                                 className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                title="Xóa đợt thu phí"
+                                title={t('listComponent.deleteTooltip')}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -528,7 +531,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
       {/* Empty State */}
       {campaigns.length === 0 && !loading && (
         <div className="py-12 text-center">
-          <div className="mb-4 text-gray-500 dark:text-gray-400">Không có đợt đóng phí nào</div>
+          <div className="mb-4 text-gray-500 dark:text-gray-400">{t('listComponent.noCampaigns')}</div>
         </div>
       )}
 

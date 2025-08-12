@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Search, Building, X, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Organization as SharedOrganization } from '../../../shared/types/organization';
 
 // Extended Organization type with level for role assignment components
@@ -26,6 +27,7 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
     placeholder,
     className = '',
 }) => {
+    const { t } = useTranslation(['users']);
 
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -228,16 +230,19 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 flex-1 flex flex-col">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                                Tổ chức đã chọn ({selectedOrganizations.length})
+                                {t('users:labels.selectedOrganizations', { 
+                                    count: selectedOrganizations.length, 
+                                    defaultValue: `Tổ chức đã chọn (${selectedOrganizations.length})` 
+                                })}
                             </span>
                             {!disabled && (
                                 <button
                                     type="button"
                                     onClick={() => onOrganizationChange([])}
                                     className="text-xs text-blue-500 hover:text-red-600 transition-colors"
-                                    title="Xóa tất cả tổ chức"
+                                    title={t('users:labels.removeAllOrganizations', { defaultValue: 'Xóa tất cả tổ chức' })}
                                 >
-                                    Xóa tất cả
+                                    {t('users:labels.removeAll', { defaultValue: 'Xóa tất cả' })}
                                 </button>
                             )}
                         </div>
@@ -257,7 +262,7 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                                             type="button"
                                             onClick={() => handleOrganizationRemove(org.id)}
                                             className="ml-1 p-0.5 text-blue-200 hover:text-white hover:bg-blue-700 rounded-full transition-all duration-150"
-                                            title="Xóa tổ chức"
+                                            title={t('users:labels.removeOrganization', { defaultValue: 'Xóa tổ chức' })}
                                         >
                                             <X className="w-3 h-3" />
                                         </button>
@@ -271,10 +276,10 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                         <div className="text-center">
                             <Building className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Người dùng chưa thuộc tổ chức nào
+                                {t('users:labels.noOrganizationsAssigned', { defaultValue: 'Người dùng chưa thuộc tổ chức nào' })}
                             </p>
                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                Sử dụng ô tìm kiếm bên dưới để thêm tổ chức
+                                {t('users:labels.searchOrganizationsHelp', { defaultValue: 'Sử dụng ô tìm kiếm bên dưới để thêm tổ chức' })}
                             </p>
                         </div>
                     </div>
@@ -290,7 +295,7 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                     onChange={handleInputChange}
                     onClick={handleInputClick}
                     onKeyDown={handleKeyDown}
-                    placeholder={placeholder || "Tìm kiếm và thêm tổ chức..."}
+                    placeholder={placeholder || t('users:labels.searchAndAddOrganizations', { defaultValue: 'Tìm kiếm và thêm tổ chức...' })}
                     disabled={disabled}
                     className="block w-full px-4 py-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200 placeholder-gray-400 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
                     autoComplete="off"
@@ -368,10 +373,13 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                             <Search className="w-5 h-5 mx-auto mb-2 text-gray-400" />
                             <p className="text-sm">
                                 {searchTerm
-                                    ? `Không tìm thấy tổ chức "${searchTerm}"`
+                                    ? t('users:labels.organizationNotFound', { 
+                                        searchTerm, 
+                                        defaultValue: `Không tìm thấy tổ chức "${searchTerm}"` 
+                                    })
                                     : availableOptions.length === 0
-                                        ? 'Tất cả tổ chức đã được thêm'
-                                        : 'Không có tổ chức nào'
+                                        ? t('users:labels.allOrganizationsAdded', { defaultValue: 'Tất cả tổ chức đã được thêm' })
+                                        : t('users:labels.noOrganizations', { defaultValue: 'Không có tổ chức nào' })
                                 }
                             </p>
                         </div>

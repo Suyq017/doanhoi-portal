@@ -1,6 +1,7 @@
 {
   "title": "Quản lý Đơn vị",
   "titlePhonetic": "Quản lý Đơn vị",
+  "entityName": "đơn vị",
   "subtitle": "Quản lý thông tin các đơn vị, phòng ban trong trường",
   "subtitlePhonetic": "Quản lý thông tin các đơn vị",
   "titles": {

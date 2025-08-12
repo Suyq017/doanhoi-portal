@@ -1,0 +1,45 @@
+{
+  "title": "Cấu Hình PayOS",
+  "subtitle": "Cài đặt thông tin xác thực PayOS để xử lý thanh toán",
+  "notConfigured": "Chưa cấu hình PayOS",
+  "configured": "PayOS đã được cấu hình",
+  
+  "validation": {
+    "clientIdRequired": "Client ID là bắt buộc",
+    "apiKeyRequired": "API Key là bắt buộc", 
+    "checksumKeyRequired": "Checksum Key là bắt buộc"
+  },
+
+  "errors": {
+    "copyFailed": "Lỗi: Không thể sao chép dữ liệu cấu hình."
+  },
+
+  "copySection": {
+    "title": "Sao chép và dán cấu hình giữa các đợt thu phí",
+    "copied": "Đã sao chép",
+    "copyConfig": "Sao chép cấu hình"
+  },
+
+  "form": {
+    "clientId": "Client ID",
+    "clientIdPlaceholder": "Nhập Client ID từ PayOS",
+    "apiKey": "API Key", 
+    "apiKeyPlaceholder": "Nhập API Key từ PayOS",
+    "checksumKey": "Checksum Key",
+    "checksumKeyPlaceholder": "Nhập Checksum Key từ PayOS"
+  },
+
+  "buttons": {
+    "saving": "Đang Lưu...",
+    "saveConfig": "Lưu Cấu Hình",
+    "updateConfig": "Cập Nhật Cấu Hình"
+  },
+
+  "instructions": {
+    "title": "Hướng Dẫn Lấy API Credentials",
+    "step1": "1. Đăng nhập vào PayOS Dashboard",
+    "step2": "2. Vào phần Cài đặt → API Keys",
+    "step3": "3. Copy các thông tin: Client ID, API Key, và Checksum Key",
+    "step4": "4. Paste vào form này và lưu lại"
+  }
+}

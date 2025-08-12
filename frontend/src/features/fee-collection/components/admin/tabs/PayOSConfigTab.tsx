@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, AlertCircle, CheckCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import PayOSConfigForm from '../payos/PayOSConfigForm';
 import { PaymentCampaign } from '../../../types';
 import { payosConfigService, PayOSConfig, CreatePayOSConfigRequest, UpdatePayOSConfigRequest } from '@/shared/services/fee-collection-service/payosConfigService';
@@ -22,6 +23,7 @@ interface PayOSConfigTabProps {
 }
 
 const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDelete }) => {
+  const { t } = useTranslation('payosConfig');
   const [config, setConfig] = useState<PayOSConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -129,28 +131,28 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-            Cấu Hình PayOS
+            {t('title')}
             {readOnly && (
               <span className="ml-2 text-orange-600 dark:text-orange-400">
-                (Chỉ xem - đợt đã {campaign.status === 'COMPLETED' ? 'hoàn thành' : 'hủy'})
+                ({t('readOnlyMode')} {campaign.status === 'COMPLETED' ? t('completed') : t('cancelled')})
               </span>
             )}
           </h3>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Thiết lập API credentials PayOS cho đợt thu phí "{campaign.name}"
+            {t('subtitle')} "{campaign.name}"
           </p>
         </div>
         <div className="flex items-center space-x-2">
           {config?.isActive && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
               <CheckCircle className="w-3 h-3 mr-1" />
-              Đã Cấu Hình
+              {t('status.configured')}
             </span>
           )}
           {!config && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
               <AlertCircle className="w-3 h-3 mr-1" />
-              Chưa Cấu Hình
+              {t('status.notConfigured')}
             </span>
           )}
         </div>
@@ -165,11 +167,11 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
-                Cấu Hình Thành Công!
+                {t('success.title')}
               </h3>
               <div className="mt-2 text-sm text-green-700 dark:text-green-300">
                 <p>
-                  PayOS credentials đã được lưu thành công. Bây giờ bạn có thể bắt đầu nhận thanh toán.
+                  {t('success.message')}
                 </p>
               </div>
             </div>
@@ -186,11 +188,11 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                PayOS Chưa Được Cấu Hình
+                {t('setup.title')}
               </h3>
               <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
                 <p>
-                  Để bắt đầu nhận thanh toán qua PayOS, vui lòng cấu hình API credentials bên dưới.
+                  {t('setup.description')}
                 </p>
               </div>
             </div>
@@ -204,12 +206,11 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
-                PayOS Đã Được Cấu Hình
+                {t('configured.title')}
               </h3>
               <div className="mt-2 text-sm text-green-700 dark:text-green-300">
                 <p>
-                  PayOS credentials đã được cấu hình thành công. 
-                  Bạn có thể cập nhật lại nếu cần thiết.
+                  {t('configured.line1')} {t('configured.line2')}
                 </p>
               </div>
             </div>
@@ -222,7 +223,7 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
         <div className="flex items-center mb-4">
           <Settings className="w-5 h-5 mr-2 text-gray-400 dark:text-gray-500" />
           <h4 className="font-medium text-gray-900 text-md dark:text-white">
-            API Credentials
+            {t('form.credentialsTitle')}
           </h4>
         </div>
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Users, DollarSign, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 
 interface AssignmentStatisticsProps {
@@ -22,6 +23,8 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
   campaignEndDate,
   loading = false
 }) => {
+  const { t } = useTranslation('memberAssignments');
+  
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -57,28 +60,28 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
   const getCollectionStatus = () => {
     if (isOverdue) {
       return {
-        text: `Đã quá hạn ${Math.abs(daysUntilDue)} ngày`,
+        text: t('statistics.overdueDays', { days: Math.abs(daysUntilDue) }),
         color: 'text-red-600 dark:text-red-400',
         bgColor: 'bg-red-50 dark:bg-red-900',
         borderColor: 'border-red-200 dark:border-red-800'
       };
     } else if (daysUntilDue <= 3) {
       return {
-        text: `Sắp hết hạn (còn ${daysUntilDue} ngày)`,
+        text: t('statistics.expiringSoon', { days: daysUntilDue }),
         color: 'text-orange-600 dark:text-orange-400',
         bgColor: 'bg-orange-50 dark:bg-orange-900',
         borderColor: 'border-orange-200 dark:border-orange-800'
       };
     } else if (daysUntilDue <= 7) {
       return {
-        text: `Còn ${daysUntilDue} ngày`,
+        text: t('statistics.daysRemaining', { days: daysUntilDue }),
         color: 'text-yellow-600 dark:text-yellow-400',
         bgColor: 'bg-yellow-50 dark:bg-yellow-900',
         borderColor: 'border-yellow-200 dark:border-yellow-800'
       };
     } else {
       return {
-        text: `Còn ${daysUntilDue} ngày`,
+        text: t('statistics.daysRemaining', { days: daysUntilDue }),
         color: 'text-green-600 dark:text-green-400',
         bgColor: 'bg-green-50 dark:bg-green-900',
         borderColor: 'border-green-200 dark:border-green-800'
@@ -109,10 +112,10 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="flex items-center text-lg font-medium text-gray-900 dark:text-white">
-            Thống Kê phân công đóng phí
+            {t('statistics.title')}
           </h3>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Tổng quan về tình hình thu phí và thanh toán
+            {t('statistics.subtitle')}
           </p>
         </div>
       </div>
@@ -123,10 +126,10 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
           <Clock className={`w-5 h-5 ${collectionStatus.color}`} />
           <div>
             <h4 className={`text-sm font-medium ${collectionStatus.color}`}>
-              Trạng Thái Thu Phí
+              {t('statistics.collectionStatus')}
             </h4>
             <p className={`text-sm ${collectionStatus.color} mt-1`}>
-              Hạn thanh toán: {formatDate(campaignEndDate)} - {collectionStatus.text}
+              {t('statistics.dueDate', { date: formatDate(campaignEndDate) })} - {collectionStatus.text}
             </p>
           </div>
         </div>
@@ -141,7 +144,7 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
               <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng Thành Viên Đóng Phí</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('statistics.totalMembers')}</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalAssignments}</p>
             </div>
           </div>
@@ -154,7 +157,7 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
               <DollarSign className="w-6 h-6 text-orange-600 dark:text-orange-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Chưa Thu</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('statistics.uncollected')}</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatAmount(stats.totalAmount - stats.totalPaidAmount)}</p>
             </div>
           </div>
@@ -167,7 +170,7 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
               <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Đã Thu</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('statistics.collected')}</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">{formatAmount(stats.totalPaidAmount)}</p>
             </div>
           </div>
@@ -180,7 +183,7 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
               <DollarSign className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng Thu Dự Kiến</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('statistics.totalExpected')}</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">{formatAmount(stats.totalAmount)}</p>
             </div>
           </div>
@@ -189,7 +192,7 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
 
       {/* Status Breakdown */}
       <div className="p-6 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
-        <h4 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">Phân Tích Trạng Thái</h4>
+        <h4 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">{t('statistics.statusAnalysis')}</h4>
         
         <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
           {/* Pending */}
@@ -198,7 +201,7 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
               <Clock className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pendingCount}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Chờ đóng</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{t('status.pending')}</div>
           </div>
 
           {/* Paid */}
@@ -207,7 +210,7 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
               <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.paidCount}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Đã đóng</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{t('status.paid')}</div>
           </div>
 
           {/* Overdue */}
@@ -216,14 +219,14 @@ const AssignmentStatistics: React.FC<AssignmentStatisticsProps> = ({
               <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
             </div>
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.overdueCount}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Quá hạn</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{t('status.overdue')}</div>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Tiến độ thu phí</span>
+            <span className="text-gray-600 dark:text-gray-400">{t('statistics.collectionProgress')}</span>
             <span className="font-medium text-gray-900 dark:text-white">{formatPercentage(stats.paymentRate)}</span>
           </div>
           <div className="w-full h-3 bg-gray-200 rounded-full dark:bg-gray-700">
