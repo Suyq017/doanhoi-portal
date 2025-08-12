@@ -146,7 +146,7 @@
             "departments": "Department Management",
             "classes": "Class Management",
             "permissions": "Permission Management",
-            "payments": "Payment Management",
+            "payments": "Fee Collection Management",
             "myPayments": "My Payments",
             "dashboardShort": "Dashboard",
             "usersShort": "Users",

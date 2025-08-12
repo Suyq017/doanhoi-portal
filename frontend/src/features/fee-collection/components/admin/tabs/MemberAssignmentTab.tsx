@@ -186,7 +186,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
                   }}
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
-                  <span className="sr-only">Đóng</span>
+                  <span className="sr-only">{t('memberAssignmentTab:close')}</span>
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -196,8 +196,8 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Member Selection */}
                 <div>
-                  <h4 className="mb-3 font-medium text-gray-900 text-md dark:text-white">
-                    Chọn Thành Viên
+                <h4 className="mb-3 font-medium text-gray-900 text-md dark:text-white">
+                    {t('memberAssignmentTab:selectMembers')}
                   </h4>
                   <MemberSelector
                     organizationId={campaign.organizationId}
@@ -209,7 +209,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
                 {/* Assignment Form */}
                 <div>
                   <h4 className="mb-3 font-medium text-gray-900 text-md dark:text-white">
-                    Thiết Lập Mức Phí
+                    {t('memberAssignmentTab:setupFeeLevel')}
                   </h4>
                   <AssignmentBulkForm
                     campaignId={campaign.id}

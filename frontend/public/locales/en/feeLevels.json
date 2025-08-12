@@ -58,6 +58,7 @@
     "statistics": "Fee Collection Progress Tracking",
     "feeLevels": "Fee Levels",
     "memberAssignments": "Member Assignments",
-    "payosConfig": "PayOS Configuration"
+    "payosConfig": "PayOS Configuration",
+    "paymentHistory": "Transactions History"
   }
 }

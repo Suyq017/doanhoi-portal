@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Users, UserCheck } from 'lucide-react';
 import { organizationService } from '@/shared/services/organizationService';
 import SearchableCombobox from '@/shared/components/SearchableCombobox';
@@ -36,6 +37,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
   organizationId,
   disabled = false
 }) => {
+  const { t } = useTranslation('memberSelector');
   const [searchTerm, setSearchTerm] = useState('');
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [members, setMembers] = useState<OrganizationMember[]>([]);
@@ -96,7 +98,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
           name: mainOrg.name,
           type: mainOrg.type,
           code: mainOrg.code,
-          displayName: `${mainOrg.name} (Tổ chức gốc)` // Mark as root organization
+          displayName: `${mainOrg.name} (${t('rootOrganization')})` // Mark as root organization
         }
       ];
 
@@ -144,12 +146,12 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
       setError(null);
 
       const response = await organizationService.getOrganizationMembers(orgId, page, MEMBERS_PER_PAGE);
-      const membersList = response.members.map(userOrg => ({
-        id: userOrg.user.id,
-        familyName: userOrg.user.familyName,
-        givenName: userOrg.user.givenName,
-        email: userOrg.user.email,
-        code: userOrg.user.code,
+      const membersList = response.members.map((userOrg: any) => ({
+        id: userOrg.user?.id || userOrg.id,
+        familyName: userOrg.user?.familyName || userOrg.familyName,
+        givenName: userOrg.user?.givenName || userOrg.givenName,
+        email: userOrg.user?.email || userOrg.email,
+        code: userOrg.user?.code || userOrg.code,
         organization: {
           id: userOrg.organization?.id || orgId,
           name: userOrg.organization?.name || 'Unknown Organization'
@@ -226,9 +228,9 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
       {/* Organization Selector - Combo Box */}
       <div className="border rounded-lg dark:border-gray-700">
         <div className="px-4 py-3 border-b bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
-          <h4 className="text-sm font-medium text-gray-900 dark:text-white">Chọn Tổ Chức</h4>
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white">{t('selectOrganization')}</h4>
           <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-            Chọn tổ chức để hiển thị danh sách thành viên
+            {t('selectOrganizationDescription')}
           </p>
         </div>
 
@@ -240,12 +242,12 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
               value: org.id,
               label: org.displayName
             }))}
-            placeholder="Chọn tổ chức..."
+            placeholder={t('selectOrganizationPlaceholder')}
             disabled={loadingOrganizations}
             className="w-full"
           />
           {loadingOrganizations && (
-            <p className="mt-2 text-xs text-gray-500">Đang tải danh sách tổ chức...</p>
+            <p className="mt-2 text-xs text-gray-500">{t('loadingOrganizations')}</p>
           )}
         </div>
       </div>
@@ -255,9 +257,9 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
         <div className="border rounded-lg dark:border-gray-700">
           <div className="px-4 py-3 border-b bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-gray-900 dark:text-white">Danh Sách Thành Viên</h4>
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white">{t('membersList')}</h4>
               <span className="text-xs text-gray-600 dark:text-gray-400">
-                {totalMembers} thành viên
+                {totalMembers} {t('membersCount')}
               </span>
             </div>
 
@@ -266,7 +268,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
               <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
               <input
                 type="text"
-                placeholder="Tìm kiếm thành viên..."
+                placeholder={t('searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full py-2 pl-10 pr-4 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:placeholder-gray-400"
@@ -282,10 +284,10 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
                   disabled={disabled}
                   className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50 dark:text-blue-400 dark:hover:text-blue-300"
                 >
-                  {getSelectedCountInFiltered() === filteredMembers.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                  {getSelectedCountInFiltered() === filteredMembers.length ? t('deselectAll') : t('selectAll')}
                 </button>
                 <span className="text-xs text-gray-600 dark:text-gray-400">
-                  Đã chọn: {getSelectedCountInFiltered()}/{filteredMembers.length}
+                  {t('selected')}: {getSelectedCountInFiltered()}/{filteredMembers.length}
                 </span>
               </div>
             )}
@@ -295,17 +297,17 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
             {loadingMembers ? (
               <div className="flex items-center justify-center p-8">
                 <div className="w-6 h-6 border-b-2 border-blue-600 rounded-full animate-spin"></div>
-                <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">Đang tải thành viên...</span>
+                <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">{t('loadingMembers')}</span>
               </div>
             ) : error ? (
               <div className="p-8 text-center">
-                <p className="text-sm text-red-600 dark:text-red-400">Lỗi: {error}</p>
+                <p className="text-sm text-red-600 dark:text-red-400">{t('error')}: {error}</p>
               </div>
             ) : filteredMembers.length === 0 ? (
               <div className="p-8 text-center">
                 <Users className="w-12 h-12 mx-auto mb-2 text-gray-400" />
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {searchTerm ? 'Không tìm thấy thành viên phù hợp' : 'Không có thành viên'}
+                  {searchTerm ? t('noMembersFound') : t('noMembersInOrganization')}
                 </p>
               </div>
             ) : (
@@ -347,7 +349,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                Trang {currentPage} / {totalPages} • Tổng {totalMembers} thành viên
+                {t('page')} {currentPage} / {totalPages} • {t('totalMembers')} {totalMembers} {t('membersCount')}
               </div>
               <div className="flex space-x-2">
                 <button
@@ -355,14 +357,14 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
                   disabled={currentPage <= 1 || loadingMembers}
                   className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-600"
                 >
-                  Trước
+                  ←
                 </button>
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage >= totalPages || loadingMembers}
                   className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-600"
                 >
-                  Sau
+                  →
                 </button>
               </div>
             </div>
@@ -373,14 +375,14 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
             <div className="px-4 py-3 border-t bg-blue-50 dark:bg-blue-900 dark:border-blue-800">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-blue-900 dark:text-blue-200">
-                  Đã chọn {selectedMemberIds.length} thành viên
+                  {t('selected')} {selectedMemberIds.length} {t('membersCount')}
                 </div>
                 <button
                   onClick={() => onMemberSelectionChange([])}
                   disabled={disabled}
                   className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50 dark:text-blue-400 dark:hover:text-blue-300"
                 >
-                  Bỏ chọn tất cả
+                  {t('deselectAll')}
                 </button>
               </div>
             </div>

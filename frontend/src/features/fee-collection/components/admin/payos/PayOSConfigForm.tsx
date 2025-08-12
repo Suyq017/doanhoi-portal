@@ -443,19 +443,6 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
           </div>
         )}
       </form>
-
-      {/* Helper Text */}
-      <div className="p-4 border border-blue-200 rounded-md bg-blue-50 dark:bg-blue-900 dark:border-blue-800">
-        <h4 className="mb-2 text-sm font-medium text-blue-900 dark:text-blue-200">
-          {t('instructions.title')}
-        </h4>
-        <div className="space-y-1 text-sm text-blue-700 dark:text-blue-300">
-          <p>{t('instructions.step1')}</p>
-          <p>{t('instructions.step2')}</p>
-          <p>{t('instructions.step3')}</p>
-          <p>{t('instructions.step4')}</p>
-        </div>
-      </div>
     </div>
   );
 };

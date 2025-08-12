@@ -31,7 +31,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
     },
     {
       id: 'payment-history',
-      label: 'Lịch sử thu phí',
+      label: t('feeLevels:tabs.paymentHistory', { defaultValue: 'Lịch sử thanh toán' }),
       icon: History
     },
     {

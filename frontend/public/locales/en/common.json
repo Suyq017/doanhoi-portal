@@ -17,8 +17,8 @@
     "classesPhonetic": "Classes",
     "permissions": "Permissions",
     "permissionsPhonetic": "Permissions",
-    "paymentAdmin": "Payment Management",
-    "paymentAdminPhonetic": "Payment Management",
+    "paymentAdmin": "Fee Collection Management",
+    "paymentAdminPhonetic": "Fee Collection Management",
     "myPayments": "My Payments",
     "myPaymentsPhonetic": "My Payments"
   },

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, User, CheckCircle, XCircle } from 'lucide-react';
 import { PaymentCampaign } from '../../../types';
 import { UserTablePagination } from '../../../../../shared/components/UserTable/UserTablePagination';
+import { useTranslation } from 'react-i18next';
 
 interface PaymentHistory {
   id: string;
@@ -37,6 +38,7 @@ interface PaymentHistoryFilters {
 }
 
 const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
+  const { t } = useTranslation(['paymentHistory', 'common']);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -97,6 +99,13 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
     return new Date(dateString).toLocaleString('vi-VN');
   };
 
+  const getDisplayDate = (history: PaymentHistory) => {
+    if (history.status === 'CANCELLED') {
+      return formatDate(history.created_at);
+    }
+    return formatDate(history.paid_at);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'PAID':
@@ -110,9 +119,9 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'PAID': return 'Đã thanh toán';
-      case 'CANCELLED': return 'Đã hủy';
-      default: return 'Đã thanh toán';
+      case 'PAID': return t('paymentHistory:status.paid');
+      case 'CANCELLED': return t('paymentHistory:status.cancelled');
+      default: return t('paymentHistory:status.paid');
     }
   };
 
@@ -150,10 +159,10 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-            Lịch sử thu phí
+            {t('paymentHistory:title')}
           </h3>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Theo dõi lịch sử giao dịch thanh toán của đợt thu phí
+            {t('paymentHistory:description')}
           </p>
         </div>
         
@@ -165,7 +174,7 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
             }`}
           >
             <Filter className="w-4 h-4 mr-2" />
-            Bộ lọc
+            {t('paymentHistory:filters.title')}
           </button>
         </div>
       </div>
@@ -177,13 +186,13 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
             {/* Search */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Tìm kiếm
+                {t('paymentHistory:filters.search')}
               </label>
               <div className="relative">
                 <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
                 <input
                   type="text"
-                  placeholder="Họ tên, mã sinh viên, mã giao dịch..."
+                  placeholder={t('paymentHistory:filters.searchPlaceholder')}
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
                   className="w-full py-2 pl-10 pr-3 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -194,16 +203,16 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
             {/* Status Filter */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Trạng thái
+                {t('paymentHistory:filters.status')}
               </label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
-                <option value="all">Tất cả</option>
-                <option value="PAID">Đã thanh toán</option>
-                <option value="CANCELLED">Đã hủy</option>
+                <option value="all">{t('paymentHistory:filters.statusOptions.all')}</option>
+                <option value="PAID">{t('paymentHistory:filters.statusOptions.paid')}</option>
+                <option value="CANCELLED">{t('paymentHistory:filters.statusOptions.cancelled')}</option>
               </select>
             </div>
 
@@ -213,7 +222,7 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
                 onClick={clearFilters}
                 className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
               >
-                Xóa bộ lọc
+                {t('paymentHistory:filters.clear')}
               </button>
             </div>
           </div>
@@ -230,10 +239,10 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
           <div className="p-12 text-center">
             <User className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
             <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
-              Không có lịch sử thanh toán
+              {t('paymentHistory:empty.title')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
-              {filters.search || filters.status !== 'PAID' ? 'Không có giao dịch nào phù hợp với bộ lọc' : 'Chưa có giao dịch thanh toán nào'}
+              {filters.search || filters.status !== 'PAID' ? t('paymentHistory:empty.noResults') : t('paymentHistory:empty.noPayments')}
             </p>
           </div>
         ) : (
@@ -241,11 +250,11 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
             {/* Table Header */}
             <div className="px-6 py-3 border-b bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
               <div className="grid grid-cols-5 gap-4 text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                <div className="col-span-1">Mã giao dịch</div>
-                <div className="col-span-1">Thành viên</div>
-                <div className="col-span-1">Số tiền đã đóng</div>
-                <div className="col-span-1">Trạng thái</div>
-                <div className="col-span-1">Thời gian đóng phí</div>
+                <div className="col-span-1">{t('paymentHistory:table.orderCode')}</div>
+                <div className="col-span-1">{t('paymentHistory:table.member')}</div>
+                <div className="col-span-1">{t('paymentHistory:table.amount')}</div>
+                <div className="col-span-1">{t('paymentHistory:table.status')}</div>
+                <div className="col-span-1">{t('paymentHistory:table.paymentTime')}</div>
               </div>
             </div>
 
@@ -262,7 +271,6 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
 
                     {/* Member Info */}
                     <div className="flex items-center space-x-3">
-                      <User className="w-6 h-6 text-gray-400 dark:text-gray-500" />
                       <div>
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
                           {history.assignment.user.familyName} {history.assignment.user.givenName}
@@ -288,36 +296,37 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
 
                     {/* Paid At */}
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(history.paid_at)}
+                      {getDisplayDate(history)}
                     </div>
                   </div>
+                  {history.status === 'PAID' && (
+                    /* Config Information Row */
+                    <div className="grid grid-cols-3 gap-4 p-3 mt-3 rounded-md bg-gray-50 dark:bg-gray-700">
+                      {/* Client ID */}
+                      <div>
+                        <div className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">{t('paymentHistory:table.clientId')}</div>
+                        <div className="font-mono text-xs text-gray-900 break-all dark:text-white">
+                          {history.client_id || '-'}
+                        </div>
+                      </div>
 
-                  {/* Config Information Row */}
-                  <div className="grid grid-cols-3 gap-4 p-3 mt-3 rounded-md bg-gray-50 dark:bg-gray-700">
-                    {/* Client ID */}
-                    <div>
-                      <div className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">Client ID</div>
-                      <div className="font-mono text-xs text-gray-900 break-all dark:text-white">
-                        {history.client_id || '-'}
+                      {/* API Key */}
+                      <div>
+                        <div className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">{t('paymentHistory:table.apiKey')}</div>
+                        <div className="font-mono text-xs text-gray-900 break-all dark:text-white">
+                          {history.api_key || '-'}
+                        </div>
+                      </div>
+
+                      {/* Checksum Key */}
+                      <div>
+                        <div className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">{t('paymentHistory:table.checksumKey')}</div>
+                        <div className="font-mono text-xs text-gray-900 break-all dark:text-white">
+                          {history.checksum_key || '-'}
+                        </div>
                       </div>
                     </div>
-
-                    {/* API Key */}
-                    <div>
-                      <div className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">API Key</div>
-                      <div className="font-mono text-xs text-gray-900 break-all dark:text-white">
-                        {history.api_key || '-'}
-                      </div>
-                    </div>
-
-                    {/* Checksum Key */}
-                    <div>
-                      <div className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">Checksum Key</div>
-                      <div className="font-mono text-xs text-gray-900 break-all dark:text-white">
-                        {history.checksum_key || '-'}
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -1,0 +1,30 @@
+{
+  "title": "Phân Công Hàng Loạt",
+  "subtitle": "Phân công đóng phí cho {{count}} thành viên đã chọn",
+  "people": "người",
+  "selectFeeLevel": "Chọn Mức Phí",
+  "selectFeeLevelPlaceholder": "Chọn mức phí có sẵn...",
+  "selectedFeeLevelInfo": "Thông Tin Mức Phí Đã Chọn",
+  "feeLevelName": "Tên mức phí",
+  "amount": "Số tiền",
+  "description": "Mô tả",
+  "notes": "Ghi chú (tùy chọn)",
+  "notesPlaceholder": "Nhập ghi chú cho đợt phân công này...",
+  "summary": "Tổng Kết Phân Công",
+  "memberCount": "Số lượng thành viên",
+  "amountPerPerson": "Số tiền mỗi người",
+  "dueDate": "Hạn thanh toán",
+  "totalAmount": "Tổng số tiền",
+  "notSelected": "Chưa chọn",
+  "errorOccurred": "Có lỗi xảy ra",
+  "validation": {
+    "selectMembers": "Vui lòng chọn ít nhất một thành viên",
+    "selectFeeLevel": "Vui lòng chọn mức phí",
+    "invalidDueDate": "Ngày đáo hạn không hợp lệ"
+  },
+  "actions": {
+    "cancel": "Hủy",
+    "processing": "Đang xử lý...",
+    "assign": "Phân Công ({{count}} người)"
+  }
+}

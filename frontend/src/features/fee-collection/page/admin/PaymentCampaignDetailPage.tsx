@@ -157,6 +157,21 @@ const PaymentCampaignDetailPage: React.FC = () => {
       if (!shouldActivate) return;
     }
 
+    // Show confirmation dialog for complete action
+    if (action === 'complete') {
+      const shouldComplete = await showConfirm(
+        t('confirmations.complete.title'),
+        t('confirmations.complete.message'),
+        {
+          confirmText: t('confirmations.complete.confirm'),
+          cancelText: t('confirmations.complete.cancel'),
+          variant: 'info'
+        }
+      );
+      
+      if (!shouldComplete) return;
+    }
+
     // Show confirmation dialog for cancel action
     if (action === 'cancel') {
       const shouldCancel = await showConfirm(

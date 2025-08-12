@@ -267,7 +267,7 @@ export const PaymentResultPage: React.FC = () => {
                         <div className="flex items-start justify-between">
                           <span className="text-sm text-gray-600">{t('details.description')}</span>
                             <span className="flex-1 ml-2 text-sm text-right">
-                            {tx.description}
+                            {tx.description.split(' ').slice(-4).join(' ')}
                             </span>
                         </div>
                       </div>
@@ -295,7 +295,7 @@ export const PaymentResultPage: React.FC = () => {
                   className="flex items-center justify-center w-full px-4 py-3 space-x-2 font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
                   <Printer className="w-4 h-4" />
-                  <span>Lưu kết quả thanh toán</span>
+                  <span>{t('print')}</span>
                 </button>
               </div>
             )}

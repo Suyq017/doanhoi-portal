@@ -58,6 +58,7 @@
     "statistics": "Theo dõi tiến độ thu phí",
     "feeLevels": "Mức Phí",
     "memberAssignments": "Phân Công Thành Viên",
-    "payosConfig": "Cấu Hình PayOS"
+    "payosConfig": "Cấu Hình PayOS",
+    "paymentHistory": "Lịch Sử Thanh Toán"
   }
 }

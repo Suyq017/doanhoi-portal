@@ -1,0 +1,30 @@
+{
+  "title": "Bulk Assignment",
+  "subtitle": "Assign fees to {{count}} selected members",
+  "people": "people",
+  "selectFeeLevel": "Select Fee Level",
+  "selectFeeLevelPlaceholder": "Select available fee level...",
+  "selectedFeeLevelInfo": "Selected Fee Level Information",
+  "feeLevelName": "Fee level name",
+  "amount": "Amount",
+  "description": "Description",
+  "notes": "Notes (optional)",
+  "notesPlaceholder": "Enter notes for this assignment batch...",
+  "summary": "Assignment Summary",
+  "memberCount": "Number of members",
+  "amountPerPerson": "Amount per person",
+  "dueDate": "Due date",
+  "totalAmount": "Total amount",
+  "notSelected": "Not selected",
+  "errorOccurred": "An error occurred",
+  "validation": {
+    "selectMembers": "Please select at least one member",
+    "selectFeeLevel": "Please select a fee level",
+    "invalidDueDate": "Invalid due date"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "processing": "Processing...",
+    "assign": "Assign ({{count}} people)"
+  }
+}

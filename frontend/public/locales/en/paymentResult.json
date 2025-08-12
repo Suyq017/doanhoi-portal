@@ -1,5 +1,6 @@
 {
   "pageTitle": "PayOS Payment Result",
+  "print": "Save payment result",
   "loading": {
     "checkingStatus": "Checking payment status..."
   },

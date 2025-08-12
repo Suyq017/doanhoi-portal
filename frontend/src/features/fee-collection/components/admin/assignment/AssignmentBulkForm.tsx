@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, X, Users, AlertCircle } from 'lucide-react';
 import { PaymentFeeLevel } from '../../../types';
 import SearchableCombobox from '@/shared/components/SearchableCombobox';
@@ -30,6 +31,7 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
   onCancel,
   loading = false
 }) => {
+  const { t } = useTranslation('assignmentBulkForm');
   const [formData, setFormData] = useState<BulkAssignmentData>({
     campaignId,
     userIds: selectedMemberIds,
@@ -69,17 +71,17 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
 
   const validateForm = (): boolean => {
     if (formData.userIds.length === 0) {
-      setError('Vui lòng chọn ít nhất một thành viên');
+      setError(t('validation.selectMembers'));
       return false;
     }
 
     if (!formData.feeLevelId) {
-      setError('Vui lòng chọn mức phí');
+      setError(t('validation.selectFeeLevel'));
       return false;
     }
 
     if (!formData.dueDate) {
-      setError('Ngày đáo hạn không hợp lệ');
+      setError(t('validation.invalidDueDate'));
       return false;
     }
 
@@ -117,15 +119,15 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Phân Công Hàng Loạt
+              {t('title')}
             </h3>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              Phân công đóng phí cho {formData.userIds.length} thành viên đã chọn
+              {t('subtitle', { count: formData.userIds.length })}
             </p>
           </div>
           <div className="flex items-center space-x-2">
             <Users className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">{formData.userIds.length} người</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{formData.userIds.length} {t('people')}</span>
           </div>
         </div>
       </div>
@@ -136,7 +138,7 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
         <div className="space-y-4">
           <div>
             <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Chọn Mức Phí
+              {t('selectFeeLevel')}
             </label>
             <SearchableCombobox
               value={formData.feeLevelId}
@@ -145,7 +147,7 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
                 value: level.id,
                 label: `${level.levelName} - ${formatAmount(level.amount)}${level.description ? ` (${level.description})` : ''}`
               }))}
-              placeholder="Chọn mức phí có sẵn..."
+              placeholder={t('selectFeeLevelPlaceholder')}
               disabled={loading}
               className="w-full"
             />
@@ -155,20 +157,20 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
           {selectedFeeLevel && (
             <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
               <h4 className="mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Thông Tin Mức Phí Đã Chọn
+                {t('selectedFeeLevelInfo')}
               </h4>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Tên mức phí:</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('feeLevelName')}:</span>
                   <span className="font-medium dark:text-white">{selectedFeeLevel.levelName}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Số tiền:</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('amount')}:</span>
                   <span className="font-medium text-blue-600 dark:text-blue-400">{formatAmount(selectedFeeLevel.amount)}</span>
                 </div>
                 {selectedFeeLevel.description && (
                   <div>
-                    <span className="text-gray-600 dark:text-gray-400">Mô tả:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('description')}:</span>
                     <p className="mt-1 text-gray-900 dark:text-white">{selectedFeeLevel.description}</p>
                   </div>
                 )}
@@ -179,7 +181,7 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
           {/* Notes Section */}
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Ghi chú (tùy chọn)
+              {t('notes')}
             </label>
             <textarea
               value={formData.notes || ''}
@@ -187,34 +189,34 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
               disabled={loading}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              placeholder="Nhập ghi chú cho đợt phân công này..."
+              placeholder={t('notesPlaceholder')}
             />
           </div>
         </div>
 
         {/* Summary */}
         <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
-          <h4 className="mb-3 text-sm font-medium text-gray-900 dark:text-white">Tổng Kết Phân Công</h4>
+          <h4 className="mb-3 text-sm font-medium text-gray-900 dark:text-white">{t('summary')}</h4>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Số lượng thành viên:</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('memberCount')}:</span>
                 <span className="font-medium dark:text-white">{formData.userIds.length}</span>
               </div>
               <div className="flex justify-between pt-2 border-t dark:border-gray-600">
-                <span className="text-gray-600 dark:text-gray-400">Số tiền mỗi người:</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('amountPerPerson')}:</span>
                 <span className="font-medium text-blue-600 dark:text-blue-400">
-                  {selectedFeeLevel ? formatAmount(selectedFeeLevel.amount) : 'Chưa chọn'}
+                  {selectedFeeLevel ? formatAmount(selectedFeeLevel.amount) : t('notSelected')}
                 </span>
               </div>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Hạn thanh toán:</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('dueDate')}:</span>
                 <span className="font-medium dark:text-white">{formatDate(campaignEndDate)}</span>
               </div>
               <div className="flex justify-between pt-2 border-t dark:border-gray-600">
-                <span className="font-medium text-gray-900 dark:text-white">Tổng số tiền:</span>
+                <span className="font-medium text-gray-900 dark:text-white">{t('totalAmount')}:</span>
                 <span className="font-bold text-green-600 dark:text-green-400">{formatAmount(getTotalAmount())}</span>
               </div>
             </div>
@@ -227,7 +229,7 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
             <div className="flex items-start space-x-3">
               <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
               <div>
-                <h4 className="text-sm font-medium text-red-900 dark:text-red-200">Có lỗi xảy ra</h4>
+                <h4 className="text-sm font-medium text-red-900 dark:text-red-200">{t('errorOccurred')}</h4>
                 <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
               </div>
             </div>
@@ -243,7 +245,7 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
             className="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
           >
             <X className="inline w-4 h-4 mr-2" />
-            Hủy
+            {t('actions.cancel')}
           </button>
           <button
             type="submit"
@@ -253,12 +255,12 @@ const AssignmentBulkForm: React.FC<AssignmentBulkFormProps> = ({
             {loading ? (
               <>
                 <div className="w-4 h-4 mr-2 border-b-2 border-white rounded-full animate-spin"></div>
-                Đang xử lý...
+                {t('actions.processing')}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Phân Công ({formData.userIds.length} người)
+                {t('actions.assign', { count: formData.userIds.length })}
               </>
             )}
           </button>

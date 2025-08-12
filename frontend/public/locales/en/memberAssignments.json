@@ -1,7 +1,7 @@
 {
   "title": "Assignment List",
   "subtitle": "Manage fee assignments for each member",
-  "readOnlyMode": "View only - campaign {{status}}",
+  "readOnlyMode": "Read only - campaign {{status}}",
   
   "status": {
     "pending": "Pending",

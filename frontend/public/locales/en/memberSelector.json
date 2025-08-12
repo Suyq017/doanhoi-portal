@@ -1,0 +1,20 @@
+{
+  "selectOrganization": "Select Organization",
+  "selectOrganizationDescription": "Select an organization to display member list",
+  "selectOrganizationPlaceholder": "Select organization...",
+  "loadingOrganizations": "Loading organization list...",
+  "membersList": "Member List",
+  "membersCount": "members",
+  "searchPlaceholder": "Search members...",
+  "selectAll": "Select all",
+  "deselectAll": "Deselect all",
+  "selected": "Selected",
+  "loadingMembers": "Loading members...",
+  "error": "Error",
+  "noMembersFound": "No members found",
+  "noMembersInOrganization": "This organization has no members yet",
+  "page": "Page",
+  "totalMembers": "Total",
+  "close": "Close",
+  "rootOrganization": "Root organization"
+}

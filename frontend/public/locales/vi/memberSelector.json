@@ -1,0 +1,20 @@
+{
+  "selectOrganization": "Chọn Tổ Chức",
+  "selectOrganizationDescription": "Chọn tổ chức để hiển thị danh sách thành viên",
+  "selectOrganizationPlaceholder": "Chọn tổ chức...",
+  "loadingOrganizations": "Đang tải danh sách tổ chức...",
+  "membersList": "Danh Sách Thành Viên",
+  "membersCount": "thành viên",
+  "searchPlaceholder": "Tìm kiếm thành viên...",
+  "selectAll": "Chọn tất cả",
+  "deselectAll": "Bỏ chọn tất cả",
+  "selected": "Đã chọn",
+  "loadingMembers": "Đang tải thành viên...",
+  "error": "Lỗi",
+  "noMembersFound": "Không tìm thấy thành viên nào",
+  "noMembersInOrganization": "Tổ chức này chưa có thành viên",
+  "page": "Trang",
+  "totalMembers": "Tổng",
+  "close": "Đóng",
+  "rootOrganization": "Tổ chức gốc"
+}

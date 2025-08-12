@@ -1,5 +1,6 @@
 {
   "pageTitle": "Kết quả thanh toán PayOS",
+  "print": "Lưu kết quả thanh toán",
   "loading": {
     "checkingStatus": "Đang kiểm tra trạng thái thanh toán..."
   },

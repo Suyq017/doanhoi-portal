@@ -1,0 +1,35 @@
+{
+  "title": "Lịch sử thu phí",
+  "description": "Theo dõi lịch sử giao dịch thanh toán của đợt thu phí",
+  "filters": {
+    "title": "Bộ lọc",
+    "search": "Tìm kiếm",
+    "searchPlaceholder": "Họ tên, mã sinh viên, mã giao dịch...",
+    "status": "Trạng thái",
+    "statusOptions": {
+      "all": "Tất cả",
+      "paid": "Đã thanh toán",
+      "cancelled": "Đã hủy"
+    },
+    "clear": "Xóa bộ lọc"
+  },
+  "table": {
+    "orderCode": "Mã giao dịch",
+    "member": "Thành viên",
+    "amount": "Số tiền đã đóng",
+    "status": "Trạng thái",
+    "paymentTime": "Thời gian đóng phí",
+    "clientId": "Client ID",
+    "apiKey": "API Key",
+    "checksumKey": "Checksum Key"
+  },
+  "status": {
+    "paid": "Đã thanh toán",
+    "cancelled": "Đã hủy"
+  },
+  "empty": {
+    "title": "Không có lịch sử thanh toán",
+    "noResults": "Không có giao dịch nào phù hợp với bộ lọc",
+    "noPayments": "Chưa có giao dịch thanh toán nào"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "title": "Transaction History",
+  "description": "Track payment transaction history for the fee collection campaign",
+  "filters": {
+    "title": "Filters",
+    "search": "Search",
+    "searchPlaceholder": "Name, member code, transaction code...",
+    "status": "Status",
+    "statusOptions": {
+      "all": "All",
+      "paid": "Paid",
+      "cancelled": "Cancelled"
+    },
+    "clear": "Clear filters"
+  },
+  "table": {
+    "orderCode": "Transaction Code",
+    "member": "Member",
+    "amount": "Amount Paid",
+    "status": "Status",
+    "paymentTime": "Transaction Time",
+    "clientId": "Client ID",
+    "apiKey": "API Key",
+    "checksumKey": "Checksum Key"
+  },
+  "status": {
+    "paid": "Paid",
+    "cancelled": "Cancelled"
+  },
+  "empty": {
+    "title": "No transaction history",
+    "noResults": "No transaction match the filter criteria",
+    "noPayments": "No payment transaction yet"
+  }
+}
