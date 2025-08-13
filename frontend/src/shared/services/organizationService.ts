@@ -4,14 +4,24 @@ import {
   CreateOrganizationRequest,
   UpdateOrganizationRequest,
   OrganizationStats,
-  OrganizationImportData
+  OrganizationImportData,
+  UserOrganizationWithUser
 } from '../types/organization';
 import { UserOrganization } from '../types/user';
 
 class OrganizationService {
   async getOrganizations(): Promise<Organization[]> {
     return apiClient.get<Organization[]>('/organizations');
+  } async getAccessibleOrganizations(): Promise<Organization[]> {
+    try {
+      const result = await apiClient.get<Organization[]>('/organizations/accessible');
+      return result;
+    } catch (error) {
+      console.error('[OrganizationService] Error calling /organizations/accessible:', error);
+      throw error;
+    }
   }
+
   async getOrganizationTree(): Promise<Organization[]> {
     return apiClient.get<Organization[]>('/organizations/tree');
   }
@@ -49,13 +59,12 @@ class OrganizationService {
     removedCount: number;
   }> {
     return apiClient.delete(`/organizations/${organizationId}/members/bulk-remove`, { userIds });
-  }
-  async getOrganizationMembers(
+  } async getOrganizationMembers(
     organizationId: string,
     page: number = 1,
     limit: number = 10
-  ): Promise<{ members: UserOrganization[], total: number, page: number, limit: number, totalPages: number }> {
-    return apiClient.get<{ members: UserOrganization[], total: number, page: number, limit: number, totalPages: number }>(
+  ): Promise<{ members: UserOrganizationWithUser[], total: number, page: number, limit: number, totalPages: number }> {
+    return apiClient.get<{ members: UserOrganizationWithUser[], total: number, page: number, limit: number, totalPages: number }>(
       `/organizations/${organizationId}/members?page=${page}&limit=${limit}`
     );
   }

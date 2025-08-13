@@ -57,11 +57,12 @@ export const usePermissions = () => {
         canDeletePaymentCampaign: () => hasPermission('payment-campaigns.delete', currentOrganizationId),
         canManagePaymentAssignments: () => hasPermission('payment-campaigns.manage_assignments', currentOrganizationId),
         canViewPaymentReports: () => hasPermission('payment-campaigns.view_reports', currentOrganizationId),
-        canExportPaymentData: () => hasPermission('payment-campaigns.export', currentOrganizationId),
-
-        // My payments permissions
+        canExportPaymentData: () => hasPermission('payment-campaigns.export', currentOrganizationId),        // My payments permissions
         canAccessMyPayments: () => hasPermission('my-payments.access', currentOrganizationId),
-        canAccessMyPaymentsInOrg: (orgId: string) => hasPermission('my-payments.access', orgId),
+        canAccessMyPaymentsInOrg: (orgId: string) => {
+            const result = hasPermission('my-payments.access', orgId);
+            return result;
+        },
 
         // Payment campaigns permissions - organization specific
         canCreatePaymentCampaignInOrg: (orgId: string) => hasPermission('payment-campaigns.create', orgId),
@@ -72,11 +73,13 @@ export const usePermissions = () => {
             // For now, return empty array and let the component fetch from API
             // The API call will handle proper organization filtering based on user permissions
             return [];
-        },
+        },        // Check if user is super admin (system-wide access)
+        isSuperAdmin: () => {
+            const hasSystemAccess = hasPermission('system.access_admin');
+            const hasSuperAdminRole = auth.userRoles && auth.userRoles.some(userRole => userRole.name === 'super_admin');
 
-        // Check if user is super admin (system-wide access)
-        isSuperAdmin: () => hasPermission('system.access_admin') ||
-            (auth.userRoles && auth.userRoles.some(userRole => userRole.name === 'super_admin')),// Generic permission check
+            return hasSystemAccess || hasSuperAdminRole;
+        },// Generic permission check
         hasPermission,
         hasAnyPermission,
 

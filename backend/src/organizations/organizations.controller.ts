@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile, Res, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile, Res, BadRequestException, UseGuards, Request } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiConsumes } from '@nestjs/swagger';
 import { Response } from 'express';
@@ -9,6 +9,7 @@ import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { BulkRemoveMembersDto } from './dto/bulk-remove-members.dto';
 import { OrganizationType } from '../entities/organization.entity';
 import { UserOrgRole } from '../entities/user-organization.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('organizations')
 @Controller('organizations')
@@ -61,9 +62,32 @@ export class OrganizationsController {
     @Get('type/:type')
     @ApiOperation({ summary: 'Lấy tổ chức theo loại' })
     @ApiParam({ name: 'type', enum: OrganizationType })
-    @ApiResponse({ status: 200, description: 'Danh sách tổ chức theo loại' })
-    findByType(@Param('type') type: OrganizationType) {
+    @ApiResponse({ status: 200, description: 'Danh sách tổ chức theo loại' }) findByType(@Param('type') type: OrganizationType) {
         return this.organizationsService.findByType(type);
+    } @Get('accessible')
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({ summary: 'Lấy danh sách tổ chức mà user có quyền payment-campaigns.create' })
+    @ApiResponse({ status: 200, description: 'Danh sách tổ chức có quyền tạo payment campaigns' })
+    async getAccessibleOrganizations(@Request() req: any) {
+        try {
+            console.log('[OrganizationsController] GET /organizations/accessible called');
+            console.log('[OrganizationsController] Request user:', req.user);
+
+            const userId = req.user?.id;
+            if (!userId) {
+                console.error('[OrganizationsController] User not authenticated - no user ID');
+                throw new BadRequestException('User not authenticated');
+            }
+
+            console.log(`[OrganizationsController] Getting organizations with payment-campaigns.create permission for user ID: ${userId}`);
+            const result = await this.organizationsService.getAccessibleOrganizations(userId);
+            console.log(`[OrganizationsController] Successfully returned ${result.length} organizations with create permission`);
+
+            return result;
+        } catch (error) {
+            console.error('[OrganizationsController] Error in getAccessibleOrganizations:', error);
+            throw error;
+        }
     }
 
     @Get(':id/children')
@@ -125,7 +149,6 @@ export class OrganizationsController {
         @Body() bulkRemoveMembersDto: BulkRemoveMembersDto
     ) {
         try {
-            console.log('Controller bulkRemoveMembers called:', { organizationId, dto: bulkRemoveMembersDto });
             await this.organizationsService.bulkRemoveMembers(organizationId, bulkRemoveMembersDto.userIds);
             return {
                 message: `Đã loại bỏ thành công ${bulkRemoveMembersDto.userIds.length} thành viên khỏi tổ chức`,
@@ -248,5 +271,4 @@ export class OrganizationsController {
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.send(templateBuffer);
     }
-
 }

@@ -27,6 +27,8 @@ interface OrganizationPageLayoutProps {
     showDropdownButton?: boolean;
     dropdownOptions?: DropdownOption[];
     dropdownLabel?: string;
+    // Flag to hide manual add option (for members page)
+    hideMnualAddOption?: boolean;
     toasts?: Array<{
         id: string;
         type: 'success' | 'error' | 'info';
@@ -58,6 +60,7 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
     importConfig,
     showDropdownButton = false,
     dropdownLabel,
+    hideMnualAddOption = false,
     toasts = [],
     onCloseToast, level,
     onRefreshData,
@@ -116,9 +119,7 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
                 type={currentOrgType}
             />
         );
-    };
-
-    const handleCreateOrganization = async (data: CreateOrganizationData) => {
+    }; const handleCreateOrganization = async (data: CreateOrganizationData) => {
         try {
             if (organizations?.length === 1) {
                 data.parentId = organizations[0].id;
@@ -131,18 +132,25 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
                     parentOrg = organizations?.find(org => org.type === 'doan_truong');
                     data.parentId = parentOrg?.id || '';
                 }
-            } await organizationService.createOrganization(data);
-            setIsCreateModalOpen(false);
-
-            if (onRefreshData) {
-                await onRefreshData();
             }
 
-            // Hiển thị thông báo thành công
+            await organizationService.createOrganization(data);
+            setIsCreateModalOpen(false);
+
+            // Hiển thị thông báo thành công trước
+            const successMessage = t('organizations:create.success', {
+                defaultValue: 'Tạo tổ chức thành công!'
+            });
+
             if (onShowSuccess) {
-                onShowSuccess(t('organizations:create.success', {
-                    defaultValue: 'Tạo tổ chức thành công!'
-                }));
+                onShowSuccess(successMessage);
+            }
+
+            // Delay refresh để toast có thời gian hiển thị
+            if (onRefreshData) {
+                setTimeout(async () => {
+                    await onRefreshData();
+                }, 2000); // 2 seconds delay to show toast
             }
 
         } catch (error) {
@@ -150,21 +158,22 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
 
             // Hiển thị lỗi cho user
             const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi tạo tổ chức';
-            alert(errorMessage); // Hoặc hiển thị toast
+            if (onShowError) {
+                onShowError(errorMessage);
+            } else {
+                alert(errorMessage);
+            }
         }
-
-
     };
-
-
     const addDropdownOptions: DropdownOption[] = [
-        {
+        // Only show manual add option if not hidden
+        ...(hideMnualAddOption ? [] : [{
             key: 'single',
             label: t('organizations:addButton.manual'),
             icon: <Plus className="w-4 h-4" />,
             description: t('organizations:addButton.manualDesc'),
             onClick: () => setIsCreateModalOpen(true)
-        },
+        }]),
         // Import classes from Excel option:
         {
             key: 'fromFile',

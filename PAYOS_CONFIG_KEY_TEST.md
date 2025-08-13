@@ -1,3 +1,0 @@
-Client ID = bcaa43cb-101d-4e96-842a-84490ac45e61
-Api Key = b45ac3c9-a2b8-4270-8c95-43d11e9ad5e6
-Checksum Key = 64f5a3d00fe07e3b3c67da4b3d13e2525b10eb829a9af77e987863492639a938

@@ -121,11 +121,10 @@ export class RoleService {
 
   async deleteRole(id: string): Promise<void> {
     await apiClient.delete<void>(`${this.baseUrl}/${id}`);
-  }
-  async bulkDeleteRoles(ids: string[]): Promise<{ message: string; deletedRoles: number; deletedUserRoleAssignments: number; roleNames: string[] }> {
-    return apiClient.delete<{ message: string; deletedRoles: number; deletedUserRoleAssignments: number; roleNames: string[] }>(this.baseUrl, {
-      body: JSON.stringify({ ids }),
-    });
+  } async bulkDeleteRoles(ids: string[]): Promise<{ message: string; deletedRoles: number; deletedUserRoleAssignments: number; roleNames: string[] }> {
+    console.log('🗑️ Bulk delete roles request:', { ids, endpoint: `${this.baseUrl}` });
+
+    return apiClient.delete<{ message: string; deletedRoles: number; deletedUserRoleAssignments: number; roleNames: string[] }>(this.baseUrl, { ids });
   }
 
   async getAvailablePermissions(): Promise<Permission[]> {

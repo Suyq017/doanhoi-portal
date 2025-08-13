@@ -46,6 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     permissionsLoading: false,
     currentOrganizationId: undefined,
   });
+
   // Load user permissions after login
   const loadUserPermissions = async () => {
     if (!auth.user) {
@@ -56,6 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const response = await authService.getUserPermissions(auth.user.id, auth.currentOrganizationId);
+
 
       // Flatten all permissions from all roles
       const allPermissions = response.roles.reduce((acc: UserPermission[], role) => {
@@ -83,9 +85,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }));
     }
   };
+
   const hasPermission = (permissionCode: string, organizationId?: string): boolean => {
-
-
     if (!auth.user || !auth.userRoles.length) return false;
 
     // Use current organization context if no specific org provided
@@ -108,10 +109,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const hasAnyPermission = (permissionCodes: string[], organizationId?: string): boolean => {
     return permissionCodes.some(code => hasPermission(code, organizationId));
   };
-
   const setCurrentOrganizationId = (orgId?: string) => {
     setAuth(prev => ({ ...prev, currentOrganizationId: orgId }));
-  };  // Update permissions when organization context changes
+  };
+
+  // Update permissions when organization context changes
   useEffect(() => {
     if (auth.user && auth.isAuthenticated) {
       loadUserPermissions();
@@ -129,7 +131,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check for stored tokens on app start
     const token = authService.getAccessToken();
     const refreshToken = authService.getRefreshToken();
-    const userData = authService.getUser(); if (token && refreshToken && userData) {
+    const userData = authService.getUser();
+
+    if (token && refreshToken && userData) {
       setAuth(prev => ({
         ...prev,
         user: userData as User,
@@ -151,7 +155,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         permissionsLoading: false,
       }));
     }
-  }, []); const login = async (email: string, password: string): Promise<AuthResponse> => {
+  }, []);
+
+  const login = async (email: string, password: string): Promise<AuthResponse> => {
     try {
       setAuth(prev => ({ ...prev, isLoading: true }));
 
@@ -161,13 +167,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Store tokens first so auth calls work
       authService.setTokens(response.accessToken, response.refreshToken);
 
-      // Log current user data to see what we have
-      console.log('🔍 Login response user:', response.user);
 
       // Try to load full user details with organizations
       try {
         const fullUserDetails = await authService.getCurrentUser();
-        console.log('🔍 Full user details from /auth/me:', fullUserDetails);
 
         // Use full user details if available, fallback to response.user
         const userToStore = fullUserDetails || response.user;
@@ -205,8 +208,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw error;
     }
   };
-
-  const googleLogin = async (googleToken: string) => {
+  const googleLogin = async (_googleToken: string) => {
     try {
       setAuth(prev => ({ ...prev, isLoading: true }));
 
@@ -241,15 +243,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       authService.setUser(user);
     }
   };
+
   const setTokens = (token: string, refreshToken: string) => {
     authService.setTokens(token, refreshToken);
     setAuth(prev => ({
       ...prev,
       token,
-      refreshToken,
-      isAuthenticated: true
+      refreshToken, isAuthenticated: true
     }));
   };
+
   const clearAuth = () => {
     authService.clearTokens();
     setAuth({

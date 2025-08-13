@@ -138,7 +138,6 @@ export const usePaymentAssignments = () => {
       setLoading(false);
     }
   }, []);
-
   // Get assignments with filters
   const getAssignments = useCallback(async (filters?: PaymentAssignmentFilters) => {
     try {
@@ -152,7 +151,9 @@ export const usePaymentAssignments = () => {
       if (filters?.page) params.append('page', filters.page.toString());
       if (filters?.limit) params.append('limit', filters.limit.toString());
 
-      const response = await fetch(`/api/payment/assignments?${params}`);
+      const url = `/api/payment/assignments?${params}`;
+
+      const response = await fetch(url);
       const result = await response.json();
 
       if (!response.ok) {
@@ -161,6 +162,7 @@ export const usePaymentAssignments = () => {
 
       return result.success ? result.data : { assignments: [], pagination: null };
     } catch (err) {
+      console.error('[usePaymentAssignments] API Error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       return { assignments: [], pagination: null };
@@ -364,7 +366,7 @@ export const usePaymentAssignments = () => {
       if (!userData) {
         throw new Error('User not authenticated');
       }
-      
+
       const user = JSON.parse(userData);
       if (!user?.id) {
         throw new Error('User ID not found');
@@ -372,7 +374,7 @@ export const usePaymentAssignments = () => {
 
       // Use the existing getAssignments endpoint with userId filter
       const result = await getAssignments({ userId: user.id });
-      
+
       return result.assignments || [];
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -406,7 +408,7 @@ export const useMyPaymentAssignments = (userId?: string) => {
   const [assignments, setAssignments] = useState<PaymentAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const { getAssignments } = usePaymentAssignments();
 
   const fetchMyAssignments = useCallback(async () => {
@@ -445,7 +447,7 @@ export const useCampaignAssignments = (campaignId: string) => {
   const [stats, setStats] = useState<PaymentAssignmentStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const { getAssignments, getAssignmentStatistics } = usePaymentAssignments();
 
   const fetchCampaignData = useCallback(async () => {
@@ -461,7 +463,7 @@ export const useCampaignAssignments = (campaignId: string) => {
       if (assignmentsResult.assignments) {
         setAssignments(assignmentsResult.assignments);
       }
-      
+
       if (statsResult) {
         setStats(statsResult);
       }

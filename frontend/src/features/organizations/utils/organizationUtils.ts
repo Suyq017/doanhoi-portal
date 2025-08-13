@@ -1,7 +1,5 @@
-import { ImportModalConfig } from '../../../shared';
-import { organizationService } from '../../../shared/services';
+
 import { Organization } from '../../../shared/types/organization';
-import { organizationColumns } from "../../../shared/utils/importColumns";
 
 // Remove unused interface
 // interface UseOrganizationImportConfigOptions removed
@@ -136,5 +134,82 @@ export const countByType = (org: Organization): { doanCount: number; hoiCount: n
     }
 
     return { doanCount, hoiCount, clbCount };
+};
+
+/**
+ * Determine the level of an organization type
+ */
+export const getOrganizationLevel = (type: string): 2 | 3 => {
+    return type === 'clb_truong' ? 3 : 2;
+};
+
+/**
+ * Check if organization type should show member statistics
+ */
+export const shouldShowMemberStats = (type?: string): boolean => {
+    return type === 'clb_truong';
+};
+
+/**
+ * Sort organizations to prioritize user's membership
+ */
+export const sortOrganizationsByMembership = (
+    organizations: Organization[],
+    isUserInOrganization: (orgId: string) => boolean
+): Organization[] => {
+    const sortOrganizations = (orgs: Organization[]): Organization[] => {
+        return [...orgs]
+            .map(org => ({
+                ...org,
+                children: org.children ? sortOrganizations(org.children) : undefined
+            }))
+            .sort((a, b) => {
+                const aIsMember = isUserInOrganization(a.id);
+                const bIsMember = isUserInOrganization(b.id);
+
+                // Prioritize organizations user belongs to
+                if (aIsMember && !bIsMember) return -1;
+                if (!aIsMember && bIsMember) return 1;
+
+                // If same membership status, maintain alphabetical order
+                return a.name.localeCompare(b.name);
+            });
+    };
+
+    return sortOrganizations(organizations);
+};
+
+/**
+ * Find organization by type and code in a tree structure
+ */
+export const findOrganizationInTree = (
+    organizations: Organization[],
+    type: string,
+    code: string
+): Organization | null => {
+    for (const org of organizations) {
+        if (org.type === type && org.code === code) {
+            return org;
+        }
+        if (org.children) {
+            const found = findOrganizationInTree(org.children, type, code);
+            if (found) return found;
+        }
+    }
+    return null;
+};
+
+/**
+ * Check if current page is a members page based on URL
+ */
+export const isMembersPage = (pathname: string): boolean => {
+    return pathname.includes('/members');
+};
+
+/**
+ * Check if current organization should show user list by default
+ */
+export const shouldShowUserListByDefault = (type?: string): boolean => {
+    return type === 'clb_truong';
 };
 

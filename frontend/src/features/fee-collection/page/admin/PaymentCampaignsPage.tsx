@@ -9,28 +9,27 @@ import { PermissionGuard } from "@/shared/components/PermissionGuard";
 import { organizationService } from "@/shared/services/organizationService";
 
 export const PaymentCampaignsPage = () => {
-  const { t } = useTranslation('paymentCampaigns');
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [accessibleOrganizations] = useState<Organization[]>([]);
+  const { t } = useTranslation('paymentCampaigns'); const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [accessibleOrganizations, setAccessibleOrganizations] = useState<Organization[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<PaymentCampaign | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [pageLoading, setPageLoading] = useState(true);
-
   useEffect(() => {
     const initializePage = async () => {
       setPageLoading(true);
-      await loadOrganizations();
+      await loadAccessibleOrganizations();
       setPageLoading(false);
     };
-    
+
     initializePage();
   }, []);
-
-  const loadOrganizations = async () => {
+  const loadAccessibleOrganizations = async () => {
     try {
-      const orgs = await organizationService.getOrganizations();
+      // Use getAccessibleOrganizations to only get organizations user has payment-campaigns.create permission for
+      const orgs = await organizationService.getAccessibleOrganizations();
+
       // Map from shared Organization type to fee-collection Organization type
       const mappedOrgs: Organization[] = (orgs || []).map(org => ({
         id: org.id,
@@ -44,10 +43,35 @@ export const PaymentCampaignsPage = () => {
         createdAt: org.createdAt || new Date().toISOString(),
         updatedAt: org.updatedAt || new Date().toISOString()
       }));
+
       setOrganizations(mappedOrgs);
+      setAccessibleOrganizations(mappedOrgs);
     } catch (error) {
-      console.error('Error loading organizations:', error);
-      setOrganizations([]);
+      console.error('[PaymentCampaignsPage] Error loading organizations with create permission:', error);
+
+      // If the accessible organizations endpoint fails (e.g., user not authenticated or no permissions),
+      // fall back to loading all organizations as a safety measure
+      try {
+        const allOrgs = await organizationService.getOrganizations();
+        const mappedAllOrgs: Organization[] = (allOrgs || []).map(org => ({
+          id: org.id,
+          name: org.name,
+          code: org.code || '',
+          type: org.type || '',
+          parentId: org.parentId,
+          level: 1,
+          path: org.name,
+          isActive: true,
+          createdAt: org.createdAt || new Date().toISOString(),
+          updatedAt: org.updatedAt || new Date().toISOString()
+        }));
+        setOrganizations(mappedAllOrgs);
+        setAccessibleOrganizations(mappedAllOrgs);
+      } catch (fallbackError) {
+        console.error('[PaymentCampaignsPage] Fallback also failed:', fallbackError);
+        setOrganizations([]);
+        setAccessibleOrganizations([]);
+      }
     }
   };
 
@@ -131,7 +155,7 @@ export const PaymentCampaignsPage = () => {
           onEditCampaign={handleEditCampaign}
           refreshTrigger={refreshTrigger}
         />
-      </div>      
+      </div>
       {/* Create Campaign Modal - Permission guarded */}
       <PermissionGuard permission="payment-campaigns.create">
         {showCreateModal && (

@@ -7,15 +7,23 @@ import OrganizationTreeContainer from './components/OrganizationTreeContainer';
 import OrganizationPageLayout from './components/OrganizationPageLayout';
 import { OrganizationUserList } from './components/OrganizationUserList';
 import { useOrganizationPage } from './hooks/useOrganizationPage';
-import { useOrganizationImport } from './hooks/useOrganizationImport';
+import { useDisplayOrganization } from './hooks/useDisplayOrganization';
 import { useMemberStats } from './hooks/useMemberStats';
+import { useRefreshHandlers } from './hooks/useRefreshHandlers';
+import { useImportModal } from './hooks/useImportModal';
+import { usePageConfig } from './hooks/usePageConfig';
 import { useOrganizationSpecificStats } from './hooks/useOrganizationSpecificStats';
 import { useBreadcrumbJSX } from './hooks/useBreadcrumbJSX';
 
 const OrganizationsDetailPage: React.FC = () => {
   const { t } = useTranslation(['organizations', 'common']);
   const { type, code } = useParams<{ type: string; code: string }>();
-  const level: 2 | 3 = type === 'clb_truong' ? 3 : 2;
+  // Get page configuration
+  const { level, shouldShowMemberStats } = usePageConfig({
+    type,
+    code
+  });
+  // Organization page data
   const {
     organizations,
     stats,
@@ -30,61 +38,54 @@ const OrganizationsDetailPage: React.FC = () => {
     handleOrganizationDeleted,
     handleDeleteError,
     toasts,
-    hideToast
+    hideToast,
+    showSuccess,
+    showError
   } = useOrganizationPage({
     type,
     code,
     isDetailPage: true
   });
 
-  // ✅ Use breadcrumb JSX for better navigation
+  // Get display organization
+  const displayOrganization = useDisplayOrganization({
+    organizations,
+    type,
+    code
+  });
+
+  // Use member stats hook for organizations that should show them
+  const { memberStats, loading: memberStatsLoading, refreshMemberStats } = useMemberStats(
+    displayOrganization,
+    shouldShowMemberStats
+  );
+  // Setup refresh handlers
+  const { handleRefreshAll } = useRefreshHandlers({
+    fetchData,
+    refreshMemberStats: shouldShowMemberStats ? refreshMemberStats : undefined
+  });
+
+  // Success handler for organization creation
+  const handleShowSuccess = useCallback((message: string) => {
+    showSuccess(message);
+  }, [showSuccess]);
+
+  // Import modal
+  const { importConfig, handleImportModalClose } = useImportModal({
+    level,
+    organizationId: displayOrganization?.id,
+    onRefresh: shouldShowMemberStats ? handleRefreshAll : fetchData
+  });
+  // Use breadcrumb JSX for better navigation
   const breadcrumbTitle = useBreadcrumbJSX({
     type,
     code,
     organizations,
-    displayOrganization: organizations[0],
+    displayOrganization,
     isDetailPage: true,
     isSubDetailPage: false,
     isMembersPage: false
   });
-
-  // Use member stats hook for clb_truong type
-  const { memberStats, loading: memberStatsLoading, refreshMemberStats } = useMemberStats(
-    organizations[0] || null,
-    type === 'clb_truong'
-  );
-
-  // Enhanced refresh function that also refreshes member stats
-  const handleRefreshAll = useCallback(async () => {
-    await fetchData(); // Refresh main data
-    if (type === 'clb_truong') {
-      refreshMemberStats(); // Refresh member stats
-    }
-  }, [fetchData, type, refreshMemberStats]);
-
-  // ✅ Use useOrganizationImport hook with specific organization
-  const { importConfig, setIsImportModalOpen } = useOrganizationImport({
-    level,
-    organizationId: organizations[0]?.id,
-    onSuccess: () => {
-      // Don't refresh here, just show success message
-      console.log('Import completed successfully');
-    },
-    onError: (error) => {
-      console.error('Import error:', error.message);
-    }
-  });
-
-  // ✅ Handle modal close with data refresh
-  const handleImportModalClose = useCallback(() => {
-    setIsImportModalOpen(false);
-    // Refresh data when modal closes (after import is done)
-    if (type === 'clb_truong') {
-      handleRefreshAll();
-    } else {
-      fetchData();
-    }
-  }, [setIsImportModalOpen, type, handleRefreshAll, fetchData]);
 
   // Calculate stats specific to this organization
   const organizationSpecificStats = useOrganizationSpecificStats(organizations, stats);
@@ -115,55 +116,58 @@ const OrganizationsDetailPage: React.FC = () => {
     handleDeleteError,
     type,
     code
-  ]);
-
-  return (<OrganizationPageLayout organizations={organizations}
-    title={breadcrumbTitle}
-    subtitle={t('organizations:subtitle')}
-    stats={organizationSpecificStats} memberStats={type === 'clb_truong' ? {
-      ...memberStats,
-      loading: memberStatsLoading,
-    } : undefined}
-    showMemberStats={type === 'clb_truong'}
-    loading={loading} error={error}
-    onRetry={type === 'clb_truong' ? handleRefreshAll : fetchData}
-    showDropdownButton={true}
-    importConfig={importConfig}
-    dropdownLabel={t('organizations:addButton.dropdown')}
-    toasts={toasts
-      .filter(toast => toast.type === 'error' || toast.type === 'success' || toast.type === 'info')
-      .map(({ type, ...rest }) => ({
-        ...rest,
-        type: type as 'error' | 'success' | 'info'
-      }))
-    } onCloseToast={hideToast} level={level}
-    type={type}
-    onRefreshData={type === 'clb_truong' ? handleRefreshAll : fetchData}
-    onShowSuccess={handleMemberAdded}
-    onImportModalClose={handleImportModalClose} // Add import modal close handler
-  >      {type === 'clb_truong' ? (
-    // Hiển thị danh sách thành viên cho clb_truong
-    <OrganizationUserList
-      organization={organizations[0]}
-      onRefresh={handleRefreshAll}
-      onShowSuccess={() => {
-        handleMemberDelete();
-      }}
-      onShowError={(message) => {
-        handleMemberAddError(message);
-      }}
-    />
-  ) : (
-    // Hiển thị cây tổ chức cho các type khác
-    <OrganizationTreeContainer
-      isEmpty={organizations.length === 0}
+  ]); return (
+    <OrganizationPageLayout
+      organizations={organizations}
+      title={breadcrumbTitle}
+      subtitle={t('organizations:subtitle')}
+      stats={organizationSpecificStats}
+      memberStats={shouldShowMemberStats ? {
+        ...memberStats,
+        loading: memberStatsLoading,
+      } : undefined}
+      showMemberStats={shouldShowMemberStats}
+      loading={loading}
+      error={error}
+      onRetry={shouldShowMemberStats ? handleRefreshAll : fetchData}
+      showDropdownButton={true}
+      importConfig={importConfig}
+      dropdownLabel={t('organizations:addButton.dropdown')}
+      toasts={toasts
+        .filter(toast => toast.type === 'error' || toast.type === 'success' || toast.type === 'info')
+        .map(({ type, ...rest }) => ({
+          ...rest,
+          type: type as 'error' | 'success' | 'info'
+        }))
+      } onCloseToast={hideToast}
+      level={level}
+      type={type}
+      onRefreshData={shouldShowMemberStats ? handleRefreshAll : fetchData}
+      onShowSuccess={handleShowSuccess}
+      onShowError={showError}
+      onImportModalClose={handleImportModalClose}
     >
-      {organizations.map(org => renderOrganization(org))}
-    </OrganizationTreeContainer>
-  )}
-
-
-  </OrganizationPageLayout>
+      {shouldShowMemberStats && displayOrganization ? (
+        // Show user list for organizations that should display it
+        <OrganizationUserList
+          organization={displayOrganization}
+          onRefresh={handleRefreshAll}
+          onShowSuccess={() => {
+            handleMemberDelete();
+          }}
+          onShowError={(message) => {
+            handleMemberAddError(message);
+          }}
+        />
+      ) : (
+        // Show organization tree for other types
+        <OrganizationTreeContainer
+          isEmpty={organizations.length === 0}
+        >
+          {organizations.map(org => renderOrganization(org))}
+        </OrganizationTreeContainer>
+      )}
+    </OrganizationPageLayout>
   );
 };
 

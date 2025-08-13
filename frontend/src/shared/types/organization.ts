@@ -49,7 +49,7 @@ export interface Organization {
         id: string;
     };
     children?: Organization[];
-
+    hasChildren?: boolean; // Thêm flag để biết tổ chức có children hay không
 
     createdAt: string;
     updatedAt: string;
@@ -111,14 +111,19 @@ export interface OrganizationImportData {
 }
 
 export interface UserOrganization {
-  id: string;
-  userId: string;
-  organizationId: string;
-  role: string;
-  isActive: boolean;
-  joinedAt: string;
-  
-  // Relationships
-  user?: User;
-  organization?: Organization;
+    id: string;
+    userId: string;
+    organizationId: string;
+    role: string;
+    isActive: boolean;
+    joinedAt: string;
+
+    // Relationships
+    user?: User;
+    organization?: Organization;
+}
+
+// Type for when user is always loaded (from API endpoints that include relations)
+export interface UserOrganizationWithUser extends Omit<UserOrganization, 'user'> {
+    user: User;
 }

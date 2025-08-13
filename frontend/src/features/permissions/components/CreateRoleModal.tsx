@@ -80,10 +80,6 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
   const { t } = useTranslation('permissions');
   const PERMISSION_GROUPS = usePermissionGroups();
 
-  console.log('=== CreateRoleModal Debug ===');
-  console.log('Total permission groups defined:', PERMISSION_GROUPS.length);
-  console.log('Group IDs:', PERMISSION_GROUPS.map(g => g.id));
-
   const [formData, setFormData] = useState<CreateRoleRequest>({
     name: '',
     displayName: '',
@@ -109,14 +105,10 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
   }, [isOpen]); const loadAvailablePermissions = async () => {
     try {
       setLoading(true);
-      console.log('=== CreateRoleModal: Loading permissions from API ===');
       const permissions = await roleService.getAvailablePermissions();
-      console.log('=== CreateRoleModal: API Response ===', permissions.length, 'permissions loaded');
-      console.log('Available categories:', [...new Set(permissions.map(p => p.category))]);
       setAvailablePermissions(permissions);
     } catch (error) {
       console.error('=== CreateRoleModal: API Error ===', error);
-      console.log('=== CreateRoleModal: Falling back to mock data ===');
       // Error loading from API, fallback to mock data
       // Mock data với permissions đầy đủ hơn
       const mockPermissions: Permission[] = [

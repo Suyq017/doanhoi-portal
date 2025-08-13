@@ -161,6 +161,8 @@ export const useOrganizationPage = (options: UseOrganizationPageOptions = {}) =>
         handleOrganizationCreateError,
         toasts,
         hideToast,
+        showSuccess,
+        showError,
         getPageTitle,
         renderOrganization
     };

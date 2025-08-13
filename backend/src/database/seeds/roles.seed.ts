@@ -17,9 +17,9 @@ export const seedRoles = async (dataSource: DataSource) => {
             'users.access', 'users.create', 'users.view_details', 'users.update', 'users.delete', 'users.export',
             'organizations.access', 'organizations.create', 'organizations.view_member_count', 'organizations.access_children', 'organizations.update', 'organizations.delete', 'organizations.add_member', 'organizations.remove_member',
             'departments.access', 'departments.create', 'departments.view_details', 'departments.update', 'departments.delete',
-            'classes.access', 'classes.create', 'classes.view_details', 'classes.update', 'classes.delete',
-            'permissions.access', 'permissions.create', 'permissions.update', 'permissions.delete', 'permissions.view_details',
+            'classes.access', 'classes.create', 'classes.view_details', 'classes.update', 'classes.delete',            'permissions.access', 'permissions.create', 'permissions.update', 'permissions.delete', 'permissions.view_details',
             'payment-campaigns.access', 'payment-campaigns.create', 'payment-campaigns.read', 'payment-campaigns.update', 'payment-campaigns.delete', 'payment-campaigns.manage_assignments', 'payment-campaigns.view_reports', 'payment-campaigns.export',
+            'my-payments.access',
         ]
     },
     ];
