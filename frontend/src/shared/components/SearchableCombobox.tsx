@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, Search, Check } from 'lucide-react';
 
 interface Option {
   value: string;
@@ -140,8 +140,9 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full px-3 py-2 text-left border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:disabled:bg-gray-600 ${isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''
-          }`}
+        className={`w-full px-3 py-2 text-left border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-doan-500 focus:border-doan-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:disabled:bg-gray-600 ${
+          disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400 dark:hover:border-gray-500 cursor-pointer'
+        } ${isOpen ? 'ring-2 ring-doan-500 border-doan-500' : ''} transition-colors duration-200`}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
@@ -150,8 +151,7 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
             {displayValue || placeholder}
           </span>
           <ChevronDown
-            className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'transform rotate-180' : ''
-              }`}
+            className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''}`}
           />
         </div>
       </button>
@@ -162,20 +162,22 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
           {/* Search Input */}
           <div className="p-2 border-b border-gray-200 dark:border-gray-600">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute w-4 h-4 text-gray-500 transform -translate-y-1/2 left-2 top-1/2" />
               <input
                 ref={inputRef}
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
                 placeholder="Tìm kiếm..."
-                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:placeholder-gray-400"
+                className="w-full py-2 pl-8 pr-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 focus:border-doan-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:placeholder-gray-400"
               />
             </div>
-          </div>          {/* Options List */}
+          </div>          
+          
+          {/* Options List */}
           <ul
             ref={listRef}
-            className="max-h-60 overflow-auto py-1"
+            className="py-1 overflow-auto max-h-60"
             role="listbox"
           >
             {loading ? (
@@ -191,11 +193,11 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
                 <li
                   key={option.value}
                   onClick={() => !option.disabled && handleSelect(option.value)}
-                  className={`px-3 py-2 text-sm cursor-pointer ${option.disabled
+                  className={`px-3 py-2 text-sm cursor-pointer transition-colors duration-150 flex items-center justify-between ${option.disabled
                       ? 'text-gray-400 cursor-not-allowed dark:text-gray-500'
                       : 'text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600'
                     } ${option.value === value
-                      ? 'bg-blue-100 text-blue-900 dark:bg-blue-600 dark:text-white'
+                      ? 'bg-doan-50 text-doan-600 dark:bg-doan-900/20 dark:text-doan-400'
                       : ''
                     } ${index === focusedIndex
                       ? 'bg-gray-100 dark:bg-gray-600'
@@ -204,7 +206,10 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
                   role="option"
                   aria-selected={option.value === value}
                 >
-                  {option.label}
+                  <span>{option.label}</span>
+                  {option.value === value && (
+                    <Check className="w-4 h-4 text-doan-600 dark:text-doan-400" />
+                  )}
                 </li>
               ))
             )}

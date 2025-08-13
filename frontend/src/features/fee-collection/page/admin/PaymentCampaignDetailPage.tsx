@@ -518,7 +518,12 @@ const PaymentCampaignDetailPage: React.FC = () => {
             <Users className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             <div>
               <div className="text-sm text-gray-500 dark:text-gray-400">{t('detail.createdBy')}</div>
-              <div className="font-medium text-gray-900 dark:text-white">{campaign.createdByUser?.familyName} {campaign.createdByUser?.givenName}</div>
+              <div className="font-medium text-gray-900 dark:text-white">
+                {campaign.createdByUser?.familyName} {campaign.createdByUser?.givenName}
+              </div>
+              <div className='text-xs font-normal'>
+                {campaign.createdByUser?.email} - {campaign.createdByUser?.code}
+              </div>
             </div>
           </div>
 

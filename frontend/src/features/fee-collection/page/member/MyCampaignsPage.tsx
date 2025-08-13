@@ -7,6 +7,7 @@ import { usePermissions } from '../../../../shared/hooks/usePermissions';
 import { useToast } from '../../../../shared/hooks/useToast';
 import { Toast } from '../../../../shared/components';
 import { UserTablePagination } from '../../../../shared/components/UserTable/UserTablePagination';
+import Select, { SelectOption } from '../../../../shared/components/Select';
 
 interface Filters {
   status: string;
@@ -47,6 +48,26 @@ export const MyCampaignsPage: React.FC = () => {
     const assignment = assignments.find(a => a.campaign.organization.id === organizationId);
     return assignment?.campaign.organization.name || `Tổ chức ${organizationId}`;
   };
+  
+  // Select options
+  const statusOptions: SelectOption[] = [
+    { value: '', label: t('filters.allStatus') },
+    { value: 'PENDING', label: t('status.pending') },
+    { value: 'OVERDUE', label: t('status.overdue') },
+    { value: 'PAID', label: t('status.paid') }
+  ];
+
+  const sortByOptions: SelectOption[] = [
+    { value: 'dueDate', label: t('sort.dueDate') },
+    { value: 'assignedAt', label: t('sort.assignedAt') },
+    { value: 'amount', label: t('sort.amount') }
+  ];
+
+  const sortOrderOptions: SelectOption[] = [
+    { value: 'asc', label: t('sort.ascending') },
+    { value: 'desc', label: t('sort.descending') }
+  ];
+
   useEffect(() => {
     fetchAssignments();
   }, []);
@@ -359,47 +380,36 @@ export const MyCampaignsPage: React.FC = () => {
               placeholder={t('search.placeholder')}
               value={filters.search}
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
-              className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
 
           {/* Status Filter */}
           <div>
-            <select
+            <Select
+              options={statusOptions}
               value={filters.status}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">{t('filters.allStatus')}</option>
-              <option value="PENDING">{t('status.pending')}</option>
-              <option value="OVERDUE">{t('status.overdue')}</option>
-              <option value="PAID">{t('status.paid')}</option>
-            </select>
+              onChange={(value) => setFilters(prev => ({ ...prev, status: value, page: 1 }))}
+              placeholder={t('filters.allStatus')}
+            />
           </div>
 
           {/* Sort By */}
           <div>
-            <select
+            <Select
+              options={sortByOptions}
               value={filters.sortBy}
-              onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            >
-              <option value="dueDate">{t('sort.dueDate')}</option>
-              <option value="assignedAt">{t('sort.assignedAt')}</option>
-              <option value="amount">{t('sort.amount')}</option>
-            </select>
+              onChange={(value) => setFilters(prev => ({ ...prev, sortBy: value as any }))}
+            />
           </div>
 
           {/* Sort Order */}
           <div>
-            <select
+            <Select
+              options={sortOrderOptions}
               value={filters.sortOrder}
-              onChange={(e) => setFilters(prev => ({ ...prev, sortOrder: e.target.value as any }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            >
-              <option value="asc">{t('sort.ascending')}</option>
-              <option value="desc">{t('sort.descending')}</option>
-            </select>
+              onChange={(value) => setFilters(prev => ({ ...prev, sortOrder: value as any }))}
+            />
           </div>
         </div>
       </div>

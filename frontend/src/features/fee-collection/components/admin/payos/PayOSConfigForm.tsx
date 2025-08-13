@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Copy, Check, Save, ClipboardCopy, Clipboard, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/shared/hooks/useToast';
+import { Toast } from '@/shared/components';
 
 interface PayOSConfig {
   id?: string;
@@ -33,6 +35,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
   readOnly = false 
 }) => {
   const { t } = useTranslation('payosConfig');
+  const { showError, toasts, hideToast } = useToast();
   const [formData, setFormData] = useState({
     clientId: '',
     apiKey: '',
@@ -142,7 +145,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
       setTimeout(() => setCopiedField(null), 2000);
     } catch (err) {
       console.error('Cannot copy configuration: ', err);
-      alert(t('errors.copyFailed'));
+      showError(t('errors.copyFailed'));
     }
   };
 
@@ -169,11 +172,11 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
         setCopiedField('paste');
         setTimeout(() => setCopiedField(null), 2000);
       } else {
-        alert(t('errors.invalidClipboardData'));
+        showError(t('errors.invalidClipboardData'));
       }
     } catch (err) {
       console.error('Không thể dán cấu hình: ', err);
-      alert(t('errors.clipboardAccessFailed'));
+      showError(t('errors.clipboardAccessFailed'));
     }
   };
 
@@ -202,7 +205,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
       setErrors({});
     } catch (error) {
       console.error('Error deleting PayOS config:', error);
-      alert(t('errors.deleteFailed'));
+      showError(t('errors.deleteFailed'));
     }
   };
 
@@ -443,6 +446,17 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
           </div>
         )}
       </form>
+
+      {/* Toast notifications */}
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          type={toast.type}
+          message={toast.message}
+          duration={toast.duration}
+          onClose={() => hideToast(toast.id)}
+        />
+      ))}
     </div>
   );
 };

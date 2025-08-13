@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '@/shared/hooks/useToast';
 import { Toast, ConfirmDialog } from '@/shared/components';
 import SearchableCombobox from '@/shared/components/SearchableCombobox';
+import Select, { SelectOption } from '@/shared/components/Select';
 import { UserTablePagination } from '@/shared/components/UserTable/UserTablePagination';
 import { PaymentCampaign, PaymentCampaignFilters, Organization } from '../../types';
 import { paymentCampaignService } from '@/shared/services/fee-collection-service';
@@ -88,6 +89,15 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
       value: org.id,
       label: org.name
     }))
+  ];
+
+  // Status options for Select component
+  const statusOptions: SelectOption[] = [
+    { value: '', label: t('listComponent.allStatus') },
+    { value: 'DRAFT', label: t('listComponent.draft') },
+    { value: 'ACTIVE', label: t('listComponent.active') },
+    { value: 'COMPLETED', label: t('listComponent.completed') },
+    { value: 'CANCELLED', label: t('listComponent.cancelled') }
   ];
 
   useEffect(() => {
@@ -315,17 +325,12 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
               {t('listComponent.status')}
             </label>
-            <select
+            <Select
+              options={statusOptions}
               value={filters.status || ''}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value as PaymentCampaign['status'] || undefined, page: 1 }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">{t('listComponent.allStatus')}</option>
-              <option value="DRAFT">{t('listComponent.draft')}</option>
-              <option value="ACTIVE">{t('listComponent.active')}</option>
-              <option value="COMPLETED">{t('listComponent.completed')}</option>
-              <option value="CANCELLED">{t('listComponent.cancelled')}</option>
-            </select>
+              onChange={(value) => setFilters(prev => ({ ...prev, status: value as PaymentCampaign['status'] || undefined, page: 1 }))}
+              placeholder={t('listComponent.allStatus')}
+            />
           </div>
 
           <div>
@@ -336,7 +341,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
               type="date"
               value={filters.startDate || ''}
               onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value || undefined, page: 1 }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 focus:border-doan-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
 
@@ -348,7 +353,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
               type="date"
               value={filters.endDate || ''}
               onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value || undefined, page: 1 }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 focus:border-doan-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
         </div>
@@ -361,7 +366,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
               placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
         </div>
