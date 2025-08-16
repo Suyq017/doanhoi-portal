@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useToast } from '../../shared/hooks';
 import { Toast } from '../../shared';
 import {

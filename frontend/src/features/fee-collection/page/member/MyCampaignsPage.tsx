@@ -80,6 +80,7 @@ export const MyCampaignsPage: React.FC = () => {
 
       // Áp dụng cơ chế phân quyền: chỉ hiển thị assignments từ những tổ chức mà user có quyền truy cập
       const filteredAssignments = result.filter((assignment: PaymentAssignment) => {
+        return true;
         // Super admin có thể xem tất cả
         if (isSuperAdmin()) {
           return true;

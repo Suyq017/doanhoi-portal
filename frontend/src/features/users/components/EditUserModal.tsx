@@ -101,11 +101,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       };
 
       setFormData(newFormData);
-      setErrors({});
-
-      // Set role assignments
+      setErrors({});      // Set role assignments - don't create empty assignment if user has no roles
       const assignments = convertUserRolesToAssignments(currentUser);
-      setRoleAssignments(assignments.length > 0 ? assignments : [generateNewAssignment()]);
+      setRoleAssignments(assignments);
 
       // Set user organizations
       const userOrgs = getUserOrganizations(currentUser);
@@ -198,15 +196,15 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         const totalRemoved = safeToRemoveOrgs.length;
         const totalKept = notRemovedOrgs.length;
 
-        let message = t('users:messages.organizationMembershipUpdated', { 
-          added: totalAdded, 
+        let message = t('users:messages.organizationMembershipUpdated', {
+          added: totalAdded,
           removed: totalRemoved,
           defaultValue: `Đã cập nhật thành viên tổ chức: +${totalAdded}, -${totalRemoved}`
         });
         if (totalKept > 0) {
           message = t('users:messages.organizationMembershipUpdatedWithKept', {
             added: totalAdded,
-            removed: totalRemoved, 
+            removed: totalRemoved,
             kept: totalKept,
             defaultValue: `Đã cập nhật thành viên tổ chức: +${totalAdded}, -${totalRemoved} (giữ lại ${totalKept} tổ chức cha cần thiết)`
           });
@@ -484,8 +482,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       // First update the basic user info
       await onSubmit(cleanedData);
 
-      // Then handle role assignments separately if there are valid assignments
-      const validRoleAssignments = roleAssignments.filter(assignment => assignment.roleIds.length > 0); if (validRoleAssignments.length > 0) {
+      // Then handle role assignments separately
+      const validRoleAssignments = roleAssignments.filter(assignment => assignment.roleIds.length > 0);
+
+      if (validRoleAssignments.length > 0) {
         console.log('Updating role assignments:', validRoleAssignments);
 
         // Remove frontend-only properties before sending to backend
@@ -516,7 +516,19 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           }
           throw roleError;
         }
-      }      // Handle organization membership changes
+      } else if (roleAssignments.length === 0) {
+        // User explicitly removed all role assignments - use grantRoles with empty array
+        console.log('User removed all role assignments - clearing via grantRoles API');
+
+        const clearRolesPayload = {
+          userId: user.id,
+          roleAssignments: [] // Empty array will remove all roles (backend validation updated to allow this)
+        };
+
+        console.log('Clearing all roles via grantRoles API');
+        await roleService.grantRoles(clearRolesPayload);
+        console.log('All role assignments successfully cleared');
+      }// Handle organization membership changes
       await handleOrganizationMembershipUpdate();
 
       // Reload user detail immediately after organization changes to get accurate data
@@ -561,7 +573,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       userType: 'student',
       membershipStatus: 'none',
       organizationId: '',
-    }); setRoleAssignments([generateNewAssignment()]);
+    }); setRoleAssignments([]); // Reset to empty array instead of creating default assignment
     setUserOrganizations([]);
     setIsSubmitting(false);
     setErrors({});

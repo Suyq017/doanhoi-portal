@@ -89,37 +89,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       }
     ];
 
-    // Debug logging
-    console.log('🔍 Navigation Debug Info:');
-    console.log('- isAuthenticated:', permissions.isAuthenticated);
-    console.log('- permissionsLoading:', permissions.permissionsLoading);
-    console.log('- currentOrganizationId:', permissions.currentOrganizationId);
-    console.log('- userRoles:', permissions.userRoles);
-    console.log('- userPermissions:', permissions.userPermissions);
-
-    // Test payment permission specifically
-    const hasPaymentAccess = permissions.hasPermission('payment-campaigns.access', permissions.currentOrganizationId);
-    console.log('- hasPaymentAccess (payment-campaigns.access):', hasPaymentAccess);
-
-    // Test alternative permission methods
-    const canAccessPaymentCampaigns = permissions.canAccessPaymentCampaigns();
-    console.log('- canAccessPaymentCampaigns():', canAccessPaymentCampaigns);
-
     // If not authenticated, return empty navigation (pages will handle auth via AuthGuard)
     if (!permissions.isAuthenticated) {
-      console.log('❌ User not authenticated - returning empty navigation');
       return [];
     }
 
     // If permissions are still loading, show all items temporarily
     if (permissions.permissionsLoading) {
-      console.log('⏳ Permissions loading - showing all navigation items');
       return baseNavigation;
     }    // Filter items based on permissions
     const filteredNavigation = baseNavigation.filter(item => {
       if ('requiredPermission' in item && item.requiredPermission) {
         const hasAccess = permissions.hasPermission(item.requiredPermission, permissions.currentOrganizationId);
-        console.log(`🔒 ${item.name} (${item.requiredPermission}):`, hasAccess);
         return hasAccess;
       }
 
@@ -128,16 +109,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         const accessibleChildren = item.children.filter(child => {
           if (child.requiredPermission) {
             const hasAccess = permissions.hasPermission(child.requiredPermission, permissions.currentOrganizationId);
-            console.log(`🔒 ${child.name} (${child.requiredPermission}):`, hasAccess);
             return hasAccess;
           }
           return true;
         });
-        console.log(`📁 ${item.name} - accessible children:`, accessibleChildren.length);
         return accessibleChildren.length > 0;
       }
 
-      console.log(`✅ ${item.name} - no permission required`);
       return true;
     }).map(item => {
       if ('children' in item && item.children) {
@@ -151,7 +129,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       return item;
     });
 
-    console.log('📋 Final filtered navigation:', filteredNavigation.map(item => item.name)); return filteredNavigation;
+    return filteredNavigation;
   };
 
   const navigation = getFilteredNavigation();

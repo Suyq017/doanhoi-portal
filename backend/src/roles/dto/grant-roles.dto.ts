@@ -37,15 +37,12 @@ export class GrantRolesDto {
         example: 'user-id-123'
     })
     @IsString()
-    userId: string;
-
-    @ApiProperty({
-        description: 'Array of role assignments',
+    userId: string; @ApiProperty({
+        description: 'Array of role assignments. Empty array will remove all user roles.',
         type: [RoleAssignmentDto]
     })
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => RoleAssignmentDto)
-    @ArrayMinSize(1)
     roleAssignments: RoleAssignmentDto[];
 }

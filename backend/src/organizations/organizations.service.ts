@@ -6,6 +6,12 @@ import { UserOrganization, UserOrgRole } from '../entities/user-organization.ent
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 
+// Interface cho Organization có thêm memberCount và hasChildren
+type OrganizationWithExtras = Organization & {
+  memberCount: number;
+  hasChildren?: boolean;
+};
+
 @Injectable()
 export class OrganizationsService {
   constructor(
@@ -39,9 +45,7 @@ export class OrganizationsService {
       relations: ['parent', 'children'],
       order: { name: 'ASC' }
     });
-  }
-
-  async findTree(): Promise<Organization[]> {
+  } async findTree(): Promise<OrganizationWithExtras[]> {
     // 1. Lấy cấu trúc cây tổ chức
     const organizations = await this.organizationsRepository.findTrees();
 
@@ -49,7 +53,7 @@ export class OrganizationsService {
     const orgIds = this.getAllOrganizationIds(organizations);
     const memberCountsMap = await this.getMemberCountsMap(orgIds);
 
-    // 3. Thêm memberCount vào mỗi tổ chức
+    // 3. Thêm memberCount và hasChildren vào mỗi tổ chức
     return this.addMemberCountsToTree(organizations, memberCountsMap);
   }
 
@@ -90,27 +94,25 @@ export class OrganizationsService {
     }
 
     return memberCountsMap;
-  }
-
-  // Thêm memberCount vào cây tổ chức
+  }  // Thêm memberCount vào cây tổ chức
   private addMemberCountsToTree(
     organizations: Organization[],
     memberCountsMap: Map<string, number>
-  ): Organization[] {
+  ): OrganizationWithExtras[] {
     return organizations.map(org => {
       const memberCount = memberCountsMap.get(org.id) || 0;
 
       // Đệ quy cho children
       const children = org.children && org.children.length > 0
         ? this.addMemberCountsToTree(org.children, memberCountsMap)
-        : [];
+        : []; const result = {
+          ...org,
+          memberCount,
+          children: children as any,
+          hasChildren: children.length > 0 // Thêm flag hasChildren
+        } as OrganizationWithExtras;
 
-      return {
-        ...org,
-        slug: org.slug, // Ensure slug is included
-        memberCount,
-        children
-      } as Organization & { memberCount: number };
+      return result;
     });
   }
 
@@ -121,6 +123,72 @@ export class OrganizationsService {
       relations: ['parent', 'children'],
       order: { name: 'ASC' }
     });
+  } async getAccessibleOrganizations(userId: string): Promise<Organization[]> {
+    try {
+      console.log(`[OrganizationsService] Getting organizations with payment-campaigns.create permission for user: ${userId}`);
+
+      // Validate userId
+      if (!userId) {
+        console.error('[OrganizationsService] Invalid userId provided');
+        throw new BadRequestException('Invalid user ID');
+      }      // Check if user is super admin (has global system.access_admin permission)
+      const superAdminQuery = `
+        SELECT ur.id
+        FROM user_roles ur
+        JOIN roles r ON ur."roleId" = r.id
+        JOIN role_permissions rp ON r.id = rp."roleId"
+        JOIN permissions p ON rp."permissionId" = p.id
+        WHERE ur."userId" = $1 
+        AND ur."organizationId" IS NULL
+        AND ur."isActive" = true
+        AND (p.code = 'system.access_admin' OR r.name = 'super_admin')
+        AND p."isActive" = true
+        LIMIT 1
+      `;
+
+      const superAdminResult = await this.organizationsRepository.query(superAdminQuery, [userId]);
+
+      if (superAdminResult.length > 0) {
+        console.log(`[OrganizationsService] User ${userId} is super admin, returning all organizations`);        // Super admin can see all organizations
+        return this.organizationsRepository.find({
+          where: { isActive: true },
+          order: { name: 'ASC' }
+        });
+      }      // Query for organizations where user has payment-campaigns.create permission
+      const accessibleOrgsQuery = `
+        SELECT DISTINCT o.id, o.name, o.code, o.type, o."parentId", o."createdAt", o."updatedAt", o."isActive"
+        FROM user_roles ur
+        JOIN roles r ON ur."roleId" = r.id
+        JOIN role_permissions rp ON r.id = rp."roleId"
+        JOIN permissions p ON rp."permissionId" = p.id
+        JOIN organizations o ON ur."organizationId" = o.id
+        WHERE ur."userId" = $1 
+        AND ur."isActive" = true
+        AND p.code = 'payment-campaigns.create'
+        AND p."isActive" = true
+        AND o."isActive" = true
+        ORDER BY o.name ASC
+      `;
+
+      const accessibleOrganizations = await this.organizationsRepository.query(accessibleOrgsQuery, [userId]);
+
+      console.log(`[OrganizationsService] Found ${accessibleOrganizations.length} organizations with payment-campaigns.create permission for user ${userId}`);      // Convert query results to Organization entities
+      const organizationIds = accessibleOrganizations.map(row => row.id);
+
+      if (organizationIds.length === 0) {
+        return [];
+      }      // Fetch full Organization entities with relations
+      const organizations = await this.organizationsRepository.find({
+        where: { id: In(organizationIds) },
+        relations: ['parent'],
+        order: { name: 'ASC' }
+      });
+
+      return organizations;
+    } catch (error) {
+      console.error('[OrganizationsService] Error getting accessible organizations:', error);
+      throw error;
+    }
   }
 
   async findOne(id: string): Promise<Organization> {
@@ -352,12 +420,12 @@ export class OrganizationsService {
   }
 
   async getMembers(
-    organizationId: string, 
-    page: number = 1, 
+    organizationId: string,
+    page: number = 1,
     limit: number = 10
   ): Promise<{ members: UserOrganization[], total: number, page: number, limit: number, totalPages: number }> {
     const offset = (page - 1) * limit;
-    
+
     const [members, total] = await this.userOrganizationsRepository.findAndCount({
       where: { organizationId },
       relations: ['user'],
@@ -371,13 +439,13 @@ export class OrganizationsService {
     return {
       members,
       total,
-      page,
-      limit,
+      page, limit,
       totalPages
     };
   }
+
   // Lấy danh sách tổ chức con trực tiếp
-  async findChildren(id: string): Promise<Organization[]> {
+  async findChildren(id: string): Promise<OrganizationWithExtras[]> {
     const organization = await this.organizationsRepository.findOne({
       where: { id },
     });
@@ -403,13 +471,24 @@ export class OrganizationsService {
     // Lấy số lượng thành viên cho mỗi tổ chức con
     const memberCountsMap = await this.getMemberCountsMap(childrenIds);
 
-    // Thêm memberCount vào mỗi tổ chức con
-    return children.map(child => {
-      return {
-        ...child,
-        memberCount: memberCountsMap.get(child.id) || 0
-      } as Organization & { memberCount: number };
-    });
+    // Kiểm tra mỗi child có children hay không
+    const childrenWithHasChildren = await Promise.all(
+      children.map(async (child) => {
+        // Đếm số lượng con của child này
+        const childrenCount = await this.organizationsRepository.count({
+          where: { parent: { id: child.id } }
+        }); const result = {
+          ...child,
+          memberCount: memberCountsMap.get(child.id) || 0,
+          children: childrenCount > 0 ? [] as any : undefined, // Nếu có children thì set mảng rỗng, không thì undefined
+          hasChildren: childrenCount > 0 // Thêm flag hasChildren
+        } as OrganizationWithExtras;
+
+        return result;
+      })
+    );
+
+    return childrenWithHasChildren;
   }
 
   async getStats(): Promise<{
@@ -563,8 +642,7 @@ export class OrganizationsService {
       totalMembers
     };
   }
-
-  async getOrganizationByTypeAndCode(type: string, code: string): Promise<Organization> {
+  async getOrganizationByTypeAndCode(type: string, code: string): Promise<OrganizationWithExtras> {
     const organization = await this.organizationsRepository.findOne({
       where: {
         type: type as OrganizationType,
@@ -584,20 +662,31 @@ export class OrganizationsService {
     }
 
     // Lấy số lượng thành viên cho tổ chức hiện tại và các children
-    const memberCountMap = await this.getMemberCountsMap(orgIds);
-
-    // Thêm memberCount vào organization và các children
+    const memberCountMap = await this.getMemberCountsMap(orgIds);    // Thêm memberCount và hasChildren vào organization và các children
     const result = {
       ...organization,
-      memberCount: memberCountMap.get(organization.id) || 0
-    } as Organization & { memberCount: number };
+      memberCount: memberCountMap.get(organization.id) || 0,
+      hasChildren: organization.children && organization.children.length > 0
+    } as OrganizationWithExtras;
 
-    // Thêm memberCount cho children nếu có
+    // Thêm memberCount và hasChildren cho children nếu có
     if (result.children && result.children.length > 0) {
-      result.children = result.children.map(child => ({
-        ...child,
-        memberCount: memberCountMap.get(child.id) || 0
-      })) as any;
+      // Lấy thông tin hasChildren cho từng child
+      const childrenWithHasChildren = await Promise.all(
+        result.children.map(async (child) => {
+          const childrenCount = await this.organizationsRepository.count({
+            where: { parent: { id: child.id } }
+          }); const childResult = {
+            ...child,
+            memberCount: memberCountMap.get(child.id) || 0,
+            hasChildren: childrenCount > 0
+          } as OrganizationWithExtras;
+
+          return childResult;
+        })
+      );
+
+      result.children = childrenWithHasChildren as any;
     }
 
     return result;

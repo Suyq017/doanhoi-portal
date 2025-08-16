@@ -48,9 +48,7 @@ export const useOrganizationTree = () => {
         for (const org of orgs) {
             const fetchPromise = (async () => {
                 try {
-                    const children = await organizationService.getOrganizationChildren(org.id);
-
-                    setOrganizations(prevOrgs => {
+                    const children = await organizationService.getOrganizationChildren(org.id); setOrganizations(prevOrgs => {
                         return prevOrgs.map(prevOrg => {
                             if (prevOrg.id === org.id) {
                                 return {

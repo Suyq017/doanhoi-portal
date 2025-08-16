@@ -65,7 +65,6 @@ export class AuthController {
     description: 'Profile retrieved successfully'
   })
   async getProfile(@Request() req) {
-    console.log('🔍 AuthController.getProfile - req.user:', { id: req.user?.id, email: req.user?.email });
     return req.user;
   }
 
@@ -81,7 +80,6 @@ export class AuthController {
     @Query('organizationId') organizationId?: string
   ) {
     const userId = req.user.id;
-    console.log('🔍 AuthController.getCurrentUserPermissions - req.user:', { id: req.user?.id, email: req.user?.email }, 'using userId:', userId);
     return this.authService.getUserPermissions(userId, organizationId);
   }
 
@@ -89,7 +87,6 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Initiate Google OAuth login' })
   async googleAuth(@Request() req) {
-    console.log('Initiating Google OAuth login...');
     // This will redirect to Google
   }
 
@@ -98,7 +95,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Google OAuth callback' })
   async googleAuthRedirect(@Request() req, @Res() res: Response) {
     try {
-      console.log('Google OAuth callback received:', req.user);
+      ;
 
       if (!req.user) {
         console.error('No user data received from Google OAuth');

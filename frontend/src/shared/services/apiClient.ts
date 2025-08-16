@@ -151,11 +151,12 @@ class ApiClient {
       body: data ? JSON.stringify(data) : undefined,
     });
   }
-
   delete<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+    const headers = data ? { 'Content-Type': 'application/json', ...options?.headers } : options?.headers;
     return this.request<T>(endpoint, {
       ...options,
       method: 'DELETE',
+      headers,
       body: data ? JSON.stringify(data) : undefined,
     });
   }

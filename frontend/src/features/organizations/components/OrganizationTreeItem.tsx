@@ -45,7 +45,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
     const { auth, hasPermission } = useAuth();
     const permissions = useOrganizationPagePermissions();
     const location = useLocation();
-    const hasChildren = org.children && org.children.length > 0;
+    const hasChildren = org.hasChildren ?? (org.children && org.children.length > 0); // Ưu tiên hasChildren từ API
     const paddingLeft = level * 24; const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -53,54 +53,47 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
     // Helper function kiểm tra user có trong user_organization không
     const isUserInOrganization = (organizationId: string): boolean => {
         if (!auth.user?.organizations) {
-            console.log(`❌ No user organizations found for org ${org.name}. User:`, {
-                userId: auth.user?.id,
-                email: auth.user?.email,
-                hasOrganizations: !!auth.user?.organizations,
-                organizationsCount: auth.user?.organizations?.length || 0
-            });
             return false;
         }
 
         const isMember = auth.user.organizations.some(userOrg =>
             userOrg.organizationId === organizationId && userOrg.isActive
         );
-
-        console.log(`👁️ Eye icon for ${org.name}: ${isMember ? 'SHOW' : 'HIDE'}`);
         return isMember;
     };
 
-    // Debug logging for permissions
-    console.log(`🔐 Organization ${org.name} permissions:`, {
-        canAddMember: permissions.canAddMember,
-        canEdit: permissions.canEdit,
-        canDelete: permissions.canDelete,
-        canShowUsersIcon: permissions.canShowUsersIcon,
-        canAccessChildren: permissions.canAccessChildren,
-        isSuperAdmin: permissions.isSuperAdmin,
-        hasAnyManagementAction: permissions.hasAnyManagementAction,
-        currentUser: auth.user?.email,
-        userRoles: auth.userRoles?.map(r => ({ name: r.name, orgId: r.organizationId })) || [],
-        isMemberOfOrg: isUserInOrganization(org.id)
-    });
-
     // Helper functions kiểm tra quyền hành động dựa trên role và organization context
     const canAddMember = (): boolean => {
-        return permissions.canAddMember;
+        // Super admin có thể thêm member ở bất kỳ tổ chức nào
+        if (permissions.isSuperAdmin) return true;
+
+        // Kiểm tra quyền add member cho tổ chức cụ thể này
+        return hasPermission('organizations.add_member', org.id);
     };
 
     const canEditOrganization = (): boolean => {
-        return permissions.canEdit;
+        // Super admin có thể edit bất kỳ tổ chức nào
+        if (permissions.isSuperAdmin) return true;
+
+        // Kiểm tra quyền edit cho tổ chức cụ thể này
+        return hasPermission('organizations.update', org.id);
     };
 
     const canDeleteOrganization = (): boolean => {
-        return permissions.canDelete;
+        // Super admin có thể delete bất kỳ tổ chức nào
+        if (permissions.isSuperAdmin) return true;
+
+        // Kiểm tra quyền delete cho tổ chức cụ thể này
+        return hasPermission('organizations.delete', org.id);
+    }; const canViewMembers = (): boolean => {
+        // Super admin có thể xem members ở bất kỳ tổ chức nào
+        if (permissions.isSuperAdmin) return true;
+
+        // User có thể xem members nếu có quyền view hoặc manage members cho tổ chức này
+        return hasPermission('organizations.view_details', org.id) ||
+            hasPermission('organizations.manage_members', org.id);
     };
 
-    const canViewMembers = (): boolean => {
-        // User có thể xem members nếu có quyền view hoặc manage members
-        return permissions.canShowUsersIcon;
-    };
 
     const handleDeleteSuccess = () => {
         if (onOrganizationDeleted) {
@@ -183,9 +176,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         }
 
         return false;
-    };
-
-    const createDetailPath = (type: string, code?: string) => {
+    }; const createDetailPath = (type: string, code?: string) => {
         if (!code) return '#';
 
         // Trường hợp 1: Đang ở trang chính, chuyển sang trang detail
@@ -213,31 +204,31 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
     }; const shouldShowDetailLink = () => {
         // Không hiển thị eye icon nếu organization này là parent organization trong trang hiện tại
         if (isCurrentParentOrganization()) {
-            console.log(`👁️ Eye icon for ${org.name}: HIDE (Current parent organization)`);
+            return false;
+        }
+
+        // QUAN TRỌNG: Chỉ hiển thị icon con mắt nếu tổ chức VẪN CÒN CÓ CON
+        if (!hasChildren) {
             return false;
         }
 
         // ĐIỀU KIỆN HIỂN THỊ ICON CON MẮT:
         // 1. User là super admin (có thể xem tất cả tổ chức)
         if (permissions.isSuperAdmin) {
-            console.log(`👁️ Eye icon for ${org.name}: SHOW (Super Admin)`);
             return true;
         }
 
         // 2. User có quyền access_children cho tổ chức này cụ thể
-        if (canAccessSpecificOrganization(org.id)) {
-            console.log(`👁️ Eye icon for ${org.name}: SHOW (Access Children Permission for this organization)`);
+        if (hasPermission('organizations.access_children', org.id)) {
             return true;
         }
 
         // 3. User có trong user_organization của tổ chức này (là thành viên)
         const isMember = isUserInOrganization(org.id);
         if (isMember) {
-            console.log(`👁️ Eye icon for ${org.name}: SHOW (Organization Member)`);
             return true;
         }
 
-        console.log(`👁️ Eye icon for ${org.name}: HIDE (No permission - not super admin, no access_children permission for this org, not a member)`);
         return false;
     };
 
@@ -256,7 +247,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
             });
         }
 
-        if (canAccessSpecificOrganization(org.id)) {
+        if (hasPermission('organizations.access_children', org.id)) {
             return t('organizations:tooltips.eye_icon_access_children_specific', {
                 defaultValue: 'Xem chi tiết tổ chức (Quyền truy cập tổ chức này)'
             });
@@ -269,22 +260,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         }
 
         return t('common:actions.view_details', { defaultValue: 'Xem chi tiết' });
-    };// Helper function kiểm tra quyền access_children cho tổ chức cụ thể
-    const canAccessSpecificOrganization = (organizationId: string): boolean => {
-        // Kiểm tra quyền access_children cho tổ chức này cụ thể
-        const hasDirectPermission = hasPermission('organizations.access_children', organizationId);
-
-        console.log(`🔍 Checking access_children permission for org ${org.name} (${organizationId}):`, {
-            hasDirectPermission,
-            userRoles: auth.userRoles?.filter(role => role.organizationId === organizationId),
-            currentOrganizationId: auth.currentOrganizationId,
-            organizationId
-        });
-
-        return hasDirectPermission;
-    };
-
-    return (
+    }; return (
         <div key={org.id}>
             <div
                 className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"

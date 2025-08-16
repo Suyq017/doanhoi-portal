@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 interface RefreshConfig {
     fetchData: () => Promise<void>;
@@ -19,20 +19,34 @@ export const useRefreshHandlers = (config: RefreshConfig) => {
         handleOrganizationCreateError
     } = config;
 
+    // State for refresh key to trigger member stats refresh
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const incrementRefreshKey = useCallback(() => {
+        setRefreshKey(prev => prev + 1);
+    }, []);
+
     // Combined refresh function that refreshes both data and stats
     const handleRefreshAll = useCallback(async () => {
         await fetchData();
         if (refreshMemberStats) {
             refreshMemberStats();
+        } else {
+            // Force memberStats refresh by incrementing key
+            incrementRefreshKey();
         }
-    }, [fetchData, refreshMemberStats]);
+    }, [fetchData, refreshMemberStats, incrementRefreshKey]);
 
-    // Success/Error handlers for user operations
+    // Success/Error handlers for user operations with delayed refresh
     const handleShowSuccess = useCallback((message: string) => {
         if (handleBulkDeleteSuccess) {
             handleBulkDeleteSuccess(message);
         }
-    }, [handleBulkDeleteSuccess]);
+        // Delay refresh to allow toast to be visible
+        setTimeout(() => {
+            handleRefreshAll();
+        }, 1500); // 1.5 seconds delay
+    }, [handleBulkDeleteSuccess, handleRefreshAll]);
 
     const handleShowError = useCallback((message: string) => {
         if (handleBulkDeleteError) {
@@ -53,13 +67,13 @@ export const useRefreshHandlers = (config: RefreshConfig) => {
         if (handleOrganizationCreateError) {
             handleOrganizationCreateError(error);
         }
-    }, [handleOrganizationCreateError]);
-
-    return {
+    }, [handleOrganizationCreateError]); return {
+        refreshKey,
         handleRefreshAll,
         handleShowSuccess,
         handleShowError,
         handleOrganizationCreatedWrapper,
-        handleOrganizationCreateErrorWrapper
+        handleOrganizationCreateErrorWrapper,
+        incrementRefreshKey
     };
 };

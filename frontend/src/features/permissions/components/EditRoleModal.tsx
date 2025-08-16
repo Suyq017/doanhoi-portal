@@ -82,9 +82,6 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
     const { t } = useTranslation('permissions');
     const PERMISSION_GROUPS = usePermissionGroups();
 
-    console.log('=== EditRoleModal Debug ===');
-    console.log('Total permission groups defined:', PERMISSION_GROUPS.length);
-    console.log('Group IDs:', PERMISSION_GROUPS.map(g => g.id));
     const [formData, setFormData] = useState<UpdateRoleRequest>({
         displayName: '',
         description: '',
@@ -112,14 +109,10 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
     }, [isOpen, role]); const loadAvailablePermissions = async () => {
         try {
             setLoading(true);
-            console.log('=== EditRoleModal: Loading permissions from API ===');
             const permissions = await roleService.getAvailablePermissions();
-            console.log('=== EditRoleModal: API Response ===', permissions.length, 'permissions loaded');
-            console.log('Available categories:', [...new Set(permissions.map(p => p.category))]);
             setAvailablePermissions(permissions);
         } catch (error) {
             console.error('=== EditRoleModal: API Error ===', error);
-            console.log('=== EditRoleModal: Falling back to mock data ===');
             // Error loading from API, fallback to mock data
             // Mock data với permissions đầy đủ hơn
             setAvailablePermissions([
@@ -314,12 +307,6 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
         if (trimmedDescription) {
             validatedData.description = trimmedDescription;
         }
-
-        console.log('=== DEBUG EditRoleModal handleSubmit ===');
-        console.log('Role ID:', role.id);
-        console.log('Original form data:', formData);
-        console.log('Validated data being sent:', validatedData);
-        console.log('Permission IDs count:', validatedData.permissionIds.length);
 
         try {
             setSubmitting(true);
