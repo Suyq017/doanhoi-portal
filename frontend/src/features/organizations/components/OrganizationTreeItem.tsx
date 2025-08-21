@@ -6,6 +6,7 @@ import { Organization, OrganizationStats } from '../../../shared/types/organizat
 import { getOrgTypeText, getOrgTypeColor } from '../utils/organizationUtils';
 import { useAuth } from '../../auth/context/AuthContext';
 import { useOrganizationPagePermissions } from '../hooks/useOrganizationPagePermissions';
+import { ORGANIZATION_PERMISSIONS } from '../../../shared/constants/permissions';
 import AddMemberModal from './AddMemberModal';
 import EditOrganizationModal from './EditOrganizationModal';
 import DeleteOrganizationModal from './DeleteOrganizationModal';
@@ -68,7 +69,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         if (permissions.isSuperAdmin) return true;
 
         // Kiểm tra quyền add member cho tổ chức cụ thể này
-        return hasPermission('organizations.add_member', org.id);
+        return hasPermission(ORGANIZATION_PERMISSIONS.ADD_MEMBER, org.id);
     };
 
     const canEditOrganization = (): boolean => {
@@ -76,7 +77,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         if (permissions.isSuperAdmin) return true;
 
         // Kiểm tra quyền edit cho tổ chức cụ thể này
-        return hasPermission('organizations.update', org.id);
+        return hasPermission(ORGANIZATION_PERMISSIONS.UPDATE, org.id);
     };
 
     const canDeleteOrganization = (): boolean => {
@@ -84,14 +85,15 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         if (permissions.isSuperAdmin) return true;
 
         // Kiểm tra quyền delete cho tổ chức cụ thể này
-        return hasPermission('organizations.delete', org.id);
-    }; const canViewMembers = (): boolean => {
+        return hasPermission(ORGANIZATION_PERMISSIONS.DELETE, org.id);
+    };
+
+    const canViewMembers = (): boolean => {
         // Super admin có thể xem members ở bất kỳ tổ chức nào
         if (permissions.isSuperAdmin) return true;
 
-        // User có thể xem members nếu có quyền view hoặc manage members cho tổ chức này
-        return hasPermission('organizations.view_details', org.id) ||
-            hasPermission('organizations.manage_members', org.id);
+        // User có thể xem members nếu có quyền view_member_count cho tổ chức này
+        return hasPermission(ORGANIZATION_PERMISSIONS.VIEW_MEMBER_COUNT, org.id);
     };
 
 
@@ -219,7 +221,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         }
 
         // 2. User có quyền access_children cho tổ chức này cụ thể
-        if (hasPermission('organizations.access_children', org.id)) {
+        if (hasPermission(ORGANIZATION_PERMISSIONS.ACCESS_CHILDREN, org.id)) {
             return true;
         }
 
@@ -247,7 +249,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
             });
         }
 
-        if (hasPermission('organizations.access_children', org.id)) {
+        if (hasPermission(ORGANIZATION_PERMISSIONS.ACCESS_CHILDREN, org.id)) {
             return t('organizations:tooltips.eye_icon_access_children_specific', {
                 defaultValue: 'Xem chi tiết tổ chức (Quyền truy cập tổ chức này)'
             });
