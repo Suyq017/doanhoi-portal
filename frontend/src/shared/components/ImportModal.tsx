@@ -64,12 +64,12 @@ const ImportModal = ({
   const isValidFile = (file: File): boolean => {
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!config.acceptedFileTypes.includes(fileExtension)) {
-      showError(t('errors.invalidFileType'));
+      showError(t('import.errors.invalidFileType'));
       return false;
     }
 
     if (file.size > config.maxFileSize) {
-      showError(t('errors.fileTooLarge'));
+      showError(t('import.errors.fileTooLarge'));
       return false;
     }
 
@@ -144,7 +144,7 @@ const ImportModal = ({
       }));
     } catch (error) {
       console.error('File processing error:', error);
-      showError(t('errors.parseFile'));
+      showError(t('import.errors.parseFile'));
       setState(prev => ({ ...prev, loading: false }));
     }
   };

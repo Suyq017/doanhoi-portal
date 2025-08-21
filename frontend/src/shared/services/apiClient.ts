@@ -162,16 +162,28 @@ class ApiClient {
   }
 
   // Special method for file uploads (uses FormData instead of JSON)
-  uploadFile<T>(endpoint: string, formData: FormData, options?: RequestInit): Promise<T> {
-    // Remove Content-Type header for FormData - let browser set it with boundary
-    const { 'Content-Type': _, ...headersWithoutContentType } = (options?.headers as Record<string, string>) || {};
+  async uploadFile<T>(endpoint: string, formData: FormData): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`;
+    const token = authService.getAccessToken();
+    
+    // Prepare headers - only add Authorization, let browser set Content-Type for FormData
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
 
-    return this.request<T>(endpoint, {
-      ...options,
+    const response = await fetch(url, {
       method: 'POST',
       body: formData,
-      headers: headersWithoutContentType,
+      headers,
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Upload failed');
+    }
+
+    return response.json();
   }
 
   // Method to get the base URL for template downloads and other direct links
