@@ -16,6 +16,8 @@ import {
   ImportState,
   ImportStep
 } from '../types/import';
+import { Toast } from '@/shared/components';
+import { useToast } from '@/shared/hooks/useToast';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -31,6 +33,7 @@ const ImportModal = ({
   className = ''
 }: ImportModalProps) => {
   const { t } = useTranslation(['common', config.entityName]);
+  const { showError, toasts, hideToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [state, setState] = useState<ImportState>({
@@ -61,12 +64,12 @@ const ImportModal = ({
   const isValidFile = (file: File): boolean => {
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!config.acceptedFileTypes.includes(fileExtension)) {
-      alert(t('errors.invalidFileType'));
+      showError(t('import.errors.invalidFileType'));
       return false;
     }
 
     if (file.size > config.maxFileSize) {
-      alert(t('errors.fileTooLarge'));
+      showError(t('import.errors.fileTooLarge'));
       return false;
     }
 
@@ -126,8 +129,6 @@ const ImportModal = ({
             modified[passwordField] = true;
           }
 
-          // Note: Đã bỏ auto-fill isActive vì backend tự động set mặc định là true
-
           return item;
         });
       }
@@ -143,7 +144,7 @@ const ImportModal = ({
       }));
     } catch (error) {
       console.error('File processing error:', error);
-      alert(t('errors.parseFile'));
+      showError(t('import.errors.parseFile'));
       setState(prev => ({ ...prev, loading: false }));
     }
   };
@@ -934,6 +935,17 @@ const ImportModal = ({
           </div>
         </div>
       </div>
+
+      {/* Toast notifications */}
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          type={toast.type}
+          message={toast.message}
+          duration={toast.duration}
+          onClose={() => hideToast(toast.id)}
+        />
+      ))}
     </div>
   );
 };

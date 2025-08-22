@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import PayOSConfigForm from '../payos/PayOSConfigForm';
 import { PaymentCampaign } from '../../../types';
 import { payosConfigService, PayOSConfig, CreatePayOSConfigRequest, UpdatePayOSConfigRequest } from '@/shared/services/fee-collection-service/payosConfigService';
+import { Toast } from '@/shared/components';
+import { useToast } from '@/shared/hooks/useToast';
 
 // PayOSConfig interface for form compatibility
 interface FormPayOSConfig {
@@ -24,9 +26,9 @@ interface PayOSConfigTabProps {
 
 const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDelete }) => {
   const { t } = useTranslation('payosConfig');
+  const { showSuccess, toasts, hideToast } = useToast();
   const [config, setConfig] = useState<PayOSConfig | null>(null);
   const [loading, setLoading] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Check if campaign is in read-only state
   const readOnly = campaign.status === 'COMPLETED' || campaign.status === 'CANCELLED';
@@ -91,10 +93,7 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
       }
       
       setConfig(savedConfig);
-      setSaveSuccess(true);
-      
-      // Hide success message after 3 seconds
-      setTimeout(() => setSaveSuccess(false), 3000);
+      showSuccess(t('success.message'));
       
     } catch (error: any) {
       console.error('Error saving PayOS config:', error);
@@ -113,9 +112,7 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
       await payosConfigService.deletePayOSConfig(campaign.id);
       setConfig(null);
       
-      // Show success message briefly
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      showSuccess(t('success.deleteMessage'));
       
     } catch (error: any) {
       console.error('Error deleting PayOS config:', error);
@@ -157,27 +154,6 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
           )}
         </div>
       </div>
-
-      {/* Success Message */}
-      {saveSuccess && (
-        <div className="p-4 border border-green-200 rounded-md bg-green-50 dark:bg-green-900 dark:border-green-800">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <CheckCircle className="w-5 h-5 text-green-400" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
-                {t('success.title')}
-              </h3>
-              <div className="mt-2 text-sm text-green-700 dark:text-green-300">
-                <p>
-                  {t('success.message')}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Status Banner */}
       {!config ? (
@@ -237,6 +213,17 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
           readOnly={readOnly}
         />
       </div>
+
+      {/* Toast notifications */}
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          type={toast.type}
+          message={toast.message}
+          duration={toast.duration}
+          onClose={() => hideToast(toast.id)}
+        />
+      ))}
     </div>
   );
 };

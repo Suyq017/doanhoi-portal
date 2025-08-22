@@ -135,7 +135,8 @@ export const PaymentCampaignsPage = () => {
             <p className="mt-2 text-gray-600 dark:text-gray-400">
               {t('pageDescription')}
             </p>
-          </div>          {/* Create Button - Only show if user has permission */}
+          </div>          
+          {/* Create Button - Only show if user has permission */}
           <PermissionGuard permission="payment-campaigns.create">
             <div className="mt-4 sm:mt-0">
               <button
