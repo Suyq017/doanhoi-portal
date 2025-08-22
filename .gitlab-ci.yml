@@ -1,0 +1,100 @@
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  NODE_VERSION: "18"
+  DEPLOY_PATH: "/opt/doanhoi-portal"
+  BACKEND_PORT: "9200"
+  FRONTEND_PORT: "9100"
+
+cache:
+  paths:
+    - backend/node_modules/
+    - frontend/node_modules/
+
+test:backend:
+  stage: test
+  image: node:18
+  script:
+    - cd backend
+    - npm ci
+    - npm run lint
+    - npm run test
+  only:
+    - merge_requests
+    - dev
+
+test:frontend:
+  stage: test
+  image: node:18
+  script:
+    - cd frontend
+    - npm ci
+    - npm run lint
+    - npm run build
+  only:
+    - merge_requests
+    - dev
+
+build:
+  stage: build
+  image: node:18
+  script:
+    - cd backend
+    - npm ci
+    - npm run build
+    - cd ../frontend
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - backend/dist/
+      - frontend/dist/
+      - docker-compose.prod.yml
+      - Dockerfile.backend
+      - Dockerfile.frontend
+    expire_in: 1 hour
+  only:
+    - dev
+
+deploy:production:
+  stage: deploy
+  tags:
+    - deploy
+    - production
+  script:
+    - echo "Deploying with Docker Compose..."
+    
+    # Backup
+    - sudo cp -r $DEPLOY_PATH $DEPLOY_PATH.backup.$(date +%Y%m%d_%H%M%S) || true
+    
+    # Copy artifacts từ GitLab runner sang server
+    - sudo rm -rf $DEPLOY_PATH || true
+    - sudo mkdir -p $DEPLOY_PATH
+    - sudo cp -r backend/dist frontend/dist docker-compose.prod.yml Dockerfile.* $DEPLOY_PATH/
+    
+    # Copy environment files
+    - sudo cp /opt/configs/doanhoi-portal/.env $DEPLOY_PATH/backend/.env
+    - sudo cp /opt/configs/doanhoi-portal/.env.frontend $DEPLOY_PATH/frontend/.env
+    
+    # Deploy bằng docker-compose
+    - cd $DEPLOY_PATH
+    - sudo docker-compose -f docker-compose.prod.yml up -d --build
+    
+    # Restart nginx nếu có config mới
+    - sudo cp /opt/configs/doanhoi-portal/nginx.conf /etc/nginx/sites-available/doanhoi-portal
+    - sudo ln -sf /etc/nginx/sites-available/doanhoi-portal /etc/nginx/sites-enabled/
+    - sudo nginx -t && sudo systemctl reload nginx
+    
+    # Health check
+    - sleep 10
+    - curl -f http://localhost:$BACKEND_PORT/health || exit 1
+    
+  environment:
+    name: production
+    url: http://103.88.121.146
+  only:
+    - dev
+  when: manual

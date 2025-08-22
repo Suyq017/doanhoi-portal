@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Database PostgreSQL
+  postgres:
+    image: postgres:15
+    container_name: doanhoi-postgres-prod
+    environment:
+      POSTGRES_DB: doanhoi
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - doanhoi_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - doanhoi-network
+
+  # Backend NestJS
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: doanhoi-backend-prod
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: doanhoi
+      PORT: 9200
+    ports:
+      - "9200:9200"   # expose ra ngoài server
+    depends_on:
+      - postgres      # chạy sau khi Postgres sẵn sàng
+    restart: unless-stopped
+    networks:
+      - doanhoi-network
+
+  # Frontend React
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: doanhoi-frontend-prod
+    environment:
+      NODE_ENV: production
+      PORT: 9100
+    ports:
+      - "9100:80"     # React build serve bằng Nginx bên trong container
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - doanhoi-network
+
+networks:
+  doanhoi-network:
+    driver: bridge
+
+volumes:
+  doanhoi_postgres_data:
