@@ -8,7 +8,6 @@ variables:
   DEPLOY_PATH: "/opt/doanhoi-portal"
   BACKEND_PORT: "9200"
   FRONTEND_PORT: "9100"
-  ROLLUP_SKIP_NODEJS_NATIVE: "1"
 
 cache:
   paths:
@@ -20,10 +19,10 @@ test:backend:
   image: node:18
   script:
     - cd backend
-    - npm ci
+    - rm -rf node_modules package-lock.json
+    - npm install
     - npm run lint --max-warnings=9999 || true
     - npm run test -- --passWithNoTests || true
-
   only:
     - merge_requests
     - dev
@@ -31,12 +30,10 @@ test:backend:
 test:frontend:
   stage: test
   image: node:18
-  variables:
-    ROLLUP_SKIP_NODEJS_NATIVE: "1"
   script:
     - cd frontend
-    - npm ci
-    - npm install rollup --ignore-scripts
+    - rm -rf node_modules package-lock.json
+    - npm install
     - npm run lint --max-warnings=9999 || true
     - npm run build
   only:
@@ -46,14 +43,14 @@ test:frontend:
 build:
   stage: build
   image: node:18
-  variables:
-    ROLLUP_SKIP_NODEJS_NATIVE: "1"
   script:
     - cd backend
-    - npm ci
+    - rm -rf node_modules package-lock.json
+    - npm install
     - npm run build
     - cd ../frontend
-    - npm ci
+    - rm -rf node_modules package-lock.json
+    - npm install
     - npm run build
   artifacts:
     paths:

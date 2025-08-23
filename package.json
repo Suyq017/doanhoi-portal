@@ -19,7 +19,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "typeorm-uml": "^1.6.5"
+    "typeorm-uml": "^1.6.5",
+    "rollup": "^4.21.0"
   },
   "workspaces": [
     "backend",
