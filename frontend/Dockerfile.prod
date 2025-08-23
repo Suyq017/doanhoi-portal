@@ -1,0 +1,42 @@
+# Build stage only - files will be copied to host
+FROM node:20.17-alpine3.20 AS builder
+
+WORKDIR /app
+
+# Update packages để fix vulnerabilities
+RUN apk update && apk upgrade && rm -rf /var/cache/apk/*
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig*.json ./
+COPY vite.config.ts ./
+COPY tailwind.config.js ./
+COPY postcss.config.js ./
+COPY index.html ./
+
+# Install dependencies
+RUN npm ci && npm cache clean --force
+
+# Copy source code
+COPY src/ ./src/
+COPY public/ ./public/
+
+# Build for production
+RUN npm run build
+
+# Simple container to hold the build output
+FROM alpine:3.20
+WORKDIR /app
+
+# Update packages và install minimal dependencies
+RUN apk update && apk upgrade && rm -rf /var/cache/apk/*
+
+# Copy built files
+COPY --from=builder /app/dist ./dist
+
+# Health check for the container
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD ls -la /app/dist/index.html || exit 1
+
+# Keep container running to allow file copying
+CMD ["tail", "-f", "/dev/null"]

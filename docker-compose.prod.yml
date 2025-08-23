@@ -12,6 +12,11 @@ services:
     volumes:
       - doanhoi_postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - doanhoi-network
 
@@ -25,19 +30,31 @@ services:
       NODE_ENV: production
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USER: postgres
+      DB_USERNAME: postgres
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: doanhoi
       PORT: 9200
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: 60m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID:-}
+      PAYOS_API_KEY: ${PAYOS_API_KEY:-}
+      PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY:-}
     ports:
       - "9200:9200"   # expose ra ngoài server
     depends_on:
-      - postgres      # chạy sau khi Postgres sẵn sàng
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - doanhoi-network
 
-  # Frontend React
+  # Frontend React (chỉ build, không serve)
   frontend:
     build:
       context: ./frontend
@@ -45,12 +62,10 @@ services:
     container_name: doanhoi-frontend-prod
     environment:
       NODE_ENV: production
-      PORT: 9100
-    ports:
-      - "9100:80"     # React build serve bằng Nginx bên trong container
+    volumes:
+      - ./frontend/dist:/app/dist  # Mount dist folder ra ngoài để dễ copy
     depends_on:
       - backend
-    restart: unless-stopped
     networks:
       - doanhoi-network
 
