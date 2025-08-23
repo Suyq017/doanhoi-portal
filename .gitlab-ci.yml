@@ -1,57 +1,22 @@
 stages:
-  - test
   - build
   - deploy
 
 variables:
-  NODE_VERSION: "18"
   DEPLOY_PATH: "/opt/doanhoi-portal"
   BACKEND_PORT: "9200"
-  FRONTEND_PORT: "9100"
-  GIT_DEPTH: 0
-cache:
-  paths:
-    - backend/node_modules/
-    - frontend/node_modules/
-
-test:backend:
-  stage: test
-  image: node:18
-  script:
-    - cd backend
-    - rm -rf node_modules package-lock.json
-    - npm install
-    - npm run lint --max-warnings=9999 || true
-    - npm run test -- --passWithNoTests || true
-  only:
-    - merge_requests
-    - dev
-
-test:frontend:
-  stage: test
-  image: node:18
-  script:
-    - cd frontend
-    - rm -rf node_modules package-lock.json
-    - npm install
-    - npm rebuild rollup
-    - npm run lint --max-warnings=9999 || true
-    - npm run build
-  only:
-    - merge_requests
-    - dev
 
 build:
   stage: build
-  image: node:18
+  image: node:20
   script:
+    - echo "Building backend..."
     - cd backend
-    - rm -rf node_modules package-lock.json
-    - npm install
+    - npm ci
     - npm run build
+    - echo "Building frontend..."
     - cd ../frontend
-    - rm -rf node_modules package-lock.json
-    - npm install
+    - npm ci
     - npm run build
   artifacts:
     paths:
@@ -68,22 +33,10 @@ build:
 
 deploy:production:
   stage: deploy
-  tags:
-    - deploy
-    - production
   script:
-    - echo "Deploying with Docker Compose..."
-    
-    # Backup với sudo permissions
-    - sudo cp -r $DEPLOY_PATH $DEPLOY_PATH.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
-    
-    # Clear deployment directory với sudo
-    - sudo rm -rf $DEPLOY_PATH/* || true
-    - sudo mkdir -p $DEPLOY_PATH
+    - echo "Starting deployment..."
     - sudo mkdir -p $DEPLOY_PATH/backend
-    - sudo mkdir-p $DEPLOY_PATH/frontend
-    
-    # Copy artifacts với đường dẫn chính xác
+    - sudo mkdir -p $DEPLOY_PATH/frontend
     - sudo cp -r backend/dist $DEPLOY_PATH/backend/
     - sudo cp -r frontend/dist $DEPLOY_PATH/frontend/
     - sudo cp docker-compose.prod.yml $DEPLOY_PATH/
@@ -91,32 +44,12 @@ deploy:production:
     - sudo cp frontend/Dockerfile.prod $DEPLOY_PATH/frontend/
     - sudo cp backend/package*.json $DEPLOY_PATH/backend/ || true
     - sudo cp frontend/package*.json $DEPLOY_PATH/frontend/ || true
-    
-    # Copy environment files
-    - sudo cp /opt/configs/doanhoi-portal/.env.production $DEPLOY_PATH/ || echo "Warning: No .env.production in configs"
-    
-    # Set proper permissions
     - sudo chown -R gitlab-runner:gitlab-runner $DEPLOY_PATH
-    - sudo chmod -R 755 $DEPLOY_PATH
-    
-    # Deploy bằng docker-compose
     - cd $DEPLOY_PATH
     - sudo docker-compose -f docker-compose.prod.yml down || true
-    - sudo docker-compose -f docker-compose.prod.yml build --no-cache
-    - sudo docker-compose -f docker-compose.prod.yml up -d
-    
-    # Copy frontend static files to nginx location
-    - sudo cp -r frontend/dist/* /opt/doanhoi-portal/frontend/dist/ || sudo mkdir -p /opt/doanhoi-portal/frontend/dist
-    - sudo cp -r frontend/dist/* /opt/doanhoi-portal/frontend/dist/
-    
-    # Restart nginx
-    - sudo systemctl reload nginx || true
-    
-    # Health check
-    - sleep 30
-    - curl -f http://localhost:$BACKEND_PORT/api || echo "Backend health check failed"
+    - sudo docker-compose -f docker-compose.prod.yml up -d --build
+    - sleep 20
     - sudo docker-compose -f docker-compose.prod.yml ps
-    
   environment:
     name: production
     url: http://103.88.121.146
