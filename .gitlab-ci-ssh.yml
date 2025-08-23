@@ -1,0 +1,83 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  DEPLOY_PATH: "/opt/doanhoi-portal"
+  BACKEND_PORT: "9200"
+
+build:
+  stage: build
+  image: node:20
+  script:
+    - echo "Building backend..."
+    - cd backend
+    - npm ci
+    - npm run build
+    - echo "Building frontend..."
+    - cd ../frontend
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - backend/dist/
+      - frontend/dist/
+      - docker-compose.prod.yml
+      - backend/Dockerfile.prod
+      - frontend/Dockerfile.prod
+      - backend/package*.json
+      - frontend/package*.json
+    expire_in: 1 hour
+  only:
+    - dev
+
+# Deploy using Docker image with tools
+deploy:production:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client rsync curl docker-compose
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
+  script:
+    - echo "Deploying to production server..."
+    - echo "Creating deployment directory..."
+    - ssh $SERVER_USER@$SERVER_HOST "sudo mkdir -p $DEPLOY_PATH/backend $DEPLOY_PATH/frontend"
+    
+    - echo "Copying backend files..."
+    - rsync -avz backend/dist/ $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/backend/dist/
+    - scp backend/Dockerfile.prod $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/backend/
+    - scp backend/package*.json $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/backend/ || true
+    
+    - echo "Copying frontend files..."
+    - rsync -avz frontend/dist/ $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/frontend/dist/
+    - scp frontend/Dockerfile.prod $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/frontend/
+    - scp frontend/package*.json $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/frontend/ || true
+    
+    - echo "Copying docker-compose..."
+    - scp docker-compose.prod.yml $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
+    
+    - echo "Setting permissions..."
+    - ssh $SERVER_USER@$SERVER_HOST "sudo chown -R $SERVER_USER:$SERVER_USER $DEPLOY_PATH"
+    
+    - echo "Deploying with Docker Compose..."
+    - ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && sudo docker-compose -f docker-compose.prod.yml down || true"
+    - ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && sudo docker-compose -f docker-compose.prod.yml up -d --build"
+    
+    - echo "Copying frontend to nginx location..."
+    - ssh $SERVER_USER@$SERVER_HOST "sudo mkdir -p /opt/doanhoi-portal/frontend && sudo cp -r $DEPLOY_PATH/frontend/dist/* /opt/doanhoi-portal/frontend/"
+    - ssh $SERVER_USER@$SERVER_HOST "sudo systemctl reload nginx || true"
+    
+    - echo "Health check..."
+    - sleep 30
+    - ssh $SERVER_USER@$SERVER_HOST "curl -f http://localhost:$BACKEND_PORT/api || echo 'Backend health check failed'"
+    - ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && sudo docker-compose -f docker-compose.prod.yml ps"
+  environment:
+    name: production
+    url: http://103.88.121.146
+  only:
+    - dev
+  when: manual

@@ -1,0 +1,58 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  DEPLOY_PATH: "/opt/doanhoi-portal"
+  BACKEND_PORT: "9200"
+
+build:
+  stage: build
+  image: node:20
+  script:
+    - echo "Building backend..."
+    - cd backend
+    - npm ci
+    - npm run build
+    - echo "Building frontend..."
+    - cd ../frontend
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - backend/dist/
+      - frontend/dist/
+      - docker-compose.prod.yml
+      - backend/Dockerfile.prod
+      - frontend/Dockerfile.prod
+      - backend/package*.json
+      - frontend/package*.json
+    expire_in: 1 hour
+  only:
+    - dev
+
+deploy:production:
+  stage: deploy
+  script:
+    - echo "Starting deployment..."
+    - sudo mkdir -p $DEPLOY_PATH/backend
+    - sudo mkdir -p $DEPLOY_PATH/frontend
+    - sudo cp -r backend/dist $DEPLOY_PATH/backend/
+    - sudo cp -r frontend/dist $DEPLOY_PATH/frontend/
+    - sudo cp docker-compose.prod.yml $DEPLOY_PATH/
+    - sudo cp backend/Dockerfile.prod $DEPLOY_PATH/backend/
+    - sudo cp frontend/Dockerfile.prod $DEPLOY_PATH/frontend/
+    - sudo cp backend/package*.json $DEPLOY_PATH/backend/ || true
+    - sudo cp frontend/package*.json $DEPLOY_PATH/frontend/ || true
+    - sudo chown -R gitlab-runner:gitlab-runner $DEPLOY_PATH
+    - cd $DEPLOY_PATH
+    - sudo docker-compose -f docker-compose.prod.yml down || true
+    - sudo docker-compose -f docker-compose.prod.yml up -d --build
+    - sleep 20
+    - sudo docker-compose -f docker-compose.prod.yml ps
+  environment:
+    name: production
+    url: http://103.88.121.146
+  only:
+    - dev
+  when: manual
