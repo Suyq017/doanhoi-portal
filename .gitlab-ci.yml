@@ -34,6 +34,7 @@ test:frontend:
     - cd frontend
     - rm -rf node_modules package-lock.json
     - npm install
+    - npm rebuild rollup
     - npm run lint --max-warnings=9999 || true
     - npm run build
   only:
