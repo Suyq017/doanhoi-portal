@@ -31,10 +31,11 @@ test:backend:
 test:frontend:
   stage: test
   image: node:18
+  variables:
+    ROLLUP_SKIP_NODEJS_NATIVE: "1"
   script:
     - cd frontend
     - npm ci
-    - npm install rollup --force
     - npm run lint --max-warnings=9999 || true
     - npm run build
   only:
@@ -44,6 +45,8 @@ test:frontend:
 build:
   stage: build
   image: node:18
+  variables:
+    ROLLUP_SKIP_NODEJS_NATIVE: "1"
   script:
     - cd backend
     - npm ci
