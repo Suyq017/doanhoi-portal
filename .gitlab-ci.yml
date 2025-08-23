@@ -23,6 +23,7 @@ build:
       - frontend/Dockerfile.prod
       - backend/package*.json
       - frontend/package*.json
+      - .env.production
     expire_in: 2 hours
   only:
     - dev
@@ -56,6 +57,9 @@ deploy:production:
     - cp docker-compose.prod.yml ~/deployment/ || echo "Docker compose copy failed"
     - cp backend/Dockerfile.prod ~/deployment/backend/ || echo "Backend Dockerfile copy failed"
     - cp frontend/Dockerfile.prod ~/deployment/frontend/ || echo "Frontend Dockerfile copy failed"
+    - cp backend/package*.json ~/deployment/backend/ || echo "Backend package files copy failed"
+    - cp frontend/package*.json ~/deployment/frontend/ || echo "Frontend package files copy failed"
+    - cp .env.production ~/deployment/ || echo "Env file copy failed"
     - echo "Files copied to ~/deployment - manual deployment needed"
     - ls -la ~/deployment/
     - echo "DEPLOYMENT READY - Files available in /home/gitlab-runner/deployment/"
