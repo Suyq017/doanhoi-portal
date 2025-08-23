@@ -73,25 +73,25 @@ deploy:production:
     - echo "Deploying with Docker Compose..."
     
     # Backup
-    - sudo cp -r $DEPLOY_PATH $DEPLOY_PATH.backup.$(date +%Y%m%d_%H%M%S) || true
+    - cp -r $DEPLOY_PATH $DEPLOY_PATH.backup.$(date +%Y%m%d_%H%M%S) || true
     
     # Copy artifacts từ GitLab runner sang server
-    - sudo rm -rf $DEPLOY_PATH || true
-    - sudo mkdir -p $DEPLOY_PATH
-    - sudo cp -r backend/dist frontend/dist docker-compose.prod.yml Dockerfile.* $DEPLOY_PATH/
+    - rm -rf $DEPLOY_PATH || true
+    - mkdir -p $DEPLOY_PATH
+    - cp -r backend/dist frontend/dist docker-compose.prod.yml Dockerfile.* $DEPLOY_PATH/
     
     # Copy environment files
-    - sudo cp /opt/configs/doanhoi-portal/.env $DEPLOY_PATH/backend/.env
-    - sudo cp /opt/configs/doanhoi-portal/.env.frontend $DEPLOY_PATH/frontend/.env
+    - cp /opt/configs/doanhoi-portal/.env $DEPLOY_PATH/backend/.env
+    - cp /opt/configs/doanhoi-portal/.env.frontend $DEPLOY_PATH/frontend/.env
     
     # Deploy bằng docker-compose
     - cd $DEPLOY_PATH
-    - sudo docker-compose -f docker-compose.prod.yml up -d --build
+    - docker-compose -f docker-compose.prod.yml up -d --build
     
     # Restart nginx nếu có config mới
-    - sudo cp /opt/configs/doanhoi-portal/nginx.conf /etc/nginx/sites-available/doanhoi-portal
-    - sudo ln -sf /etc/nginx/sites-available/doanhoi-portal /etc/nginx/sites-enabled/
-    - sudo nginx -t && sudo systemctl reload nginx
+    - cp /opt/configs/doanhoi-portal/nginx.conf /etc/nginx/sites-available/doanhoi-portal
+    - ln -sf /etc/nginx/sites-available/doanhoi-portal /etc/nginx/sites-enabled/
+    - nginx -t && sudo systemctl reload nginx
     
     # Health check
     - sleep 10
