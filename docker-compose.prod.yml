@@ -26,6 +26,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile.prod
     container_name: doanhoi-backend-prod
+    env_file:
+      - .env.production
     environment:
       NODE_ENV: production
       DB_HOST: postgres

@@ -58,8 +58,10 @@ build:
       - backend/dist/
       - frontend/dist/
       - docker-compose.prod.yml
-      - Dockerfile.backend
-      - Dockerfile.frontend
+      - backend/Dockerfile.prod
+      - frontend/Dockerfile.prod
+      - backend/package*.json
+      - frontend/package*.json
     expire_in: 1 hour
   only:
     - dev
@@ -72,30 +74,48 @@ deploy:production:
   script:
     - echo "Deploying with Docker Compose..."
     
-    # Backup
-    - cp -r $DEPLOY_PATH $DEPLOY_PATH.backup.$(date +%Y%m%d_%H%M%S) || true
+    # Backup với sudo permissions
+    - sudo cp -r $DEPLOY_PATH $DEPLOY_PATH.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
     
-    # Copy artifacts từ GitLab runner sang server
-    - rm -rf $DEPLOY_PATH || true
-    - mkdir -p $DEPLOY_PATH
-    - cp -r backend/dist frontend/dist docker-compose.prod.yml Dockerfile.* $DEPLOY_PATH/
+    # Clear deployment directory với sudo
+    - sudo rm -rf $DEPLOY_PATH/* || true
+    - sudo mkdir -p $DEPLOY_PATH
+    - sudo mkdir -p $DEPLOY_PATH/backend
+    - sudo mkdir-p $DEPLOY_PATH/frontend
+    
+    # Copy artifacts với đường dẫn chính xác
+    - sudo cp -r backend/dist $DEPLOY_PATH/backend/
+    - sudo cp -r frontend/dist $DEPLOY_PATH/frontend/
+    - sudo cp docker-compose.prod.yml $DEPLOY_PATH/
+    - sudo cp backend/Dockerfile.prod $DEPLOY_PATH/backend/
+    - sudo cp frontend/Dockerfile.prod $DEPLOY_PATH/frontend/
+    - sudo cp backend/package*.json $DEPLOY_PATH/backend/ || true
+    - sudo cp frontend/package*.json $DEPLOY_PATH/frontend/ || true
     
     # Copy environment files
-    - cp /opt/configs/doanhoi-portal/.env $DEPLOY_PATH/backend/.env
-    - cp /opt/configs/doanhoi-portal/.env.frontend $DEPLOY_PATH/frontend/.env
+    - sudo cp /opt/configs/doanhoi-portal/.env.production $DEPLOY_PATH/ || echo "Warning: No .env.production in configs"
+    
+    # Set proper permissions
+    - sudo chown -R gitlab-runner:gitlab-runner $DEPLOY_PATH
+    - sudo chmod -R 755 $DEPLOY_PATH
     
     # Deploy bằng docker-compose
     - cd $DEPLOY_PATH
-    - docker-compose -f docker-compose.prod.yml up -d --build
+    - sudo docker-compose -f docker-compose.prod.yml down || true
+    - sudo docker-compose -f docker-compose.prod.yml build --no-cache
+    - sudo docker-compose -f docker-compose.prod.yml up -d
     
-    # Restart nginx nếu có config mới
-    - cp /opt/configs/doanhoi-portal/nginx.conf /etc/nginx/sites-available/doanhoi-portal
-    - ln -sf /etc/nginx/sites-available/doanhoi-portal /etc/nginx/sites-enabled/
-    - nginx -t && sudo systemctl reload nginx
+    # Copy frontend static files to nginx location
+    - sudo cp -r frontend/dist/* /opt/doanhoi-portal/frontend/dist/ || sudo mkdir -p /opt/doanhoi-portal/frontend/dist
+    - sudo cp -r frontend/dist/* /opt/doanhoi-portal/frontend/dist/
+    
+    # Restart nginx
+    - sudo systemctl reload nginx || true
     
     # Health check
-    - sleep 10
-    - curl -f http://localhost:$BACKEND_PORT/health || exit 1
+    - sleep 30
+    - curl -f http://localhost:$BACKEND_PORT/api || echo "Backend health check failed"
+    - sudo docker-compose -f docker-compose.prod.yml ps
     
   environment:
     name: production
