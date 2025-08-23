@@ -6,20 +6,19 @@ variables:
   DEPLOY_PATH: "/opt/doanhoi-portal"
   BACKEND_PORT: "9200"
 
-# Build stage - chạy trên Docker executor
 build:
   stage: build
   image: node:20
   script:
-    - echo "🔨 Building backend..."
+    - echo "Building backend..."
     - cd backend
     - npm ci
     - npm run build
-    - echo "🎨 Building frontend..."
+    - echo "Building frontend..."
     - cd ../frontend
     - npm ci
     - npm run build
-    - echo "✅ Build completed successfully"
+    - echo "Build completed successfully"
   artifacts:
     paths:
       - backend/dist/
@@ -34,76 +33,64 @@ build:
   only:
     - dev
 
-# Deploy stage - chạy trên Shell executor với tags
 deploy:production:
   stage: deploy
   tags:
     - deploy
     - production
   before_script:
-    - echo "🚀 Starting deployment to production server..."
-    - echo "📊 Current user: $(whoami)"
-    - echo "📁 Current directory: $(pwd)"
-    - echo "🖥️ Server info: $(uname -a)"
+    - echo "Starting deployment to production server"
+    - echo "Current user is $(whoami)"
+    - echo "Current directory is $(pwd)"
+    - echo "Server info $(uname -a)"
   script:
-    - echo "📦 Creating backup..."
+    - echo "Creating backup..."
     - sudo mkdir -p /opt/backups/doanhoi-portal
     - sudo cp -r $DEPLOY_PATH /opt/backups/doanhoi-portal/backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || echo "No existing deployment to backup"
-    
-    - echo "📁 Preparing deployment directory..."
+    - echo "Preparing deployment directory..."
     - sudo mkdir -p $DEPLOY_PATH
     - sudo mkdir -p $DEPLOY_PATH/backend
     - sudo mkdir -p $DEPLOY_PATH/frontend
-    
-    - echo "📋 Copying application files..."
+    - echo "Copying application files..."
     - sudo cp -r backend/dist $DEPLOY_PATH/backend/
     - sudo cp -r frontend/dist $DEPLOY_PATH/frontend/
     - sudo cp docker-compose.prod.yml $DEPLOY_PATH/
     - sudo cp backend/Dockerfile.prod $DEPLOY_PATH/backend/
     - sudo cp frontend/Dockerfile.prod $DEPLOY_PATH/frontend/
-    - sudo cp backend/package*.json $DEPLOY_PATH/backend/ || echo "Warning: backend package.json not found"
-    - sudo cp frontend/package*.json $DEPLOY_PATH/frontend/ || echo "Warning: frontend package.json not found"
-    
-    - echo "🔐 Copying environment configuration..."
-    - sudo cp .env.production $DEPLOY_PATH/ || echo "Warning: .env.production not found in artifacts"
-    - test -f /opt/configs/doanhoi-portal/.env.production && sudo cp /opt/configs/doanhoi-portal/.env.production $DEPLOY_PATH/ || echo "Warning: Server .env.production not found"
-    
-    - echo "🔧 Setting permissions..."
+    - sudo cp backend/package*.json $DEPLOY_PATH/backend/ || echo "Warning backend package.json not found"
+    - sudo cp frontend/package*.json $DEPLOY_PATH/frontend/ || echo "Warning frontend package.json not found"
+    - echo "Copying environment configuration..."
+    - sudo cp .env.production $DEPLOY_PATH/ || echo "Warning .env.production not found in artifacts"
+    - test -f /opt/configs/doanhoi-portal/.env.production && sudo cp /opt/configs/doanhoi-portal/.env.production $DEPLOY_PATH/ || echo "Warning Server .env.production not found"
+    - echo "Setting permissions..."
     - sudo chown -R gitlab-runner:gitlab-runner $DEPLOY_PATH
     - sudo chmod -R 755 $DEPLOY_PATH
-    
-    - echo "🐳 Stopping existing containers..."
+    - echo "Stopping existing containers..."
     - cd $DEPLOY_PATH
     - sudo docker-compose -f docker-compose.prod.yml down || echo "No existing containers to stop"
-    
-    - echo "🏗️ Building and starting containers..."
+    - echo "Building and starting containers..."
     - sudo docker-compose -f docker-compose.prod.yml build --no-cache
     - sudo docker-compose -f docker-compose.prod.yml up -d
-    
-    - echo "📁 Copying frontend files to nginx location..."
+    - echo "Copying frontend files to nginx location..."
     - sudo mkdir -p /opt/doanhoi-portal/frontend/dist
     - sudo cp -r frontend/dist/* /opt/doanhoi-portal/frontend/dist/
     - sudo chown -R www-data:www-data /opt/doanhoi-portal/frontend/dist
-    
-    - echo "🔄 Reloading nginx..."
-    - sudo systemctl reload nginx || echo "Warning: nginx reload failed"
-    
-    - echo "⏳ Waiting for services to start..."
+    - echo "Reloading nginx..."
+    - sudo systemctl reload nginx || echo "Warning nginx reload failed"
+    - echo "Waiting for services to start..."
     - sleep 30
-    
-    - echo "🔍 Health checks..."
+    - echo "Health checks..."
     - sudo docker-compose -f docker-compose.prod.yml ps
-    - curl -f http://localhost:$BACKEND_PORT/api || echo "⚠️ Backend health check failed"
-    - curl -f https://103.88.121.146 || echo "⚠️ Frontend health check failed"
-    
-    - echo "✅ Deployment completed successfully!"
+    - curl -f http://localhost:$BACKEND_PORT/api || echo "Warning Backend health check failed"
+    - curl -f https://103.88.121.146 || echo "Warning Frontend health check failed"
+    - echo "Deployment completed successfully"
   after_script:
-    - echo "📊 Final status check..."
+    - echo "Final status check..."
     - sudo docker-compose -f $DEPLOY_PATH/docker-compose.prod.yml ps || true
-    - echo "📋 Deployment summary:"
-    - echo "🌐 Frontend: https://103.88.121.146"
-    - echo "🔗 Backend API: http://localhost:$BACKEND_PORT"
-    - echo "📊 Logs: sudo docker-compose -f $DEPLOY_PATH/docker-compose.prod.yml logs"
+    - echo "Deployment summary"
+    - echo "Frontend https://103.88.121.146"
+    - echo "Backend API http://localhost:$BACKEND_PORT"
+    - echo "Logs sudo docker-compose -f $DEPLOY_PATH/docker-compose.prod.yml logs"
   environment:
     name: production
     url: https://103.88.121.146
