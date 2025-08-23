@@ -8,6 +8,7 @@ variables:
   DEPLOY_PATH: "/opt/doanhoi-portal"
   BACKEND_PORT: "9200"
   FRONTEND_PORT: "9100"
+  ROLLUP_SKIP_NODEJS_NATIVE: "1"
 
 cache:
   paths:
