@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Shield } from 'lucide-react';
 
 interface LoadingStateProps {
     title?: string;

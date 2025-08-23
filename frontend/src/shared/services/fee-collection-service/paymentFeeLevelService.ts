@@ -1,9 +1,9 @@
-import { 
-  PaymentFeeLevel, 
-  CreatePaymentFeeLevelDto, 
+import {
+  PaymentFeeLevel,
+  CreatePaymentFeeLevelDto,
   UpdatePaymentFeeLevelDto,
   ApiResponse
-} from '../types';
+} from '../../types';
 
 const API_BASE = '/api';
 
@@ -34,7 +34,7 @@ class PaymentFeeLevelService {
       },
       body: JSON.stringify({ ...data, campaignId }),
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to create fee level');
     }
@@ -49,7 +49,7 @@ class PaymentFeeLevelService {
       },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to update fee level');
     }
@@ -60,7 +60,7 @@ class PaymentFeeLevelService {
     const response = await fetch(`${API_BASE}/payment-fee-levels/${id}`, {
       method: 'DELETE',
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to delete fee level');
     }
@@ -70,7 +70,7 @@ class PaymentFeeLevelService {
     const response = await fetch(`${API_BASE}/payment-fee-levels/${id}/set-default`, {
       method: 'POST',
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to set default fee level');
     }

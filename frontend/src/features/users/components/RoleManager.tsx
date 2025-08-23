@@ -5,7 +5,6 @@ import { roleService, type Role } from '../../permissions/services/roleService';
 import RoleBadge from './RoleBadge';
 
 interface RoleManagerProps {
-  userId?: string;
   selectedRoles: string[];
   onRolesChange: (roles: string[]) => void;
   readonly?: boolean;
@@ -13,7 +12,6 @@ interface RoleManagerProps {
 }
 
 const RoleManager: React.FC<RoleManagerProps> = ({
-  userId,
   selectedRoles,
   onRolesChange,
   readonly = false,
@@ -43,7 +41,7 @@ const RoleManager: React.FC<RoleManagerProps> = ({
   };
 
   const handleRoleToggle = (roleId: string) => {
-    const newRoles = selectedRoles.includes(roleId) 
+    const newRoles = selectedRoles.includes(roleId)
       ? selectedRoles.filter(id => id !== roleId)
       : [...selectedRoles, roleId];
     onRolesChange(newRoles);
@@ -54,11 +52,11 @@ const RoleManager: React.FC<RoleManagerProps> = ({
   };
 
   // Filter roles based on search term
-  const filteredAvailableRoles = availableRoles.filter(role => 
-    !selectedRoles.includes(role.id) && 
+  const filteredAvailableRoles = availableRoles.filter(role =>
+    !selectedRoles.includes(role.id) &&
     (role.displayName.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
-     role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
-     (role.description && role.description.toLowerCase().includes(roleSearchTerm.toLowerCase())))
+      role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
+      (role.description && role.description.toLowerCase().includes(roleSearchTerm.toLowerCase())))
   );
 
   const selectedRoleObjects = availableRoles.filter(role => selectedRoles.includes(role.id));
@@ -93,8 +91,8 @@ const RoleManager: React.FC<RoleManagerProps> = ({
             {selectedRoleObjects.map(role => (
               <div key={role.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
                 <div className="flex-1">
-                  <RoleBadge 
-                    role={role} 
+                  <RoleBadge
+                    role={role}
                     showPermissionCount={true}
                     size="md"
                   />
@@ -160,8 +158,8 @@ const RoleManager: React.FC<RoleManagerProps> = ({
                     disabled={loading}
                   />
                   <div className="flex-1">
-                    <RoleBadge 
-                      role={role} 
+                    <RoleBadge
+                      role={role}
                       showPermissionCount={true}
                       size="sm"
                     />

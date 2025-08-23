@@ -56,8 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuth(prev => ({ ...prev, permissionsLoading: true }));
 
     try {
-      const response = await authService.getUserPermissions(auth.user.id, auth.currentOrganizationId);
-
+      const response = await authService.getUserPermissions(auth.currentOrganizationId);
 
       // Flatten all permissions from all roles
       const allPermissions = response.roles.reduce((acc: UserPermission[], role) => {

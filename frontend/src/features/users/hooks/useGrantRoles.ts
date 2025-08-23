@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { userService, organizationService } from '../../../shared/services';
 import { roleService } from '../../permissions/services/roleService';
-import { User as ApiUser, UserOrganization } from '../../../shared/types/user';
+import { User as ApiUser } from '../../../shared/types/user';
+import { UserOrganization } from '../../../shared/types/organization';
 
 export interface User {
     id: string;
@@ -149,13 +150,15 @@ export const useGrantRoles = ({ onSuccess, onError }: UseGrantRolesProps = {}) =
             // Extract organizations from user data
             const userOrganizations: UserOrganization[] = user.organizations || [];
 
-            setUserOrganizations(userOrganizations.map((userOrg: UserOrganization) => ({
-                id: userOrg.organization.id,
-                name: userOrg.organization.name,
-                code: userOrg.organization.code || '',
-                parentId: userOrg.organization.parentId,
-                level: 0
-            })));
+            setUserOrganizations(userOrganizations
+                .filter((userOrg: UserOrganization) => userOrg.organization) // Filter out items without organization
+                .map((userOrg: UserOrganization) => ({
+                    id: userOrg.organization!.id,
+                    name: userOrg.organization!.name,
+                    code: userOrg.organization!.code || '',
+                    parentId: userOrg.organization!.parentId,
+                    level: 0
+                })));
         } catch (error) {
             console.error('Error loading user organizations:', error);
             setUserOrganizations([]);

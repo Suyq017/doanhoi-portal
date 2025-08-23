@@ -4,8 +4,6 @@ import { ValidationErrors, ValidationRules, PaymentValidator, PaymentScenarioVal
 export interface UseFormValidationProps {
   validationRules?: ValidationRules;
   scenario?: keyof typeof PaymentScenarioValidations;
-  validateOnChange?: boolean;
-  validateOnBlur?: boolean;
 }
 
 export interface UseFormValidationReturn {
@@ -22,9 +20,7 @@ export interface UseFormValidationReturn {
 
 export function useFormValidation({
   validationRules,
-  scenario,
-  validateOnChange = true,
-  validateOnBlur = true
+  scenario
 }: UseFormValidationProps = {}): UseFormValidationReturn {
   const [errors, setErrors] = useState<ValidationErrors>({});
 
@@ -41,11 +37,11 @@ export function useFormValidation({
   const validateField = useCallback((fieldName: string, value: any): string | null => {
     const rules = getValidationRules();
     const fieldRule = rules[fieldName];
-    
+
     if (!fieldRule) return null;
-    
+
     const error = PaymentValidator.validateField(value, fieldRule);
-    
+
     setErrors(prev => {
       const newErrors = { ...prev };
       if (error) {
@@ -55,7 +51,7 @@ export function useFormValidation({
       }
       return newErrors;
     });
-    
+
     return error;
   }, [getValidationRules]);
 
@@ -63,7 +59,7 @@ export function useFormValidation({
   const validateForm = useCallback((formData: Record<string, any>): boolean => {
     const rules = getValidationRules();
     const formErrors = PaymentValidator.validateForm(formData, rules);
-    
+
     setErrors(formErrors);
     return Object.keys(formErrors).length === 0;
   }, [getValidationRules]);
@@ -72,7 +68,7 @@ export function useFormValidation({
   const clearErrors = useCallback((fieldNames?: string[]) => {
     setErrors(prev => {
       if (!fieldNames) return {};
-      
+
       const newErrors = { ...prev };
       fieldNames.forEach(fieldName => {
         delete newErrors[fieldName];
@@ -136,7 +132,7 @@ export function useFieldValidation(
 
   const validate = useCallback((value: any): string | null => {
     let rules: ValidationRules = {};
-    
+
     if (validationRules) {
       rules = validationRules;
     } else if (scenario && PaymentScenarioValidations[scenario]) {
@@ -185,7 +181,7 @@ export function useFormSubmission<T extends Record<string, any>>(
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  
+
   const validation = useFormValidation(validationConfig);
 
   const handleSubmit = useCallback(async (formData: T, event?: React.FormEvent) => {
@@ -226,7 +222,7 @@ export function useFormSubmission<T extends Record<string, any>>(
 
 // Hook for async field validation (e.g., checking if email exists)
 export function useAsyncFieldValidation(
-  fieldName: string,
+  _fieldName: string,
   asyncValidator: (value: any) => Promise<string | null>,
   debounceMs: number = 500
 ) {

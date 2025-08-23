@@ -1,8 +1,6 @@
-import { 
-  PaymentAssignment, 
+import {
+  PaymentAssignment,
   CreatePaymentAssignmentDto,
-  CreateBulkPaymentAssignmentDto,
-  CreateMultiplePaymentAssignmentDto,
   PaymentAssignmentFilters,
   PaymentStatistics,
   ApiResponse,
@@ -15,7 +13,7 @@ class PaymentAssignmentService {
   // CRUD Operations
   async getPaymentAssignments(filters: PaymentAssignmentFilters = {}): Promise<PaginatedResponse<PaymentAssignment>> {
     const params = new URLSearchParams();
-    
+
     if (filters.campaignId) params.append('campaignId', filters.campaignId);
     if (filters.userId) params.append('userId', filters.userId);
     if (filters.organizationId) params.append('organizationId', filters.organizationId);
@@ -89,7 +87,7 @@ class PaymentAssignmentService {
       },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to create assignment');
     }
@@ -109,7 +107,7 @@ class PaymentAssignmentService {
       },
       body: JSON.stringify(requestBody),
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to create multiple assignments');
     }
@@ -125,7 +123,7 @@ class PaymentAssignmentService {
       },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to update assignment');
     }
@@ -136,7 +134,7 @@ class PaymentAssignmentService {
     const response = await fetch(`${API_BASE}/${id}`, {
       method: 'DELETE',
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to delete assignment');
     }

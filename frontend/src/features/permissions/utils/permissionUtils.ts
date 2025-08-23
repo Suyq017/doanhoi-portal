@@ -118,7 +118,7 @@ export const getCategoryColor = (category: string): string => {
     return colors[category as keyof typeof colors] || 'text-gray-600 bg-gray-50 dark:bg-gray-700';
 };
 
-export const getColorClasses = (color: string) => {
+export const getColorClasses = () => {
     // Simplified gray-based color scheme for consistency
     return {
         bg: 'bg-gray-50 dark:bg-gray-700',

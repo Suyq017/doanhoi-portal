@@ -104,21 +104,6 @@ const Combobox: React.FC<ComboboxProps> = ({
         }
     };
 
-    // Find all scrollable parents and add scroll listeners
-    const getScrollableParents = (element: Element): Element[] => {
-        const scrollableParents: Element[] = [];
-        let currentElement = element.parentElement;
-
-        while (currentElement) {
-            const overflowY = window.getComputedStyle(currentElement).overflowY;
-            if (overflowY === 'scroll' || overflowY === 'auto') {
-                scrollableParents.push(currentElement);
-            }
-            currentElement = currentElement.parentElement;
-        }
-
-        return scrollableParents;
-    }; 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
@@ -145,9 +130,8 @@ const Combobox: React.FC<ComboboxProps> = ({
             } else {
                 // Click is inside - keep dropdown open
             }
-        }; const handleScroll = () => {
-            throttledUpdatePosition();
-        };        // Add event listeners
+        };
+
         document.addEventListener('mousedown', handleClickOutside);
 
         // For portal dropdown, use IntersectionObserver + targeted scroll listeners

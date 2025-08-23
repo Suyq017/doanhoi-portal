@@ -29,7 +29,8 @@ export const useOrganizationMemberStats = (organizationId?: string) => {
                 setError(null);
 
                 // Gọi API để lấy danh sách thành viên
-                const members = await organizationService.getOrganizationMembers(organizationId);
+                const response = await organizationService.getOrganizationMembers(organizationId);
+                const members = response.members;
 
                 // Tính toán statistics
                 let doanVienCount = 0;
@@ -37,7 +38,7 @@ export const useOrganizationMemberStats = (organizationId?: string) => {
                 let bothMemberCount = 0;
                 let nonMemberCount = 0;
 
-                members.forEach(member => {
+                members.forEach((member: any) => {
                     const user = member.user;
                     const isDoanVien = user.membershipStatus === 'doan_vien' || user.membershipStatus === 'both';
                     const isHoiVien = user.membershipStatus === 'hoi_vien' || user.membershipStatus === 'both';

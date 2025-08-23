@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Save, X, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { 
-  PaymentFeeLevel, 
-  CreatePaymentFeeLevelDto, 
+import {
+  CreatePaymentFeeLevelDto,
   UpdatePaymentFeeLevelDto,
-  PaymentCampaign 
+  PaymentCampaign
 } from '../../types';
 import { paymentFeeLevelService, paymentCampaignService } from '@/shared/services/fee-collection-service';
 
@@ -28,11 +27,10 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
   const { campaignId, id } = useParams<{ campaignId: string; id?: string }>();
   const navigate = useNavigate();
   const [campaign, setCampaign] = useState<PaymentCampaign | null>(null);
-  const [feeLevel, setFeeLevel] = useState<PaymentFeeLevel | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState<FeeLevelFormData>({
     levelName: '',
     amount: 0,
@@ -50,7 +48,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
 
   const loadData = async () => {
     if (!campaignId) return;
-    
+
     try {
       setLoading(true);
       const campaignResponse = await paymentCampaignService.getPaymentCampaignById(campaignId);
@@ -58,13 +56,12 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
 
       if (mode === 'edit' && id) {
         const feeLevelResponse = await paymentFeeLevelService.getFeeLevelById(campaignId, id);
-        const levelData = feeLevelResponse;
-        setFeeLevel(levelData);
+        const levelData = feeLevelResponse.data;
         setFormData({
           levelName: levelData.levelName,
           amount: levelData.amount,
-          description: levelData.description,
-          note: levelData.note,
+          description: levelData.description || '',
+          note: levelData.note || '',
           isDefault: levelData.isDefault,
           orderIndex: levelData.orderIndex
         });
@@ -73,7 +70,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
         const feeLevelsResponse = await paymentFeeLevelService.getFeeLevelsByCampaign(campaignId);
         setFormData(prev => ({
           ...prev,
-          orderIndex: feeLevelsResponse.length
+          orderIndex: feeLevelsResponse.data.length
         }));
       }
     } catch (err) {
@@ -88,24 +85,24 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
       setError(t('errors.nameRequired'));
       return false;
     }
-    
+
     if (formData.amount <= 0) {
       setError(t('errors.amountInvalid'));
       return false;
     }
-    
+
     return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm() || !campaignId) return;
-    
+
     try {
       setSaving(true);
       setError(null);
-      
+
       if (mode === 'create') {
         const createData: CreatePaymentFeeLevelDto = {
           levelName: formData.levelName,
@@ -115,7 +112,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
           isDefault: formData.isDefault,
           orderIndex: formData.orderIndex
         };
-        
+
         await paymentFeeLevelService.createFeeLevel(campaignId, createData);
       } else if (id) {
         const updateData: UpdatePaymentFeeLevelDto = {
@@ -126,10 +123,10 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
           isDefault: formData.isDefault,
           orderIndex: formData.orderIndex
         };
-        
+
         await paymentFeeLevelService.updateFeeLevel(campaignId, id, updateData);
       }
-      
+
       navigate(`/admin/payment-campaigns/${campaignId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save fee level');
@@ -199,7 +196,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
         {/* Basic Information */}
         <div className="p-6 bg-white border rounded-lg">
           <h2 className="mb-4 text-lg font-medium text-gray-900">{t('title')}</h2>
-          
+
           <div className="space-y-4">
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">

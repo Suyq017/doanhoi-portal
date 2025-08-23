@@ -32,14 +32,15 @@ export const useMemberStats = (organization: Organization | null, shouldLoad: bo
 
         try {
             setLoading(true);
-            const members = await organizationService.getOrganizationMembers(organization.id);
+            const response = await organizationService.getOrganizationMembers(organization.id);
+            const members = response.members;
 
             let doanVienCount = 0;
             let hoiVienCount = 0;
             let bothMemberCount = 0;
             let nonMemberCount = 0;
 
-            members.forEach(member => {
+            members.forEach((member: any) => {
                 const user = member.user;
                 const isDoanVien = user.membershipStatus === 'doan_vien' || user.membershipStatus === 'both';
                 const isHoiVien = user.membershipStatus === 'hoi_vien' || user.membershipStatus === 'both';

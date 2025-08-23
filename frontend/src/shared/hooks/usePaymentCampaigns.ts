@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   PaymentCampaign,
   PaymentCampaignFilters,
@@ -25,9 +25,9 @@ export const usePaymentCampaigns = (initialFilters: PaymentCampaignFilters = {})
   const loadCampaigns = async () => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
-      
+
       const response = await paymentCampaignService.getPaymentCampaigns(state.filters);
-      
+
       setState(prev => ({
         ...prev,
         campaigns: response.data,
@@ -83,11 +83,11 @@ export const usePaymentCampaign = (id?: string) => {
 
   const loadCampaign = async () => {
     if (!id) return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await paymentCampaignService.getPaymentCampaignById(id);
       setCampaign(response);
     } catch (err) {
@@ -119,7 +119,7 @@ export const useCreatePaymentCampaign = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await paymentCampaignService.createPaymentCampaign(data);
       return response.data;
     } catch (err) {
@@ -145,7 +145,7 @@ export const useUpdatePaymentCampaign = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await paymentCampaignService.updatePaymentCampaign(id, data);
       return response.data;
     } catch (err) {
@@ -171,7 +171,7 @@ export const useDeletePaymentCampaign = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       await paymentCampaignService.deletePaymentCampaign(id);
       return true;
     } catch (err) {
@@ -197,7 +197,7 @@ export const useCampaignStatusActions = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await paymentCampaignService.activatePaymentCampaign(id);
       return response.data;
     } catch (err) {
@@ -212,7 +212,7 @@ export const useCampaignStatusActions = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await paymentCampaignService.completePaymentCampaign(id);
       return response.data;
     } catch (err) {
@@ -227,7 +227,7 @@ export const useCampaignStatusActions = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await paymentCampaignService.cancelPaymentCampaign(id);
       return response.data;
     } catch (err) {

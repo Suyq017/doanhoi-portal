@@ -12,11 +12,13 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess, onErro
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    
+
     try {
       // Redirect to backend Google OAuth endpoint
       const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
       window.location.href = `${backendUrl}/auth/google`;
+      // Call onSuccess callback if provided
+      onSuccess?.();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t('auth:form.error.googleLoginFailed');
       onError?.(errorMessage);

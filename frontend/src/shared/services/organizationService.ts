@@ -5,9 +5,9 @@ import {
   UpdateOrganizationRequest,
   OrganizationStats,
   OrganizationImportData,
-  UserOrganizationWithUser
+  UserOrganizationWithUser,
+  UserOrganization
 } from '../types/organization';
-import { UserOrganization } from '../types/user';
 
 class OrganizationService {
   async getOrganizations(): Promise<Organization[]> {

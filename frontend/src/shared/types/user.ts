@@ -1,20 +1,5 @@
 import { UserRole } from './permission';
-
-export interface UserOrganization {
-    id: string;
-    userId: string;
-    organizationId: string;
-    role: 'member' | 'admin' | 'super_admin';
-    isActive: boolean;
-    joinedAt: string;
-    updatedAt: string;
-    organization: {
-        id: string;
-        name: string;
-        code?: string;
-        parentId?: string;
-    };
-}
+import { UserOrganization } from './organization';
 
 export interface User {
     id: string;

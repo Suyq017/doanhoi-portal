@@ -12,7 +12,6 @@ interface TagInputProps {
     selectedTags: TagOption[];
     onTagsChange: (tags: TagOption[]) => void;
     placeholder?: string;
-    searchPlaceholder?: string;
     loading?: boolean;
     disabled?: boolean;
     maxTags?: number;
@@ -27,7 +26,6 @@ export const TagInput: React.FC<TagInputProps> = ({
     selectedTags,
     onTagsChange,
     placeholder = "Chọn các mục...",
-    searchPlaceholder = "Tìm kiếm...",
     loading = false,
     disabled = false,
     maxTags = 10,

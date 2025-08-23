@@ -23,10 +23,6 @@ export const useBreadcrumb = (config: BreadcrumbConfig) => {
         const membersText = t('organizations:members.title', { defaultValue: 'Danh sách thành viên' });
 
         const {
-            type,
-            code,
-            parentType,
-            parentCode,
             isDetailPage,
             isSubDetailPage,
             isMembersPage,

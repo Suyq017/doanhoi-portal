@@ -133,7 +133,7 @@ class AuthService {
   }
 
   // These methods can use apiClient since they need token refresh capability
-  async getUserPermissions(userId: string, organizationId?: string): Promise<UserPermissionsResponse> {
+  async getUserPermissions(organizationId?: string): Promise<UserPermissionsResponse> {
     const queryParams = organizationId ? `?organizationId=${organizationId}` : '';
     return apiClient.get<UserPermissionsResponse>(`/auth/me/permissions${queryParams}`);
   }
