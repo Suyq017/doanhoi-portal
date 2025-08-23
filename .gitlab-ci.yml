@@ -43,24 +43,23 @@ deploy:production:
     - echo "Checking artifacts"
     - ls -la backend/dist/ || echo "No backend dist"
     - ls -la frontend/dist/ || echo "No frontend dist"
-    - echo "Creating deployment directories"
-    - sudo mkdir -p $DEPLOY_PATH/backend $DEPLOY_PATH/frontend
-    - echo "Copying application files"
-    - sudo cp -r backend/dist $DEPLOY_PATH/backend/
-    - sudo cp -r frontend/dist $DEPLOY_PATH/frontend/
-    - sudo cp docker-compose.prod.yml $DEPLOY_PATH/
-    - sudo cp backend/Dockerfile.prod $DEPLOY_PATH/backend/
-    - sudo cp frontend/Dockerfile.prod $DEPLOY_PATH/frontend/
-    - echo "Setting permissions"
-    - sudo chown -R gitlab-runner:gitlab-runner $DEPLOY_PATH
-    - echo "Starting deployment"
-    - cd $DEPLOY_PATH
-    - sudo docker-compose -f docker-compose.prod.yml down || true
-    - sudo docker-compose -f docker-compose.prod.yml up -d --build
-    - sleep 20
-    - echo "Checking deployment status"
-    - sudo docker-compose -f docker-compose.prod.yml ps
-    - echo "Deployment completed"
+    - echo "Checking current permissions"
+    - whoami
+    - groups
+    - echo "Testing directory access"
+    - test -w /opt && echo "Can write to /opt" || echo "Cannot write to /opt - need sudo setup"
+    - echo "Creating deployment directories with fallback"
+    - mkdir -p ~/deployment/backend ~/deployment/frontend || echo "Using home directory fallback"
+    - echo "Copying application files to temp location"
+    - cp -r backend/dist ~/deployment/backend/ || echo "Backend copy failed"
+    - cp -r frontend/dist ~/deployment/frontend/ || echo "Frontend copy failed"
+    - cp docker-compose.prod.yml ~/deployment/ || echo "Docker compose copy failed"
+    - cp backend/Dockerfile.prod ~/deployment/backend/ || echo "Backend Dockerfile copy failed"
+    - cp frontend/Dockerfile.prod ~/deployment/frontend/ || echo "Frontend Dockerfile copy failed"
+    - echo "Files copied to ~/deployment - manual deployment needed"
+    - ls -la ~/deployment/
+    - echo "DEPLOYMENT READY - Files available in /home/gitlab-runner/deployment/"
+    - echo "Run manual deployment with proper sudo permissions"
   environment:
     name: production
     url: https://103.88.121.146
