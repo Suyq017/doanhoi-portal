@@ -5,9 +5,8 @@ stages:
 variables:
   DEPLOY_PATH: "/opt/doanhoi-portal"
   BACKEND_PORT: "9200"
-  GIT_DEPTH: 1
-  GIT_STRATEGY: fetch
 
+# Build trên Docker - không cần git clone trên server
 build:
   stage: build
   image: node:20
@@ -22,29 +21,46 @@ build:
       - docker-compose.prod.yml
       - backend/Dockerfile.prod
       - frontend/Dockerfile.prod
-    expire_in: 1 hour
+      - backend/package*.json
+      - frontend/package*.json
+    expire_in: 2 hours
   only:
     - dev
 
+# Deploy chỉ sử dụng artifacts - không cần git clone
 deploy:production:
   stage: deploy
   tags:
     - deploy
     - production
+  variables:
+    GIT_STRATEGY: none
+  dependencies:
+    - build
   script:
-    - echo "Deploying to production"
+    - echo "Deploying using artifacts only - no git operations"
+    - pwd && ls -la
+    - echo "Checking artifacts"
+    - ls -la backend/dist/ || echo "No backend dist"
+    - ls -la frontend/dist/ || echo "No frontend dist"
+    - echo "Creating deployment directories"
     - sudo mkdir -p $DEPLOY_PATH/backend $DEPLOY_PATH/frontend
+    - echo "Copying application files"
     - sudo cp -r backend/dist $DEPLOY_PATH/backend/
     - sudo cp -r frontend/dist $DEPLOY_PATH/frontend/
     - sudo cp docker-compose.prod.yml $DEPLOY_PATH/
     - sudo cp backend/Dockerfile.prod $DEPLOY_PATH/backend/
     - sudo cp frontend/Dockerfile.prod $DEPLOY_PATH/frontend/
+    - echo "Setting permissions"
     - sudo chown -R gitlab-runner:gitlab-runner $DEPLOY_PATH
+    - echo "Starting deployment"
     - cd $DEPLOY_PATH
     - sudo docker-compose -f docker-compose.prod.yml down || true
     - sudo docker-compose -f docker-compose.prod.yml up -d --build
     - sleep 20
+    - echo "Checking deployment status"
     - sudo docker-compose -f docker-compose.prod.yml ps
+    - echo "Deployment completed"
   environment:
     name: production
     url: https://103.88.121.146
