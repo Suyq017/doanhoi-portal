@@ -36,6 +36,7 @@ test:frontend:
   script:
     - cd frontend
     - npm ci
+    - npm install rollup --ignore-scripts
     - npm run lint --max-warnings=9999 || true
     - npm run build
   only:
