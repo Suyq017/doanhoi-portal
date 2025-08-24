@@ -56,7 +56,7 @@ services:
     networks:
       - doanhoi-network
 
-  # Frontend React (chỉ build, không serve)
+  # Frontend React served by nginx
   frontend:
     build:
       context: ./frontend
@@ -64,10 +64,11 @@ services:
     container_name: doanhoi-frontend-prod
     environment:
       NODE_ENV: production
-    volumes:
-      - ./frontend/dist:/app/dist  # Mount dist folder ra ngoài để dễ copy
+    ports:
+      - "8080:80"   # expose frontend ra port 8080
     depends_on:
       - backend
+    restart: unless-stopped
     networks:
       - doanhoi-network
 

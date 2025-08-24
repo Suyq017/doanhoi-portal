@@ -12,7 +12,9 @@ build:
   image: node:20
   script:
     - echo "Building application"
+    - echo "Installing and building backend"
     - cd backend && npm ci && npm run build
+    - echo "Installing and building frontend"  
     - cd ../frontend && npm ci && npm run build
   artifacts:
     paths:

@@ -1,42 +1,21 @@
-# Build stage only - files will be copied to host
-FROM node:20.17-alpine3.20 AS builder
-
-WORKDIR /app
+# Production-only Dockerfile - uses pre-built dist folder
+FROM nginx:alpine
 
 # Update packages để fix vulnerabilities
-RUN apk update && apk upgrade && rm -rf /var/cache/apk/*
+RUN apk update && apk upgrade && apk add --no-cache curl && rm -rf /var/cache/apk/*
 
-# Copy package files
-COPY package*.json ./
-COPY tsconfig*.json ./
-COPY vite.config.ts ./
-COPY tailwind.config.js ./
-COPY postcss.config.js ./
-COPY index.html ./
+# Copy built static files (assuming dist is already built by CI)
+COPY dist/ /usr/share/nginx/html/
 
-# Install dependencies
-RUN npm ci && npm cache clean --force
+# Copy custom nginx config if needed (optional)
+# COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy source code
-COPY src/ ./src/
-COPY public/ ./public/
+# Expose port 80
+EXPOSE 80
 
-# Build for production
-RUN npm run build
-
-# Simple container to hold the build output
-FROM alpine:3.20
-WORKDIR /app
-
-# Update packages và install minimal dependencies
-RUN apk update && apk upgrade && rm -rf /var/cache/apk/*
-
-# Copy built files
-COPY --from=builder /app/dist ./dist
-
-# Health check for the container
+# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ls -la /app/dist/index.html || exit 1
+    CMD curl -f http://localhost/ || exit 1
 
-# Keep container running to allow file copying
-CMD ["tail", "-f", "/dev/null"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
