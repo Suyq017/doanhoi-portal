@@ -14,7 +14,6 @@ RUN npm install --omit=dev && npm cache clean --force
 
 # Copy built application (assuming dist is already built by CI)
 COPY dist ./dist
-
 # Create non-root user with secure settings
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 -G nodejs && \
