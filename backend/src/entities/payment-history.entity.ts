@@ -8,6 +8,11 @@ export enum PaymentHistoryStatus {
   EXPIRED = 'EXPIRED'
 }
 
+export enum PaymentMethod {
+  MANUAL = 'MANUAL', // Đóng thủ công
+  ONLINE = 'ONLINE'  // Đóng online
+}
+
 @Entity('payment_history')
 export class PaymentHistory {
   @PrimaryGeneratedColumn('uuid')
@@ -25,6 +30,13 @@ export class PaymentHistory {
     default: PaymentHistoryStatus.PENDING
   })
   status: PaymentHistoryStatus;
+
+  @Column({
+    type: 'enum',
+    enum: PaymentMethod,
+    default: PaymentMethod.ONLINE
+  })
+  payment_method: PaymentMethod;
 
   @Column('bigint', { unique: true })
   order_code: number;
