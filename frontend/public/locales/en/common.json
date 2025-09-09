@@ -19,6 +19,10 @@
     "permissionsPhonetic": "Permissions",
     "paymentAdmin": "Fee Collection Management",
     "paymentAdminPhonetic": "Fee Collection Management",
+    "feeBatches": "Fee Batches",
+    "feeBatchesPhonetic": "Fee Batches",
+    "createFeeBatch": "Create Fee Batch", 
+    "createFeeBatchPhonetic": "Create Fee Batch",
     "myPayments": "My Payments",
     "myPaymentsPhonetic": "My Payments"
   },

@@ -1,4 +1,26 @@
-# Production-only Dockerfile - uses pre-built dist folder
+# Multi-stage build for Backend
+FROM node:20.17-alpine3.20 AS builder
+
+WORKDIR /app
+
+# Update packages
+RUN apk update && apk upgrade && rm -rf /var/cache/apk/*
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig*.json ./
+COPY nest-cli.json ./
+
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci && npm cache clean --force
+
+# Copy source code
+COPY src ./src
+
+# Build the application
+RUN npm run build
+
+# Production stage
 FROM node:20.17-alpine3.20 AS production
 
 WORKDIR /app
@@ -12,8 +34,9 @@ RUN apk update && apk upgrade && \
 COPY package*.json ./
 RUN npm install --omit=dev && npm cache clean --force
 
-# Copy built application (assuming dist is already built by CI)
-COPY dist ./dist
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+
 # Create non-root user with secure settings
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 -G nodejs && \

@@ -19,6 +19,10 @@
     "permissionsPhonetic": "Phân quyền",
     "paymentAdmin": "Quản lý đóng phí",
     "paymentAdminPhonetic": "Quản lý đóng phí",
+    "feeBatches": "Đợt đóng phí",
+    "feeBatchesPhonetic": "Đợt đóng phí",
+    "createFeeBatch": "Tạo đợt đóng phí",
+    "createFeeBatchPhonetic": "Tạo đợt đóng phí",
     "myPayments": "Đóng phí của tôi",
     "myPaymentsPhonetic": "Đóng phí của tôi"
   },
