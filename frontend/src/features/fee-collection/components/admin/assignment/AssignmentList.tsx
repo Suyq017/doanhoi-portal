@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, Download, Search, Filter, User, Clock, CheckCircle, AlertTriangle, Plus, CreditCard } from 'lucide-react';
+import { Trash2, Download, Search, Filter, User, Clock, CheckCircle, AlertTriangle, Plus } from 'lucide-react';
 import { PaymentAssignment, PaymentCampaign } from '../../../types';
 import { UserTablePagination } from '../../../../../shared/components/UserTable/UserTablePagination';
 import { useToast } from '../../../../../shared/hooks/useToast';
@@ -495,7 +495,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
                           className="p-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
                           title={t('assignmentsList.markAsPaidButton')}
                         >
-                          <CreditCard className="w-4 h-4" />
+                          <CheckCircle className="w-4 h-4" />
                         </button>
                       )}
                       
