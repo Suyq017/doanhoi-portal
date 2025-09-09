@@ -140,6 +140,21 @@ class PaymentAssignmentService {
     }
     return response.json();
   }
+
+  // Status Update Operations
+  async markAsPaid(id: string): Promise<ApiResponse<PaymentAssignment>> {
+    const response = await fetch(`${API_BASE}/${id}/mark-paid`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to mark assignment as paid');
+    }
+    return response.json();
+  }
 }
 
 export const paymentAssignmentService = new PaymentAssignmentService();

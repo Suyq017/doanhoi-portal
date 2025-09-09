@@ -5,7 +5,7 @@ import { PaymentAssignment, PaymentAssignmentStatus } from '../../entities/payme
 import { PaymentCampaign } from '../../entities/payment-campaign.entity';
 import { PaymentFeeLevel } from '../../entities/payment-fee-level.entity';
 import { User } from '../../entities/user.entity';
-import { PaymentHistory } from '../../entities/payment-history.entity';
+import { PaymentHistory, PaymentHistoryStatus, PaymentMethod } from '../../entities/payment-history.entity';
 import { CreatePaymentAssignmentDto } from '../dto/create-payment-assignment.dto';
 import { UpdatePaymentAssignmentDto } from '../dto/update-payment-assignment.dto';
 
@@ -217,12 +217,29 @@ export class PaymentAssignmentService {
       throw new BadRequestException('Assignment is already marked as paid');
     }
 
+    // Update assignment status
     assignment.status = PaymentAssignmentStatus.PAID;
     assignment.paidAt = new Date();
 
     const updatedAssignment = await this.assignmentRepository.save(assignment);
 
-    this.logger.log(`Marked assignment ${id} as paid`);
+    // Create payment history record for manual payment
+    const paymentHistory = this.paymentHistoryRepository.create({
+      assignment_id: assignment.id,
+      amount: assignment.feeLevel.amount,
+      status: PaymentHistoryStatus.PAID,
+      payment_method: PaymentMethod.MANUAL,
+      order_code: Number(String(Date.now()).slice(-6)), // Generate a simple order code based on timestamp
+      paid_at: new Date(),
+      // PayOS fields can be null for manual payments
+      client_id: null,
+      api_key: null,
+      checksum_key: null
+    });
+
+    await this.paymentHistoryRepository.save(paymentHistory);
+
+    this.logger.log(`Marked assignment ${id} as paid manually and created payment history`);
 
     return updatedAssignment;
   }

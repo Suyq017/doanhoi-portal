@@ -18,6 +18,7 @@
     "member": "Thành viên",
     "amount": "Số tiền đã đóng",
     "status": "Trạng thái",
+    "paymentMethod": "Phương thức thanh toán",
     "paymentTime": "Thời gian đóng phí",
     "clientId": "Client ID",
     "apiKey": "API Key",
@@ -26,6 +27,10 @@
   "status": {
     "paid": "Đã thanh toán",
     "cancelled": "Đã hủy"
+  },
+  "paymentMethod": {
+    "manual": "Đóng thủ công",
+    "online": "Đóng online"
   },
   "empty": {
     "title": "Không có lịch sử thanh toán",
