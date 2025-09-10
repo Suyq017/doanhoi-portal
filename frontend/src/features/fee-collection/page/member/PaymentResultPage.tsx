@@ -203,7 +203,7 @@ export const PaymentResultPage: React.FC = () => {
       }} />
       
       <div className="max-w-md px-4 mx-auto">
-        <div className="overflow-hidden bg-white rounded-lg shadow-lg printable-area">
+        <div className="overflow-hidden bg-white border-gray-500 rounded-lg shadow-lg printable-area">
           {/* Header */}
           <div className="px-6 py-4 text-center border-b bg-gray-50">
             <h1 className="text-lg font-semibold text-gray-900">
@@ -288,7 +288,7 @@ export const PaymentResultPage: React.FC = () => {
             )}
 
             {/* Print button - only show when payment is successful */}
-            {(paymentStatus.status === 'PAID' || paymentStatus.status === 'CANCELLED' || paymentStatus.status === 'EXPIRED') && (
+            {/* {(paymentStatus.status === 'PAID' || paymentStatus.status === 'CANCELLED' || paymentStatus.status === 'EXPIRED') && (
               <div className="mb-4 no-print">
                 <button
                   onClick={handlePrintResult}
@@ -298,7 +298,7 @@ export const PaymentResultPage: React.FC = () => {
                   <span>{t('print')}</span>
                 </button>
               </div>
-            )}
+            )} */}
 
             {/* Action Buttons */}
             <div className="space-y-3 no-print">

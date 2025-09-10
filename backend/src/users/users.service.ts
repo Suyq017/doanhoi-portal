@@ -32,9 +32,15 @@ export class UsersService {
 
     // Hash password if provided
     const { roleId, organizationId, roles, roleAssignments, ...userData } = createUserDto;
+    let userPassword: string = "";
     if (userData.password) {
       userData.password = await bcrypt.hash(userData.password, 10);
-    } const user = this.usersRepository.create(userData);
+    } else {
+      userPassword = this.generatePasswordFromEmail(userData.email);
+      userData.password = await bcrypt.hash(userPassword, 10);
+    }
+
+    const user = this.usersRepository.create(userData);
     const savedUser = await this.usersRepository.save(user);    // Handle organization membership (including parent organizations)
     if (organizationId && organizationId.trim() !== '') {
       try {
