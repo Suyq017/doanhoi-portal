@@ -97,17 +97,20 @@ build_artifacts:
 deploy_production:
   stage: deploy
   image: alpine:latest
-  dependencies:
-    - build_artifacts
   before_script:
+<<<<<<< HEAD
     # Install required packages
     - apk add --no-cache openssh-client rsync curl bash
+=======
+    - apk add --no-cache openssh-client git bash curl
+>>>>>>> 3ed14fa4b4614760832dea8c5aa20df5271e0264
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
     - mkdir -p ~/.ssh
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
     - chmod 600 ~/.ssh/config
   script:
+<<<<<<< HEAD
     - echo "🚀 Starting deployment to production server..."
     
     # Test SSH connection
@@ -291,6 +294,41 @@ deploy_production:
     - dev
   
   when: manual  # Require manual trigger for safety
+=======
+    - echo "🚀 Deploying Doanhoi Portal on $PRODUCTION_SERVER ..."
+    - |
+      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << DEPLOY_SCRIPT
+        set -e
+        echo "📂 Moving into project directory..."
+        cd $DEPLOY_PATH
+
+        echo "🌿 Checking out dev branch..."
+        git fetch --all
+        git checkout dev
+        git pull origin dev
+
+        echo "🔨 Running deploy.sh..."
+        chmod +x deploy.sh
+        ./deploy.sh
+
+        echo "✅ Deployment finished successfully!"
+      DEPLOY_SCRIPT
+
+    - echo "🔍 Verifying deployment..."
+    - |
+      if curl -f -k https://$DOMAIN >/dev/null 2>&1; then
+        echo "🎉 SUCCESS: Website is accessible at https://$DOMAIN"
+      else
+        echo "⚠️ WARNING: Deployment finished but domain check failed"
+      fi
+  environment:
+    name: production
+    url: https://doanhoi.hcmut.edu.vn
+  only:
+    - dev
+  when: manual
+
+>>>>>>> 3ed14fa4b4614760832dea8c5aa20df5271e0264
 
 # Rollback job (manual trigger only)
 rollback_production:
