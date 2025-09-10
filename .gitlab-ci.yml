@@ -109,23 +109,32 @@ deploy_production:
   script:
     - echo "🚀 Starting deployment to production server..."
     
-    # Test SSH connection
-    - sshpass -p "$SSH_PASSWORD" ssh $PRODUCTION_USER@$PRODUCTION_SERVER "echo '✅ SSH connection successful'"
+    # Debug SSH connection
+    - echo "🔍 Debugging SSH connection..."
+    - echo "Server: $PRODUCTION_SERVER"
+    - echo "User: $PRODUCTION_USER"
+    - echo "Password length: ${#SSH_PASSWORD}"
+    
+    # Alternative SSH method with password file
+    - echo "$SSH_PASSWORD" > /tmp/ssh_pass
+    - chmod 600 /tmp/ssh_pass
+    - echo "🧪 Testing SSH with password file..."
+    - sshpass -f /tmp/ssh_pass ssh -o ConnectTimeout=30 $PRODUCTION_USER@$PRODUCTION_SERVER "echo '✅ SSH connection successful'"
     
     # Create deployment directory
     - |
-      sshpass -p "$SSH_PASSWORD" ssh $PRODUCTION_USER@$PRODUCTION_SERVER "
+      sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "
         mkdir -p $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA
         echo '📁 Created temporary deployment directory'
       "
     
     # Upload files to server
     - echo "📤 Uploading files to server..."
-    - sshpass -p "$SSH_PASSWORD" rsync -avz --delete ./ $PRODUCTION_USER@$PRODUCTION_SERVER:$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA/
+    - sshpass -f /tmp/ssh_pass rsync -avz --delete ./ $PRODUCTION_USER@$PRODUCTION_SERVER:$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA/
     
     # Execute deployment on server
     - |
-      sshpass -p "$SSH_PASSWORD" ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'DEPLOY_SCRIPT'
+      sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'DEPLOY_SCRIPT'
         set -e
         
         TEMP_DIR="$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA"
