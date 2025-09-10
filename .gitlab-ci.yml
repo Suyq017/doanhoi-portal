@@ -154,9 +154,6 @@ deploy_production:
     name: production
     url: https://doanhoi.hcmut.edu.vn
   
-  dependencies:
-    - build_artifacts
-  
   only:
     - dev
     - main
@@ -168,58 +165,21 @@ rollback_production:
   stage: deploy
   image: alpine:latest
   before_script:
-    - apk add --no-cache openssh-client bash
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - apk add --no-cache openssh-client bash sshpass
     - mkdir -p ~/.ssh
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
+    - chmod 600 ~/.ssh/config
   script:
     - echo "🔄 Starting rollback procedure..."
-    - |
-      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'ROLLBACK_SCRIPT'
-        cd $DEPLOY_PATH
-        
-        echo "=== 🔄 Starting Rollback ==="
-        
-        # Find latest backup
-        BACKUP_FILE=$(ls -t docker-compose.prod.yml.backup-* 2>/dev/null | head -n1)
-        
-        if [ -z "$BACKUP_FILE" ]; then
-          echo "❌ No backup file found!"
-          echo "Available backups:"
-          ls -la docker-compose.prod.yml.* 2>/dev/null || echo "No backups available"
-          exit 1
-        fi
-        
-        echo "📁 Rolling back to: $BACKUP_FILE"
-        
-        # Stop current containers
-        echo "🛑 Stopping current containers..."
-        docker-compose -f docker-compose.prod.yml down --timeout 30 || true
-        
-        # Restore backup
-        echo "📂 Restoring backup configuration..."
-        cp "$BACKUP_FILE" docker-compose.prod.yml
-        
-        # Start containers with backup config
-        echo "▶️ Starting containers with backup configuration..."
-        docker-compose -f docker-compose.prod.yml up -d
-        
-        # Wait and verify
-        echo "⏳ Waiting for containers..."
-        sleep 30
-        
-        # Health check
-        if curl -f http://localhost:2680 >/dev/null 2>&1 && curl -f http://localhost:2681/api >/dev/null 2>&1; then
-          echo "✅ Rollback successful!"
-        else
-          echo "⚠️ Rollback completed but health check failed"
-        fi
-        
-        docker-compose -f docker-compose.prod.yml ps
-        
-        echo "=== ✅ Rollback Completed ==="
-      ROLLBACK_SCRIPT
+    - echo "$SSH_PASSWORD" > /tmp/ssh_pass
+    - chmod 600 /tmp/ssh_pass
+    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && echo '=== 🔄 Starting Rollback ==='"
+    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && BACKUP_FILE=\$(ls -t docker-compose.prod.yml.backup-* 2>/dev/null | head -n1) && echo 'Latest backup:' \$BACKUP_FILE"
+    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml down --timeout 30 || true"
+    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && BACKUP_FILE=\$(ls -t docker-compose.prod.yml.backup-* 2>/dev/null | head -n1) && cp \$BACKUP_FILE docker-compose.prod.yml"
+    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml up -d"
+    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && sleep 30 && docker-compose -f docker-compose.prod.yml ps"
+    - echo "✅ Rollback completed"
   
   environment:
     name: production
