@@ -111,20 +111,20 @@ deploy_production:
     - echo "$SSH_PASSWORD" > /tmp/ssh_pass
     - chmod 600 /tmp/ssh_pass
     - echo "🧪 Testing SSH with password file..."
-    - sshpass -f /tmp/ssh_pass ssh -o ConnectTimeout=30 $PRODUCTION_USER@$PRODUCTION_SERVER "echo '✅ SSH connection successful'"
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "mkdir -p $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA && echo '📁 Created temporary deployment directory'"
+    - "sshpass -f /tmp/ssh_pass ssh -o ConnectTimeout=30 $PRODUCTION_USER@$PRODUCTION_SERVER 'echo \"✅ SSH connection successful\"'"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'mkdir -p $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA && echo \"📁 Created temporary deployment directory\"'"
     - echo "📤 Uploading files to server..."
-    - sshpass -f /tmp/ssh_pass rsync -avz --delete ./ $PRODUCTION_USER@$PRODUCTION_SERVER:$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA/
+    - "sshpass -f /tmp/ssh_pass rsync -avz --delete ./ $PRODUCTION_USER@$PRODUCTION_SERVER:$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA/"
     - echo "🔨 Executing deployment script..."
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA && echo '=== 🚀 Starting Doanhoi Portal Deployment ===' && echo '📅 Deployment time:' \$(date)"
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA && if [ -f $DEPLOY_PATH/docker-compose.prod.yml ]; then cp $DEPLOY_PATH/docker-compose.prod.yml $DEPLOY_PATH/docker-compose.prod.yml.backup-\$(date +%Y%m%d_%H%M%S); fi"
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA && cp -r * $DEPLOY_PATH/"
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml down --timeout 30 || true"
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && docker image prune -f || true"
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml up -d --build"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA && echo \"=== 🚀 Starting Doanhoi Portal Deployment ===\" && echo \"📅 Deployment time: \$(date)\"'"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA && if [ -f $DEPLOY_PATH/docker-compose.prod.yml ]; then cp $DEPLOY_PATH/docker-compose.prod.yml $DEPLOY_PATH/docker-compose.prod.yml.backup-\$(date +%Y%m%d_%H%M%S); fi'"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA && cp -r * $DEPLOY_PATH/'"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml down --timeout 30 || true'"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH && docker image prune -f || true'"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml up -d --build'"
     - echo "⏳ Waiting for containers to initialize..."
     - sleep 45
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml ps"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml ps'"
     - echo "🔍 Final verification from GitLab runner..."
     - "if curl -f -k https://$DOMAIN >/dev/null 2>&1; then echo '🎉 SUCCESS: Deployment completed!'; else echo '⚠️ WARNING: Domain verification failed'; fi"
   environment:
@@ -148,12 +148,12 @@ rollback_production:
     - echo "🔄 Starting rollback procedure..."
     - echo "$SSH_PASSWORD" > /tmp/ssh_pass
     - chmod 600 /tmp/ssh_pass
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && echo '=== 🔄 Starting Rollback ==='"
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && BACKUP_FILE=\$(ls -t docker-compose.prod.yml.backup-* 2>/dev/null | head -n1) && echo 'Latest backup:' \$BACKUP_FILE"
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml down --timeout 30 || true"
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && BACKUP_FILE=\$(ls -t docker-compose.prod.yml.backup-* 2>/dev/null | head -n1) && cp \$BACKUP_FILE docker-compose.prod.yml"
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml up -d"
-    - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && sleep 30 && docker-compose -f docker-compose.prod.yml ps"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH && echo \"=== 🔄 Starting Rollback ===\"'"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH && BACKUP_FILE=\$(ls -t docker-compose.prod.yml.backup-* 2>/dev/null | head -n1) && echo \"Latest backup: \$BACKUP_FILE\"'"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml down --timeout 30 || true'"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH && BACKUP_FILE=\$(ls -t docker-compose.prod.yml.backup-* 2>/dev/null | head -n1) && cp \$BACKUP_FILE docker-compose.prod.yml'"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml up -d'"
+    - "sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER 'cd $DEPLOY_PATH && sleep 30 && docker-compose -f docker-compose.prod.yml ps'"
     - echo "✅ Rollback completed"
   environment:
     name: production
