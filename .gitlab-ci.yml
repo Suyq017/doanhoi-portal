@@ -97,200 +97,49 @@ build_artifacts:
 deploy_production:
   stage: deploy
   image: alpine:latest
-  dependencies:
-    - build_artifacts
   before_script:
-    # Install required packages
-    - apk add --no-cache openssh-client rsync curl bash
+    - apk add --no-cache openssh-client git bash curl
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
     - mkdir -p ~/.ssh
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
     - chmod 600 ~/.ssh/config
   script:
-    - echo "🚀 Starting deployment to production server..."
-    
-    # Test SSH connection
-    - ssh $PRODUCTION_USER@$PRODUCTION_SERVER "echo '✅ SSH connection successful'"
-    
-    # Create deployment directory
-    - |
-      ssh $PRODUCTION_USER@$PRODUCTION_SERVER "
-        mkdir -p $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA
-        echo '📁 Created temporary deployment directory'
-      "
-    
-    # Upload files to server
-    - echo "📤 Uploading files to server..."
-    - rsync -avz --delete ./ $PRODUCTION_USER@$PRODUCTION_SERVER:$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA/
-    
-    # Execute deployment on server
+    - echo "🚀 Deploying Doanhoi Portal on $PRODUCTION_SERVER ..."
     - |
       ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'DEPLOY_SCRIPT'
         set -e
         
-        TEMP_DIR="$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA"
-        cd $TEMP_DIR
+        echo "📂 Moving into project directory..."
+        cd /opt/doanhoi-portal
         
-        echo "=== 🚀 Starting Doanhoi Portal Deployment ==="
-        echo "📅 Deployment time: $(date)"
-        echo "📝 Commit: $CI_COMMIT_SHORT_SHA"
-        echo "🌿 Branch: $CI_COMMIT_REF_NAME"
+        echo "🌿 Checking out dev branch..."
+        git fetch --all
+        git checkout dev
+        git pull origin dev
         
-        # Backup current deployment
-        if [ -f $DEPLOY_PATH/docker-compose.prod.yml ]; then
-          echo "💾 Creating backup..."
-          BACKUP_NAME="backup-$(date +%Y%m%d_%H%M%S)"
-          cp $DEPLOY_PATH/docker-compose.prod.yml $DEPLOY_PATH/docker-compose.prod.yml.$BACKUP_NAME
-          echo "✅ Backup created: docker-compose.prod.yml.$BACKUP_NAME"
-        fi
+        echo "🔨 Running deploy.sh..."
+        chmod +x deploy.sh
+        ./deploy.sh
         
-        # Update deployment files
-        echo "📂 Updating deployment files..."
-        cp -r * $DEPLOY_PATH/
-        cd $DEPLOY_PATH
-        
-        # Check environment file
-        if [ ! -f .env.production ]; then
-          echo "❌ .env.production not found!"
-          exit 1
-        fi
-        
-        if [ ! -f frontend/.env.production ]; then
-          echo "❌ frontend/.env.production not found!"
-          exit 1
-        fi
-        
-        # Check Docker and Docker Compose
-        which docker || { echo "❌ Docker not found!"; exit 1; }
-        which docker-compose || { echo "❌ Docker Compose not found!"; exit 1; }
-        
-        # Stop current containers gracefully
-        echo "🛑 Stopping current containers..."
-        docker-compose -f docker-compose.prod.yml down --timeout 30 || echo "⚠️ No containers to stop"
-        
-        # Clean up old images to save space
-        echo "🧹 Cleaning up old Docker images..."
-        docker image prune -f || echo "⚠️ Image cleanup failed"
-        
-        # Build and start new containers
-        echo "🔨 Building and starting containers..."
-        docker-compose -f docker-compose.prod.yml up -d --build
-        
-        # Wait for containers to initialize
-        echo "⏳ Waiting for containers to initialize..."
-        sleep 45
-        
-        # Health checks
-        echo "🔍 Performing health checks..."
-        
-        # Check container status
-        echo "📊 Container status:"
-        docker-compose -f docker-compose.prod.yml ps
-        
-        # Check if all containers are running
-        RUNNING_CONTAINERS=$(docker-compose -f docker-compose.prod.yml ps --services --filter "status=running" | wc -l)
-        TOTAL_CONTAINERS=$(docker-compose -f docker-compose.prod.yml ps --services | wc -l)
-        
-        echo "🏃 Running containers: $RUNNING_CONTAINERS/$TOTAL_CONTAINERS"
-        
-        if [ "$RUNNING_CONTAINERS" -ne "$TOTAL_CONTAINERS" ]; then
-          echo "❌ Not all containers are running!"
-          docker-compose -f docker-compose.prod.yml logs --tail=50
-          exit 1
-        fi
-        
-        # Health check endpoints
-        echo "🩺 Testing application endpoints..."
-        
-        # Backend health check
-        for i in {1..30}; do
-          if curl -f http://localhost:2681/api >/dev/null 2>&1; then
-            echo "✅ Backend is healthy (attempt $i)"
-            break
-          fi
-          if [ $i -eq 30 ]; then
-            echo "❌ Backend health check failed after 30 attempts"
-            docker logs doanhoi-backend-prod --tail=20
-            exit 1
-          fi
-          echo "⏳ Waiting for backend... ($i/30)"
-          sleep 5
-        done
-        
-        # Frontend health check
-        for i in {1..30}; do
-          if curl -f http://localhost:2680 >/dev/null 2>&1; then
-            echo "✅ Frontend is healthy (attempt $i)"
-            break
-          fi
-          if [ $i -eq 30 ]; then
-            echo "❌ Frontend health check failed after 30 attempts"
-            docker logs doanhoi-frontend-prod --tail=20
-            exit 1
-          fi
-          echo "⏳ Waiting for frontend... ($i/30)"
-          sleep 5
-        done
-        
-        # Domain health check
-        echo "🌐 Testing domain accessibility..."
-        if curl -f -k https://$DOMAIN >/dev/null 2>&1; then
-          echo "✅ Domain https://$DOMAIN is accessible"
-        else
-          echo "⚠️ Domain check failed, but containers are running"
-        fi
-        
-        # Database connection check
-        echo "🗄️ Testing database connection..."
-        if docker exec doanhoi-postgres-prod pg_isready -U postgres >/dev/null 2>&1; then
-          echo "✅ Database is ready"
-        else
-          echo "❌ Database connection failed"
-          exit 1
-        fi
-        
-        # Clean up temporary directory
-        echo "🧹 Cleaning up temporary files..."
-        rm -rf $TEMP_DIR
-        
-        # Show final status
-        echo "📊 Final deployment status:"
-        docker-compose -f docker-compose.prod.yml ps
-        echo ""
-        echo "💾 Disk usage:"
-        df -h $DEPLOY_PATH
-        echo ""
-        echo "🔗 Application URLs:"
-        echo "   - Domain: https://$DOMAIN"
-        echo "   - Frontend: http://localhost:2680"
-        echo "   - Backend: http://localhost:2681/api"
-        echo "   - Admin Login: admin@doanhoi.com / admin123"
-        echo ""
-        echo "=== ✅ Deployment Completed Successfully ==="
+        echo "✅ Deployment finished successfully!"
       DEPLOY_SCRIPT
     
-    # Final verification from GitLab runner
-    - echo "🔍 Final verification from GitLab runner..."
+    - echo "🔍 Verifying deployment..."
     - |
       if curl -f -k https://$DOMAIN >/dev/null 2>&1; then
-        echo "🎉 SUCCESS: Deployment completed! Website is accessible at https://$DOMAIN"
+        echo "🎉 SUCCESS: Website is accessible at https://$DOMAIN"
       else
-        echo "⚠️ WARNING: Deployment completed but domain verification failed"
-        echo "Please check manually: https://$DOMAIN"
+        echo "⚠️ WARNING: Deployment finished but domain check failed"
+        echo "Please verify manually: https://$DOMAIN"
       fi
-  
   environment:
     name: production
     url: https://doanhoi.hcmut.edu.vn
-  
-  dependencies:
-    - build_artifacts
-  
   only:
     - dev
-  
-  when: manual  # Require manual trigger for safety
+  when: manual
+
 
 # Rollback job (manual trigger only)
 rollback_production:
