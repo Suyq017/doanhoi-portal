@@ -102,11 +102,7 @@ deploy_production:
     - build_artifacts
   before_script:
     # Install required packages
-    - apk add --no-cache openssh-client rsync curl bash
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key
-    - chmod 600 /tmp/ssh_key
-    - ssh-add /tmp/ssh_key
+    - apk add --no-cache openssh-client rsync curl bash sshpass
     - mkdir -p ~/.ssh
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
     - chmod 600 ~/.ssh/config
@@ -114,22 +110,22 @@ deploy_production:
     - echo "🚀 Starting deployment to production server..."
     
     # Test SSH connection
-    - ssh $PRODUCTION_USER@$PRODUCTION_SERVER "echo '✅ SSH connection successful'"
+    - sshpass -p "$SSH_PASSWORD" ssh $PRODUCTION_USER@$PRODUCTION_SERVER "echo '✅ SSH connection successful'"
     
     # Create deployment directory
     - |
-      ssh $PRODUCTION_USER@$PRODUCTION_SERVER "
+      sshpass -p "$SSH_PASSWORD" ssh $PRODUCTION_USER@$PRODUCTION_SERVER "
         mkdir -p $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA
         echo '📁 Created temporary deployment directory'
       "
     
     # Upload files to server
     - echo "📤 Uploading files to server..."
-    - rsync -avz --delete ./ $PRODUCTION_USER@$PRODUCTION_SERVER:$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA/
+    - sshpass -p "$SSH_PASSWORD" rsync -avz --delete ./ $PRODUCTION_USER@$PRODUCTION_SERVER:$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA/
     
     # Execute deployment on server
     - |
-      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'DEPLOY_SCRIPT'
+      sshpass -p "$SSH_PASSWORD" ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'DEPLOY_SCRIPT'
         set -e
         
         TEMP_DIR="$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA"
