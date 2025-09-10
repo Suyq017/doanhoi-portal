@@ -148,7 +148,7 @@ deploy_production:
     
     # Final verification
     - echo "🔍 Final verification from GitLab runner..."
-    - if curl -f -k https://$DOMAIN >/dev/null 2>&1; then echo "🎉 SUCCESS: Deployment completed!"; else echo "⚠️ WARNING: Domain verification failed"; fi
+    - "if curl -f -k https://$DOMAIN >/dev/null 2>&1; then echo '🎉 SUCCESS: Deployment completed!'; else echo '⚠️ WARNING: Domain verification failed'; fi"
   
   environment:
     name: production
