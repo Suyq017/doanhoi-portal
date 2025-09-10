@@ -1,6 +1,3 @@
-# GitLab CI/CD Pipeline cho Doanhoi Portal
-# Tự động deploy khi push vào nhánh dev
-
 stages:
   - test
   - build
@@ -101,7 +98,6 @@ deploy_production:
   dependencies:
     - build_artifacts
   before_script:
-    # Install required packages
     - apk add --no-cache openssh-client rsync curl bash sshpass
     - mkdir -p ~/.ssh
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
@@ -130,17 +126,14 @@ deploy_production:
     - sleep 45
     - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml ps"
     - echo "🔍 Final verification from GitLab runner..."
-    - "if curl -f -k https://$DOMAIN >/dev/null 2>&1; then echo '🎉 SUCCESS: Deployment completed!'; else echo '⚠️ WARNING: Domain verification failed'; fi"
-  
+    - if curl -f -k https://$DOMAIN >/dev/null 2>&1; then echo "🎉 SUCCESS: Deployment completed!"; else echo "⚠️ WARNING: Domain verification failed"; fi
   environment:
     name: production
     url: https://doanhoi.hcmut.edu.vn
-  
   only:
     - dev
     - main
-  
-  when: on_success  # Tự động deploy khi merge vào main
+  when: on_success
 
 # Rollback job (manual trigger only)
 rollback_production:
@@ -162,13 +155,10 @@ rollback_production:
     - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && docker-compose -f docker-compose.prod.yml up -d"
     - sshpass -f /tmp/ssh_pass ssh $PRODUCTION_USER@$PRODUCTION_SERVER "cd $DEPLOY_PATH && sleep 30 && docker-compose -f docker-compose.prod.yml ps"
     - echo "✅ Rollback completed"
-  
   environment:
     name: production
     url: https://doanhoi.hcmut.edu.vn
-  
   only:
     - dev
     - main
-  
   when: manual
