@@ -13,7 +13,7 @@ export interface OrganizationPagePermissions extends ComponentPermissions {
     canViewMemberCount: boolean;
 
     // Tree view permissions
-    canShowEyeIcon: boolean; // Based on membership OR access_children permission OR super admin
+    canShowEyeIcon: boolean; // Based on membership OR flexible access_children permission (context/global) OR super admin (NO hasChildren check)
     canShowUsersIcon: boolean; // Based on view permissions
     canShowActionIcons: boolean; // Based on any edit permissions
 
@@ -47,12 +47,12 @@ export const useOrganizationPagePermissions = (): OrganizationPagePermissions =>
         const canAddMember = permissions.canAddOrganizationMember();
         const canRemoveMember = permissions.canRemoveOrganizationMember();
         const canManageMembers = permissions.canManageOrganizationMembers();
-        const canAccessChildren = permissions.canAccessChildOrganizations();
+        const canAccessChildren = permissions.canAccessChildOrganizationsFlexible(); // Use flexible method
         const canViewMemberCount = permissions.canViewOrganizationDetails();
 
         // Check if user is super admin
         const isSuperAdmin = permissions.isSuperAdmin();        // Tree view permissions
-        const canShowEyeIcon = isSuperAdmin || canAccessChildren; // Base permission check, component will add membership check
+        const canShowEyeIcon = isSuperAdmin || canAccessChildren; // Base permission check with flexible access_children, component will add membership check (NO hasChildren)
         const canShowUsersIcon = canViewMemberCount || canManageMembers;
         const canShowActionIcons = canUpdate || canDelete || canManageMembers;
 

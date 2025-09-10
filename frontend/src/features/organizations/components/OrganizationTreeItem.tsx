@@ -209,28 +209,23 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
             return false;
         }
 
-        // 1. User là super admin (có thể xem tất cả tổ chức) - KHÔNG cần kiểm tra hasChildren
+        // 1. User là super admin (có thể xem tất cả tổ chức)
         if (permissions.isSuperAdmin) {
             return true;
         }
 
-        // 2. User có quyền access_children cho tổ chức này cụ thể - KHÔNG cần kiểm tra hasChildren  
+        // 2. User có quyền access_children CHỈ cho tổ chức này cụ thể
         if (hasPermission(ORGANIZATION_PERMISSIONS.ACCESS_CHILDREN, org.id)) {
             return true;
         }
 
-        // 3. User có trong user_organization của tổ chức này (là thành viên) - KHÔNG cần kiểm tra hasChildren
+        // 3. User có trong user_organization của tổ chức này (là thành viên)
         const isMember = isUserInOrganization(org.id);
         if (isMember) {
             return true;
         }
 
-        // 4. Chỉ kiểm tra hasChildren cho các user thường (không phải admin)
-        // QUAN TRỌNG: Chỉ hiển thị icon con mắt nếu tổ chức VẪN CÒN CÓ CON (cho user thường)
-        if (hasChildren) {
-            return true;
-        }
-
+        // 4. User thường không được xem icon con mắt nếu không có quyền cụ thể cho tổ chức này
         return false;
     };
 
@@ -249,6 +244,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
             });
         }
 
+        // Chỉ kiểm tra quyền access_children cho tổ chức cụ thể này
         if (hasPermission(ORGANIZATION_PERMISSIONS.ACCESS_CHILDREN, org.id)) {
             return t('organizations:tooltips.eye_icon_access_children_specific', {
                 defaultValue: 'Xem chi tiết tổ chức (Quyền truy cập tổ chức này)'

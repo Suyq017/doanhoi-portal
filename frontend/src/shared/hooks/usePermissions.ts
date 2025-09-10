@@ -18,6 +18,18 @@ export const usePermissions = () => {
         canCreateOrganization: () => hasPermission('organizations.create'), // System-wide permission
         canViewOrganizationDetails: () => hasPermission('organizations.view_member_count', currentOrganizationId),
         canAccessChildOrganizations: () => hasPermission('organizations.access_children', currentOrganizationId),
+        // NEW: More flexible method to check access_children permission
+        canAccessChildOrganizationsFlexible: () => {
+            // Check in current organization context
+            if (hasPermission('organizations.access_children', currentOrganizationId)) {
+                return true;
+            }
+            // Check global permission (no organizationId)
+            if (hasPermission('organizations.access_children')) {
+                return true;
+            }
+            return false;
+        },
         canUpdateOrganization: () => hasPermission('organizations.update', currentOrganizationId),
         canDeleteOrganization: () => hasPermission('organizations.delete', currentOrganizationId),
         canExportOrganizations: () => hasPermission('organizations.export', currentOrganizationId),
