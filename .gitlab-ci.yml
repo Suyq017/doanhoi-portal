@@ -107,31 +107,29 @@ deploy_production:
   script:
     - echo "🚀 Deploying Doanhoi Portal on $PRODUCTION_SERVER ..."
     - |
-      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'DEPLOY_SCRIPT'
+      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << DEPLOY_SCRIPT
         set -e
-        
         echo "📂 Moving into project directory..."
-        cd /opt/doanhoi-portal
-        
+        cd $DEPLOY_PATH
+
         echo "🌿 Checking out dev branch..."
         git fetch --all
         git checkout dev
         git pull origin dev
-        
+
         echo "🔨 Running deploy.sh..."
         chmod +x deploy.sh
         ./deploy.sh
-        
+
         echo "✅ Deployment finished successfully!"
       DEPLOY_SCRIPT
-    
+
     - echo "🔍 Verifying deployment..."
     - |
       if curl -f -k https://$DOMAIN >/dev/null 2>&1; then
         echo "🎉 SUCCESS: Website is accessible at https://$DOMAIN"
       else
         echo "⚠️ WARNING: Deployment finished but domain check failed"
-        echo "Please verify manually: https://$DOMAIN"
       fi
   environment:
     name: production
