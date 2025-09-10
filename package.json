@@ -25,16 +25,16 @@
     "prod:backend-only": "docker-compose -f docker-compose.prod.yml --env-file .env.production up -d postgres backend"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jsx-a11y": "^6.8.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
-    "typescript-eslint": "^7.0.2",
-    "concurrently": "^8.2.2",
     "rollup": "^4.21.2",
-    "typeorm-uml": "^1.6.5"
+    "typeorm-uml": "^1.6.5",
+    "typescript-eslint": "^7.0.2"
   },
   "workspaces": [
     "backend",

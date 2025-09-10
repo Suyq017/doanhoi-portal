@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw, Printer } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { paymentService } from '../../../../shared/services/fee-collection-service';
 
@@ -62,10 +62,6 @@ export const PaymentResultPage: React.FC = () => {
       setLoading(false);
       setChecking(false);
     }
-  };
-
-  const handlePrintResult = () => {
-    window.print();
   };
 
   const getStatusDisplay = (status: string) => {
