@@ -92,6 +92,7 @@ build_artifacts:
     expire_in: 1 day
   only:
     - dev
+    - main
 
 # Stage 3: Deploy to Production Server
 deploy_production:
@@ -289,8 +290,9 @@ deploy_production:
   
   only:
     - dev
+    - main
   
-  when: manual  # Require manual trigger for safety
+  when: on_success  # Tự động deploy khi merge vào main
 
 # Rollback job (manual trigger only)
 rollback_production:
@@ -356,5 +358,6 @@ rollback_production:
   
   only:
     - dev
+    - main
   
   when: manual
