@@ -209,25 +209,25 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
             return false;
         }
 
-        // QUAN TRỌNG: Chỉ hiển thị icon con mắt nếu tổ chức VẪN CÒN CÓ CON
-        if (!hasChildren) {
-            return false;
-        }
-
-        // ĐIỀU KIỆN HIỂN THỊ ICON CON MẮT:
-        // 1. User là super admin (có thể xem tất cả tổ chức)
+        // 1. User là super admin (có thể xem tất cả tổ chức) - KHÔNG cần kiểm tra hasChildren
         if (permissions.isSuperAdmin) {
             return true;
         }
 
-        // 2. User có quyền access_children cho tổ chức này cụ thể
+        // 2. User có quyền access_children cho tổ chức này cụ thể - KHÔNG cần kiểm tra hasChildren  
         if (hasPermission(ORGANIZATION_PERMISSIONS.ACCESS_CHILDREN, org.id)) {
             return true;
         }
 
-        // 3. User có trong user_organization của tổ chức này (là thành viên)
+        // 3. User có trong user_organization của tổ chức này (là thành viên) - KHÔNG cần kiểm tra hasChildren
         const isMember = isUserInOrganization(org.id);
         if (isMember) {
+            return true;
+        }
+
+        // 4. Chỉ kiểm tra hasChildren cho các user thường (không phải admin)
+        // QUAN TRỌNG: Chỉ hiển thị icon con mắt nếu tổ chức VẪN CÒN CÓ CON (cho user thường)
+        if (hasChildren) {
             return true;
         }
 
@@ -269,7 +269,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
                 style={{ paddingLeft: paddingLeft + 16 }}
             >
                 <div className="flex items-center flex-1">
-                    {hasChildren ? (
+                    {hasChildren && level === 0 ? (
                         <button
                             onClick={() => onToggleExpand(org.id)}
                             className="mr-2 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"

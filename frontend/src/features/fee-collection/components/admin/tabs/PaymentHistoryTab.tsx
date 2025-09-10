@@ -9,6 +9,7 @@ interface PaymentHistory {
   order_code: number;
   amount: number;
   status: 'PAID' | 'CANCELLED';
+  payment_method: 'MANUAL' | 'ONLINE';
   paid_at: string | null;
   client_id: string | null;
   api_key: string | null;
@@ -136,6 +137,25 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
     }
   };
 
+  const getPaymentMethodText = (paymentMethod: string) => {
+    switch (paymentMethod) {
+      case 'MANUAL': return t('paymentHistory:paymentMethod.manual');
+      case 'ONLINE': return t('paymentHistory:paymentMethod.online');
+      default: return t('paymentHistory:paymentMethod.online');
+    }
+  };
+
+  const getPaymentMethodClass = (paymentMethod: string) => {
+    switch (paymentMethod) {
+      case 'MANUAL':
+        return 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800';
+      case 'ONLINE':
+        return 'bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-800';
+      default:
+        return 'bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-800';
+    }
+  };
+
   const handleFilterChange = (key: keyof PaymentHistoryFilters, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page when filtering
@@ -249,11 +269,12 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
           <>
             {/* Table Header */}
             <div className="px-6 py-3 border-b bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
-              <div className="grid grid-cols-5 gap-4 text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
+              <div className="grid grid-cols-6 gap-4 text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 <div className="col-span-1">{t('paymentHistory:table.orderCode')}</div>
                 <div className="col-span-1">{t('paymentHistory:table.member')}</div>
                 <div className="col-span-1">{t('paymentHistory:table.amount')}</div>
                 <div className="col-span-1">{t('paymentHistory:table.status')}</div>
+                <div className="col-span-1">{t('paymentHistory:table.paymentMethod')}</div>
                 <div className="col-span-1">{t('paymentHistory:table.paymentTime')}</div>
               </div>
             </div>
@@ -263,7 +284,7 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
               {paymentHistory.map((history) => (
                 <div key={history.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700">
                   {/* Main Row */}
-                  <div className="grid items-center grid-cols-5 gap-4">
+                  <div className="grid items-center grid-cols-6 gap-4">
                     {/* Order Code */}
                     <div className="font-mono text-sm text-gray-900 dark:text-white">
                       {history.order_code}
@@ -291,6 +312,13 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusClass(history.status)}`}>
                         {getStatusIcon(history.status)}
                         <span className="ml-1">{getStatusText(history.status)}</span>
+                      </span>
+                    </div>
+
+                    {/* Payment Method */}
+                    <div>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getPaymentMethodClass(history.payment_method)}`}>
+                        {getPaymentMethodText(history.payment_method)}
                       </span>
                     </div>
 

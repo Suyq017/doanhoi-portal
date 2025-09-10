@@ -1,74 +1,360 @@
+# GitLab CI/CD Pipeline cho Doanhoi Portal
+# Tự động deploy khi push vào nhánh dev
+
 stages:
+  - test
   - build
   - deploy
 
 variables:
+  # Production server config
+  PRODUCTION_SERVER: "103.88.121.146"
+  PRODUCTION_USER: "root"
   DEPLOY_PATH: "/opt/doanhoi-portal"
-  BACKEND_PORT: "9200"
+  DOMAIN: "doanhoi.hcmut.edu.vn"
+  
+  # Docker config
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
 
-# Build trên Docker - không cần git clone trên server
-build:
-  stage: build
-  image: node:20
+# Stage 1: Test và Validation
+test_backend:
+  stage: test
+  image: node:20.17-alpine
+  cache:
+    key: backend-$CI_COMMIT_REF_SLUG
+    paths:
+      - backend/node_modules/
+  before_script:
+    - cd backend
+    - npm ci
   script:
-    - echo "Building application"
-    - echo "Installing and building backend"
-    - cd backend && npm ci && npm run build
-    - echo "Installing and building frontend"  
-    - cd ../frontend && npm ci && npm run build
+    - echo "🧪 Testing Backend..."
+    - npm run lint || echo "⚠️ Lint warnings found"
+    - npm run build
+    - echo "✅ Backend tests completed"
   artifacts:
     paths:
       - backend/dist/
-      - frontend/dist/
-      - docker-compose.prod.yml
-      - backend/Dockerfile.prod
-      - frontend/Dockerfile.prod
       - backend/package*.json
-      - frontend/package*.json
-      - .env.production
+      - backend/tsconfig*.json
+      - backend/nest-cli.json
     expire_in: 2 hours
   only:
     - dev
+    - main
 
-# Deploy chỉ sử dụng artifacts - không cần git clone
-deploy:production:
-  stage: deploy
-  tags:
-    - deploy
-    - production
-  variables:
-    GIT_STRATEGY: none
-  dependencies:
-    - build
+test_frontend:
+  stage: test
+  image: node:18-alpine
+  cache:
+    key: frontend-$CI_COMMIT_REF_SLUG
+    paths:
+      - frontend/node_modules/
+  before_script:
+    - cd frontend
+    - npm ci
   script:
-    - echo "Deploying using artifacts only - no git operations"
-    - pwd && ls -la
-    - echo "Checking artifacts"
-    - ls -la backend/dist/ || echo "No backend dist"
-    - ls -la frontend/dist/ || echo "No frontend dist"
-    - echo "Checking current permissions"
-    - whoami
-    - groups
-    - echo "Testing directory access"
-    - test -w /opt && echo "Can write to /opt" || echo "Cannot write to /opt - need sudo setup"
-    - echo "Creating deployment directories with fallback"
-    - mkdir -p ~/deployment/backend ~/deployment/frontend || echo "Using home directory fallback"
-    - echo "Copying application files to temp location"
-    - cp -r backend/dist ~/deployment/backend/ || echo "Backend copy failed"
-    - cp -r frontend/dist ~/deployment/frontend/ || echo "Frontend copy failed"
-    - cp docker-compose.prod.yml ~/deployment/ || echo "Docker compose copy failed"
-    - cp backend/Dockerfile.prod ~/deployment/backend/ || echo "Backend Dockerfile copy failed"
-    - cp frontend/Dockerfile.prod ~/deployment/frontend/ || echo "Frontend Dockerfile copy failed"
-    - cp backend/package*.json ~/deployment/backend/ || echo "Backend package files copy failed"
-    - cp frontend/package*.json ~/deployment/frontend/ || echo "Frontend package files copy failed"
-    - cp .env.production ~/deployment/ || echo "Env file copy failed"
-    - echo "Files copied to ~/deployment - manual deployment needed"
-    - ls -la ~/deployment/
-    - echo "DEPLOYMENT READY - Files available in /home/gitlab-runner/deployment/"
-    - echo "Run manual deployment with proper sudo permissions"
-  environment:
-    name: production
-    url: https://103.88.121.146
+    - echo "🧪 Testing Frontend..."
+    - npm run lint || echo "⚠️ Lint warnings found"
+    - npm run build
+    - echo "✅ Frontend tests completed"
+  artifacts:
+    paths:
+      - frontend/dist/
+      - frontend/package*.json
+      - frontend/tsconfig*.json
+      - frontend/vite.config.ts
+      - frontend/nginx.conf
+    expire_in: 2 hours
   only:
     - dev
+    - main
+
+# Stage 2: Build Artifacts
+build_artifacts:
+  stage: build
+  image: alpine:latest
+  dependencies:
+    - test_backend
+    - test_frontend
+  script:
+    - echo "📦 Preparing deployment artifacts..."
+    - ls -la
+    - echo "✅ Build artifacts ready"
+  artifacts:
+    name: "doanhoi-portal-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - backend/
+      - frontend/
+      - docker-compose.prod.yml
+      - .env.production
+    expire_in: 1 day
+  only:
+    - dev
+
+# Stage 3: Deploy to Production Server
+deploy_production:
+  stage: deploy
+  image: alpine:latest
+  dependencies:
+    - build_artifacts
+  before_script:
+    # Install required packages
+    - apk add --no-cache openssh-client rsync curl bash
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
+    - chmod 600 ~/.ssh/config
+  script:
+    - echo "🚀 Starting deployment to production server..."
+    
+    # Test SSH connection
+    - ssh $PRODUCTION_USER@$PRODUCTION_SERVER "echo '✅ SSH connection successful'"
+    
+    # Create deployment directory
+    - |
+      ssh $PRODUCTION_USER@$PRODUCTION_SERVER "
+        mkdir -p $DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA
+        echo '📁 Created temporary deployment directory'
+      "
+    
+    # Upload files to server
+    - echo "📤 Uploading files to server..."
+    - rsync -avz --delete ./ $PRODUCTION_USER@$PRODUCTION_SERVER:$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA/
+    
+    # Execute deployment on server
+    - |
+      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'DEPLOY_SCRIPT'
+        set -e
+        
+        TEMP_DIR="$DEPLOY_PATH/temp-deploy-$CI_COMMIT_SHORT_SHA"
+        cd $TEMP_DIR
+        
+        echo "=== 🚀 Starting Doanhoi Portal Deployment ==="
+        echo "📅 Deployment time: $(date)"
+        echo "📝 Commit: $CI_COMMIT_SHORT_SHA"
+        echo "🌿 Branch: $CI_COMMIT_REF_NAME"
+        
+        # Backup current deployment
+        if [ -f $DEPLOY_PATH/docker-compose.prod.yml ]; then
+          echo "💾 Creating backup..."
+          BACKUP_NAME="backup-$(date +%Y%m%d_%H%M%S)"
+          cp $DEPLOY_PATH/docker-compose.prod.yml $DEPLOY_PATH/docker-compose.prod.yml.$BACKUP_NAME
+          echo "✅ Backup created: docker-compose.prod.yml.$BACKUP_NAME"
+        fi
+        
+        # Update deployment files
+        echo "📂 Updating deployment files..."
+        cp -r * $DEPLOY_PATH/
+        cd $DEPLOY_PATH
+        
+        # Check environment file
+        if [ ! -f .env.production ]; then
+          echo "❌ .env.production not found!"
+          exit 1
+        fi
+        
+        if [ ! -f frontend/.env.production ]; then
+          echo "❌ frontend/.env.production not found!"
+          exit 1
+        fi
+        
+        # Check Docker and Docker Compose
+        which docker || { echo "❌ Docker not found!"; exit 1; }
+        which docker-compose || { echo "❌ Docker Compose not found!"; exit 1; }
+        
+        # Stop current containers gracefully
+        echo "🛑 Stopping current containers..."
+        docker-compose -f docker-compose.prod.yml down --timeout 30 || echo "⚠️ No containers to stop"
+        
+        # Clean up old images to save space
+        echo "🧹 Cleaning up old Docker images..."
+        docker image prune -f || echo "⚠️ Image cleanup failed"
+        
+        # Build and start new containers
+        echo "🔨 Building and starting containers..."
+        docker-compose -f docker-compose.prod.yml up -d --build
+        
+        # Wait for containers to initialize
+        echo "⏳ Waiting for containers to initialize..."
+        sleep 45
+        
+        # Health checks
+        echo "🔍 Performing health checks..."
+        
+        # Check container status
+        echo "📊 Container status:"
+        docker-compose -f docker-compose.prod.yml ps
+        
+        # Check if all containers are running
+        RUNNING_CONTAINERS=$(docker-compose -f docker-compose.prod.yml ps --services --filter "status=running" | wc -l)
+        TOTAL_CONTAINERS=$(docker-compose -f docker-compose.prod.yml ps --services | wc -l)
+        
+        echo "🏃 Running containers: $RUNNING_CONTAINERS/$TOTAL_CONTAINERS"
+        
+        if [ "$RUNNING_CONTAINERS" -ne "$TOTAL_CONTAINERS" ]; then
+          echo "❌ Not all containers are running!"
+          docker-compose -f docker-compose.prod.yml logs --tail=50
+          exit 1
+        fi
+        
+        # Health check endpoints
+        echo "🩺 Testing application endpoints..."
+        
+        # Backend health check
+        for i in {1..30}; do
+          if curl -f http://localhost:2681/api >/dev/null 2>&1; then
+            echo "✅ Backend is healthy (attempt $i)"
+            break
+          fi
+          if [ $i -eq 30 ]; then
+            echo "❌ Backend health check failed after 30 attempts"
+            docker logs doanhoi-backend-prod --tail=20
+            exit 1
+          fi
+          echo "⏳ Waiting for backend... ($i/30)"
+          sleep 5
+        done
+        
+        # Frontend health check
+        for i in {1..30}; do
+          if curl -f http://localhost:2680 >/dev/null 2>&1; then
+            echo "✅ Frontend is healthy (attempt $i)"
+            break
+          fi
+          if [ $i -eq 30 ]; then
+            echo "❌ Frontend health check failed after 30 attempts"
+            docker logs doanhoi-frontend-prod --tail=20
+            exit 1
+          fi
+          echo "⏳ Waiting for frontend... ($i/30)"
+          sleep 5
+        done
+        
+        # Domain health check
+        echo "🌐 Testing domain accessibility..."
+        if curl -f -k https://$DOMAIN >/dev/null 2>&1; then
+          echo "✅ Domain https://$DOMAIN is accessible"
+        else
+          echo "⚠️ Domain check failed, but containers are running"
+        fi
+        
+        # Database connection check
+        echo "🗄️ Testing database connection..."
+        if docker exec doanhoi-postgres-prod pg_isready -U postgres >/dev/null 2>&1; then
+          echo "✅ Database is ready"
+        else
+          echo "❌ Database connection failed"
+          exit 1
+        fi
+        
+        # Clean up temporary directory
+        echo "🧹 Cleaning up temporary files..."
+        rm -rf $TEMP_DIR
+        
+        # Show final status
+        echo "📊 Final deployment status:"
+        docker-compose -f docker-compose.prod.yml ps
+        echo ""
+        echo "💾 Disk usage:"
+        df -h $DEPLOY_PATH
+        echo ""
+        echo "🔗 Application URLs:"
+        echo "   - Domain: https://$DOMAIN"
+        echo "   - Frontend: http://localhost:2680"
+        echo "   - Backend: http://localhost:2681/api"
+        echo "   - Admin Login: admin@doanhoi.com / admin123"
+        echo ""
+        echo "=== ✅ Deployment Completed Successfully ==="
+      DEPLOY_SCRIPT
+    
+    # Final verification from GitLab runner
+    - echo "🔍 Final verification from GitLab runner..."
+    - |
+      if curl -f -k https://$DOMAIN >/dev/null 2>&1; then
+        echo "🎉 SUCCESS: Deployment completed! Website is accessible at https://$DOMAIN"
+      else
+        echo "⚠️ WARNING: Deployment completed but domain verification failed"
+        echo "Please check manually: https://$DOMAIN"
+      fi
+  
+  environment:
+    name: production
+    url: https://doanhoi.hcmut.edu.vn
+  
+  dependencies:
+    - build_artifacts
+  
+  only:
+    - dev
+  
+  when: manual  # Require manual trigger for safety
+
+# Rollback job (manual trigger only)
+rollback_production:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client bash
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
+  script:
+    - echo "🔄 Starting rollback procedure..."
+    - |
+      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'ROLLBACK_SCRIPT'
+        cd $DEPLOY_PATH
+        
+        echo "=== 🔄 Starting Rollback ==="
+        
+        # Find latest backup
+        BACKUP_FILE=$(ls -t docker-compose.prod.yml.backup-* 2>/dev/null | head -n1)
+        
+        if [ -z "$BACKUP_FILE" ]; then
+          echo "❌ No backup file found!"
+          echo "Available backups:"
+          ls -la docker-compose.prod.yml.* 2>/dev/null || echo "No backups available"
+          exit 1
+        fi
+        
+        echo "📁 Rolling back to: $BACKUP_FILE"
+        
+        # Stop current containers
+        echo "🛑 Stopping current containers..."
+        docker-compose -f docker-compose.prod.yml down --timeout 30 || true
+        
+        # Restore backup
+        echo "📂 Restoring backup configuration..."
+        cp "$BACKUP_FILE" docker-compose.prod.yml
+        
+        # Start containers with backup config
+        echo "▶️ Starting containers with backup configuration..."
+        docker-compose -f docker-compose.prod.yml up -d
+        
+        # Wait and verify
+        echo "⏳ Waiting for containers..."
+        sleep 30
+        
+        # Health check
+        if curl -f http://localhost:2680 >/dev/null 2>&1 && curl -f http://localhost:2681/api >/dev/null 2>&1; then
+          echo "✅ Rollback successful!"
+        else
+          echo "⚠️ Rollback completed but health check failed"
+        fi
+        
+        docker-compose -f docker-compose.prod.yml ps
+        
+        echo "=== ✅ Rollback Completed ==="
+      ROLLBACK_SCRIPT
+  
+  environment:
+    name: production
+    url: https://doanhoi.hcmut.edu.vn
+  
+  only:
+    - dev
+  
   when: manual

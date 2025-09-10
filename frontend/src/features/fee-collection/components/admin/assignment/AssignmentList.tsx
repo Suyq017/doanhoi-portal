@@ -3,12 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { Trash2, Download, Search, Filter, User, Clock, CheckCircle, AlertTriangle, Plus } from 'lucide-react';
 import { PaymentAssignment, PaymentCampaign } from '../../../types';
 import { UserTablePagination } from '../../../../../shared/components/UserTable/UserTablePagination';
+import { useToast } from '../../../../../shared/hooks/useToast';
+import Toast from '../../../../../shared/components/Toast';
+import ConfirmDialog from '../../../../../shared/components/ConfirmDialog';
+import { paymentAssignmentService } from '../../../../../shared/services/fee-collection-service/paymentAssignmentService';
 
 interface AssignmentListProps {
   assignments: PaymentAssignment[];
   campaign: PaymentCampaign;
   campaignEndDate: string;
   onDeleteAssignment?: (assignmentId: string) => void;
+  onMarkAsPaid?: (assignmentId: string) => void;
   onExportList: () => void;
   onBulkCreate?: () => void;
   loading?: boolean;
@@ -30,6 +35,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
   campaign,
   campaignEndDate,
   onDeleteAssignment,
+  onMarkAsPaid,
   onExportList,
   onBulkCreate,
   loading = false,
@@ -37,6 +43,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
   readOnly = false
 }) => {
   const { t } = useTranslation('memberAssignments');
+  const { toasts, confirmDialog, showSuccess, showError, showConfirm, hideToast } = useToast();
   const [filters, setFilters] = useState<AssignmentFilters>({
     search: '',
     status: 'all',
@@ -47,6 +54,36 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
   });
 
   const [showFilters, setShowFilters] = useState(false);
+
+  // Handle mark assignment as paid with confirmation
+  const handleMarkAsPaid = async (assignment: PaymentAssignment) => {
+    const confirmed = await showConfirm(
+      t('confirmDialog.markAsPaid.title'),
+      t('confirmDialog.markAsPaid.message', { 
+        userName: `${assignment.user?.familyName || ''} ${assignment.user?.givenName || ''}`.trim(),
+        amount: formatAmount(assignment.feeLevel?.amount || 0)
+      }),
+      {
+        confirmText: t('confirmDialog.markAsPaid.confirm'),
+        cancelText: t('confirmDialog.markAsPaid.cancel'),
+        variant: 'info'
+      }
+    );
+
+    if (confirmed) {
+      try {
+        await paymentAssignmentService.markAsPaid(assignment.id);
+        showSuccess(t('messages.markAsPaidSuccess'));
+        // Call parent callback to refresh data
+        if (onMarkAsPaid) {
+          onMarkAsPaid(assignment.id);
+        }
+      } catch (error) {
+        console.error('Error marking assignment as paid:', error);
+        showError(t('messages.markAsPaidError'));
+      }
+    }
+  };
 
   // Calculate status including overdue based on campaign end date
   const getAssignmentStatus = (assignment: PaymentAssignment) => {
@@ -450,7 +487,19 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-end space-x-2">
+                      {/* Mark as Paid Button - only show for pending/overdue assignments */}
+                      {!readOnly && (assignment.computedStatus === 'PENDING' || assignment.computedStatus === 'OVERDUE') && (
+                        <button
+                          onClick={() => handleMarkAsPaid(assignment)}
+                          className="p-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+                          title={t('assignmentsList.markAsPaidButton')}
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                      )}
+                      
+                      {/* Delete Button */}
                       {!readOnly && onDeleteAssignment && (
                         <button
                           onClick={() => onDeleteAssignment(assignment.id)}
@@ -482,6 +531,29 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
         total={totalFiltered}
         limit={filters.limit}
         onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
+      />
+
+      {/* Toast Notifications */}
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          type={toast.type}
+          message={toast.message}
+          duration={toast.duration}
+          onClose={() => hideToast(toast.id)}
+        />
+      ))}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        cancelText={confirmDialog.cancelText}
+        variant={confirmDialog.variant}
+        onConfirm={confirmDialog.onConfirm || (() => {})}
+        onCancel={confirmDialog.onCancel || (() => {})}
       />
     </div>
     

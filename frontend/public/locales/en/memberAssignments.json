@@ -77,6 +77,7 @@
   "assignmentsList": {
     "custom": "Custom",
     "deleteButton": "Delete",
+    "markAsPaidButton": "Mark as Paid",
     "note": "Note",
     "showingResults": "Showing {{showing}} / {{total}} members",
     "noAssignments": "No member assignments yet",
@@ -101,6 +102,20 @@
   "deleteAssignment": {
     "success": "Assignment deleted successfully!",
     "error": "Cannot delete assignment. Please try again."
+  },
+
+  "confirmDialog": {
+    "markAsPaid": {
+      "title": "Confirm Mark as Paid",
+      "message": "Are you sure you want to mark {{userName}} as paid for the amount {{amount}}? This will create a manual payment record.",
+      "confirm": "Mark as Paid",
+      "cancel": "Cancel"
+    }
+  },
+
+  "messages": {
+    "markAsPaidSuccess": "Successfully marked as paid!",
+    "markAsPaidError": "An error occurred while marking as paid. Please try again."
   },
   
   "noAssignments": "No assignments yet",

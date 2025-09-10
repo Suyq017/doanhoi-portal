@@ -150,6 +150,26 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
     }
   };
 
+  const handleMarkAsPaid = async (assignmentId: string) => {
+    try {
+      // Update assignment status in local state
+      setAssignments(prev => prev.map(assignment => 
+        assignment.id === assignmentId 
+          ? { ...assignment, status: 'PAID', paidAt: new Date().toISOString() }
+          : assignment
+      ));
+      
+      // Notify parent about changes
+      if (onAssignmentsChange) {
+        onAssignmentsChange();
+      }
+    } catch (error) {
+      console.error('Error marking assignment as paid:', error);
+      // Revert the local state change on error
+      fetchAssignments();
+    }
+  };
+
   return (
     <div>
       {/* Assignment List */}
@@ -158,6 +178,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
         assignments={assignments}
         loading={loading}
         onDeleteAssignment={readOnly ? undefined : handleAssignmentDelete}
+        onMarkAsPaid={readOnly ? undefined : handleMarkAsPaid}
         onExportList={handleOpenExportModal}
         onBulkCreate={readOnly ? undefined : handleBulkCreate}
         campaignEndDate={campaign.endDate}
