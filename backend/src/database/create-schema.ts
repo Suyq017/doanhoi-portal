@@ -10,17 +10,28 @@ function getDatabaseHost(): string {
   const envHost = process.env.DB_HOST;
   if (envHost) return envHost;
   
-  // For different environments, use appropriate host
-  // In Docker environment, try container name first
-  return '127.0.0.1'; // Default to IPv4 localhost
+  // Check if we're trying to connect to production port 2679
+  const envPort = process.env.DB_PORT;
+  if (envPort === '2679') {
+    // Production: Connect via Docker network
+    return 'doanhoi-postgres-prod';
+  }
+  
+  // Development: Use localhost
+  return '127.0.0.1';
 }
 
 // Function to get proper database port
 function getDatabasePort(): number {
   const envPort = process.env.DB_PORT;
-  if (envPort) return parseInt(envPort);
+  if (envPort) {
+    // If connecting to production via Docker network, use internal port
+    if (envPort === '2679') {
+      return 5432; // Internal PostgreSQL port
+    }
+    return parseInt(envPort);
+  }
   
-  // Default ports based on environment
   return 9000; // Default development port
 }
 

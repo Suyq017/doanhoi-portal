@@ -48,26 +48,38 @@ docker compose -f docker-compose.prod.yml exec -T postgres psql -U postgres -c "
 print_status "✅ Database đã được tạo lại"
 
 print_status "🏗️  Bước 2: Tạo schema..."
-cd backend
-DB_HOST=localhost \
-DB_PORT=2679 \
-DB_USERNAME=postgres \
-DB_PASSWORD=your_secure_password \
-DB_NAME=doanhoi \
-npm run db:create-schema
+# Run create-schema from inside backend container to use Docker network
+if docker compose -f docker-compose.prod.yml exec -T backend npm run db:create-schema 2>/dev/null; then
+    print_status "✅ Schema đã được tạo từ backend container"
+else
+    print_warning "⚠️  Thử tạo schema từ host..."
+    cd backend
+    DB_HOST=doanhoi-postgres-prod \
+    DB_PORT=5432 \
+    DB_USERNAME=postgres \
+    DB_PASSWORD=your_secure_password \
+    DB_NAME=doanhoi \
+    npm run db:create-schema
+    cd ..
+fi
 print_status "✅ Schema đã được tạo"
-cd ..
 
 print_status "🌱 Bước 3: Seed database..."
-cd backend
-DB_HOST=localhost \
-DB_PORT=2679 \
-DB_USERNAME=postgres \
-DB_PASSWORD=your_secure_password \
-DB_NAME=doanhoi \
-npm run seed
+# Run seed from inside backend container to use Docker network  
+if docker compose -f docker-compose.prod.yml exec -T backend npm run seed 2>/dev/null; then
+    print_status "✅ Đã seed từ backend container"
+else
+    print_warning "⚠️  Thử seed từ host..."
+    cd backend
+    DB_HOST=doanhoi-postgres-prod \
+    DB_PORT=5432 \
+    DB_USERNAME=postgres \
+    DB_PASSWORD=your_secure_password \
+    DB_NAME=doanhoi \
+    npm run seed
+    cd ..
+fi
 print_status "✅ Đã seed xong"
-cd ..
 
 print_title "🎉 Hoàn thành! Production database đã được reset."
 print_warning "🔑 Login: admin@doanhoi.com / admin1"
