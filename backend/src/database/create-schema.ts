@@ -15,12 +15,34 @@ function getDatabaseHost(): string {
   return '127.0.0.1'; // Default to IPv4 localhost
 }
 
+// Function to get proper database port
+function getDatabasePort(): number {
+  const envPort = process.env.DB_PORT;
+  if (envPort) return parseInt(envPort);
+  
+  // Default ports based on environment
+  return 9000; // Default development port
+}
+
+// Function to get database password
+function getDatabasePassword(): string {
+  const envPassword = process.env.DB_PASSWORD;
+  if (envPassword) return envPassword;
+  
+  // Check if this is production environment
+  if (process.env.NODE_ENV === 'production') {
+    return 'your_secure_password'; // Production default
+  }
+  
+  return 'password'; // Development default
+}
+
 const AppDataSource = new DataSource({
   type: 'postgres',
   host: getDatabaseHost(),
-  port: parseInt(process.env.DB_PORT) || 9000,
+  port: getDatabasePort(),
   username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'password',
+  password: getDatabasePassword(),
   database: process.env.DB_NAME || 'doanhoi',
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   synchronize: true,
