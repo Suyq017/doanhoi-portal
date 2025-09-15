@@ -68,7 +68,9 @@
     "previous": "Previous",
     "previousPhonetic": "Previous",
     "select": "Select",
-    "selectPhonetic": "Select"
+    "selectPhonetic": "Select",
+    "selected": "selected",
+    "clearSelection": "Clear Selection"
   },
   "states": {
     "loading": "Loading...",
@@ -91,6 +93,8 @@
       "create": "Created successfully",
       "update": "Updated successfully",
       "delete": "Deleted successfully",
+      "bulkDelete": "Successfully deleted {{count}} items",
+      "deleteMultiple": "Successfully deleted {{count}} items",
       "save": "Saved successfully",
       "add": "Added successfully"
     },
@@ -98,6 +102,8 @@
       "create": "Error occurred while creating",
       "update": "Error occurred while updating",
       "delete": "Error occurred while deleting",
+      "bulkDelete": "Error occurred while bulk deleting",
+      "deleteMultiple": "Error occurred while deleting multiple items",
       "load": "Error occurred while loading data",
       "network": "Network connection error",
       "unknown": "An error occurred",
@@ -105,6 +111,9 @@
     },
     "confirm": {
       "delete": "Are you sure you want to delete",
+      "deleteSingle": "Are you sure you want to delete this item?",
+      "deleteMultiple": "Are you sure you want to delete {{count}} selected items?",
+      "bulkDelete": "Confirm bulk deletion",
       "deleteWarning": "This action cannot be undone.",
       "seedDefaults": "Are you sure you want to create default roles and permissions?"
     },

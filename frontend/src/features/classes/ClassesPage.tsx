@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Filter, Eye, Edit, Trash2, Users, Upload } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Edit, Trash2, Users, Upload, X } from 'lucide-react';
 import type { Class, ClassQueryParams } from '../../shared/types';
 import {
   classService,
@@ -12,8 +12,10 @@ import {
   AddDropdownButton,
   DropdownOption,
   ImportModal,
-  useImportConfig, ConditionalRender,
+  useImportConfig, 
+  ConditionalRender,
   createPermissionBasedDropdownOptions,
+  ConfirmDialog,
 } from '../../shared';
 import { classColumns } from '../../shared/utils/importColumns';
 import { useClassPagePermissions } from './hooks/useClassPagePermissions';
@@ -36,6 +38,13 @@ const ClassesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
 
+  // State for multiple selection (for bulk actions)
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+
+  // Helpers function for selection
+  const isAllSelected = classes.length > 0 && selectedClassIds.length === classes.length;
+  const isSomeSelected = selectedClassIds.length > 0;
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [limit] = useState(10);
@@ -50,6 +59,7 @@ const ClassesPage: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
 
   // Import configuration using custom hook
@@ -144,6 +154,11 @@ const ClassesPage: React.FC = () => {
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
+
+  // Reset selection when classes change
+  useEffect(() => {
+    setSelectedClassIds([]);
+  }, [classes]);
 
   const loadClasses = async () => {
     try {
@@ -241,6 +256,51 @@ const ClassesPage: React.FC = () => {
     setStatusFilter('');
     setCurrentPage(1);
   };
+
+  // Selection handlers
+  const handleSelectAll = useCallback(() => {
+    if (isAllSelected) {
+      setSelectedClassIds([]);
+    } else {
+      setSelectedClassIds(classes.map(cls => cls.id));
+    }
+  }, [isAllSelected, classes]);
+
+  const handleSelectClass = useCallback((classId: string) => {
+    setSelectedClassIds(prev => {
+      if (prev.includes(classId)) {
+        return prev.filter(id => id !== classId);
+      } else {
+        return [...prev, classId];
+      }
+    });
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedClassIds([]);
+  }, []);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedClassIds.length > 0) {
+      setShowBulkDeleteModal(true);
+    }
+  }, [selectedClassIds]);
+
+  const confirmBulkDelete = useCallback(async () => {
+    try {
+      await classService.bulkDeleteClasses(selectedClassIds);
+      setSelectedClassIds([]);
+      await loadClasses();
+      showSuccess(t('common:messages.success.bulkDelete', { 
+        count: selectedClassIds.length 
+      }));
+      setShowBulkDeleteModal(false);
+    } catch (error) {
+      console.error('Error bulk deleting classes:', error);
+      showError(t('common:messages.error.bulkDelete'));
+      setShowBulkDeleteModal(false);
+    }
+  }, [selectedClassIds, showSuccess, showError, t, loadClasses]);
 
   if (loading) {
     return (
@@ -376,39 +436,31 @@ const ClassesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Bulk Actions Bar
-      {selectedClassIds.length > 0 && (
-        <div className="p-4 border-2 border-blue-200 rounded-lg shadow-md bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 dark:border-blue-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  {t('classes:bulk.selected', { 
-                    defaultValue: 'Đã chọn {{count}} lớp học', 
-                    count: selectedClassIds.length 
-                  })}
-                </span>
-              </div>
-              <button
-                onClick={handleClearSelection}
-                className="text-sm text-blue-600 underline transition-colors hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-              >
-                {t('common:actions.clearSelection', { defaultValue: 'Bỏ chọn tất cả' })}
-              </button>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handleBulkDelete}
-                className="flex items-center px-4 py-2 text-sm font-medium text-white transition-colors bg-red-600 border border-red-600 rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {t('common:actions.delete')} ({selectedClassIds.length})
-              </button>
-            </div>
+      {/* Bulk Actions Bar */}
+      {isSomeSelected && (
+        <div className="flex items-center justify-between px-6 py-3 border border-gray-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-gray-700">
+          <div className="flex items-center space-x-3">
+            <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              {t('common:actions.select')} ({selectedClassIds.length})
+            </span>
+            <button
+              onClick={handleClearSelection}
+              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 border border-red-300 rounded-md hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/40"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              {t('common:actions.delete')} ({selectedClassIds.length})
+            </button>
           </div>
         </div>
-      )} */}
+      )}
 
       {/* Classes Table */}
       <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
@@ -417,15 +469,13 @@ const ClassesPage: React.FC = () => {
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th className="w-12 px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-400">
-                  {/* <div className="flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedClassIds.length === classes.length && classes.length > 0}
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                      title={selectedClassIds.length === classes.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
-                    />
-                  </div> */}
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    title={isAllSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                  />
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('classes:fields.info')}
@@ -450,16 +500,21 @@ const ClassesPage: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {classes.map((classItem) => (
-                <tr key={classItem.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr 
+                  key={classItem.id} 
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                    selectedClassIds.includes(classItem.id)
+                      ? 'bg-blue-50 dark:bg-blue-900/20'
+                      : ''
+                  }`}
+                >
                   <td className="px-6 py-4 text-center whitespace-nowrap">
-                    {/* <div className="flex items-center justify-center">
-                      <input
-                        type="checkbox"
-                        checked={selectedClassIds.includes(classItem.id)}
-                        onChange={(e) => handleSelectClass(classItem.id, e.target.checked)}
-                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                      />
-                    </div> */}
+                    <input
+                      type="checkbox"
+                      checked={selectedClassIds.includes(classItem.id)}
+                      onChange={() => handleSelectClass(classItem.id)}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -491,7 +546,8 @@ const ClassesPage: React.FC = () => {
                     </span>
                   </td>                  <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                     <ConditionalRender condition={permissions.showActionColumn}>
-                      <div className="flex items-center space-x-2">                        <ConditionalRender condition={permissions.canView}>
+                      <div className="flex items-center space-x-2">                        
+                        <ConditionalRender condition={permissions.canView}>
                         <button
                           onClick={() => handleView(classItem)}
                           className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
@@ -525,7 +581,8 @@ const ClassesPage: React.FC = () => {
               ))}
             </tbody>
           </table>
-        </div>        {/* Empty State */}
+        </div>        
+        {/* Empty State */}
         {classes.length === 0 && !loading && (
           <div className="py-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">
@@ -612,7 +669,21 @@ const ClassesPage: React.FC = () => {
           onClose={handleCloseModals}
           onSuccess={handleDeleteSuccess}
         />
-      )}      {/* Import Modal */}
+      )}
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showBulkDeleteModal}
+        title={t('common:messages.confirm.bulkDelete')}
+        message={t('common:messages.confirm.deleteMultiple', { count: selectedClassIds.length })}
+        confirmText={t('common:actions.delete')}
+        cancelText={t('common:actions.cancel')}
+        variant="danger"
+        onConfirm={confirmBulkDelete}
+        onCancel={() => setShowBulkDeleteModal(false)}
+      />
+
+      {/* Import Modal */}
       {isImportModalOpen && (
         <ImportModal
           isOpen={isImportModalOpen}
