@@ -85,6 +85,29 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
     }
   };
 
+  // Handle delete assignment with confirmation
+  const handleDeleteAssignment = async (assignment: PaymentAssignment) => {
+    const confirmed = await showConfirm(
+      t('confirmDialog.deleteAssignment.title'),
+      t('confirmDialog.deleteAssignment.message', { 
+        userName: `${assignment.user?.familyName || ''} ${assignment.user?.givenName || ''}`.trim(),
+        amount: formatAmount(assignment.feeLevel?.amount || 0)
+      }),
+      {
+        confirmText: t('confirmDialog.deleteAssignment.confirm'),
+        cancelText: t('confirmDialog.deleteAssignment.cancel'),
+        variant: 'danger'
+      }
+    );
+
+    if (confirmed) {
+      // Call parent callback to delete assignment
+      if (onDeleteAssignment) {
+        onDeleteAssignment(assignment.id);
+      }
+    }
+  };
+
   // Calculate status including overdue based on campaign end date
   const getAssignmentStatus = (assignment: PaymentAssignment) => {
     if (assignment.status === 'PAID') return 'PAID';
@@ -502,7 +525,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
                       {/* Delete Button */}
                       {!readOnly && onDeleteAssignment && (
                         <button
-                          onClick={() => onDeleteAssignment(assignment.id)}
+                          onClick={() => handleDeleteAssignment(assignment)}
                           className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                           title={t('assignmentsList.deleteButton')}
                         >

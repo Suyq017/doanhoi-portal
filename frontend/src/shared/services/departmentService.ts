@@ -37,6 +37,11 @@ class DepartmentService {
   async deleteDepartment(id: string): Promise<void> {
     await apiClient.delete(`/departments/${id}`);
   }
+
+  async bulkDeleteDepartments(ids: string[]): Promise<void> {
+    await apiClient.delete('/departments/bulk', { ids });
+  }
+
   // Import functionality - Updated for server-side processing
   async getTemplate(): Promise<string> {
     return `${apiClient.getBaseURL()}/departments/template`;

@@ -8,6 +8,7 @@ import { ImportService } from './services/import.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { QueryDepartmentDto } from './dto/query-department.dto';
+import { BulkDeleteDepartmentDto } from './dto/bulk-delete-department.dto';
 
 @ApiTags('departments')
 @Controller('departments')
@@ -58,6 +59,15 @@ export class DepartmentsController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy đơn vị' })
   update(@Param('id') id: string, @Body() updateDepartmentDto: UpdateDepartmentDto) {
     return this.departmentsService.update(id, updateDepartmentDto);
+  }
+
+  @Delete('bulk')
+  @ApiOperation({ summary: 'Xóa nhiều đơn vị cùng lúc' })
+  @ApiResponse({ status: 200, description: 'Các đơn vị đã được xóa thành công' })
+  @ApiResponse({ status: 400, description: 'Danh sách ID không hợp lệ hoặc không thể xóa một số đơn vị' })
+  @ApiResponse({ status: 404, description: 'Một hoặc nhiều đơn vị không tồn tại' })
+  async bulkRemove(@Body() bulkDeleteDto: BulkDeleteDepartmentDto) {
+    return this.departmentsService.bulkRemove(bulkDeleteDto.ids);
   }
 
   @Delete(':id')

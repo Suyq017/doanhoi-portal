@@ -110,12 +110,20 @@
       "message": "Bạn có chắc chắn muốn đánh dấu {{userName}} đã thanh toán số tiền {{amount}}? Hành động này sẽ tạo bản ghi giao dịch thủ công.",
       "confirm": "Đánh dấu đã thanh toán",
       "cancel": "Hủy"
+    },
+    "deleteAssignment": {
+      "title": "Xác nhận xóa phân công",
+      "message": "Bạn có chắc chắn muốn xóa phân công của {{userName}} với số tiền {{amount}}? Hành động này không thể hoàn tác.",
+      "confirm": "Xóa phân công",
+      "cancel": "Hủy"
     }
   },
 
   "messages": {
     "markAsPaidSuccess": "Đã đánh dấu thanh toán thành công!",
-    "markAsPaidError": "Có lỗi xảy ra khi đánh dấu thanh toán. Vui lòng thử lại."
+    "markAsPaidError": "Có lỗi xảy ra khi đánh dấu thanh toán. Vui lòng thử lại.",
+    "deleteAssignmentSuccess": "Đã xóa phân công thành công!",
+    "deleteAssignmentError": "Có lỗi xảy ra khi xóa phân công. Vui lòng thử lại."
   },
   
   "noAssignments": "Chưa có phân công nào",
