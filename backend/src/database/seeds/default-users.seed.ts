@@ -29,22 +29,43 @@ export const seedDefaultUsers = async (dataSource: DataSource) => {
             isSystemUser: true
         },
 
-    ];    // Get or create default organization
-    let defaultOrg = await organizationRepository.findOne({
-        where: { code: 'ROOT' }
+    ];
+
+    // Get or create default organizations
+    let doanTruongOrg = await organizationRepository.findOne({
+        where: { code: 'DOAN_TRUONG' }
     });
 
-    if (!defaultOrg) {
-        defaultOrg = organizationRepository.create({
-            name: 'Tổ chức Gốc',
-            description: 'Tổ chức gốc của hệ thống',
+    if (!doanTruongOrg) {
+        doanTruongOrg = organizationRepository.create({
+            name: 'Đoàn Trường',
+            description: 'Đoàn Thanh niên Cộng sản Hồ Chí Minh trường',
             type: OrganizationType.DOAN_TRUONG,
-            code: 'ROOT',
+            code: 'DOAN_TRUONG',
             isActive: true
         });
-        await organizationRepository.save(defaultOrg);
-        console.log('Created default organization: ROOT');
+        await organizationRepository.save(doanTruongOrg);
+        console.log('Created organization: Đoàn Trường');
     }
+
+    let hoiSinhVienOrg = await organizationRepository.findOne({
+        where: { code: 'HOI_SINH_VIEN' }
+    });
+
+    if (!hoiSinhVienOrg) {
+        hoiSinhVienOrg = organizationRepository.create({
+            name: 'Sinh Viên',
+            description: 'Hội Sinh viên Việt Nam trường',
+            type: OrganizationType.HOI_SINH_VIEN_TRUONG,
+            code: 'HOI_SINH_VIEN',
+            isActive: true
+        });
+        await organizationRepository.save(hoiSinhVienOrg);
+        console.log('Created organization: Sinh Viên');
+    }
+
+    // Use Đoàn Trường as default organization for admin user
+    const defaultOrg = doanTruongOrg;
 
     for (const userData of defaultUsers) {
         // Check if user already exists
@@ -113,6 +134,15 @@ export const seedDefaultUsers = async (dataSource: DataSource) => {
     console.log('Admin:');
     console.log('  Email: admin@doanhoi.com');
     console.log('  Password: admin1');
+    console.log('  Organization: Đoàn Trường');
+
+    console.log('\n=== ORGANIZATIONS CREATED ===');
+    console.log('1. Đoàn Trường (doan_truong)');
+    console.log('   Code: DOAN_TRUONG');
+    console.log('   Description: Đoàn Thanh niên Cộng sản Hồ Chí Minh trường');
+    console.log('2. Sinh Viên (hoi_sinh_vien_truong)');
+    console.log('   Code: HOI_SINH_VIEN');
+    console.log('   Description: Hội Sinh viên Việt Nam trường');
 
     console.log('==========================================\n');
 };

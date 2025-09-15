@@ -19,11 +19,12 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "typeorm-ts-node-commonjs",
+    "db:create-schema": "ts-node src/database/create-schema.ts",
     "seed": "ts-node src/database/seeds/index.ts",
     "seed:permissions": "ts-node -e \"import('./src/database/seeds/permissions.seed').then(m => m.seedPermissions(require('./src/database/seeds/dataSource')))\"",
     "seed:roles": "ts-node -e \"import('./src/database/seeds/roles.seed').then(m => m.seedRoles(require('./src/database/seeds/dataSource')))\"",
     "seed:users": "ts-node -e \"import('./src/database/seeds/default-users.seed').then(m => m.seedDefaultUsers(require('./src/database/seeds/dataSource')))\"",
-    "db:reset": "npm run seed",
+    "db:reset": "npm run db:create-schema && npm run seed",
     "db:setup": "node scripts/seed-database.js"
   },
   "dependencies": {
