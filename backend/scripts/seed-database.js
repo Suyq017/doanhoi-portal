@@ -33,7 +33,7 @@ try {
     console.log('   ✅ All permissions (dashboard, users, organizations, departments, classes, permissions, payments)');
     console.log('   ✅ All roles (admin)');
     console.log('   ✅ Default users with credentials');
-    console.log('   ✅ Default organization (ROOT)');
+    console.log('   ✅ Default organizations (Đoàn Trường và Hội Sinh viên)');
     console.log('   ✅ User-role assignments');
 
     console.log('\n🔑 Default Login Credentials:');

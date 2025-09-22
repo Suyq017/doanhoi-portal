@@ -9,6 +9,8 @@ services:
       POSTGRES_DB: doanhoi
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "2679:5432"  # Expose PostgreSQL for debugging
     volumes:
       - doanhoi_postgres_data:/var/lib/postgresql/data
     restart: unless-stopped

@@ -54,14 +54,14 @@ export const seedDefaultUsers = async (dataSource: DataSource) => {
 
     if (!hoiSinhVienOrg) {
         hoiSinhVienOrg = organizationRepository.create({
-            name: 'Sinh Viên',
+            name: 'Hội Sinh viên',
             description: 'Hội Sinh viên Việt Nam trường',
             type: OrganizationType.HOI_SINH_VIEN_TRUONG,
             code: 'HOI_SINH_VIEN',
             isActive: true
         });
         await organizationRepository.save(hoiSinhVienOrg);
-        console.log('Created organization: Sinh Viên');
+        console.log('Created organization: Hội Sinh viên');
     }
 
     // Use Đoàn Trường as default organization for admin user
@@ -140,7 +140,7 @@ export const seedDefaultUsers = async (dataSource: DataSource) => {
     console.log('1. Đoàn Trường (doan_truong)');
     console.log('   Code: DOAN_TRUONG');
     console.log('   Description: Đoàn Thanh niên Cộng sản Hồ Chí Minh trường');
-    console.log('2. Sinh Viên (hoi_sinh_vien_truong)');
+    console.log('2. Hội Sinh viên (hoi_sinh_vien_truong)');
     console.log('   Code: HOI_SINH_VIEN');
     console.log('   Description: Hội Sinh viên Việt Nam trường');
 
