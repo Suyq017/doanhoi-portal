@@ -110,12 +110,20 @@
       "message": "Are you sure you want to mark {{userName}} as paid for the amount {{amount}}? This will create a manual payment record.",
       "confirm": "Mark as Paid",
       "cancel": "Cancel"
+    },
+    "deleteAssignment": {
+      "title": "Confirm Delete Assignment",
+      "message": "Are you sure you want to delete the assignment for {{userName}} with amount {{amount}}? This action cannot be undone.",
+      "confirm": "Delete Assignment",
+      "cancel": "Cancel"
     }
   },
 
   "messages": {
     "markAsPaidSuccess": "Successfully marked as paid!",
-    "markAsPaidError": "An error occurred while marking as paid. Please try again."
+    "markAsPaidError": "An error occurred while marking as paid. Please try again.",
+    "deleteAssignmentSuccess": "Assignment deleted successfully!",
+    "deleteAssignmentError": "An error occurred while deleting assignment. Please try again."
   },
   
   "noAssignments": "No assignments yet",

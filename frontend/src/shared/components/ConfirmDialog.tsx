@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
 
 interface ConfirmDialogProps {
@@ -53,22 +54,22 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
   const styles = getVariantStyles();
 
-  return (
-    <>
+  return createPortal(
+    <div>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 z-50 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 z-50 transition-opacity bg-black bg-opacity-50"
         onClick={onCancel}
       />
       
       {/* Dialog */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="relative w-full max-w-md mx-auto">
-          <div className="bg-white rounded-lg shadow-xl dark:bg-gray-800 transform transition-all">
+          <div className="transition-all transform bg-white rounded-lg shadow-xl dark:bg-gray-800">
             {/* Close button */}
             <button
               onClick={onCancel}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="absolute text-gray-400 top-4 right-4 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <X className="w-5 h-5" />
             </button>
@@ -92,7 +93,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               </div>
 
               {/* Actions */}
-              <div className="mt-6 flex items-center justify-end space-x-3">
+              <div className="flex items-center justify-end mt-6 space-x-3">
                 <button
                   type="button"
                   onClick={onCancel}
@@ -112,7 +113,8 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </div>
         </div>
       </div>
-    </>
+    </div>
+  , document.body
   );
 };
 

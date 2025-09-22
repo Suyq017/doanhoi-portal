@@ -118,7 +118,8 @@ export const seedDefaultUsers = async (dataSource: DataSource) => {
                         isActive: true
                     });
 
-                    await userOrgRepository.save(userOrg);
+  
+                  await userOrgRepository.save(userOrg);
                     console.log(`Added user ${userData.email} to organization: ${defaultOrg.name}`);
                 }
             } else {

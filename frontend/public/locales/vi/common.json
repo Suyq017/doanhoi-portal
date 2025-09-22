@@ -69,7 +69,8 @@
     "previous": "Trước",
     "previousPhonetic": "Trước",
     "select": "Chọn",
-    "selectPhonetic": "Chọn"
+    "selectPhonetic": "Chọn",
+    "selected": "đã chọn"
   },
   "states": {
     "loading": "Đang tải...",
@@ -90,8 +91,10 @@
   "messages": {
     "success": {
       "create": "Tạo thành công",
-      "update": "Cập nhật thành công",
+      "update": "Cập nhật thành công", 
       "delete": "Xóa thành công",
+      "bulkDelete": "Đã xóa {{count}} mục thành công",
+      "deleteMultiple": "Đã xóa {{count}} mục thành công",
       "save": "Lưu thành công",
       "add": "Thêm thành công"
     },
@@ -99,6 +102,7 @@
       "create": "Có lỗi xảy ra khi tạo",
       "update": "Có lỗi xảy ra khi cập nhật",
       "delete": "Có lỗi xảy ra khi xóa",
+      "bulkDelete": "Có lỗi xảy ra khi xóa nhiều mục",
       "load": "Có lỗi xảy ra khi tải dữ liệu",
       "network": "Lỗi kết nối mạng",
       "unknown": "Đã có lỗi xảy ra",
@@ -106,6 +110,9 @@
     },
     "confirm": {
       "delete": "Bạn có chắc chắn muốn xóa",
+      "deleteSingle": "Bạn có chắc chắn muốn xóa mục này?",
+      "deleteMultiple": "Bạn có chắc chắn muốn xóa {{count}} mục đã chọn?",
+      "bulkDelete": "Xác nhận xóa hàng loạt",
       "deleteWarning": "Hành động này không thể hoàn tác.",
       "seedDefaults": "Bạn có chắc chắn muốn tạo các vai trò và quyền mặc định?"
     },

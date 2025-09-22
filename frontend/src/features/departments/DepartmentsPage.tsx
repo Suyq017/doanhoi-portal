@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Search, Filter, Edit, Trash2, Eye, UserPlus, Upload } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Search, Filter, Edit, Trash2, Eye, UserPlus, Upload, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   departmentService,
@@ -15,6 +15,7 @@ import {
   DropdownOption,
   useImportConfig, ConditionalRender,
   createPermissionBasedDropdownOptions,
+  ConfirmDialog,
 } from "../../shared";
 import { departmentColumns } from "../../shared/utils/importColumns";
 import { useDepartmentPagePermissions } from "./hooks/useDepartmentPagePermissions";
@@ -37,6 +38,13 @@ const Departments: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [limit] = useState(10);
+
+  // State for multiple selection (for bulk actions)
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
+
+  // Helpers function for selection
+  const isAllSelected = departments.length > 0 && selectedDepartmentIds.length === departments.length;
+  const isSomeSelected = selectedDepartmentIds.length > 0;
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -76,6 +84,7 @@ const Departments: React.FC = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [isUpdatingDepartment, setIsUpdatingDepartment] = useState(false);
   const [isDeletingDepartment, setIsDeletingDepartment] = useState(false);
 
@@ -218,6 +227,47 @@ const Departments: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
+  // Bulk selection handlers
+  const handleSelectAll = useCallback(() => {
+    if (isAllSelected) {
+      setSelectedDepartmentIds([]);
+    } else {
+      setSelectedDepartmentIds(departments.map(dept => dept.id));
+    }
+  }, [isAllSelected, departments]);
+
+  const handleSelectDepartment = useCallback((departmentId: string) => {
+    setSelectedDepartmentIds(prev => 
+      prev.includes(departmentId)
+        ? prev.filter(id => id !== departmentId)
+        : [...prev, departmentId]
+    );
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedDepartmentIds([]);
+  }, []);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedDepartmentIds.length > 0) {
+      setShowBulkDeleteModal(true);
+    }
+  }, [selectedDepartmentIds]);
+
+  const confirmBulkDelete = useCallback(async () => {
+    try {
+      await departmentService.bulkDeleteDepartments(selectedDepartmentIds);
+      showSuccess(t('common:messages.success.bulkDelete', { count: selectedDepartmentIds.length }));
+      setSelectedDepartmentIds([]);
+      await loadDepartments();
+      setShowBulkDeleteModal(false);
+    } catch (error) {
+      console.error("Error deleting departments:", error);
+      showError(t('common:messages.error.bulkDelete'));
+      setShowBulkDeleteModal(false);
+    }
+  }, [selectedDepartmentIds, t, showSuccess, showError, loadDepartments]);
+
   const confirmDeleteDepartment = async () => {
     if (!selectedDepartment) return;
 
@@ -352,12 +402,48 @@ const Departments: React.FC = () => {
         </div>
       </div>
 
+      {/* Bulk Actions Toolbar */}
+      {isSomeSelected && (
+        <div className="flex items-center justify-between p-4 mb-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-gray-700 dark:border-gray-600">
+          <div className="flex items-center space-x-3">
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+               {t('common:actions.select')} ({selectedDepartmentIds.length})
+            </span>
+            <button
+              onClick={handleClearSelection}
+              className="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+            <X className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 border border-red-300 rounded-md hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/40"
+            >
+              <X className="w-4 h-4 mr-1" />
+              {t('common:actions.delete')}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Departments Table */}
       <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full table-auto">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
+                <th className="px-6 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    aria-label="Select all departments"
+                  />
+                </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('departments:fields.name')}
                 </th>
@@ -378,7 +464,23 @@ const Departments: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {filteredDepartments.map((department) => (
-                <tr key={department.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr 
+                  key={department.id} 
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                    selectedDepartmentIds.includes(department.id) 
+                      ? 'bg-blue-50 dark:bg-blue-900/20' 
+                      : ''
+                  }`}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={selectedDepartmentIds.includes(department.id)}
+                      onChange={() => handleSelectDepartment(department.id)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      aria-label={`Select ${department.name}`}
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-medium text-gray-900 dark:text-white">{department.name}</div>
                   </td>
@@ -531,6 +633,18 @@ const Departments: React.FC = () => {
           />
         </>
       )}
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showBulkDeleteModal}
+        title={t('common:messages.confirm.bulkDelete')}
+        message={t('common:messages.confirm.deleteMultiple', { count: selectedDepartmentIds.length })}
+        confirmText={t('common:actions.delete')}
+        cancelText={t('common:actions.cancel')}
+        variant="danger"
+        onConfirm={confirmBulkDelete}
+        onCancel={() => setShowBulkDeleteModal(false)}
+      />
 
       {/* Import Modal */}
       <ImportModal
