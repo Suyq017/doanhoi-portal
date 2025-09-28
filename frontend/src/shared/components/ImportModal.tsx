@@ -142,9 +142,10 @@ const ImportModal = ({
         step: 'preview',
         loading: false
       }));
-    } catch (error) {
+    } catch (error: any) {
       console.error('File processing error:', error);
-      showError(t('import.errors.parseFile'));
+      const errorMessage = error.response?.data?.message || error.message || t('import.errors.parseFile');
+      showError(errorMessage);
       setState(prev => ({ ...prev, loading: false }));
     }
   };
@@ -237,9 +238,7 @@ const ImportModal = ({
         case 'boolean':
           return value ? (
             <CheckCircle className="w-4 h-4 text-green-500" />
-          ) : (
-            <XCircle className="w-4 h-4 text-red-500" />
-          );
+          ) : null;
         case 'date':
           return new Date(value).toLocaleDateString();
         case 'number':
@@ -313,28 +312,61 @@ const ImportModal = ({
           <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
           <div>
             <h4 className="mb-2 font-medium text-blue-900 dark:text-blue-100">
-              {t(`${config.entityName}:import.instructions`)}
+              {config.instructions ? 'Hướng dẫn import dữ liệu' : t(`${config.entityName}:import.instructions`)}
             </h4>
             <ol className="space-y-1 text-sm text-blue-800 list-decimal list-inside dark:text-blue-200">
-              <li>
-                {t(`${config.entityName}:import.step1`).includes(t(`${config.entityName}:import.templateLinkText`)) ? (
-                  <>
-                    {t(`${config.entityName}:import.step1`).split(t(`${config.entityName}:import.templateLinkText`))[0]}
-                    <a
-                      href={config.templateUrl}
-                      download={config.templateFileName}
-                      className="font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
-                    >
-                      {t(`${config.entityName}:import.templateLinkText`)}
-                    </a>
-                    {t(`${config.entityName}:import.step1`).split(t(`${config.entityName}:import.templateLinkText`))[1]}
-                  </>
-                ) : (
-                  t(`${config.entityName}:import.step1`)
-                )}
-              </li>
-              <li>{t(`${config.entityName}:import.step2`)}</li>
-              <li>{t(`${config.entityName}:import.step3`)}</li>
+              {config.instructions ? (
+                config.instructions.map((instruction, index) => (
+                  <li key={index}>
+                    {instruction.includes('tại đây') ? (
+                      <>
+                        {instruction.split('tại đây')[0]}
+                        {config.downloadTemplate ? (
+                          <button
+                            onClick={config.downloadTemplate}
+                            className="font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+                          >
+                            tại đây
+                          </button>
+                        ) : (
+                          <a
+                            href={config.templateUrl}
+                            download={config.templateFileName}
+                            className="font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+                          >
+                            tại đây
+                          </a>
+                        )}
+                        {instruction.split('tại đây')[1]}
+                      </>
+                    ) : (
+                      instruction
+                    )}
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li>
+                    {t(`${config.entityName}:import.step1`).includes(t(`${config.entityName}:import.templateLinkText`)) ? (
+                      <>
+                        {t(`${config.entityName}:import.step1`).split(t(`${config.entityName}:import.templateLinkText`))[0]}
+                        <a
+                          href={config.templateUrl}
+                          download={config.templateFileName}
+                          className="font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+                        >
+                          {t(`${config.entityName}:import.templateLinkText`)}
+                        </a>
+                        {t(`${config.entityName}:import.step1`).split(t(`${config.entityName}:import.templateLinkText`))[1]}
+                      </>
+                    ) : (
+                      t(`${config.entityName}:import.step1`)
+                    )}
+                  </li>
+                  <li>{t(`${config.entityName}:import.step2`)}</li>
+                  <li>{t(`${config.entityName}:import.step3`)}</li>
+                </>
+              )}
             </ol>
           </div>
         </div>
@@ -392,7 +424,7 @@ const ImportModal = ({
 
   const renderPreviewStep = () => {
     // Server-side processing only
-    if (!state.serverValidation) return null;
+    if (!state.serverValidation?.summary) return null;
 
     const displayRows = getDisplayRows();
     const summary = state.serverValidation.summary;
@@ -533,7 +565,8 @@ const ImportModal = ({
                 {displayRows.map((item, index) => {
                   // Handle server-side data structure
                   // Check both hasErrors and _hasError for compatibility
-                  const hasErrors = item.hasErrors || item._hasError;
+                  // Also check Trạng thái field for grading validation
+                  const hasErrors = item.hasErrors || item._hasError || (item['Trạng thái'] && item['Trạng thái'].includes('❌'));
                   const hasWarnings = item.hasWarnings || (item._warnings && item._warnings.length > 0);
 
                   // Calculate proper row number for pagination
@@ -642,46 +675,6 @@ const ImportModal = ({
                 </p>
               </div>
             </label>
-
-            <label className="flex items-start">
-              <input
-                type="checkbox"
-                checked={state.options.updateExisting}
-                onChange={(e) => setState(prev => ({
-                  ...prev,
-                  options: { ...prev.options, updateExisting: e.target.checked }
-                }))}
-                className="mt-1 mr-3 text-doan-500 focus:ring-doan-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('import.updateExisting')}
-                </span>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {t('import.updateExistingDescription')}
-                </p>
-              </div>
-            </label>
-
-            <label className="flex items-start">
-              <input
-                type="checkbox"
-                checked={state.options.dryRun || false}
-                onChange={(e) => setState(prev => ({
-                  ...prev,
-                  options: { ...prev.options, dryRun: e.target.checked }
-                }))}
-                className="mt-1 mr-3 text-doan-500 focus:ring-doan-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('import.dryRun')}
-                </span>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {t('import.dryRunDescription')}
-                </p>
-              </div>
-            </label>
           </div>
         </div>
       </div>
@@ -692,7 +685,7 @@ const ImportModal = ({
     <div className="py-12 text-center">
       <RefreshCw className="w-16 h-16 mx-auto mb-4 text-doan-500 animate-spin" />
       <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
-        {state.options.dryRun ? t('import.validating') : t('import.importing')}
+        {t('import.importing')}
       </h3>
       <p className="mb-4 text-gray-500 dark:text-gray-400">
         {t('import.pleaseWait')}
@@ -751,10 +744,7 @@ const ImportModal = ({
         </h3>
 
         <p className="mb-6 text-gray-600 dark:text-gray-400">
-          {state.options.dryRun
-            ? t('import.dryRunComplete')
-            : t('import.importComplete')
-          }
+          {t('import.importComplete')}
         </p>
 
         {/* Results Summary */}
@@ -829,7 +819,7 @@ const ImportModal = ({
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
         <div
-          className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-80"
+          className="fixed inset-0 bg-black bg-opacity-50"
           onClick={onClose}
         />
 
@@ -838,7 +828,7 @@ const ImportModal = ({
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              {t(`${config.entityName}:import.title`)}
+              {config.title || t(`${config.entityName}:import.title`)}
             </h3>
             <button
               onClick={onClose}
@@ -918,7 +908,7 @@ const ImportModal = ({
                     disabled={!state.serverValidation?.isValid && !state.options.skipErrors}
                     className="px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {state.options.dryRun ? t('import.validate') : t('import.startImport')}
+                    {t('import.startImport')}
                   </button>
                 </>
               )}

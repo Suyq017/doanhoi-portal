@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Res, NotFoundException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiParam } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { UsersService } from './users.service';
@@ -214,5 +214,29 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Trạng thái hàng đợi' })
   async getQueueStatus() {
     return this.importService.getQueueStatus();
+  }
+
+  @Get('find-by-code/:code')
+  @ApiOperation({ 
+    summary: 'Tìm sinh viên chính xác theo mã số',
+    description: 'Tìm kiếm chính xác một sinh viên theo mã số sinh viên (không phải tìm kiếm mờ)'
+  })
+  @ApiParam({ name: 'code', description: 'Mã số sinh viên cần tìm' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Thông tin sinh viên được tìm thấy'
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Không tìm thấy sinh viên với mã số này'
+  })
+  async findByExactCode(@Param('code') code: string) {
+    const user = await this.usersService.findByExactCode(code);
+    
+    if (!user) {
+      throw new NotFoundException(`Không tìm thấy sinh viên với mã số: ${code}`);
+    }
+    
+    return user;
   }
 }

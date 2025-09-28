@@ -59,8 +59,9 @@ export interface ImportColumn {
 // Enhanced config interface for server-side processing only
 export interface ImportModalConfig {
   // Template & File handling
-  templateUrl: string;
+  templateUrl?: string;
   templateFileName: string;
+  downloadTemplate?: () => Promise<void>;
   acceptedFileTypes: string[];
   maxFileSize: number;
 
@@ -71,10 +72,12 @@ export interface ImportModalConfig {
   getImportStatus?: (sessionId: string) => Promise<any>;
 
   // UI Configuration
+  title?: string; // Custom title for the modal
   columns: ImportColumn[];
   entityName: string; // Used for i18n keys like 'departments', 'users', 'classes'
   previewRowCount?: number;
   allowPartialImport?: boolean;
+  instructions?: string[]; // Custom instructions for upload process
 
   // Optional callbacks
   onSuccess?: (result: ServerImportResult) => void;

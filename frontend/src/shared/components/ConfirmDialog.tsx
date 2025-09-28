@@ -24,6 +24,14 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  // Prevent body scroll when modal is open
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const getVariantStyles = () => {
     switch (variant) {
       case 'danger':
@@ -54,65 +62,62 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   const styles = getVariantStyles();
 
   return (
-    <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 z-50 bg-black bg-opacity-50 transition-opacity"
-        onClick={onCancel}
-      />
-      
-      {/* Dialog */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="relative w-full max-w-md mx-auto">
-          <div className="bg-white rounded-lg shadow-xl dark:bg-gray-800 transform transition-all">
-            {/* Close button */}
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          onClick={onCancel}
+          aria-hidden="true"
+        />
+
+        {/* Modal panel */}
+        <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md dark:bg-gray-800">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-3">
+              <div className={`flex-shrink-0 p-2 rounded-full ${styles.iconBg}`}>
+                {styles.icon}
+              </div>
+              <h3 className={`text-lg font-medium ${styles.titleColor}`}>
+                {title}
+              </h3>
+            </div>
             <button
               onClick={onCancel}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <X className="w-5 h-5" />
             </button>
+          </div>
 
-            <div className="p-6">
-              {/* Icon and Title */}
-              <div className="flex items-start space-x-4">
-                <div className={`flex-shrink-0 p-2 rounded-full ${styles.iconBg}`}>
-                  {styles.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className={`text-lg font-medium ${styles.titleColor}`}>
-                    {title}
-                  </h3>
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {message}
-                    </p>
-                  </div>
-                </div>
-              </div>
+          {/* Content */}
+          <div className="p-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {message}
+            </p>
 
-              {/* Actions */}
-              <div className="mt-6 flex items-center justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
-                >
-                  {cancelText}
-                </button>
-                <button
-                  type="button"
-                  onClick={onConfirm}
-                  className={`px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${styles.confirmBtn}`}
-                >
-                  {confirmText}
-                </button>
-              </div>
+            {/* Actions */}
+            <div className="mt-6 flex items-center justify-end space-x-3">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+              >
+                {cancelText}
+              </button>
+              <button
+                type="button"
+                onClick={onConfirm}
+                className={`px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${styles.confirmBtn}`}
+              >
+                {confirmText}
+              </button>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

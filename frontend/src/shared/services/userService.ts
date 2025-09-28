@@ -82,6 +82,18 @@ class UserService {
   async updateUserOrganizations(userId: string, organizationIds: string[]): Promise<User> {
     return apiClient.put<User>(`/users/${userId}/organizations`, { organizationIds });
   }
+
+  // Tìm kiếm chính xác theo mã số sinh viên
+  async findByExactCode(code: string): Promise<User | null> {
+    try {
+      return await apiClient.get<User>(`/users/find-by-code/${encodeURIComponent(code.trim())}`);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();

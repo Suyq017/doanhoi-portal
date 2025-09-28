@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard } from 'lucide-react';
+import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard, Heart, Calendar, BarChart, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -77,6 +77,36 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         requiredPermission: 'permissions.access'
       },
       {
+        name: t('navigation.ctxh'),
+        key: 'ctxh',
+        icon: Heart,
+        children: [
+          {
+            name: t('navigation.ctxhCategories'),
+            href: '/ctxh/categories',
+            icon: Database,
+            requiredPermission: 'ctxh.access'
+          },
+          {
+            name: t('navigation.ctxhActivities'),
+            href: '/ctxh/activities',
+            icon: Calendar,
+            requiredPermission: 'ctxh.access'
+          },
+          {
+            name: t('navigation.ctxhLimitConfig'),
+            href: '/ctxh/limit-config',
+            icon: Settings,
+            requiredPermission: 'ctxh.access'
+          }
+        ]
+      },
+      {
+        name: 'Báo cáo cá nhân',
+        href: '/student-reports',
+        icon: BarChart,
+      },
+      {
         name: t('navigation.paymentAdmin'),
         href: '/admin/payment-campaigns',
         icon: CreditCard,
@@ -143,7 +173,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isParentActive = (children: any[]) => children.some(child => child.href && isActive(child.href));
 
   return (
-    <div className={`min-h-screen bg-background ${isDarkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen bg-background ${isDarkMode ? 'dark' : ''}`} style={{overflowX: 'hidden', maxWidth: '100vw'}}>
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 shadow-lg transform transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
@@ -243,10 +273,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className={`transition-all ${isSidebarOpen ? 'lg:ml-64' : ''}`}>
+      <div className={`transition-all ${isSidebarOpen ? 'lg:ml-64' : ''}`} style={{overflowX: 'hidden', maxWidth: '100%'}}>
         {/* Top bar */}
-        <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-700">
-          <div className="flex items-center justify-between px-4 py-3">
+        <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-700" style={{width: '100%', maxWidth: '100%'}}>
+          <div className="flex items-center justify-between px-4 py-3" style={{maxWidth: '100%'}}>
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -272,7 +302,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
 
         {/* Page content */}
-        <main className="p-6">
+        <main className="p-6" style={{width: '100%', overflowX: 'hidden', maxWidth: '100%'}}>
           {children}
         </main>
       </div>
