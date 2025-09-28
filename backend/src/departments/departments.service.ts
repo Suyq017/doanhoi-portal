@@ -105,4 +105,45 @@ export class DepartmentsService {
 
     await this.departmentsRepository.remove(department);
   }
+
+  async bulkRemove(ids: string[]): Promise<{ deleted: number; errors: Array<{ id: string; error: string }> }> {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException('No department IDs provided');
+    }
+
+    const errors: Array<{ id: string; error: string }> = [];
+    let deleted = 0;
+
+    for (const id of ids) {
+      try {
+        // Find department with relations to check for users
+        const department = await this.departmentsRepository.findOne({
+          where: { id },
+          relations: ['managementUsers', 'trainingUsers'],
+        });
+
+        if (!department) {
+          errors.push({ id, error: 'Department not found' });
+          continue;
+        }
+
+        // Check if department has users
+        const hasUsers = department.managementUsers?.length > 0 || department.trainingUsers?.length > 0;
+        if (hasUsers) {
+          errors.push({ id, error: 'Cannot delete department with associated users' });
+          continue;
+        }
+
+        await this.departmentsRepository.remove(department);
+        deleted++;
+      } catch (error) {
+        errors.push({ id, error: error.message || 'Unknown error occurred' });
+      }
+    }
+
+    return {
+      deleted,
+      errors
+    };
+  }
 }
