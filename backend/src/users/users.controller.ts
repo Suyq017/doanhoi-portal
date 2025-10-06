@@ -180,7 +180,8 @@ export class UsersController {
     return this.importService.getBackgroundJobStatus(jobId);
   }
 
-  @Post('import/background-job/:jobId/cancel') @ApiOperation({ summary: 'Hủy background job' })
+  @Post('import/background-job/:jobId/cancel') 
+  @ApiOperation({ summary: 'Hủy background job' })
   @ApiResponse({ status: 200, description: 'Job đã được hủy' })
   @ApiResponse({ status: 404, description: 'Job không tồn tại' })
   async cancelBackgroundJob(@Param('jobId') jobId: string) {

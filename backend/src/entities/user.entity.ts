@@ -89,6 +89,7 @@ export class User {
   @ManyToOne(() => Class, { nullable: true })
   @JoinColumn({ name: 'classId' })
   class: Class;
+  
   @OneToMany('UserOrganization', 'user')
   organizations: UserOrganization[];
 

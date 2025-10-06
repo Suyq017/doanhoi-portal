@@ -53,7 +53,9 @@ export class CreateUserDto {
   @ApiPropertyOptional({ description: 'ID đơn vị đào tạo' })
   @IsOptional()
   @IsUUID()
-  trainingDepartmentId?: string; @ApiPropertyOptional({ description: 'ID lớp' })
+  trainingDepartmentId?: string; 
+  
+  @ApiPropertyOptional({ description: 'ID lớp' })
   @IsOptional()
   @IsUUID()
   classId?: string;

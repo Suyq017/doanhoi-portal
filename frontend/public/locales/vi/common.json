@@ -261,6 +261,7 @@
     "dryRunDescriptionPhonetic": "Chỉ kiểm tra tính hợp lệ",
     "validate": "Kiểm tra",
     "validatePhonetic": "Kiểm tra",
+    "validationErrors": "Có lỗi trong quá trình kiểm tra. Vui lòng sửa các lỗi và thử lại.",
     "startImport": "Bắt đầu import",
     "startImportPhonetic": "Bắt đầu import",
     "importing": "Đang import dữ liệu...",
