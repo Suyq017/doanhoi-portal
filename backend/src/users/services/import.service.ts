@@ -2,11 +2,12 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User, UserType, MembershipStatus, AuthProvider } from '../../entities/user.entity';
+import * as XLSX from 'xlsx';
+import { User, UserType, MembershipStatus, AuthProvider, Gender, TrainingSystem, TrainingLevel } from '../../entities/user.entity';
 import { Class } from '../../entities/class.entity';
 import { Department } from '../../entities/department.entity';
-import { Organization } from '../../entities/organization.entity';
-import { UserOrganization } from '../../entities/user-organization.entity';
+import { Organization, OrganizationType } from '../../entities/organization.entity';
+import { UserOrganization, UserOrgRole } from '../../entities/user-organization.entity';
 import { ExcelParserService, UserImportData } from './excel-parser.service';
 import { ImportValidationService, ResolvedUserData, ValidationError } from './import-validation.service';
 import { ImportSessionService, ImportSession, ImportResult } from './import-session.service';
@@ -326,26 +327,28 @@ export class ImportService {
     const user = new User();
     user.familyName = userData.familyName;
     user.givenName = userData.givenName;
-    user.email = userData.email;
+    user.email = userData.email || null; // Handle null email from "*" values
     user.code = userData.code;
+    user.studentCode = userData.code; // Enhanced: map code to studentCode
     user.phone = userData.phone || '';
     
     // Handle password
-    let userPassword = '';
     if (userData.password && userData.password.trim()) {
-      userPassword = userData.password.trim();
+      // Use provided password
+      const userPassword = userData.password.trim();
       user.password = await bcrypt.hash(userPassword, 10);
-    } else {
-      // Generate password from email if not provided
-      userPassword = this.generatePasswordFromEmail(userData.email);
+    } else if (userData.email) {
+      // No password provided but has email - generate from email
+      const userPassword = this.generatePasswordFromEmail(userData.email);
       user.password = await bcrypt.hash(userPassword, 10);
       
-      // Log the generated password for admin reference
-      console.log(`User ${userData.email} created with email-based password: ${userPassword}`);
+    } else {
+      // No password and no email - leave password empty (null)
+      user.password = null;
     }
 
-    // Set user type
-    user.userType = userData.userType as UserType || UserType.STUDENT;
+    // Set user type - Enhanced: use SINH_VIEN instead of STUDENT
+    user.userType = userData.userType as UserType || UserType.SINH_VIEN;
     
     // Set membership status
     user.membershipStatus = userData.membershipStatus as MembershipStatus || MembershipStatus.NONE;
@@ -387,7 +390,12 @@ export class ImportService {
     // Save user
     const savedUser = await queryRunner.manager.save(User, user);
 
-    // Handle organization assignments
+    // Enhanced: Handle class organization creation and assignment
+    if (userData.className) {
+      await this.handleClassOrganizationWithTransaction(queryRunner, userData.className, userData.managementDepartmentCode, savedUser.id);
+    }
+
+    // Handle other organization assignments
     if (userData.organizationIds && userData.organizationIds.length > 0) {
       for (const orgId of userData.organizationIds) {
         const organization = await queryRunner.manager.findOne(Organization, { 
@@ -408,7 +416,8 @@ export class ImportService {
     return savedUser;
   }
 
-  private generatePasswordFromEmail(email: string): string {
+  private generatePasswordFromEmail(email: string | null): string {
+    
     // Generate password from email: take username part before @
     // Example: "nguyen.van.a@example.com" → "nguyenvana"
     // Example: "test@example.com" → "test"
@@ -430,7 +439,64 @@ export class ImportService {
   }
 
   async generateTemplate(): Promise<Buffer> {
-    return this.excelParserService.generateTemplate();
+    // Enhanced template with 18 columns
+    const headers = [
+      'Mã số sinh viên',     // A - required
+      'Email',               // B - optional  
+      'CMND',               // C
+      'Họ',                 // D - required
+      'Tên',                // E - required
+      'Ngày sinh',          // F (DD/MM/YYYY)
+      'Giới tính',           // G (NAM/NU)
+      'Mật khẩu',           // H
+      'Điện thoại',         // I - optional
+      'Năm vào',            // J
+      'Năm CTDT',           // K
+      'Tên lớp',            // L
+      'Mã Khoa',            // M
+      'Mã đơn vị quản lý',  // N
+      'Hệ đào tạo',         // O (VLVH/CQ/QT/DTTX)
+      'Bậc đào tạo',        // P (DH)
+      'Loại người dùng',    // Q (SINH_VIEN/CAN_BO)
+      'Tình trạng thành viên' // R (ACTIVE/INACTIVE/GRADUATED)
+    ];
+
+    const sampleData = [
+      [
+        '2200000',           // Mã số sinh viên
+        'a.nguyen@hcmut.edu.vn', // Email
+        '123456789',            // CMND
+        'Nguyễn',               // Họ
+        'Văn A',                // Tên
+        '01/01/2004',           // Ngày sinh
+        'NAM',                  // Giới tính
+        'password123',          // Mật khẩu
+        '0901234567',           // Điện thoại
+        '20222',                 // Năm vào
+        '2022',                 // Năm CTDT
+        'CC01',                 // Tên lớp
+        'KHMT',                 // Mã Khoa
+        'BK-KHMT',              // Mã đơn vị quản lý
+        'CQ',                   // Hệ đào tạo
+        'DH',                   // Bậc đào tạo
+        'SINH_VIEN',            // Loại người dùng
+        'ACTIVE'                // Tình trạng thành viên
+      ]
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
+
+    // Set column widths
+    ws['!cols'] = [
+      { width: 15 }, { width: 25 }, { width: 12 }, { width: 15 }, { width: 15 },
+      { width: 12 }, { width: 10 }, { width: 12 }, { width: 15 }, { width: 10 },
+      { width: 10 }, { width: 15 }, { width: 10 }, { width: 15 }, { width: 10 },
+      { width: 10 }, { width: 15 }, { width: 20 }
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Users');
+    return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   }
 
   async getSystemHealth(): Promise<any> {
@@ -448,7 +514,6 @@ export class ImportService {
     batchProcessingOptions: BatchProcessingOptions,
     options?: { skipConflicts?: boolean }
   ): Promise<ImportResult> {
-    const startTime = new Date();
     const importResult: ImportResult = {
       success: true,
       importedCount: 0,
@@ -741,5 +806,143 @@ export class ImportService {
         endTime: batch.endTime
       }))
     };
+  }
+
+  // Enhanced organization handling methods
+  private async handleClassOrganizationWithTransaction(queryRunner: any, className: string, facultyCode: string, userId: string): Promise<void> {
+    // Create both Chi đoàn and Chi hội organizations for the class
+    const { chiDoan, chiHoi } = await this.createClassOrganizationsWithTransaction(queryRunner, className, facultyCode);
+
+    // Add user to both organizations
+    for (const org of [chiDoan, chiHoi]) {
+      const existingMembership = await queryRunner.manager.findOne(UserOrganization, {
+        where: { userId, organizationId: org.id }
+      });
+
+      if (!existingMembership) {
+        const membership = queryRunner.manager.create(UserOrganization, {
+          userId,
+          organizationId: org.id,
+          role: UserOrgRole.MEMBER
+        });
+        await queryRunner.manager.save(UserOrganization, membership);
+      }
+    }
+  }
+
+  private async createClassOrganizationsWithTransaction(queryRunner: any, className: string, facultyCode: string): Promise<{ chiDoan: Organization, chiHoi: Organization }> {
+    // Get or create parent organizations (level 2)
+    const { lienChiDoan, lienChiHoi } = await this.getOrCreateParentOrganizationsWithTransaction(queryRunner, className, facultyCode);
+
+    // Check if class organizations already exist
+    let chiDoan = await queryRunner.manager.findOne(Organization, {
+      where: { code: `CHI_DOAN_${className}`, type: OrganizationType.CHI_DOAN }
+    });
+
+    let chiHoi = await queryRunner.manager.findOne(Organization, {
+      where: { code: `CHI_HOI_${className}`, type: OrganizationType.CHI_HOI }
+    });
+
+    // Create Chi đoàn if not exists
+    if (!chiDoan) {
+      chiDoan = queryRunner.manager.create(Organization, {
+        name: `Chi đoàn ${className}`,
+        code: `CHI_DOAN_${className}`,
+        type: OrganizationType.CHI_DOAN,
+        parent: lienChiDoan
+      });
+      chiDoan = await queryRunner.manager.save(Organization, chiDoan);
+    }
+
+    // Create Chi hội if not exists
+    if (!chiHoi) {
+      chiHoi = queryRunner.manager.create(Organization, {
+        name: `Chi hội ${className}`,
+        code: `CHI_HOI_${className}`,
+        type: OrganizationType.CHI_HOI,
+        parent: lienChiHoi
+      });
+      chiHoi = await queryRunner.manager.save(Organization, chiHoi);
+    }
+
+    return { chiDoan, chiHoi };
+  }
+
+  private async getOrCreateParentOrganizationsWithTransaction(queryRunner: any, className: string, facultyCode: string): Promise<{ lienChiDoan: Organization, lienChiHoi: Organization }> {
+    let departmentName = 'Unknown Department';
+    let departmentCode = facultyCode || 'UNKNOWN';
+
+    // Check if class name starts with international prefixes
+    const internationalPrefixes = ['CC', 'CN', 'CT', 'TT'];
+    const isInternational = internationalPrefixes.some(prefix => 
+      className.toUpperCase().startsWith(prefix)
+    );
+
+    if (isInternational) {
+      departmentName = 'Văn phòng Đào tạo quốc tế';
+      departmentCode = 'QT';
+    } else if (facultyCode) {
+      // Try to get department name from database
+      const department = await queryRunner.manager.findOne(Department, {
+        where: { code: facultyCode }
+      });
+      if (department) {
+        departmentName = department.name;
+        departmentCode = department.code;
+      }
+    }
+
+    // Get level 1 parent organizations
+    const doanTruong = await queryRunner.manager.findOne(Organization, {
+      where: { type: OrganizationType.DOAN_TRUONG }
+    });
+    
+    const hoiSinhVien = await queryRunner.manager.findOne(Organization, {
+      where: { type: OrganizationType.HOI_SINH_VIEN_TRUONG }
+    });
+
+    if (!doanTruong || !hoiSinhVien) {
+      throw new Error('Không tìm thấy tổ chức cấp 1 (Đoàn Trường hoặc Hội Sinh viên)');
+    }
+
+    // Get or create Liên chi đoàn (level 2) - Đoàn cơ sở
+    let lienChiDoan = await queryRunner.manager.findOne(Organization, {
+      where: { 
+        name: `Liên chi đoàn ${departmentName}`, 
+        type: OrganizationType.DOAN_CO_SO 
+      }
+    });
+
+    if (!lienChiDoan) {
+      lienChiDoan = queryRunner.manager.create(Organization, {
+        name: `Liên chi đoàn ${departmentName}`,
+        code: `LIEN_CHI_DOAN_${departmentCode}`,
+        type: OrganizationType.DOAN_CO_SO,
+        description: `Đoàn cơ sở của ${departmentName}`,
+        parent: doanTruong
+      });
+      lienChiDoan = await queryRunner.manager.save(Organization, lienChiDoan);
+    }
+
+    // Get or create Liên chi hội (level 2)
+    let lienChiHoi = await queryRunner.manager.findOne(Organization, {
+      where: { 
+        name: `Liên chi hội ${departmentName}`, 
+        type: OrganizationType.LIEN_CHI_HOI 
+      }
+    });
+
+    if (!lienChiHoi) {
+      lienChiHoi = queryRunner.manager.create(Organization, {
+        name: `Liên chi hội ${departmentName}`,
+        code: `LIEN_CHI_HOI_${departmentCode}`,
+        type: OrganizationType.LIEN_CHI_HOI,
+        description: `Hội sinh viên cơ sở của ${departmentName}`,
+        parent: hoiSinhVien
+      });
+      lienChiHoi = await queryRunner.manager.save(Organization, lienChiHoi);
+    }
+
+    return { lienChiDoan, lienChiHoi };
   }
 }

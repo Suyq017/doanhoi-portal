@@ -62,7 +62,7 @@ class UserService {
   }
 
   async executeImport(sessionId: string, options?: { skipConflicts?: boolean }): Promise<ImportExecuteResponse> {
-    return apiClient.post<ImportExecuteResponse>(`/users/import/${sessionId}/execute`, options || {});
+    return apiClient.post<ImportExecuteResponse>(`/users/import/${sessionId}/execute`, options);
   }
 
   async getImportStatus(sessionId: string): Promise<ImportSession> {

@@ -403,7 +403,7 @@ const ImportModal = ({
       <div className="space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="p-4 text-center rounded-lg bg-gray-50 dark:bg-gray-800">
+          <div className="p-4 text-center bg-gray-200 rounded-lg dark:bg-gray-800">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {summary.total}
             </div>
@@ -412,7 +412,7 @@ const ImportModal = ({
             </div>
           </div>
 
-          <div className="p-4 text-center rounded-lg bg-green-50 dark:bg-green-900/20">
+          <div className="p-4 text-center bg-green-100 rounded-lg dark:bg-green-900/20">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {summary.valid}
             </div>
@@ -421,7 +421,7 @@ const ImportModal = ({
             </div>
           </div>
 
-          <div className="p-4 text-center rounded-lg bg-red-50 dark:bg-red-900/20">
+          <div className="p-4 text-center bg-red-100 rounded-lg dark:bg-red-900/20">
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {errors.length}
             </div>
@@ -430,7 +430,7 @@ const ImportModal = ({
             </div>
           </div>
 
-          <div className="p-4 text-center rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+          <div className="p-4 text-center bg-yellow-100 rounded-lg dark:bg-yellow-900/20">
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
               {warnings.length}
             </div>
@@ -481,7 +481,7 @@ const ImportModal = ({
             </div>
 
             {/* Pagination Controls */}
-            {!showAllRows && getTotalPages() > 1 && (
+            {!showAllRows && getTotalPages() > 0 && (
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setPreviewPage(Math.max(1, previewPage - 1))}
@@ -616,74 +616,6 @@ const ImportModal = ({
             </div>
           </div>
         )}
-
-        {/* Import Options */}
-        <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
-          <h4 className="mb-3 font-medium text-gray-900 dark:text-white">
-            {t('import.options')}
-          </h4>
-          <div className="space-y-3">
-            <label className="flex items-start">
-              <input
-                type="checkbox"
-                checked={state.options.skipErrors}
-                onChange={(e) => setState(prev => ({
-                  ...prev,
-                  options: { ...prev.options, skipErrors: e.target.checked }
-                }))}
-                className="mt-1 mr-3 text-doan-500 focus:ring-doan-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('import.skipErrorRows')}
-                </span>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {t('import.skipErrorRowsDescription')}
-                </p>
-              </div>
-            </label>
-
-            <label className="flex items-start">
-              <input
-                type="checkbox"
-                checked={state.options.updateExisting}
-                onChange={(e) => setState(prev => ({
-                  ...prev,
-                  options: { ...prev.options, updateExisting: e.target.checked }
-                }))}
-                className="mt-1 mr-3 text-doan-500 focus:ring-doan-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('import.updateExisting')}
-                </span>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {t('import.updateExistingDescription')}
-                </p>
-              </div>
-            </label>
-
-            <label className="flex items-start">
-              <input
-                type="checkbox"
-                checked={state.options.dryRun || false}
-                onChange={(e) => setState(prev => ({
-                  ...prev,
-                  options: { ...prev.options, dryRun: e.target.checked }
-                }))}
-                className="mt-1 mr-3 text-doan-500 focus:ring-doan-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('import.dryRun')}
-                </span>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {t('import.dryRunDescription')}
-                </p>
-              </div>
-            </label>
-          </div>
-        </div>
       </div>
     );
   };
@@ -759,19 +691,19 @@ const ImportModal = ({
 
         {/* Results Summary */}
         <div className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
-          <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+          <div className="p-4 bg-gray-200 rounded-lg dark:bg-gray-800">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{total}</div>
             <div className="text-sm text-gray-500 dark:text-gray-400">{t('import.total')}</div>
           </div>
-          <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
+          <div className="p-4 bg-green-100 rounded-lg dark:bg-green-900/20">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">{success}</div>
             <div className="text-sm text-green-600 dark:text-green-400">{t('import.successful')}</div>
           </div>
-          <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20">
+          <div className="p-4 bg-red-100 rounded-lg dark:bg-red-900/20">
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">{failed}</div>
             <div className="text-sm text-red-600 dark:text-red-400">{t('import.failed')}</div>
           </div>
-          <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+          <div className="p-4 bg-yellow-100 rounded-lg dark:bg-yellow-900/20">
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{skipped}</div>
             <div className="text-sm text-yellow-600 dark:text-yellow-400">{t('import.skipped')}</div>
           </div>
@@ -915,7 +847,7 @@ const ImportModal = ({
                   </button>
                   <button
                     onClick={handleImport}
-                    disabled={!state.serverValidation?.isValid && !state.options.skipErrors}
+                    disabled={!state.serverValidation?.isValid}
                     className="px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {state.options.dryRun ? t('import.validate') : t('import.startImport')}

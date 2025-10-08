@@ -15,7 +15,7 @@ import { RolesService } from '../roles/roles.service';
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly importService: ImportService,
+    private readonly importService: ImportService, // Enhanced with 18-column template & auto organization creation
     private readonly rolesService: RolesService
   ) { }
   @Post()
@@ -33,15 +33,17 @@ export class UsersController {
     return this.usersService.findAll(query);
   }
   @Get('template')
-  @ApiOperation({ summary: 'Download template Excel để import users' })
+  @ApiOperation({ summary: 'Download template Excel để import users (Enhanced 18-Column Version)' })
   @ApiResponse({ status: 200, description: 'File template Excel' })
   async downloadTemplate(@Res() res: Response) {
     const buffer = await this.importService.generateTemplate();
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="users_import_template.xlsx"');
+    res.setHeader('Content-Disposition', 'attachment; filename="users_import_template_enhanced.xlsx"');
     res.send(buffer);
   }
+
+
 
   @Delete('bulk-delete')
   @ApiOperation({ summary: 'Xóa nhiều người dùng cùng lúc' })
@@ -94,7 +96,7 @@ export class UsersController {
 
 
   @Post('import/upload')
-  @ApiOperation({ summary: 'Upload file Excel để import users' })
+  @ApiOperation({ summary: 'Upload file Excel để import users (Enhanced 18-Column Version)' })
   @ApiResponse({ status: 200, description: 'File đã được upload thành công' })
   @ApiResponse({ status: 400, description: 'File không hợp lệ' })
   @ApiConsumes('multipart/form-data')
@@ -103,8 +105,10 @@ export class UsersController {
     return this.importService.uploadFile(file);
   }
 
+
+
   @Get('import/:sessionId/validate')
-  @ApiOperation({ summary: 'Validate dữ liệu import' })
+  @ApiOperation({ summary: 'Validate dữ liệu import (Enhanced with Organization Auto-Creation)' })
   @ApiResponse({ status: 200, description: 'Kết quả validation' })
   @ApiResponse({ status: 404, description: 'Session không tồn tại' })
   async validateImportData(@Param('sessionId') sessionId: string) {
@@ -112,26 +116,34 @@ export class UsersController {
   }
 
   @Post('import/:sessionId/execute')
-  @ApiOperation({ summary: 'Thực hiện import dữ liệu' })
+  @ApiOperation({ summary: 'Thực hiện import dữ liệu (Enhanced with Auto Organization Creation)' })
   @ApiResponse({ status: 200, description: 'Import thành công' })
   @ApiResponse({ status: 400, description: 'Dữ liệu chưa được validate hoặc có lỗi' })
   async executeImport(
     @Param('sessionId') sessionId: string,
-    @Body() options?: { skipConflicts?: boolean; batchSize?: number }
+    @Body() options?: { skipConflicts: true; batchSize?: number }
   ) {
     return this.importService.executeImport(sessionId, options);
   }
 
-  @Post('import/:sessionId/execute-async')
-  @ApiOperation({ summary: 'Thực hiện import dữ liệu bất đồng bộ (cho file lớn)' })
-  @ApiResponse({ status: 200, description: 'Import được xếp hàng thành công' })
-  @ApiResponse({ status: 400, description: 'Dữ liệu chưa được validate hoặc có lỗi' })
-  async executeImportAsync(
-    @Param('sessionId') sessionId: string,
-    @Body() options?: { skipConflicts?: boolean; batchSize?: number }
-  ) {
-    return this.importService.executeImportAsync(sessionId, options);
+  @Get('import/:sessionId/status')
+  @ApiOperation({ summary: 'Lấy trạng thái session import' })
+  @ApiResponse({ status: 200, description: 'Trạng thái session' })
+  @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+  async getSessionStatus(@Param('sessionId') sessionId: string) {
+    return this.importService.getSessionStatus(sessionId);
   }
+
+  // @Post('import/:sessionId/execute-async')
+  // @ApiOperation({ summary: 'Thực hiện import dữ liệu bất đồng bộ (cho file lớn)' })
+  // @ApiResponse({ status: 200, description: 'Import được xếp hàng thành công' })
+  // @ApiResponse({ status: 400, description: 'Dữ liệu chưa được validate hoặc có lỗi' })
+  // async executeImportAsync(
+  //   @Param('sessionId') sessionId: string,
+  //   @Body() options?: { skipConflicts?: boolean; batchSize?: number }
+  // ) {
+  //   return this.importService.executeImportAsync(sessionId, options);
+  // }
 
   @Get('import/:sessionId/progress')
   @ApiOperation({ summary: 'Lấy tiến trình import' })
@@ -180,7 +192,8 @@ export class UsersController {
     return this.importService.getBackgroundJobStatus(jobId);
   }
 
-  @Post('import/background-job/:jobId/cancel') @ApiOperation({ summary: 'Hủy background job' })
+  @Post('import/background-job/:jobId/cancel') 
+  @ApiOperation({ summary: 'Hủy background job' })
   @ApiResponse({ status: 200, description: 'Job đã được hủy' })
   @ApiResponse({ status: 404, description: 'Job không tồn tại' })
   async cancelBackgroundJob(@Param('jobId') jobId: string) {
