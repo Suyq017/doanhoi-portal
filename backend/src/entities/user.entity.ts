@@ -7,6 +7,8 @@ import { UserRole } from './user-role.entity';
 export enum UserType {
   STUDENT = 'student',
   STAFF = 'staff',
+  SINH_VIEN = 'SINH_VIEN',
+  CAN_BO = 'CAN_BO',
 }
 
 export enum MembershipStatus {
@@ -14,6 +16,26 @@ export enum MembershipStatus {
   HOI_VIEN = 'hoi_vien',
   BOTH = 'both',
   NONE = 'none',
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  GRADUATED = 'GRADUATED',
+}
+
+// New enums for import system
+export enum Gender {
+  NAM = 'NAM',
+  NU = 'NU'
+}
+
+export enum TrainingSystem {
+  VLVH = 'VLVH',  // Vừa làm Vừa học
+  CQ = 'CQ',      // Chính quy
+  QT = 'QT',      // Quốc tế
+  DTTX = 'DTTX'   // Đào tạo từ xa
+}
+
+export enum TrainingLevel {
+  DH = 'DH'       // Đại học (có thể mở rộng)
 }
 
 export enum AuthProvider {
@@ -35,10 +57,10 @@ export class User {
   @Column()
   givenName: string; // Tên
 
-  @Column({ unique: true })
+  @Column({ nullable: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   phone: string;
 
   @Column({ nullable: true })
@@ -95,6 +117,34 @@ export class User {
 
   @OneToMany(() => UserRole, 'user')
   userRoles: UserRole[];
+
+  // New fields for enhanced import system
+  @Column({ name: 'student_code', nullable: true, unique: true })
+  studentCode: string;
+  
+  @Column({ name: 'identity_card', nullable: true })
+  identityCard: string;
+  
+  @Column({ name: 'birth_date', type: 'date', nullable: true })
+  birthDate: Date;
+  
+  @Column({ name: 'gender', type: 'enum', enum: Gender, nullable: true })
+  gender: Gender;
+  
+  @Column({ name: 'admission_year', nullable: true })
+  admissionYear: string;
+  
+  @Column({ name: 'curriculum_year', nullable: true })
+  curriculumYear: string;
+  
+  @Column({ name: 'faculty_code', nullable: true })
+  facultyCode: string;
+  
+  @Column({ name: 'training_system', type: 'enum', enum: TrainingSystem, nullable: true })
+  trainingSystem: TrainingSystem;
+  
+  @Column({ name: 'training_level', type: 'enum', enum: TrainingLevel, nullable: true })
+  trainingLevel: TrainingLevel;
 
   // Getter cho fullName để tương thích với code cũ
   get fullName(): string {

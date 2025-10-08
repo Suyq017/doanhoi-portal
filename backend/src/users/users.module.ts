@@ -10,7 +10,7 @@ import { UserOrganization } from '../entities/user-organization.entity';
 import { ExcelParserService } from './services/excel-parser.service';
 import { ImportValidationService } from './services/import-validation.service';
 import { ImportSessionService } from './services/import-session.service';
-import { ImportService } from './services/import.service';
+import { ImportService } from './services/import.service'; // Enhanced with 18-column & organization auto-creation
 import { UserBatchProcessingService } from './services/batch-processing.service';
 import { UserTransactionService } from './services/transaction.service';
 import { UserImportMonitoringService } from './services/monitoring.service';
@@ -31,7 +31,7 @@ import { CleanEmptyStringsMiddleware } from '../common/middleware/clean-empty-st
     ExcelParserService,
     ImportValidationService,
     ImportSessionService,
-    ImportService,
+    ImportService, // Enhanced with all advanced features
     UserBatchProcessingService,
     UserTransactionService,
     UserImportMonitoringService,

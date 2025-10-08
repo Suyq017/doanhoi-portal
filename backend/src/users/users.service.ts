@@ -40,7 +40,13 @@ export class UsersService {
       userData.password = await bcrypt.hash(userPassword, 10);
     }
 
-    const user = this.usersRepository.create(userData);
+    // Handle date conversion
+    const userDataWithDates = {
+      ...userData,
+      birthDate: userData.birthDate ? new Date(userData.birthDate) : undefined
+    };
+
+    const user = this.usersRepository.create(userDataWithDates);
     const savedUser = await this.usersRepository.save(user);    // Handle organization membership (including parent organizations)
     if (organizationId && organizationId.trim() !== '') {
       try {
@@ -131,6 +137,22 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  /**
+   * Find user by student code
+   */
+  async findByStudentCode(studentCode: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { studentCode },
+      relations: [
+        'managementDepartment',
+        'trainingDepartment',
+        'class',
+        'organizations',
+        'organizations.organization'
+      ]
+    });
   }
 
   /**

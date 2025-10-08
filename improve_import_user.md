@@ -380,3 +380,130 @@ ADD CONSTRAINT fk_users_department FOREIGN KEY (department_id) REFERENCES depart
    - Invalid enum values
 
 Kế hoạch này sẽ thay thế hoàn toàn hệ thống import hiện tại với cấu trúc dữ liệu mới và logic tự động tạo organization dựa trên tên lớp.
+
+---
+
+## Tiến độ hiện thực
+
+### ✅ Đã hoàn thành:
+
+1. **Cập nhật User Entity và Enums** ✅
+   - Thêm các enum mới: `Gender`, `TrainingSystem`, `TrainingLevel`
+   - Mở rộng `UserType` và `MembershipStatus` 
+   - Thêm các trường mới: `studentCode`, `identityCard`, `birthDate`, `gender`, `admissionYear`, `curriculumYear`, `facultyCode`, `trainingSystem`, `trainingLevel`
+
+2. **Cập nhật CreateUserDto** ✅
+   - Import các enum mới
+   - Thêm validation cho các trường mới
+   - Hỗ trợ date string validation
+
+3. **Migration Database** ✅
+   - Tạo migration script thêm các cột mới
+   - Chạy migration thành công
+   - Thêm indexes cho performance
+
+4. **Enhanced Import Service** ✅
+   - Tạo `EnhancedImportService` với đầy đủ chức năng
+   - Template Excel với 18 cột dữ liệu mới
+   - Validation logic đầy đủ cho tất cả trường
+   - Logic tự động tạo class organization
+   - Xử lý prefix lớp quốc tế (CC, CN, CT, TT)
+
+5. **Cập nhật Controller** ✅
+   - Thêm endpoints mới cho enhanced import
+   - Giữ lại legacy endpoints để tương thích
+   - Template download endpoints
+
+6. **Cập nhật Module** ✅
+   - Đăng ký `EnhancedImportService` trong `UsersModule`
+   - Cấu hình dependencies
+
+7. **Cập nhật Users Service** ✅
+   - Hỗ trợ các trường mới trong `create` method
+   - Thêm `findByStudentCode` method
+   - Xử lý date conversion
+
+8. **Test Suite** ✅
+   - Tạo comprehensive test suite
+   - Test cases cho validation
+   - Test cases cho import logic
+   - Mock data samples
+
+### 🎯 Các tính năng chính đã implement:
+
+**Template Excel mới:**
+- 18 cột dữ liệu chi tiết
+- Validation rules rõ ràng
+- Sample data hướng dẫn
+
+**Validation nâng cao:**
+- Required fields: Mã số sinh viên, Họ, Tên, Email, Điện thoại
+- Enum validation cho tất cả các trường enum
+- Date format validation (DD/MM/YYYY)
+- Email format validation
+- Duplicate checking
+
+**Logic tự động tạo Organization:**
+- Kiểm tra prefix lớp: CC, CN, CT, TT → Văn phòng Đào tạo quốc tế
+- Các lớp khác → theo Khoa (facultyCode)
+- Tự động tạo Class Organization nếu chưa có
+- Thêm user vào organization
+
+**API Endpoints:**
+- `GET /users/template` - Enhanced template
+- `GET /users/template-legacy` - Legacy template  
+- `POST /users/import/upload` - Enhanced upload
+- `POST /users/import/upload-legacy` - Legacy upload
+- `GET /users/import/:sessionId/validate` - Enhanced validation
+- `POST /users/import/:sessionId/execute` - Enhanced import
+
+### 🔄 Đang hoạt động:
+
+- Hệ thống cũ vẫn hoạt động bình thường (legacy endpoints)
+- Hệ thống mới đã sẵn sàng sử dụng (enhanced endpoints)
+- Database đã được migrate thành công
+- Backward compatibility đảm bảo
+
+### 📋 Hướng dẫn sử dụng:
+
+1. **Download template mới:**
+   ```
+   GET /users/template
+   ```
+
+2. **Upload file Excel:**
+   ```
+   POST /users/import/upload
+   Content-Type: multipart/form-data
+   Body: file (Excel file)
+   ```
+
+3. **Validate dữ liệu:**
+   ```
+   GET /users/import/{sessionId}/validate
+   ```
+
+4. **Thực hiện import:**
+   ```
+   POST /users/import/{sessionId}/execute
+   Body: { "skipConflicts": true }
+   ```
+
+### 🧪 Testing:
+
+Chạy test:
+```bash
+npm test enhanced-import.service.spec.ts
+```
+
+### 📊 Kết quả:
+
+- ✅ Database migration thành công
+- ✅ Enhanced Import Service hoạt động
+- ✅ API endpoints sẵn sàng
+- ✅ Template Excel mới
+- ✅ Validation logic đầy đủ
+- ✅ Organization auto-creation
+- ✅ Backward compatibility
+
+**Hệ thống Enhanced Import đã sẵn sàng để sử dụng trong production!**

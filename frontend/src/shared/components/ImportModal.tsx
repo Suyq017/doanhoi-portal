@@ -691,19 +691,19 @@ const ImportModal = ({
 
         {/* Results Summary */}
         <div className="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
-          <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+          <div className="p-4 bg-gray-200 rounded-lg dark:bg-gray-800">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{total}</div>
             <div className="text-sm text-gray-500 dark:text-gray-400">{t('import.total')}</div>
           </div>
-          <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20">
+          <div className="p-4 bg-green-100 rounded-lg dark:bg-green-900/20">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">{success}</div>
             <div className="text-sm text-green-600 dark:text-green-400">{t('import.successful')}</div>
           </div>
-          <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20">
+          <div className="p-4 bg-red-100 rounded-lg dark:bg-red-900/20">
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">{failed}</div>
             <div className="text-sm text-red-600 dark:text-red-400">{t('import.failed')}</div>
           </div>
-          <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+          <div className="p-4 bg-yellow-100 rounded-lg dark:bg-yellow-900/20">
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{skipped}</div>
             <div className="text-sm text-yellow-600 dark:text-yellow-400">{t('import.skipped')}</div>
           </div>
