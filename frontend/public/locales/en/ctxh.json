@@ -81,6 +81,7 @@
     "deleteConfirm": "Confirm Delete",
     "deleteMessage": "Are you sure you want to delete activity \"{{name}}\"?",
     "deleteError": "An error occurred while deleting the activity!",
+    "deleteErrorHasParticipants": "Cannot delete this activity because there are participants. Please remove all participants first.",
     "saveError": "An error occurred while saving the activity!",
     "loadCategoriesError": "Unable to load category list",
     "loadActivitiesError": "Unable to load activity list",

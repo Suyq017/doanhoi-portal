@@ -431,10 +431,19 @@ export class ActivitiesService {
   async remove(id: string, deletedBy: string): Promise<{ message: string }> {
     const activity = await this.activityRepository.findOne({
       where: { id, deleted_at: IsNull() },
+      relations: ['participations'],
     });
 
     if (!activity) {
       throw new NotFoundException(`Hoạt động với ID ${id} không tồn tại`);
+    }
+
+    // Check if activity has participants
+    const activeParticipations = activity.participations?.filter(p => !p.deleted_at) || [];
+    if (activeParticipations.length > 0) {
+      throw new ConflictException(
+        `Không thể xóa hoạt động này vì đang có ${activeParticipations.length} sinh viên tham gia. Vui lòng xóa tất cả sinh viên tham gia trước khi xóa hoạt động.`
+      );
     }
 
     await this.activityRepository.update(id, {

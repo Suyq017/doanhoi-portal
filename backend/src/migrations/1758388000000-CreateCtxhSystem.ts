@@ -106,7 +106,7 @@ export class CreateCtxhSystem1758388000000 implements MigrationInterface {
           {
             name: 'category_id',
             type: 'uuid',
-            isNullable: true,
+            isNullable: false,
           },
           {
             name: 'organization_id',
@@ -173,7 +173,7 @@ export class CreateCtxhSystem1758388000000 implements MigrationInterface {
             columnNames: ['category_id'],
             referencedTableName: 'ctxh_category',
             referencedColumnNames: ['id'],
-            onDelete: 'SET NULL',
+            onDelete: 'RESTRICT',
           },
           {
             columnNames: ['organization_id'],
@@ -229,7 +229,7 @@ export class CreateCtxhSystem1758388000000 implements MigrationInterface {
             name: 'student_code',
             type: 'varchar',
             length: '20',
-            isNullable: true,
+            isNullable: false,
           },
           {
             name: 'actual_days',
@@ -291,7 +291,7 @@ export class CreateCtxhSystem1758388000000 implements MigrationInterface {
             columnNames: ['activity_id'],
             referencedTableName: 'ctxh_activity',
             referencedColumnNames: ['id'],
-            onDelete: 'SET NULL',
+            onDelete: 'RESTRICT',
           },
           {
             columnNames: ['student_id'],
@@ -534,6 +534,13 @@ export class CreateCtxhSystem1758388000000 implements MigrationInterface {
       ALTER TABLE "ctxh_activity" 
       ADD CONSTRAINT "CHK_ctxh_activity_dates" 
       CHECK ("start_date" IS NULL OR "end_date" IS NULL OR "start_date" <= "end_date");
+    `);
+
+    // Unique constraint for limit config (one active config per organization)
+    await queryRunner.query(`
+      CREATE UNIQUE INDEX "idx_ctxh_limit_config_org_unique_active" 
+      ON "ctxh_limit_config" ("organization_id") 
+      WHERE "status" = 'ACTIVE' AND "deleted_at" IS NULL;
     `);
   }
 

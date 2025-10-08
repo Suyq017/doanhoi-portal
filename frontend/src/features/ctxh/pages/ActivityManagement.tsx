@@ -50,9 +50,27 @@ const ActivityManagement: React.FC = () => {
       await activityService.delete(activity.id);
       setRefreshTrigger(prev => prev + 1);
       showSuccess(t('activity.deleted'));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete activity:', error);
-      showError(t('activity.deleteError'));
+      
+      // Handle different error formats
+      let errorMessage = t('activity.deleteError');
+      
+      // The error message is now in error.message (thanks to updated apiClient)
+      if (error.message) {
+        // Check if it's the specific "has participants" error
+        if (error.message.includes('sinh viên tham gia') || error.message.includes('participants')) {
+          errorMessage = t('activity.deleteErrorHasParticipants');
+        } else {
+          // Use the full server error message
+          errorMessage = error.message;
+        }
+      } else if (error.response?.data?.message) {
+        // Fallback to response data message
+        errorMessage = error.response.data.message;
+      }
+      
+      showError(errorMessage);
     }
   };
 

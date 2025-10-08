@@ -78,6 +78,7 @@
     "deleteMessage": "Bạn có chắc chắn muốn xóa hoạt động \"{{name}}\" không?",
     "deleted": "Đã xóa hoạt động thành công!",
     "deleteError": "Có lỗi xảy ra khi xóa hoạt động!",
+    "deleteErrorHasParticipants": "Không thể xóa hoạt động này vì đang có sinh viên tham gia. Vui lòng xóa tất cả sinh viên tham gia trước.",
     "saveError": "Có lỗi xảy ra khi lưu hoạt động!",
     "loadCategoriesError": "Không thể tải danh sách danh mục",
     "loadActivitiesError": "Không thể tải danh sách hoạt động",
