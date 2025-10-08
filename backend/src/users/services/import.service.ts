@@ -514,7 +514,6 @@ export class ImportService {
     batchProcessingOptions: BatchProcessingOptions,
     options?: { skipConflicts?: boolean }
   ): Promise<ImportResult> {
-    const startTime = new Date();
     const importResult: ImportResult = {
       success: true,
       importedCount: 0,
@@ -837,18 +836,18 @@ export class ImportService {
 
     // Check if class organizations already exist
     let chiDoan = await queryRunner.manager.findOne(Organization, {
-      where: { code: `${className}_CHI_DOAN`, type: OrganizationType.CHI_DOAN }
+      where: { code: `CHI_DOAN_${className}`, type: OrganizationType.CHI_DOAN }
     });
 
     let chiHoi = await queryRunner.manager.findOne(Organization, {
-      where: { code: `${className}_CHI_HOI`, type: OrganizationType.CHI_HOI }
+      where: { code: `CHI_HOI_${className}`, type: OrganizationType.CHI_HOI }
     });
 
     // Create Chi đoàn if not exists
     if (!chiDoan) {
       chiDoan = queryRunner.manager.create(Organization, {
         name: `Chi đoàn ${className}`,
-        code: `${className}_CHI_DOAN`,
+        code: `CHI_DOAN_${className}`,
         type: OrganizationType.CHI_DOAN,
         parent: lienChiDoan
       });
@@ -859,7 +858,7 @@ export class ImportService {
     if (!chiHoi) {
       chiHoi = queryRunner.manager.create(Organization, {
         name: `Chi hội ${className}`,
-        code: `${className}_CHI_HOI`,
+        code: `CHI_HOI_${className}`,
         type: OrganizationType.CHI_HOI,
         parent: lienChiHoi
       });
@@ -917,7 +916,7 @@ export class ImportService {
     if (!lienChiDoan) {
       lienChiDoan = queryRunner.manager.create(Organization, {
         name: `Liên chi đoàn ${departmentName}`,
-        code: departmentCode,
+        code: `LIEN_CHI_DOAN_${departmentCode}`,
         type: OrganizationType.DOAN_CO_SO,
         description: `Đoàn cơ sở của ${departmentName}`,
         parent: doanTruong
@@ -936,7 +935,7 @@ export class ImportService {
     if (!lienChiHoi) {
       lienChiHoi = queryRunner.manager.create(Organization, {
         name: `Liên chi hội ${departmentName}`,
-        code: departmentCode,
+        code: `LIEN_CHI_HOI_${departmentCode}`,
         type: OrganizationType.LIEN_CHI_HOI,
         description: `Hội sinh viên cơ sở của ${departmentName}`,
         parent: hoiSinhVien

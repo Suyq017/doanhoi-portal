@@ -481,7 +481,7 @@ const ImportModal = ({
             </div>
 
             {/* Pagination Controls */}
-            {!showAllRows && getTotalPages() > 1 && (
+            {!showAllRows && getTotalPages() > 0 && (
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setPreviewPage(Math.max(1, previewPage - 1))}
