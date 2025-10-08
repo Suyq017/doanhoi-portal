@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Calendar, ArrowLeft, Users, Settings, BarChart3 } from 'lucide-react';
 import { CtxhActivity, CtxhCategory, ParticipationResponse } from '../types';
 import { activityService, categoryService } from '../services';
@@ -9,6 +10,7 @@ import ParticipantManagement from '../components/ParticipantManagement';
 import ActivityForm from '../components/ActivityForm';
 
 const ActivityDetail: React.FC = () => {
+  const { t } = useTranslation(['ctxh', 'common']);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
@@ -95,31 +97,35 @@ const ActivityDetail: React.FC = () => {
 
   // Helper functions
   const getCategoryName = (categoryId: string | number | null | undefined): string => {
-    if (!categoryId) return 'Chưa phân loại';
+    if (!categoryId) return t('activity.uncategorized');
     const category = categories.find(cat => String(cat.id) === String(categoryId));
-    return category?.name || 'Chưa phân loại';
+    return category?.name || t('activity.uncategorized');
   };
 
   const formatDate = (dateString: string | Date | null): string => {
-    if (!dateString) return 'Không xác định';
+    if (!dateString) return t('common:labels.unknown');
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('vi-VN', {
+      return date.toLocaleDateString(t('common:locale'), {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
     } catch (error) {
-      return 'Không xác định';
+      return t('common:labels.unknown');
     }
+  };
+
+  const formatNumber = (num: number): string => {
+    return num % 1 === 0 ? Math.floor(num).toString() : num.toString();
   };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'ACTIVE': { label: 'Đang hoạt động', color: 'bg-green-100 text-green-800' },
-      'COMPLETED': { label: 'Hoàn thành', color: 'bg-gray-100 text-gray-800' },
-      'CANCELLED': { label: 'Đã hủy', color: 'bg-red-100 text-red-800' },
-      'DRAFT': { label: 'Nháp', color: 'bg-yellow-100 text-yellow-800' }
+      'ACTIVE': { label: t('activity.statusOptions.ACTIVE'), color: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' },
+      'COMPLETED': { label: t('activity.statusOptions.COMPLETED'), color: 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200' },
+      'CANCELLED': { label: t('activity.statusOptions.CANCELLED'), color: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' },
+      'DRAFT': { label: t('activity.statusOptions.DRAFT'), color: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' }
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.DRAFT;
@@ -134,8 +140,8 @@ const ActivityDetail: React.FC = () => {
     return (
       <div className="container mx-auto px-4 py-6">
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-sm text-gray-500">Đang tải thông tin hoạt động...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('activity.detail.loading')}</p>
         </div>
       </div>
     );
@@ -145,16 +151,16 @@ const ActivityDetail: React.FC = () => {
     return (
       <div className="container mx-auto px-4 py-6">
         <div className="text-center py-12">
-          <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Không tìm thấy hoạt động</h3>
-          <p className="mt-1 text-sm text-gray-500">Hoạt động không tồn tại hoặc đã bị xóa.</p>
+          <Calendar className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{t('activity.detail.notFound')}</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('activity.detail.notFoundMessage')}</p>
           <div className="mt-6">
             <button 
               onClick={() => navigate('/ctxh/activities')}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Quay lại danh sách
+              {t('common:actions.backToList')}
             </button>
           </div>
         </div>
@@ -170,18 +176,18 @@ const ActivityDetail: React.FC = () => {
           <div className="flex items-center space-x-4">
             <button 
               onClick={() => navigate('/ctxh/activities')}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Quay lại
+              {t('common:actions.back')}
             </button>
             
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                <Calendar className="mr-3 h-8 w-8 text-blue-600" />
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                <Calendar className="mr-3 h-8 w-8 text-blue-600 dark:text-blue-400" />
                 {activity.name}
               </h1>
-              <p className="mt-2 text-gray-600">Chi tiết hoạt động CTXH</p>
+              <p className="mt-2 text-gray-600 dark:text-gray-300">{t('activity.detail.subtitle')}</p>
             </div>
           </div>
           
@@ -192,77 +198,77 @@ const ActivityDetail: React.FC = () => {
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-doan-500 hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500"
             >
               <Settings className="mr-2 h-4 w-4" />
-              Chỉnh sửa
+              {t('common:actions.edit')}
             </button>
           </div>
         </div>
       </div>
 
       {/* Activity Summary */}
-      <div className="bg-white shadow rounded-lg mb-6">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
         <div className="px-6 py-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
-              <dt className="text-sm font-medium text-gray-500">Danh mục</dt>
-              <dd className="mt-1 text-sm text-gray-900">
+              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.category')}</dt>
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
                 {getCategoryName((activity as any).category_id)}
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">Tổ chức</dt>
-              <dd className="mt-1 text-sm text-gray-900">
-                {activity.organization?.name || 'Chưa có thông tin tổ chức'}
+              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.organization')}</dt>
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                {activity.organization?.name || t('activity.noOrganizationInfo')}
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">Thời gian</dt>
-              <dd className="mt-1 text-sm text-gray-900">
+              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.timePeriod')}</dt>
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
                 {formatDate((activity as any).start_date)} - {formatDate((activity as any).end_date)}
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">Tổng số ngày</dt>
-              <dd className="mt-1 text-sm text-gray-900">
-                {(activity as any).total_days || 'Chưa xác định'} ngày
+              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.totalDays')}</dt>
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                {(activity as any).total_days ? formatNumber((activity as any).total_days) : t('common:labels.unknown')} {t('activity.days')}
               </dd>
             </div>
           </div>
           
           {activity.description && (
             <div className="mt-6">
-              <dt className="text-sm font-medium text-gray-500">Mô tả</dt>
-              <dd className="mt-1 text-sm text-gray-900">{activity.description}</dd>
+              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.description')}</dt>
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white">{activity.description}</dd>
             </div>
           )}
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('overview')}
               className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
             >
               <BarChart3 className="inline-block mr-2 h-4 w-4" />
-              Tổng quan
+              {t('activity.tabs.overview')}
             </button>
             
             <button
               onClick={() => setActiveTab('participants')}
               className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'participants'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
             >
               <Users className="inline-block mr-2 h-4 w-4" />
-              Sinh viên tham gia
+              {t('activity.tabs.participants')}
             </button>
           </nav>
         </div>
@@ -271,29 +277,29 @@ const ActivityDetail: React.FC = () => {
         <div className="p-6">
           {activeTab === 'overview' && (
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Thống kê hoạt động</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('activity.statistics.title')}</h3>
               {participantsLoading ? (
                 <div className="text-center py-8">
-                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <p className="mt-2 text-sm text-gray-500">Đang tải thống kê...</p>
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('activity.statistics.loading')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{getStatistics().total}</div>
-                    <div className="text-sm text-gray-600">Tổng sinh viên</div>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{getStatistics().total}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300">{t('activity.statistics.totalStudents')}</div>
                   </div>
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{getStatistics().completed}</div>
-                    <div className="text-sm text-gray-600">Đã hoàn thành</div>
+                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">{getStatistics().completed}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300">{t('activity.statistics.completed')}</div>
                   </div>
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <div className="text-2xl font-bold text-yellow-600">{getStatistics().registered}</div>
-                    <div className="text-sm text-gray-600">Đang tham gia</div>
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{getStatistics().registered}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300">{t('activity.statistics.participating')}</div>
                   </div>
-                  <div className="bg-red-50 p-4 rounded-lg">
-                    <div className="text-2xl font-bold text-red-600">{getStatistics().cancelled}</div>
-                    <div className="text-sm text-gray-600">Đã hủy</div>
+                  <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">{getStatistics().cancelled}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300">{t('activity.statistics.cancelled')}</div>
                   </div>
                 </div>
               )}
@@ -301,21 +307,21 @@ const ActivityDetail: React.FC = () => {
               {/* Additional Overview Information */}
               {!participantsLoading && participants.length > 0 && (
                 <div className="mt-8">
-                  <h4 className="text-md font-medium text-gray-900 mb-4">Chi tiết thống kê</h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">{t('activity.statistics.detailedTitle')}</h4>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="font-medium text-gray-700">Tỷ lệ hoàn thành:</span>
-                        <span className="ml-2 text-gray-600">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{t('activity.statistics.completionRate')}:</span>
+                        <span className="ml-2 text-gray-600 dark:text-gray-400">
                           {getStatistics().total > 0 
                             ? `${Math.round((getStatistics().completed / getStatistics().total) * 100)}%`
                             : '0%'}
                         </span>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">Sinh viên đang tham gia:</span>
-                        <span className="ml-2 text-gray-600">
-                          {getStatistics().registered} sinh viên
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{t('activity.statistics.participatingStudents')}:</span>
+                        <span className="ml-2 text-gray-600 dark:text-gray-400">
+                          {getStatistics().registered} {t('activity.students')}
                         </span>
                       </div>
                     </div>
@@ -325,9 +331,9 @@ const ActivityDetail: React.FC = () => {
               
               {!participantsLoading && participants.length === 0 && (
                 <div className="mt-8 text-center py-8">
-                  <Users className="mx-auto h-12 w-12 text-gray-400" />
-                  <h4 className="mt-2 text-sm font-medium text-gray-900">Chưa có sinh viên tham gia</h4>
-                  <p className="mt-1 text-sm text-gray-500">Chuyển sang tab "Sinh viên tham gia" để thêm sinh viên.</p>
+                  <Users className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                  <h4 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{t('activity.noParticipants')}</h4>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('activity.noParticipantsMessage')}</p>
                 </div>
               )}
             </div>
@@ -369,14 +375,14 @@ const ActivityDetail: React.FC = () => {
               const updatedActivity = await activityService.update(activity.id, activityData);
               setActivity(updatedActivity);
               setShowEditForm(false);
-              showSuccess('Cập nhật hoạt động thành công!');
+              showSuccess(t('activity.updateSuccess'));
             } catch (error) {
               console.error('Failed to update activity:', error);
               // Error toast will be shown by ActivityForm
             }
           }}
           activity={activity}
-          title="Chỉnh sửa hoạt động"
+          title={t('activity.editTitle')}
         />
       )}
     </div>

@@ -150,7 +150,7 @@ export class ActivityService {
     const formData = new FormData();
     formData.append('file', file);
     
-    return apiClient.uploadFile<ExcelValidationResult>(`${this.basePath}/${activityId}/participants/grade-excel`, formData);
+    return apiClient.uploadFile<ExcelValidationResult>(`${this.basePath}/${activityId}/participants/grading-upload`, formData);
   }
 
   // Remove participant from activity

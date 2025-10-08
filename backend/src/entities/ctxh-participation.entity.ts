@@ -31,7 +31,7 @@ export class CtxhParticipation {
   @Column({ type: 'varchar', length: 20, nullable: true })
   student_code: string;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'decimal', precision: 5, scale: 1, nullable: true })
   actual_days: number;
 
   @Column({

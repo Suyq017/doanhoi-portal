@@ -32,7 +32,7 @@ const ImportModal = ({
   config,
   className = ''
 }: ImportModalProps) => {
-  const { t } = useTranslation(['common', config.entityName]);
+  const { t } = useTranslation(['common', 'ctxh', config.entityName]);
   const { showError, toasts, hideToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -144,9 +144,13 @@ const ImportModal = ({
       }));
     } catch (error: any) {
       console.error('File processing error:', error);
-      const errorMessage = error.response?.data?.message || error.message || t('import.errors.parseFile');
-      showError(errorMessage);
-      setState(prev => ({ ...prev, loading: false }));
+      
+      // Don't show error toast here - let parent component handle it via onError callback
+      // Call onError callback to let parent component handle the error and show toast
+      config.onError?.(error);
+      
+      // Reset completely to upload step when there's an error
+      resetImport();
     }
   };
 
@@ -225,6 +229,11 @@ const ImportModal = ({
     setShowAllRows(false);
     setShowOnlyErrors(false);
     setPreviewPage(1);
+    
+    // Clear file input value to allow re-uploading the same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   // Utility functions
@@ -242,7 +251,19 @@ const ImportModal = ({
         case 'date':
           return new Date(value).toLocaleDateString();
         case 'number':
-          return typeof value === 'number' ? value.toLocaleString('en-US', { useGrouping: false }) : value;
+          // Handle NaN and convert to string to avoid React warning
+          if (typeof value === 'number') {
+            if (isNaN(value)) {
+              return <span className="italic text-gray-400">-</span>;
+            }
+            return value.toLocaleString('en-US', { useGrouping: false });
+          }
+          // Try to parse as number if it's a string
+          const numValue = Number(value);
+          if (!isNaN(numValue)) {
+            return numValue.toLocaleString('en-US', { useGrouping: false });
+          }
+          return String(value);
         default:
           return String(value);
       }
@@ -253,7 +274,15 @@ const ImportModal = ({
 
   const getDisplayRows = () => {
     // Server-side processing only
-    if (!state.serverValidation) return []; let rows = state.serverValidation.previewData || [];
+    if (!state.serverValidation) return [];
+    
+    // Try to get data from serverValidation first, then from serverSession
+    let rows = state.serverValidation.previewData || state.serverSession?.previewData || [];
+    
+    console.log('ImportModal getDisplayRows:');
+    console.log('- serverValidation.previewData:', state.serverValidation.previewData);
+    console.log('- serverSession.previewData:', state.serverSession?.previewData);
+    console.log('- final rows:', rows);
 
     // Apply error filtering - check both hasErrors and _hasError for compatibility
     if (showOnlyErrors) {
@@ -312,21 +341,29 @@ const ImportModal = ({
           <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
           <div>
             <h4 className="mb-2 font-medium text-blue-900 dark:text-blue-100">
-              {config.instructions ? 'Hướng dẫn import dữ liệu' : t(`${config.entityName}:import.instructions`)}
+              {config.instructions ? t('common:import.instructionsTitle') : t(`${config.entityName}:import.instructions`)}
             </h4>
             <ol className="space-y-1 text-sm text-blue-800 list-decimal list-inside dark:text-blue-200">
               {config.instructions ? (
-                config.instructions.map((instruction, index) => (
-                  <li key={index}>
-                    {instruction.includes('tại đây') ? (
-                      <>
-                        {instruction.split('tại đây')[0]}
+                config.instructions.map((instruction, index) => {
+                  // Only detect 'here' or 'tại đây' as download links when they appear after 'template'
+                  const hasVietnameseLink = instruction.includes('tải file mẫu Excel tại đây') || instruction.includes('file mẫu Excel tại đây');
+                  const hasEnglishLink = instruction.includes('template here') && !instruction.includes('ensure there');
+                  const hasDownloadLink = hasVietnameseLink || hasEnglishLink;
+                  
+                  if (hasDownloadLink) {
+                    const linkText = hasVietnameseLink ? 'tại đây' : 'here';
+                    const parts = instruction.split(linkText);
+                    
+                    return (
+                      <li key={index}>
+                        {parts[0]}
                         {config.downloadTemplate ? (
                           <button
                             onClick={config.downloadTemplate}
                             className="font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
                           >
-                            tại đây
+                            {linkText}
                           </button>
                         ) : (
                           <a
@@ -334,16 +371,20 @@ const ImportModal = ({
                             download={config.templateFileName}
                             className="font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
                           >
-                            tại đây
+                            {linkText}
                           </a>
                         )}
-                        {instruction.split('tại đây')[1]}
-                      </>
-                    ) : (
-                      instruction
-                    )}
-                  </li>
-                ))
+                        {parts[1]}
+                      </li>
+                    );
+                  }
+                  
+                  return (
+                    <li key={index}>
+                      {instruction}
+                    </li>
+                  );
+                })
               ) : (
                 <>
                   <li>
@@ -437,7 +478,7 @@ const ImportModal = ({
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div className="p-4 text-center rounded-lg bg-gray-50 dark:bg-gray-800">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {summary.total}
+              {summary.total || 0}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {t('import.totalRecords')}
@@ -446,7 +487,7 @@ const ImportModal = ({
 
           <div className="p-4 text-center rounded-lg bg-green-50 dark:bg-green-900/20">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {summary.valid}
+              {summary.valid || 0}
             </div>
             <div className="text-sm text-green-600 dark:text-green-400">
               {t('import.validRecords')}
@@ -455,7 +496,7 @@ const ImportModal = ({
 
           <div className="p-4 text-center rounded-lg bg-red-50 dark:bg-red-900/20">
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {errors.length}
+              {errors.length || 0}
             </div>
             <div className="text-sm text-red-600 dark:text-red-400">
               {t('import.error')}
@@ -464,7 +505,7 @@ const ImportModal = ({
 
           <div className="p-4 text-center rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {warnings.length}
+              {warnings.length || 0}
             </div>
             <div className="text-sm text-yellow-600 dark:text-yellow-400">
               {t('import.warnings')}
@@ -505,9 +546,9 @@ const ImportModal = ({
               {(() => {
                 const range = getCurrentRowRange();
                 return t('common:pagination.showing', {
-                  start: range.start,
-                  end: range.end,
-                  total: range.total
+                  start: Math.max(range.start || 0, 0),
+                  end: Math.max(range.end || 0, 0),
+                  total: Math.max(range.total || 0, 0)
                 });
               })()}
             </div>
@@ -516,18 +557,18 @@ const ImportModal = ({
             {!showAllRows && getTotalPages() > 1 && (
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => setPreviewPage(Math.max(1, previewPage - 1))}
-                  disabled={previewPage <= 1}
+                  onClick={() => setPreviewPage(Math.max(1, (previewPage || 1) - 1))}
+                  disabled={(previewPage || 1) <= 1}
                   className="px-2 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400"
                 >
                   {t('common:pagination.previous')}
                 </button>
                 <span className="px-2 py-1 text-sm text-gray-700 dark:text-gray-300">
-                  {previewPage} / {getTotalPages()}
+                  {previewPage || 1} / {getTotalPages() || 1}
                 </span>
                 <button
-                  onClick={() => setPreviewPage(Math.min(getTotalPages(), previewPage + 1))}
-                  disabled={previewPage >= getTotalPages()}
+                  onClick={() => setPreviewPage(Math.min(getTotalPages() || 1, (previewPage || 1) + 1))}
+                  disabled={(previewPage || 1) >= (getTotalPages() || 1)}
                   className="px-2 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400"
                 >
                   {t('common:pagination.next')}
@@ -570,14 +611,14 @@ const ImportModal = ({
                   const hasWarnings = item.hasWarnings || (item._warnings && item._warnings.length > 0);
 
                   // Calculate proper row number for pagination
-                  let rowNumber;
+                  let rowNumber = 1;
                   if (showAllRows) {
                     // For show all rows, use sequential numbering
-                    rowNumber = index + 1;
+                    rowNumber = (index || 0) + 1;
                   } else {
                     // For paginated view, calculate based on page and position
                     const range = getCurrentRowRange();
-                    rowNumber = range.start + index;
+                    rowNumber = (range.start || 1) + (index || 0);
                   }
 
                   return (
@@ -635,7 +676,7 @@ const ImportModal = ({
                 {errors.map((error, index) => (
                   <li key={index} className="flex items-start">
                     <span className="font-mono text-xs bg-red-100 dark:bg-red-900/30 px-1 rounded mr-2 mt-0.5">
-                      {error.row}
+                      {error.row || (index + 1)}
                     </span>
                     <span>{error.message}</span>
                   </li>
@@ -702,10 +743,10 @@ const ImportModal = ({
     if (!result) return null;
 
     // Server-side result structure
-    const total = result.importedCount + result.skippedCount + result.failedCount;
-    const success = result.importedCount;
-    const failed = result.failedCount;
-    const skipped = result.skippedCount;
+    const total = (result.importedCount || 0) + (result.skippedCount || 0) + (result.failedCount || 0);
+    const success = result.importedCount || 0;
+    const failed = result.failedCount || 0;
+    const skipped = result.skippedCount || 0;
     const errors = result.errors || [];
     const warnings: string[] = []; // Server result doesn't have warnings field
 
@@ -828,7 +869,9 @@ const ImportModal = ({
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              {config.title || t(`${config.entityName}:import.title`)}
+              {config.entityName === 'participants' ? t('ctxh:participant.addStudentForm') :
+               config.entityName === 'grading' ? t('ctxh:participant.gradeFromFileForm') :
+               config.title || t(`${config.entityName}:import.title`)}
             </h3>
             <button
               onClick={onClose}

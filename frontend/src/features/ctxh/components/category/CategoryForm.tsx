@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, AlertCircle } from 'lucide-react';
 import { CtxhCategory, CreateCategoryRequest, UpdateCategoryRequest } from '../../types';
 import { validateRequired } from '../../utils';
@@ -28,6 +29,8 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
   onClose,
   loading = false
 }) => {
+  const { t } = useTranslation('ctxh');
+  
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: ''
@@ -71,8 +74,9 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
     
-    const nameError = validateRequired(formData.name, 'Tên danh mục');
-    if (nameError) newErrors.name = nameError;
+    if (!validateRequired(formData.name)) {
+      newErrors.name = t('validation.required', { field: t('category.name') });
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -101,7 +105,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
       }
     } catch (error: any) {
       setErrors({
-        general: error.message || 'Đã xảy ra lỗi khi lưu danh mục'
+        general: error.message || t('category.saveError')
       });
     } finally {
       setIsSubmitting(false);
@@ -136,7 +140,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              {isEditMode ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới'}
+              {isEditMode ? t('category.edit') : t('category.addNew')}
             </h3>
             <button
               onClick={onClose}
@@ -162,7 +166,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
               {/* Category Name */}
               <div className="mb-4">
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Tên danh mục <span className="text-red-500">*</span>
+                  {t('category.name')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -175,7 +179,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                       ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                       : 'border-gray-300 dark:border-gray-600'
                   } dark:bg-gray-700 dark:text-white`}
-                  placeholder="Nhập tên danh mục"
+                  placeholder={t('category.namePlaceholder')}
                   disabled={isSubmitting}
                 />
                 {errors.name && (
@@ -186,7 +190,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
               {/* Description */}
               <div className="mb-4">
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Mô tả
+                  {t('category.description')}
                 </label>
                 <textarea
                   id="description"
@@ -195,7 +199,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                   value={formData.description}
                   onChange={handleInputChange}
                   className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:text-white"
-                  placeholder="Nhập mô tả danh mục (tùy chọn)"
+                  placeholder={t('category.descriptionPlaceholder')}
                   disabled={isSubmitting}
                 />
               </div>
@@ -205,7 +209,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                 <div className="flex items-start">
                   <div className="ml-0">
                     <p className="text-sm text-blue-700">
-                      <strong>Lưu ý:</strong> Danh mục CTXH sẽ được áp dụng cho toàn trường và có thể được sử dụng bởi tất cả các tổ chức.
+                      <strong>Lưu ý:</strong> {t('category.note')}
                     </p>
                   </div>
                 </div>
@@ -219,7 +223,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
                   disabled={isSubmitting}
                 >
-                  Hủy
+                  {t('category.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -229,10 +233,10 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
-                      {isEditMode ? 'Đang cập nhật...' : 'Đang tạo...'}
+                      {isEditMode ? t('category.updating') : t('category.creating')}
                     </>
                   ) : (
-                    isEditMode ? 'Cập nhật' : 'Tạo mới'
+                    isEditMode ? t('category.edit') : t('category.create')
                   )}
                 </button>
               </div>

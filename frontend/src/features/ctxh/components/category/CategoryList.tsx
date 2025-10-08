@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Edit, Trash2, Eye } from 'lucide-react';
 import { 
   CtxhCategory, 
@@ -25,6 +26,8 @@ const CategoryList: React.FC<CategoryListProps> = ({
   showToast,
   refreshTrigger
 }) => {
+  const { t } = useTranslation('ctxh');
+  
   const [categories, setCategories] = useState<CtxhCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -90,7 +93,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
             <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
             <input
               type="text"
-              placeholder="Tìm kiếm danh mục..."
+              placeholder={t('category.search')}
               value={searchTerm}
               onChange={handleSearch}
               className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -120,16 +123,16 @@ const CategoryList: React.FC<CategoryListProps> = ({
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
                     <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 w-1/4">
-                      Tên danh mục
+                      {t('category.name')}
                     </th>
                     <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 w-1/2">
-                      Mô tả
+                      {t('category.description')}
                     </th>
                     <th className="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-400 w-1/6">
-                      Số hoạt động
+                      {t('category.activities')}
                     </th>
                     <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400 w-1/12">
-                      Thao tác
+                      {t('category.actions')}
                     </th>
                   </tr>
                 </thead>
@@ -158,7 +161,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                       </td>
                       <td className="px-6 py-4 text-center whitespace-nowrap">
                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                          {category._count?.activities || category.activities_count || 0} hoạt động
+                          {category._count?.activities || category.activities_count || 0} {t('category.activities')}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
@@ -195,7 +198,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
             {categories.length === 0 && (
               <div className="py-12 text-center">
                 <div className="text-gray-500 dark:text-gray-400">
-                  {searchTerm ? 'Không tìm thấy danh mục nào' : 'Chưa có danh mục nào. Tạo danh mục đầu tiên.'}
+                  {searchTerm ? t('category.noSearchResults') : t('category.noData') + '. ' + t('category.createFirst') + '.'}
                 </div>
               </div>
             )}

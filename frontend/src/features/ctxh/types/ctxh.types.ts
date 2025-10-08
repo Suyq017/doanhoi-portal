@@ -156,8 +156,7 @@ export interface GradeParticipantsRequest {
 // Limit Config interfaces
 export interface CtxhLimitConfig extends BaseEntity {
   organizationId: string;
-  requiredDays: number; // Fixed at 15
-  maxDaysPerSemester: number;
+  maxDays: number;
   status: LimitConfigStatus;
   
   // Relations
@@ -169,12 +168,12 @@ export interface CtxhLimitConfig extends BaseEntity {
 
 export interface CreateLimitConfigRequest {
   organization_id: string;
-  max_days_per_semester: number; // Use snake_case to match backend
+  max_days: number; // Updated field name
   description?: string;
 }
 
 export interface UpdateLimitConfigRequest {
-  max_days_per_semester?: number; // Use snake_case to match backend
+  max_days?: number; // Updated field name
   status?: LimitConfigStatus;
   description?: string;
 }

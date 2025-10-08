@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface PaginationProps {
     currentPage: number;
@@ -23,6 +24,8 @@ const Pagination: React.FC<PaginationProps> = ({
     limitOptions = [5, 10, 20, 50],
     className = '',
 }) => {
+    const { t } = useTranslation('common');
+    
     if (total === 0) {
         return null;
     }
@@ -32,7 +35,7 @@ const Pagination: React.FC<PaginationProps> = ({
             <div className="flex items-center space-x-4">
                 {showLimitSelector && onLimitChange && (
                     <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-700 dark:text-gray-300">Hiển thị</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{t('pagination.show')}</span>
                         <select
                             value={limit}
                             onChange={(e) => onLimitChange(Number(e.target.value))}
@@ -44,12 +47,12 @@ const Pagination: React.FC<PaginationProps> = ({
                                 </option>
                             ))}
                         </select>
-                        <span className="text-sm text-gray-700 dark:text-gray-300">mục/trang</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{t('pagination.perPage')}</span>
                     </div>
                 )}
                 
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Hiển thị {(currentPage - 1) * limit + 1} - {Math.min(currentPage * limit, total)} trong tổng số {total} mục
+                    {t('pagination.showing')} {(currentPage - 1) * limit + 1} - {Math.min(currentPage * limit, total)} {t('pagination.of')} {total} {t('pagination.items')}
                 </div>
             </div>
 
@@ -59,7 +62,7 @@ const Pagination: React.FC<PaginationProps> = ({
                     disabled={currentPage === 1}
                     className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white"
                 >
-                    Trước
+                    {t('pagination.previous')}
                 </button>
                 
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
@@ -97,7 +100,7 @@ const Pagination: React.FC<PaginationProps> = ({
                     disabled={currentPage >= totalPages}
                     className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white"
                 >
-                    Sau
+                    {t('pagination.next')}
                 </button>
             </div>
         </div>

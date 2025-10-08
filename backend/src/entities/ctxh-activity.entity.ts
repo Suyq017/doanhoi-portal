@@ -42,7 +42,7 @@ export class CtxhActivity {
   @Column({ type: 'date', nullable: true })
   end_date: Date;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'decimal', precision: 5, scale: 1, nullable: true })
   total_days: number;
 
   @Column({

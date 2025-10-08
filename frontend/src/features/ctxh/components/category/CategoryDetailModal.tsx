@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Search } from 'lucide-react';
 import { CtxhCategory, CtxhActivity, ActivityQueryParams, PaginatedResponse } from '../../types';
 import { activityService } from '../../services';
@@ -16,6 +17,8 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
   category,
   onClose
 }) => {
+  const { t } = useTranslation('ctxh');
+  
   const [allActivities, setAllActivities] = useState<CtxhActivity[]>([]);
   const [filteredActivities, setFilteredActivities] = useState<CtxhActivity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -141,10 +144,10 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Chi tiết danh mục: {category.name}
+                  {t('category.details')}: {category.name}
                 </h3>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  {category.description || 'Không có mô tả'}
+                  {category.description || t('category.noDescription')}
                 </p>
               </div>
               <button
@@ -164,7 +167,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                 <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm hoạt động..."
+                  placeholder={t('category.searchActivities')}
                   value={searchInput}
                   onChange={handleSearchInputChange}
                   className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -185,7 +188,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                 <div className="flex items-center justify-center min-h-[300px]">
                   <div className="text-center">
                     <p className="text-gray-500 dark:text-gray-400">
-                      {searchInput ? 'Không tìm thấy hoạt động nào' : 'Chưa có hoạt động nào trong danh mục này'}
+                      {searchInput ? t('activity.noSearchResults') : t('category.noActivities')}
                     </p>
                   </div>
                 </div>
@@ -195,16 +198,16 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                     <thead className="bg-gray-50 dark:bg-gray-900">
                       <tr>
                         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                          Tên hoạt động
+                          {t('activity.name')}
                         </th>
                         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                          Trạng thái
+                          {t('activity.status')}
                         </th>
                         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                          Thời gian
+                          {t('activity.time')}
                         </th>
                         <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                          Đơn vị
+                          {t('activity.unit')}
                         </th>
                       </tr>
                     </thead>
@@ -291,7 +294,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
               >
-                Đóng
+                {t('category.close')}
               </button>
             </div>
           </div>

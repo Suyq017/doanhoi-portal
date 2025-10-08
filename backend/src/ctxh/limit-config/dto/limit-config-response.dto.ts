@@ -13,11 +13,8 @@ export class LimitConfigResponseDto {
 
   @ApiProperty()
   @Expose()
-  required_days: number;
-
-  @ApiProperty()
-  @Expose()
-  max_days_per_semester: number;
+  @Transform(({ obj }) => obj.max_days) 
+  maxDays: number;
 
   @ApiPropertyOptional()
   @Expose()

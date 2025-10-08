@@ -102,7 +102,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         ]
       },
       {
-        name: 'Báo cáo cá nhân',
+        name: t('navigation.ctxhStudentReport'),
         href: '/student-reports',
         icon: BarChart,
       },

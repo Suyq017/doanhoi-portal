@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
 import { CtxhActivity } from '../../entities/ctxh-activity.entity';
 import { CtxhCategory } from '../../entities/ctxh-category.entity';
+import { CtxhLimitConfig } from '../../entities/ctxh-limit-config.entity';
 import { CtxhParticipation } from '../../entities/ctxh-participation.entity';
 import { User } from '../../entities/user.entity';
 import { Organization } from '../../entities/organization.entity';
@@ -17,6 +18,7 @@ import { ExcelParserService } from '../../users/services/excel-parser.service';
     TypeOrmModule.forFeature([
       CtxhActivity,
       CtxhCategory,
+      CtxhLimitConfig,
       CtxhParticipation,
       User,
       Organization,

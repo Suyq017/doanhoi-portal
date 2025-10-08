@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CtxhCategory, CreateCategoryRequest, UpdateCategoryRequest } from '../types';
 import { categoryService } from '../services/categoryService';
 import { getErrorMessage } from '../utils';
@@ -11,6 +12,8 @@ import { useToast } from '../../../shared/hooks';
 import { Plus } from 'lucide-react';
 
 const CategoryManagement: React.FC = () => {
+  const { t } = useTranslation('ctxh');
+  
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError } = useToast();
   
@@ -54,11 +57,11 @@ const CategoryManagement: React.FC = () => {
       if (selectedCategory) {
         // Update existing category
         await categoryService.update(selectedCategory.id, data as UpdateCategoryRequest);
-        showSuccess('Cập nhật danh mục thành công');
+        showSuccess(t('category.updated'));
       } else {
         // Create new category
         await categoryService.create(data as CreateCategoryRequest);
-        showSuccess('Tạo danh mục thành công');
+        showSuccess(t('category.created'));
       }
       
       setIsFormOpen(false);
@@ -94,10 +97,10 @@ const CategoryManagement: React.FC = () => {
     try {
       if (confirmAction === 'delete') {
         await categoryService.delete(selectedCategory.id);
-        showSuccess('Xóa danh mục thành công');
+        showSuccess(t('category.deleted'));
       } else if (confirmAction === 'restore') {
         await categoryService.restore(selectedCategory.id);
-        showSuccess('Khôi phục danh mục thành công');
+        showSuccess(t('category.restored'));
       }
       
       // Trigger refresh of CategoryList
@@ -125,16 +128,14 @@ const CategoryManagement: React.FC = () => {
 
     if (confirmAction === 'delete') {
       return {
-        title: 'Xóa danh mục',
-        message: `Bạn có chắc chắn muốn xóa
-
- danh mục: ${selectedCategory.name}`,
+        title: t('category.delete'),
+        message: t('category.deleteConfirm') + ` "${selectedCategory.name}"?`,
         variant: 'danger' as const
       };
     } else {
       return {
-        title: 'Khôi phục danh mục',
-        message: `Bạn có chắc chắn muốn khôi phục danh mục "${selectedCategory.name}"?`,
+        title: t('category.restore'),
+        message: t('category.restoreConfirm') + ` "${selectedCategory.name}"?`,
         variant: 'info' as const
       };
     }
@@ -148,10 +149,10 @@ const CategoryManagement: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Quản lý danh mục CTXH
+            {t('category.title')}
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Quản lý các danh mục hoạt động công tác xã hội của trường
+            {t('category.subtitle')}
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
@@ -161,7 +162,7 @@ const CategoryManagement: React.FC = () => {
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-doan-500 hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Tạo danh mục mới
+            {t('category.create')}
           </button>
         </div>
       </div>
@@ -201,8 +202,8 @@ const CategoryManagement: React.FC = () => {
         title={dialogContent.title}
         message={dialogContent.message}
         variant={dialogContent.variant}
-        confirmText={confirmAction === 'delete' ? 'Xóa' : 'Khôi phục'}
-        cancelText="Hủy"
+        confirmText={confirmAction === 'delete' ? t('common.delete') : t('category.restore')}
+        cancelText={t('common.cancel')}
         onConfirm={handleConfirmAction}
         onCancel={handleCancelAction}
       />

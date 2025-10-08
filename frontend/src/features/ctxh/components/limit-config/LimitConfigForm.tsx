@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Building2, Calendar } from 'lucide-react';
 import { CtxhLimitConfig, CreateLimitConfigRequest, UpdateLimitConfigRequest, LimitConfigStatus } from '../../types';
 import { organizationService } from '../../../../shared/services';
@@ -13,13 +14,13 @@ interface LimitConfigFormProps {
 
 interface FormData {
   organizationId: string;
-  maxDaysPerSemester: number;
+  maxDays: number;
   status: LimitConfigStatus;
 }
 
 interface ValidationErrors {
   organizationId?: string;
-  maxDaysPerSemester?: string;
+  maxDays?: string;
 }
 
 const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
@@ -29,10 +30,30 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
   onClose,
   loading = false
 }) => {
+  const { t } = useTranslation('ctxh');
+  
+  // Translate error messages from server
+  const translateError = (error: any): string => {
+    const message = error?.message || error?.toString() || '';
+    
+    // Common server error patterns
+    if (message.includes('tồn tại cấu hình') || message.includes('already exists')) {
+      return t('limitConfig.errors.alreadyExists');
+    }
+    if (message.includes('không tìm thấy') || message.includes('not found')) {
+      return t('limitConfig.errors.notFound');
+    }
+    if (message.includes('không có quyền') || message.includes('permission')) {
+      return t('limitConfig.errors.noPermission');
+    }
+    
+    // Return original message if no translation found
+    return message || t('limitConfig.errors.unknown');
+  };
   // Form state
   const [formData, setFormData] = useState<FormData>({
     organizationId: '',
-    maxDaysPerSemester: 30,
+    maxDays: 15,
     status: LimitConfigStatus.ACTIVE
   });
 
@@ -67,14 +88,14 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
       // Editing mode - ensure all fields have valid values
       setFormData({
         organizationId: config.organizationId || '',
-        maxDaysPerSemester: config.maxDaysPerSemester || 30,
+        maxDays: config.maxDays || 15,
         status: config.status || LimitConfigStatus.ACTIVE
       });
     } else {
       // Creating mode - reset to defaults
       setFormData({
         organizationId: '',
-        maxDaysPerSemester: 30,
+        maxDays: 15,
         status: LimitConfigStatus.ACTIVE
       });
     }
@@ -101,32 +122,47 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
 
     // Only validate organization when creating (not editing)
     if (!config && !formData.organizationId) {
-      newErrors.organizationId = 'Vui lòng chọn tổ chức';
+      newErrors.organizationId = t('validation.required', { field: t('limitConfig.organization') });
     }
 
-    if (!formData.maxDaysPerSemester || formData.maxDaysPerSemester < 1) {
-      newErrors.maxDaysPerSemester = 'Số ngày tối đa phải lớn hơn 0';
-    } else if (formData.maxDaysPerSemester > 365) {
-      newErrors.maxDaysPerSemester = 'Số ngày tối đa không được vượt quá 365';
+    if (!formData.maxDays || formData.maxDays < 0.1) {
+      newErrors.maxDays = t('limitConfig.validation.minDays');
+    } else if (formData.maxDays > 365) {
+      newErrors.maxDays = t('limitConfig.validation.maxDays');
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Form handlers
+  // Handle input changes with real-time validation
   const handleInputChange = (field: keyof FormData, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
 
-    // Clear error when user starts typing
-    if (errors[field as keyof ValidationErrors]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: undefined
-      }));
+    // Real-time validation for maxDays
+    if (field === 'maxDays' && typeof value === 'number') {
+      const newErrors = { ...errors };
+      if (value < 0.1 && value > 0) {
+        newErrors.maxDays = t('limitConfig.validation.minDays');
+      } else if (value > 365) {
+        newErrors.maxDays = t('limitConfig.validation.maxDays');
+      } else if (value === 0 || !value) {
+        newErrors.maxDays = t('limitConfig.validation.minDays');
+      } else {
+        delete newErrors.maxDays;
+      }
+      setErrors(newErrors);
+    } else {
+      // Clear error when user starts typing for other fields
+      if (errors[field as keyof ValidationErrors]) {
+        setErrors(prev => ({
+          ...prev,
+          [field]: undefined
+        }));
+      }
     }
   };
 
@@ -140,7 +176,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
       if (config) {
         // Update mode - only send changed fields
         const updateData: UpdateLimitConfigRequest = {
-          max_days_per_semester: formData.maxDaysPerSemester,
+          max_days: formData.maxDays,
           status: formData.status
         };
         // Updating configuration
@@ -149,7 +185,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
         // Create mode - use snake_case for backend compatibility
         const createData: CreateLimitConfigRequest = {
           organization_id: formData.organizationId,
-          max_days_per_semester: formData.maxDaysPerSemester
+          max_days: formData.maxDays
         };
         // Creating new configuration
         await onSave(createData);
@@ -179,7 +215,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b">
             <h2 className="text-lg font-medium text-gray-900">
-              {config ? 'Cập nhật cấu hình' : 'Tạo cấu hình mới'}
+              {config ? t('limitConfig.edit') : t('limitConfig.create')}
             </h2>
             <button
               onClick={onClose}
@@ -191,13 +227,13 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
           </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <div className="p-6 space-y-4">
                 {/* Organization */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Building2 className="inline h-4 w-4 mr-1" />
-                    Tổ chức <span className="text-red-500">*</span>
+                    {t('limitConfig.organization')} <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.organizationId}
@@ -209,8 +245,16 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                         : 'border-gray-300 focus:border-blue-500'
                     } ${(!!config || submitting) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   >
-                    <option value="">Chọn tổ chức</option>
-                    {organizations.map((org) => (
+                    {/* Show current organization in edit mode */}
+                    {config ? (
+                      <option value={config.organizationId || ''}>
+                        {config.organization?.name || t('limitConfig.unknownOrganization')}
+                      </option>
+                    ) : (
+                      <option value="">{t('limitConfig.selectOrganization')}</option>
+                    )}
+                    {/* Show all organizations in create mode */}
+                    {!config && organizations.map((org) => (
                       <option key={org.id} value={org.id}>
                         {org.name}
                       </option>
@@ -221,7 +265,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                   )}
                   {config && (
                     <p className="mt-1 text-xs text-gray-500">
-                      Không thể thay đổi tổ chức khi cập nhật
+                      {t('limitConfig.cannotChangeOrganization')}
                     </p>
                   )}
                 </div>
@@ -230,27 +274,27 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     <Calendar className="inline h-4 w-4 mr-1" />
-                    Số ngày tối đa mỗi kì học <span className="text-red-500">*</span>
+                    {t('limitConfig.maxDays')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
-                    min="1"
-                    max="365"
-                    value={formData.maxDaysPerSemester}
-                    onChange={(e) => handleInputChange('maxDaysPerSemester', parseInt(e.target.value) || 0)}
+                    step="0.1"
+                    min="0.1"
+                    value={formData.maxDays}
+                    onChange={(e) => handleInputChange('maxDays', parseFloat(e.target.value) || 0)}
                     disabled={submitting}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.maxDaysPerSemester 
+                      errors.maxDays 
                         ? 'border-red-300 focus:ring-red-500' 
                         : 'border-gray-300 focus:border-blue-500'
                     }`}
-                    placeholder="Nhập số ngày tối đa"
+                    placeholder={t('limitConfig.maxDaysPlaceholder')}
                   />
-                  {errors.maxDaysPerSemester && (
-                    <p className="mt-1 text-xs text-red-500">{errors.maxDaysPerSemester}</p>
+                  {errors.maxDays && (
+                    <p className="mt-1 text-xs text-red-500">{errors.maxDays}</p>
                   )}
                   <p className="mt-1 text-xs text-gray-500">
-                    Số ngày CTXH tối đa sinh viên có thể đăng ký trong một kì học
+                    {t('limitConfig.maxDaysHelp')}
                   </p>
                 </div>
 
@@ -258,7 +302,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                 {config && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Trạng thái
+                      {t('limitConfig.status')}
                     </label>
                     <select
                       value={formData.status}
@@ -266,9 +310,9 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                       disabled={submitting}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value={LimitConfigStatus.ACTIVE}>Hoạt động</option>
-                      <option value={LimitConfigStatus.INACTIVE}>Không hoạt động</option>
-                      <option value={LimitConfigStatus.DRAFT}>Nháp</option>
+                      <option value={LimitConfigStatus.ACTIVE}>{t('limitConfig.statusOptions.ACTIVE')}</option>
+                      <option value={LimitConfigStatus.INACTIVE}>{t('limitConfig.statusOptions.INACTIVE')}</option>
+                      <option value={LimitConfigStatus.DRAFT}>{t('limitConfig.statusOptions.DRAFT')}</option>
                     </select>
                   </div>
                 )}
@@ -282,7 +326,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                   disabled={submitting}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Hủy
+                  {t('limitConfig.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -292,7 +336,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                   {(submitting || loading) && (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   )}
-                  {config ? 'Cập nhật' : 'Tạo mới'}
+                  {config ? t('limitConfig.edit') : t('limitConfig.create')}
                 </button>
               </div>
             </form>

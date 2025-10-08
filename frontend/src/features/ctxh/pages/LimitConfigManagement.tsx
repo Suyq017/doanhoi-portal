@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { CtxhLimitConfig, CreateLimitConfigRequest, UpdateLimitConfigRequest } from '../types';
 import { limitConfigService } from '../services/limitConfigService';
-import { getErrorMessage } from '../utils';
 import LimitConfigList from '../components/limit-config/LimitConfigList';
 import LimitConfigForm from '../components/limit-config/LimitConfigForm';
 import ConfirmDialog from '../../../shared/components/ConfirmDialog';
@@ -10,6 +10,27 @@ import { Toast } from '../../../shared/components';
 import { useToast } from '../../../shared/hooks';
 
 const LimitConfigManagement: React.FC = () => {
+  const { t } = useTranslation('ctxh');
+  
+  // Translate error messages from server
+  const translateError = (error: any): string => {
+    const message = error?.message || error?.toString() || '';
+    
+    // Common server error patterns
+    if (message.includes('tồn tại cấu hình') || message.includes('already exists')) {
+      return t('limitConfig.errors.alreadyExists');
+    }
+    if (message.includes('không tìm thấy') || message.includes('not found')) {
+      return t('limitConfig.errors.notFound');
+    }
+    if (message.includes('không có quyền') || message.includes('permission')) {
+      return t('limitConfig.errors.noPermission');
+    }
+    
+    // Return original message if no translation found
+    return message || t('limitConfig.errors.unknown');
+  };
+  
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError } = useToast();
   
@@ -52,11 +73,11 @@ const LimitConfigManagement: React.FC = () => {
       if (selectedConfig) {
         // Update existing config
         await limitConfigService.update(selectedConfig.id, data as UpdateLimitConfigRequest);
-        showSuccess('Cập nhật cấu hình thành công');
+        showSuccess(t('limitConfig.updated'));
       } else {
         // Create new config
         await limitConfigService.create(data as CreateLimitConfigRequest);
-        showSuccess('Tạo cấu hình thành công');
+        showSuccess(t('limitConfig.created'));
       }
       
       setIsFormOpen(false);
@@ -64,7 +85,7 @@ const LimitConfigManagement: React.FC = () => {
       // Trigger refresh of LimitConfigList
       setRefreshTrigger(prev => prev + 1);
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
+      const errorMessage = translateError(error);
       showError(errorMessage);
       throw error; // Re-throw to let the form handle it
     } finally {
@@ -92,16 +113,16 @@ const LimitConfigManagement: React.FC = () => {
     try {
       if (confirmAction === 'delete') {
         await limitConfigService.delete(selectedConfig.id);
-        showSuccess('Đã xóa cấu hình thành công');
+        showSuccess(t('limitConfig.deleted'));
       } else if (confirmAction === 'restore') {
         await limitConfigService.restore(selectedConfig.id);
-        showSuccess('Đã khôi phục cấu hình thành công');
+        showSuccess(t('limitConfig.restored'));
       }
       
       // Trigger refresh
       setRefreshTrigger(prev => prev + 1);
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
+      const errorMessage = translateError(error);
       showError(errorMessage);
     } finally {
       setLoading(false);
@@ -123,19 +144,19 @@ const LimitConfigManagement: React.FC = () => {
 
     if (confirmAction === 'delete') {
       return {
-        title: 'Xóa cấu hình',
-        message: `Bạn có chắc chắn muốn xóa
+        title: t('limitConfig.deleteConfirm'),
+        message: `${t('limitConfig.deleteMessage')}
 
-Tên tổ chức: ${selectedConfig.organization?.name || 'N/A'}`,
+${t('limitConfig.organization')}: ${selectedConfig.organization?.name || 'N/A'}`,
         variant: 'danger' as const
       };
     }
 
     return {
-      title: 'Khôi phục cấu hình',
-      message: `Bạn có chắc chắn muốn khôi phục
+      title: t('limitConfig.restoreConfirm'),
+      message: `${t('limitConfig.restoreMessage')}
 
-Tên tổ chức: ${selectedConfig.organization?.name || 'N/A'}`,
+${t('limitConfig.organization')}: ${selectedConfig.organization?.name || 'N/A'}`,
       variant: 'info' as const
     };
   };
@@ -148,10 +169,10 @@ Tên tổ chức: ${selectedConfig.organization?.name || 'N/A'}`,
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Cấu hình giới hạn CTXH
+            {t('limitConfig.title')}
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Quản lý cấu hình giới hạn số ngày CTXH cho các tổ chức
+            {t('limitConfig.subtitle')}
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
@@ -160,7 +181,7 @@ Tên tổ chức: ${selectedConfig.organization?.name || 'N/A'}`,
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-doan-500 hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Tạo cấu hình mới
+            {t('limitConfig.create')}
           </button>
         </div>
       </div>
@@ -190,8 +211,8 @@ Tên tổ chức: ${selectedConfig.organization?.name || 'N/A'}`,
         title={dialogContent.title}
         message={dialogContent.message}
         variant={dialogContent.variant}
-        confirmText={confirmAction === 'delete' ? 'Xóa' : 'Khôi phục'}
-        cancelText="Hủy"
+        confirmText={confirmAction === 'delete' ? t('limitConfig.delete') : t('limitConfig.restore')}
+        cancelText={t('common.cancel')}
         onConfirm={handleConfirmAction}
         onCancel={handleCancelAction}
       />

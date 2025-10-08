@@ -1,6 +1,7 @@
-import { IsNotEmpty, IsInt, Min, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsNumber, Min, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LimitConfigStatus } from '../../../entities/ctxh-limit-config.entity';
+import { Transform } from 'class-transformer';
 
 export class CreateLimitConfigDto {
   @ApiProperty({
@@ -12,14 +13,15 @@ export class CreateLimitConfigDto {
   organization_id: string;
 
   @ApiProperty({
-    description: 'Số ngày CTXH tối đa mà khoa có thể cấp cho sinh viên trong 1 học kỳ',
-    example: 50,
-    minimum: 15,
+    description: 'Số ngày CTXH tối đa mà tổ chức có thể cấp cho sinh viên trong 1 học kỳ',
+    example: 50.5,
+    minimum: 0.1,
   })
   @IsNotEmpty()
-  @IsInt()
-  @Min(15, { message: 'Số ngày tối đa phải ít nhất 15 ngày (bằng yêu cầu tối thiểu)' })
-  max_days_per_semester: number;
+  @IsNumber({ maxDecimalPlaces: 1 }, { message: 'Số ngày phải là số thập phân với tối đa 1 chữ số thập phân' })
+  @Min(0.1, { message: 'Số ngày tối đa phải ít nhất 0.1 ngày' })
+  @Transform(({ value }) => parseFloat(value))
+  max_days: number;
 
   @ApiPropertyOptional({
     description: 'Mô tả cấu hình',

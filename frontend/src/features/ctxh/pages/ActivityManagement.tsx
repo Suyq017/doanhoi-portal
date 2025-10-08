@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CtxhActivity } from '../types';
@@ -9,6 +10,8 @@ import { useToast } from '../../../shared/hooks';
 import { Toast, ConfirmDialog } from '../../../shared/components';
 
 const ActivityManagement: React.FC = () => {
+  const { t } = useTranslation('ctxh');
+  
   // ActivityManagement component
   const navigate = useNavigate();
   const [showActivityForm, setShowActivityForm] = useState(false);
@@ -32,11 +35,11 @@ const ActivityManagement: React.FC = () => {
     // Deleting activity
     
     const confirmed = await showConfirm(
-      'Xác nhận xóa',
-      `Bạn có chắc chắn muốn xóa hoạt động "${activity.name}" không?`,
+      t('activity.deleteConfirm'),
+      t('activity.deleteMessage', { name: activity.name }),
       {
-        confirmText: 'Xóa',
-        cancelText: 'Hủy',
+        confirmText: t('activity.delete'),
+        cancelText: t('category.cancel'),
         variant: 'danger'
       }
     );
@@ -46,10 +49,10 @@ const ActivityManagement: React.FC = () => {
     try {
       await activityService.delete(activity.id);
       setRefreshTrigger(prev => prev + 1);
-      showSuccess('Đã xóa hoạt động thành công!');
+      showSuccess(t('activity.deleted'));
     } catch (error) {
       console.error('Failed to delete activity:', error);
-      showError('Có lỗi xảy ra khi xóa hoạt động!');
+      showError(t('activity.deleteError'));
     }
   };
 
@@ -61,7 +64,7 @@ const ActivityManagement: React.FC = () => {
     setShowActivityForm(false);
     setEditingActivity(null);
     setRefreshTrigger(prev => prev + 1);
-    showSuccess(editingActivity ? 'Đã cập nhật hoạt động thành công!' : 'Đã tạo hoạt động mới thành công!');
+    showSuccess(editingActivity ? t('activity.updated') : t('activity.created'));
   };
 
   const handleActivitySubmit = async (data: any) => {
@@ -72,9 +75,28 @@ const ActivityManagement: React.FC = () => {
         await activityService.create(data);
       }
       handleActivitySaved();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save activity:', error);
-      showError('Có lỗi xảy ra khi lưu hoạt động!');
+      
+      // Handle specific server errors
+      if (error.response?.data?.message) {
+        const serverMessage = error.response.data.message;
+        
+        // Check if it's a duplicate error
+        if (serverMessage.includes('duplicate') || serverMessage.includes('already exists') || serverMessage.includes('đã tồn tại')) {
+          showError(t('activity.validation.duplicateNameCategory'));
+        }
+        // Check if it's a day limit exceeded error
+        else if (serverMessage.includes('vượt quá giới hạn') || serverMessage.includes('exceed') || serverMessage.includes('limit')) {
+          showError(t('activity.dayLimitExceeded') + ': ' + serverMessage);
+        }
+        // Show the original server message for other errors
+        else {
+          showError(serverMessage);
+        }
+      } else {
+        showError(t('activity.saveError'));
+      }
       throw error;
     }
   };
@@ -93,10 +115,10 @@ const ActivityManagement: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Quản lý hoạt động CTXH
+            {t('activity.title')}
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Quản lý các hoạt động công tác xã hội của trường
+            {t('activity.subtitle')}
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
@@ -105,7 +127,7 @@ const ActivityManagement: React.FC = () => {
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-doan-500 hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Tạo hoạt động mới
+            {t('activity.create')}
           </button>
         </div>
       </div>
@@ -124,7 +146,7 @@ const ActivityManagement: React.FC = () => {
       {showActivityForm && (
         <ActivityForm
           activity={editingActivity || undefined}
-          title={editingActivity ? 'Chỉnh sửa hoạt động' : 'Tạo hoạt động mới'}
+          title={editingActivity ? t('activity.edit') : t('activity.create')}
           isOpen={showActivityForm}
           onClose={() => {
             setShowActivityForm(false);

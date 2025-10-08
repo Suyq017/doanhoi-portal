@@ -18,6 +18,8 @@ export interface ServerImportSession {
   fileName: string;
   totalRows: number;
   message: string;
+  data?: any[]; // For local processing
+  previewData?: any[]; // For local processing preview
 }
 
 export interface ServerValidationResult {

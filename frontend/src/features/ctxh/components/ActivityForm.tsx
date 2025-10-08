@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { CtxhCategory, CtxhActivity, CreateActivityRequest, UpdateActivityRequest, ActivityStatus } from '../types';
-import { categoryService } from '../services';
+import { categoryService, activityService, limitConfigService } from '../services';
 import { organizationService } from '../../../shared/services/organizationService';
 import { useToast } from '../../../shared/hooks';
-import { Toast } from '../../../shared/components';
 
 interface ActivityFormProps {
   isOpen: boolean;
@@ -21,6 +21,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   activity,
   title
 }) => {
+  const { t } = useTranslation('ctxh');
   // Prevent body scroll when modal is open  
   useEffect(() => {
     if (isOpen) {
@@ -54,8 +55,222 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     endDate: { isValid: true, message: '' }
   });
 
+  const [fieldValidation, setFieldValidation] = useState({
+    name: { isValid: true, message: '' },
+    categoryId: { isValid: true, message: '' },
+    organizationId: { isValid: true, message: '' },
+    totalDays: { isValid: true, message: '' },
+    startDate: { isValid: true, message: '' },
+    endDate: { isValid: true, message: '' }
+  });
+
+  // Combobox search states
+  const [categorySearch, setCategorySearch] = useState('');
+  const [organizationSearch, setOrganizationSearch] = useState('');
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [organizationDropdownOpen, setOrganizationDropdownOpen] = useState(false);
+
   // Toast notifications
-  const { toasts, hideToast, showError } = useToast();
+  const { showError } = useToast();
+
+  // Format number to remove unnecessary decimal places
+  const formatNumber = (num: number): string => {
+    return num % 1 === 0 ? Math.floor(num).toString() : num.toString();
+  };
+
+  // Filter functions for combobox
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const filteredOrganizations = organizations.filter(org =>
+    org.name.toLowerCase().includes(organizationSearch.toLowerCase())
+  );
+
+  // Helper functions to get selected names
+  const getSelectedCategoryName = () => {
+    const category = categories.find(c => c.id === formData.categoryId);
+    return category?.name || '';
+  };
+
+  const getSelectedOrganizationName = () => {
+    const org = organizations.find(o => o.id === formData.organizationId);
+    return org?.name || '';
+  };
+
+  // Validate required fields
+  const validateFields = async () => {
+    let isValid = true;
+    const errors = [];
+    
+    // Set field validation states
+    const newFieldValidation = {
+      name: {
+        isValid: formData.name.trim() !== '',
+        message: formData.name.trim() === '' ? t('activity.validation.nameRequired') : ''
+      },
+      categoryId: {
+        isValid: formData.categoryId !== '',
+        message: formData.categoryId === '' ? t('activity.validation.categoryRequired') : ''
+      },
+      organizationId: {
+        isValid: formData.organizationId !== '',
+        message: formData.organizationId === '' ? t('activity.validation.organizationRequired') : ''
+      },
+      totalDays: fieldValidation.totalDays,
+      startDate: fieldValidation.startDate,
+      endDate: fieldValidation.endDate
+    };
+    
+    // Check basic required fields
+    if (!newFieldValidation.name.isValid) {
+      isValid = false;
+    }
+    if (!newFieldValidation.categoryId.isValid) {
+      isValid = false;
+    }
+    if (!newFieldValidation.organizationId.isValid) {
+      isValid = false;
+    }
+
+    // Check if total days is required for ACTIVE status
+    if (formData.status === ActivityStatus.ACTIVE) {
+      if (!formData.totalDays || parseFloat(formData.totalDays) < 0.1) {
+        newFieldValidation.totalDays = {
+          isValid: false,
+          message: t('activity.validation.totalDaysRequired')
+        };
+        isValid = false;
+      }
+      
+      // Require start and end date when total days is specified
+      if (!formData.startDate) {
+        newFieldValidation.startDate = {
+          isValid: false,
+          message: t('activity.validation.startDateRequiredForActive')
+        };
+        isValid = false;
+      }
+      
+      if (!formData.endDate) {
+        newFieldValidation.endDate = {
+          isValid: false,
+          message: t('activity.validation.endDateRequiredForActive')
+        };
+        isValid = false;
+      }
+    }
+
+    // Set all field validations
+    setFieldValidation(newFieldValidation);
+
+    // Check for duplicate name + category combination (only if name and category are valid)
+    if (formData.name.trim() && formData.categoryId) {
+      try {
+        const response = await activityService.findAll({ 
+          search: formData.name.trim(),
+          category_id: formData.categoryId,
+          limit: 100 
+        });
+        
+        const existingActivity = response.data.find((act: any) => 
+          act.name.toLowerCase() === formData.name.trim().toLowerCase() &&
+          act.category_id === formData.categoryId &&
+          (!activity || act.id !== activity.id) // Exclude current activity when editing
+        );
+        
+        if (existingActivity) {
+          errors.push(t('activity.validation.duplicateNameCategory'));
+          isValid = false;
+        }
+      } catch (error) {
+        console.error('Error checking duplicate activity:', error);
+      }
+    }
+    
+    // Check organization day limit (when totalDays is specified - validate for both new and existing activities)
+    if (formData.totalDays && formData.organizationId) {
+      console.log('Starting day limit validation:', {
+        status: formData.status,
+        totalDays: formData.totalDays,
+        organizationId: formData.organizationId,
+        isNewActivity: !activity
+      });
+      
+      try {
+        const totalDays = parseFloat(formData.totalDays);
+        const limitConfigs = await limitConfigService.findAll({
+          organization_id: formData.organizationId,
+          status: 'ACTIVE' as any,
+          limit: 10
+        });
+        
+        console.log('Limit configs response:', limitConfigs);
+        
+        if (limitConfigs.data && limitConfigs.data.length > 0) {
+          const activeConfig = limitConfigs.data[0];
+          console.log('Full activeConfig object:', activeConfig);
+          console.log('Available properties:', Object.keys(activeConfig));
+          
+          const maxDays = activeConfig.maxDays;
+          console.log('Day limit validation check:', {
+            totalDays,
+            maxDays,
+            maxDaysProperty: activeConfig.maxDays,
+            exceedsLimit: totalDays > maxDays,
+            activeConfig
+          });
+          
+          if (totalDays > maxDays) {
+            console.log('Day limit exceeded - adding validation error');
+            errors.push(t('limitConfig.validation.totalDaysExceedLimit', { 
+              totalDays: totalDays, 
+              maxDays: formatNumber(maxDays)
+            }));
+            
+            // Also update the totalDays field validation
+            newFieldValidation.totalDays = {
+              isValid: false,
+              message: t('limitConfig.validation.organizationLimitExceeded', { 
+                maxDays: formatNumber(maxDays)
+              })
+            };
+            setFieldValidation(newFieldValidation);
+            isValid = false;
+          } else {
+            console.log('Day limit within allowed range');
+            // Clear any previous validation error for totalDays
+            newFieldValidation.totalDays = {
+              isValid: true,
+              message: ''
+            };
+            setFieldValidation(newFieldValidation);
+          }
+        } else {
+          console.log('No active limit config found for organization');
+          // Clear any previous validation error for totalDays when no limit config
+          newFieldValidation.totalDays = {
+            isValid: true,
+            message: ''
+          };
+          setFieldValidation(newFieldValidation);
+        }
+      } catch (error) {
+        console.error('Error checking organization day limit:', error);
+        showError(t('activity.checkDayLimitError'));
+      }
+    } else {
+      console.log('Skipping day limit validation:', {
+        hasTotalDays: !!formData.totalDays,
+        hasOrganization: !!formData.organizationId,
+        totalDays: formData.totalDays,
+        organizationId: formData.organizationId
+      });
+    }
+    
+    // Return validation result with errors for external handling (only duplicate errors)
+    return { isValid, errors };
+  };
 
   // Validate dates in real-time
   const validateDates = (startDate: string, endDate: string) => {
@@ -73,7 +288,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
       if (!activity && start < today) {
         startDateValidation = { 
           isValid: false, 
-          message: 'Ngày bắt đầu phải từ hôm nay trở về sau' 
+          message: t('activity.validation.startDateFuture')
         };
       }
     }
@@ -85,7 +300,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
       if (end <= start) {
         endDateValidation = { 
           isValid: false, 
-          message: 'Ngày kết thúc phải sau ngày bắt đầu' 
+          message: t('activity.validation.endDateAfterStart')
         };
       }
     }
@@ -173,46 +388,44 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
-    if (!formData.name.trim()) {
-      showError('Tên hoạt động không được để trống!');
-      return;
-    }
+    // Validate all fields
+    const validationResult = await validateFields();
+    const datesValid = dateValidation.startDate.isValid && dateValidation.endDate.isValid;
     
-    if (!formData.categoryId) {
-      showError('Vui lòng chọn danh mục!');
-      return;
-    }
+    // Check field validation state (including totalDays validation)
+    const fieldValidationValid = Object.values(fieldValidation).every(field => field.isValid);
     
-    if (!formData.organizationId) {
-      showError('Vui lòng chọn tổ chức!');
-      return;
-    }
-
-    // Date validation
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to midnight for comparison
+    console.log('Form submission validation:', {
+      validationResult: validationResult.isValid,
+      datesValid,
+      fieldValidationValid,
+      fieldValidation,
+      errors: validationResult.errors
+    });
     
-    if (formData.startDate) {
-      const startDate = new Date(formData.startDate);
-      startDate.setHours(0, 0, 0, 0);
-      
-      // Only check if start date is before today for NEW activities (not editing)
-      if (!activity && startDate < today) {
-        showError('Ngày bắt đầu phải từ hôm nay trở về sau!');
-        return;
+    if (!validationResult.isValid || !datesValid || !fieldValidationValid) {
+      // Show all validation errors in a single toast
+      const allErrors = [...validationResult.errors];
+      if (!dateValidation.startDate.isValid) {
+        allErrors.push(dateValidation.startDate.message);
       }
-    }
-    
-    if (formData.startDate && formData.endDate) {
-      const startDate = new Date(formData.startDate);
-      const endDate = new Date(formData.endDate);
-      
-      // Check if end date is before or equal to start date
-      if (endDate <= startDate) {
-        showError('Ngày kết thúc phải sau ngày bắt đầu!');
-        return;
+      if (!dateValidation.endDate.isValid) {
+        allErrors.push(dateValidation.endDate.message);
       }
+      
+      // Add field validation errors
+      Object.values(fieldValidation).forEach(field => {
+        if (!field.isValid) {
+          allErrors.push(field.message);
+        }
+      });
+      
+      console.log('Form submission blocked due to validation errors:', allErrors);
+      
+      if (allErrors.length > 0) {
+        showError(allErrors.join(' • '));
+      }
+      return;
     }
     
     try {
@@ -225,17 +438,22 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         organization_id: formData.organizationId, // Required - Backend expects organization_id
         start_date: formData.startDate || undefined, // Backend expects start_date (as date string)
         end_date: formData.endDate || undefined, // Backend expects end_date (as date string)
-        total_days: formData.totalDays ? parseInt(formData.totalDays) : undefined, // Backend expects total_days
+        total_days: formData.totalDays ? parseFloat(formData.totalDays) : undefined, // Backend expects total_days
         ...(activity && { status: formData.status }) // Only include status for updates
       };
+
+      console.log('Form submission data:', {
+        original_totalDays: formData.totalDays,
+        parsed_totalDays: formData.totalDays ? parseFloat(formData.totalDays) : undefined,
+        submitData
+      });
 
       await onSubmit(submitData as any);
       // Success toast will be shown by parent component
       onClose();
     } catch (error) {
       console.error('Failed to submit form:', error);
-      // Show error toast in the form itself for immediate feedback
-      showError('Có lỗi xảy ra khi lưu hoạt động!');
+      // Don't show error toast here - let parent handle server errors
       // Don't close the form on error so user can try again
     } finally {
       setLoading(false);
@@ -245,6 +463,111 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   const handleInputChange = (field: string, value: string) => {
     const newFormData = { ...formData, [field]: value };
     setFormData(newFormData);
+    
+    // Clear field validation errors when user makes changes
+    if (field === 'name' && fieldValidation.name && !fieldValidation.name.isValid) {
+      setFieldValidation(prev => ({
+        ...prev,
+        name: { isValid: true, message: '' }
+      }));
+    }
+    
+    if (field === 'categoryId' && fieldValidation.categoryId && !fieldValidation.categoryId.isValid) {
+      setFieldValidation(prev => ({
+        ...prev,
+        categoryId: { isValid: true, message: '' }
+      }));
+    }
+    
+    if (field === 'organizationId' && fieldValidation.organizationId && !fieldValidation.organizationId.isValid) {
+      setFieldValidation(prev => ({
+        ...prev,
+        organizationId: { isValid: true, message: '' }
+      }));
+    }
+    
+    if (field === 'totalDays' && fieldValidation.totalDays && !fieldValidation.totalDays.isValid) {
+      setFieldValidation(prev => ({
+        ...prev,
+        totalDays: { isValid: true, message: '' }
+      }));
+    }
+    
+    if (field === 'startDate' && fieldValidation.startDate && !fieldValidation.startDate.isValid) {
+      setFieldValidation(prev => ({
+        ...prev,
+        startDate: { isValid: true, message: '' }
+      }));
+    }
+    
+    if (field === 'endDate' && fieldValidation.endDate && !fieldValidation.endDate.isValid) {
+      setFieldValidation(prev => ({
+        ...prev,
+        endDate: { isValid: true, message: '' }
+      }));
+    }
+    
+    // Show field validation when changing to ACTIVE status
+    if (field === 'status' && value === ActivityStatus.ACTIVE) {
+      setFieldValidation(prev => ({
+        ...prev,
+        totalDays: {
+          isValid: !!(newFormData.totalDays && parseInt(newFormData.totalDays) >= 1),
+          message: (!newFormData.totalDays || parseInt(newFormData.totalDays) < 1) ? t('activity.validation.totalDaysRequired') : ''
+        },
+        startDate: {
+          isValid: !!newFormData.startDate,
+          message: !newFormData.startDate ? t('activity.validation.startDateRequiredForActive') : ''
+        },
+        endDate: {
+          isValid: !!newFormData.endDate,
+          message: !newFormData.endDate ? t('activity.validation.endDateRequiredForActive') : ''
+        }
+      }));
+    }
+    
+    // Clear field validation when changing away from ACTIVE status
+    if (field === 'status' && value !== ActivityStatus.ACTIVE) {
+      setFieldValidation(prev => ({
+        ...prev,
+        totalDays: { isValid: true, message: '' },
+        startDate: { isValid: true, message: '' },
+        endDate: { isValid: true, message: '' }
+      }));
+    }
+    
+    // Re-validate active fields when they change and status is ACTIVE
+    if (formData.status === ActivityStatus.ACTIVE) {
+      if (field === 'totalDays') {
+        setFieldValidation(prev => ({
+          ...prev,
+          totalDays: {
+            isValid: !!(value && parseInt(value) >= 1),
+            message: (!value || parseInt(value) < 1) ? t('activity.validation.totalDaysRequired') : ''
+          }
+        }));
+      }
+      
+      if (field === 'startDate') {
+        setFieldValidation(prev => ({
+          ...prev,
+          startDate: {
+            isValid: !!value,
+            message: !value ? t('activity.validation.startDateRequiredForActive') : ''
+          }
+        }));
+      }
+      
+      if (field === 'endDate') {
+        setFieldValidation(prev => ({
+          ...prev,
+          endDate: {
+            isValid: !!value,
+            message: !value ? t('activity.validation.endDateRequiredForActive') : ''
+          }
+        }));
+      }
+    }
     
     // Validate dates when start or end date changes
     if (field === 'startDate' || field === 'endDate') {
@@ -278,27 +601,35 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
           </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-6">
           {/* Activity Name */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-              Tên hoạt động <span className="text-red-500">*</span>
+              {t('activity.name')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               id="name"
-              required
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Nhập tên hoạt động..."
+              className={`w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ${
+                !fieldValidation.name.isValid
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300'
+              }`}
+              placeholder={t('activity.form.namePlaceholder')}
             />
+            {!fieldValidation.name.isValid && (
+              <p className="mt-1 text-sm text-red-600">
+                {fieldValidation.name.message}
+              </p>
+            )}
           </div>
 
           {/* Description */}
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-              Mô tả
+              {t('activity.description')}
             </label>
             <textarea
               id="description"
@@ -306,56 +637,153 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Nhập mô tả hoạt động..."
+              placeholder={t('activity.form.descriptionPlaceholder')}
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Category */}
-            <div>
+            <div className="relative">
               <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
-                Danh mục <span className="text-red-500">*</span>
+                {t('activity.category')} <span className="text-red-500">*</span>
               </label>
-              <select
-                id="categoryId"
-                value={formData.categoryId}
-                onChange={(e) => handleInputChange('categoryId', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={categoriesLoading}
-              >
-                <option value="">
-                  {categoriesLoading ? 'Đang tải...' : 'Chọn danh mục'}
-                </option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder={categoriesLoading ? t('activity.form.loading') : t('activity.form.selectCategory')}
+                  value={categoryDropdownOpen ? categorySearch : getSelectedCategoryName()}
+                  onChange={(e) => {
+                    setCategorySearch(e.target.value);
+                    if (!categoryDropdownOpen) setCategoryDropdownOpen(true);
+                  }}
+                  onFocus={() => {
+                    setCategoryDropdownOpen(true);
+                    setCategorySearch('');
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => setCategoryDropdownOpen(false), 200);
+                  }}
+                  className={`w-full border rounded-md px-3 py-2 pr-10 focus:ring-blue-500 focus:border-blue-500 ${
+                    !fieldValidation.categoryId.isValid
+                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300'
+                  }`}
+                  disabled={categoriesLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {categoryDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                    {filteredCategories.length > 0 ? (
+                      filteredCategories.map((category) => (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => {
+                            handleInputChange('categoryId', category.id);
+                            setCategoryDropdownOpen(false);
+                            setCategorySearch('');
+                          }}
+                          className={`w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none ${
+                            formData.categoryId === category.id ? 'bg-blue-50 text-blue-700' : 'text-gray-900'
+                          }`}
+                        >
+                          {category.name}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-gray-500 text-sm">
+                        {categoriesLoading ? t('activity.form.loading') : t('activity.form.noResults')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {!fieldValidation.categoryId.isValid && (
+                <p className="mt-1 text-sm text-red-600">
+                  {fieldValidation.categoryId.message}
+                </p>
+              )}
             </div>
 
             {/* Organization */}
-            <div>
+            <div className="relative">
               <label htmlFor="organizationId" className="block text-sm font-medium text-gray-700 mb-2">
-                Tổ chức <span className="text-red-500">*</span>
+                {t('activity.organization')} <span className="text-red-500">*</span>
               </label>
-              <select
-                id="organizationId"
-                value={formData.organizationId}
-                onChange={(e) => handleInputChange('organizationId', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={organizationsLoading}
-                required
-              >
-                <option value="">
-                  {organizationsLoading ? 'Đang tải...' : 'Chọn tổ chức'}
-                </option>
-                {organizations.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder={organizationsLoading ? t('activity.form.loading') : t('activity.form.selectOrganization')}
+                  value={organizationDropdownOpen ? organizationSearch : getSelectedOrganizationName()}
+                  onChange={(e) => {
+                    setOrganizationSearch(e.target.value);
+                    if (!organizationDropdownOpen) setOrganizationDropdownOpen(true);
+                  }}
+                  onFocus={() => {
+                    setOrganizationDropdownOpen(true);
+                    setOrganizationSearch('');
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => setOrganizationDropdownOpen(false), 200);
+                  }}
+                  className={`w-full border rounded-md px-3 py-2 pr-10 focus:ring-blue-500 focus:border-blue-500 ${
+                    !fieldValidation.organizationId.isValid
+                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300'
+                  }`}
+                  disabled={organizationsLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setOrganizationDropdownOpen(!organizationDropdownOpen)}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {organizationDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                    {filteredOrganizations.length > 0 ? (
+                      filteredOrganizations.map((org) => (
+                        <button
+                          key={org.id}
+                          type="button"
+                          onClick={() => {
+                            handleInputChange('organizationId', org.id);
+                            setOrganizationDropdownOpen(false);
+                            setOrganizationSearch('');
+                          }}
+                          className={`w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none ${
+                            formData.organizationId === org.id ? 'bg-blue-50 text-blue-700' : 'text-gray-900'
+                          }`}
+                        >
+                          {org.name}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-gray-500 text-sm">
+                        {organizationsLoading ? t('activity.form.loading') : t('activity.form.noResults')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {!fieldValidation.organizationId.isValid && (
+                <p className="mt-1 text-sm text-red-600">
+                  {fieldValidation.organizationId.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -364,19 +792,18 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
             {activity && (
               <div>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-                  Trạng thái <span className="text-red-500">*</span>
+                  {t('activity.status')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="status"
-                  required
                   value={formData.status}
                   onChange={(e) => handleInputChange('status', e.target.value as ActivityStatus)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value={ActivityStatus.DRAFT}>Nháp</option>
-                  <option value={ActivityStatus.ACTIVE}>Đang hoạt động</option>
-                  <option value={ActivityStatus.COMPLETED}>Hoàn thành</option>
-                  <option value={ActivityStatus.CANCELLED}>Đã hủy</option>
+                  <option value={ActivityStatus.DRAFT}>{t('activity.statusOptions.DRAFT')}</option>
+                  <option value={ActivityStatus.ACTIVE}>{t('activity.statusOptions.ACTIVE')}</option>
+                  <option value={ActivityStatus.COMPLETED}>{t('activity.statusOptions.COMPLETED')}</option>
+                  <option value={ActivityStatus.CANCELLED}>{t('activity.statusOptions.CANCELLED')}</option>
                 </select>
               </div>
             )}
@@ -386,7 +813,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
             {/* Start Date */}
             <div>
               <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
-                Ngày bắt đầu
+                {t('activity.startDate')}
               </label>
               <input
                 type="date"
@@ -394,7 +821,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 value={formData.startDate}
                 onChange={(e) => handleInputChange('startDate', e.target.value)}
                 className={`w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  !dateValidation.startDate.isValid 
+                  !dateValidation.startDate.isValid || !fieldValidation.startDate.isValid
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
                     : 'border-gray-300'
                 }`}
@@ -404,12 +831,17 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                   {dateValidation.startDate.message}
                 </p>
               )}
+              {!fieldValidation.startDate.isValid && (
+                <p className="mt-1 text-sm text-red-600">
+                  {fieldValidation.startDate.message}
+                </p>
+              )}
             </div>
 
             {/* End Date */}
             <div>
               <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
-                Ngày kết thúc
+                {t('activity.endDate')}
               </label>
               <input
                 type="date"
@@ -417,7 +849,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 value={formData.endDate}
                 onChange={(e) => handleInputChange('endDate', e.target.value)}
                 className={`w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  !dateValidation.endDate.isValid 
+                  !dateValidation.endDate.isValid || !fieldValidation.endDate.isValid
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
                     : 'border-gray-300'
                 }`}
@@ -427,23 +859,38 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                   {dateValidation.endDate.message}
                 </p>
               )}
+              {!fieldValidation.endDate.isValid && (
+                <p className="mt-1 text-sm text-red-600">
+                  {fieldValidation.endDate.message}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Total Days */}
           <div>
             <label htmlFor="totalDays" className="block text-sm font-medium text-gray-700 mb-2">
-              Tổng số ngày
+              {t('activity.totalDays')}
             </label>
             <input
               type="number"
               id="totalDays"
-              min="1"
+              min="0.1"
+              step="0.1"
               value={formData.totalDays}
               onChange={(e) => handleInputChange('totalDays', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Nhập tổng số ngày..."
+              className={`w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ${
+                !fieldValidation.totalDays.isValid
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300'
+              }`}
+              placeholder={t('activity.form.totalDaysPlaceholder')}
             />
+            {!fieldValidation.totalDays.isValid && (
+              <p className="mt-1 text-sm text-red-600">
+                {fieldValidation.totalDays.message}
+              </p>
+            )}
           </div>
 
           {/* Actions */}
@@ -453,31 +900,18 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              Hủy
+              {t('category.cancel')}
             </button>
             <button
               type="submit"
-              disabled={loading || !dateValidation.startDate.isValid || !dateValidation.endDate.isValid}
+              disabled={loading}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Đang lưu...' : activity ? 'Cập nhật' : 'Tạo mới'}
+              {loading ? t('activity.form.saving') : activity ? t('activity.form.update') : t('activity.form.create')}
             </button>
           </div>
         </form>
         </div>
-      </div>
-      
-      {/* Toast Notifications */}
-      <div className="fixed top-4 right-4 z-[60] space-y-4">
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            type={toast.type}
-            message={toast.message}
-            duration={toast.duration}
-            onClose={() => hideToast(toast.id)}
-          />
-        ))}
       </div>
     </div>
   );

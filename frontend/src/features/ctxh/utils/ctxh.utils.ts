@@ -126,35 +126,23 @@ export const calculateProgress = (currentDays: number, requiredDays: number): nu
 };
 
 // Form validation utilities
-export const validateRequired = (value: any, fieldName: string): string | null => {
-  if (value === null || value === undefined || value === '') {
-    return `${fieldName} không được để trống`;
-  }
-  return null;
+export const validateRequired = (value: any): boolean => {
+  return value !== null && value !== undefined && value !== '';
 };
 
-export const validateEmail = (email: string): string | null => {
+export const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return 'Email không đúng định dạng';
-  }
-  return null;
+  return emailRegex.test(email);
 };
 
-export const validateStudentCode = (code: string): string | null => {
+export const validateStudentCode = (code: string): boolean => {
   // Vietnamese student code format: 7-10 digits
   const codeRegex = /^\d{7,10}$/;
-  if (!codeRegex.test(code)) {
-    return 'Mã số sinh viên không đúng định dạng (7-10 chữ số)';
-  }
-  return null;
+  return codeRegex.test(code);
 };
 
-export const validatePositiveNumber = (value: number, fieldName: string): string | null => {
-  if (isNaN(value) || value < 0) {
-    return `${fieldName} phải là số dương`;
-  }
-  return null;
+export const validatePositiveNumber = (value: number): boolean => {
+  return !isNaN(value) && value >= 0;
 };
 
 // Error handling utilities
@@ -165,7 +153,7 @@ export const getErrorMessage = (error: any): string => {
   if (typeof error === 'string') {
     return error;
   }
-  return 'Đã xảy ra lỗi không xác định';
+  return 'An error occurred';
 };
 
 // Debounce utility for search

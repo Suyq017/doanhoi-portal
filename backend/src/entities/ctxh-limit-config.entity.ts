@@ -25,11 +25,8 @@ export class CtxhLimitConfig {
   @Column({ type: 'uuid' })
   organization_id: string;
 
-  @Column({ type: 'int', default: 15, comment: 'Số ngày CTXH yêu cầu tối thiểu để tốt nghiệp (chung cho tất cả)' })
-  required_days: number;
-
-  @Column({ type: 'int', default: 50, comment: 'Số ngày CTXH tối đa mà khoa có thể cấp trong 1 học kỳ' })
-  max_days_per_semester: number;
+  @Column({ type: 'decimal', precision: 5, scale: 1, default: 50.0, comment: 'Số ngày CTXH tối đa mà tổ chức có thể cấp trong 1 học kỳ' })
+  max_days: number;
 
   @Column({
     type: 'enum',

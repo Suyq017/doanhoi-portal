@@ -76,6 +76,8 @@
     "retryPhonetic": "Thử lại",
     "back": "Quay lại",
     "backPhonetic": "Quay lại",
+    "backToList": "Quay lại danh sách",
+    "backToListPhonetic": "Quay lại danh sách",
     "next": "Tiếp theo",
     "nextPhonetic": "Tiếp theo",
     "previous": "Trước",
@@ -98,7 +100,10 @@
     "processing": "Đang xử lý...",
     "processingPhonetic": "Đang xử lý",
     "assigning": "Đang gán...",
-    "assigningPhonetic": "Đang gán"
+    "assigningPhonetic": "Đang gán",
+    "adding": "Đang thêm...",
+    "grading": "Đang chấm điểm...",
+    "filtered": "đã lọc"
   },
   "messages": {
     "success": {
@@ -118,6 +123,7 @@
       "load": "Có lỗi xảy ra khi tải dữ liệu",
       "network": "Lỗi kết nối mạng",
       "unknown": "Đã có lỗi xảy ra",
+      "noPermission": "Không có quyền truy cập!",
       "seedDefaults": "Có lỗi xảy ra khi tạo dữ liệu mặc định"
     },
     "confirm": {
@@ -135,9 +141,12 @@
     "more": "thêm"
   },
   "pagination": {
+    "show": "Hiển thị",
+    "perPage": "mục/trang",
     "showing": "Hiển thị",
     "to": "đến",
-    "of": "trong tổng",
+    "of": "trong tổng số",
+    "items": "mục",
     "results": "kết quả",
     "previous": "Trước",
     "next": "Tiếp theo",
@@ -209,11 +218,14 @@
   "labels": {
     "optional": "tùy chọn",
     "required": "bắt buộc",
-    "none": "Không chọn"
+    "none": "Không chọn",
+    "unknown": "Không xác định"
   },
   "import": {
     "downloadTemplate": "Tải file mẫu",
     "downloadTemplatePhonetic": "Tải file mẫu",
+    "downloadHere": "tại đây",
+    "instructionsTitle": "Hướng dẫn import dữ liệu",
     "templateDescription": "Tải file Excel mẫu để điền dữ liệu theo đúng định dạng",
     "templateDescriptionPhonetic": "Tải file Excel mẫu",
     "dropFile": "Kéo thả file vào đây",

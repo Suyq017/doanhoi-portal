@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, ILike } from 'typeorm';
 import { CtxhActivity } from '../../entities/ctxh-activity.entity';
 import { CtxhCategory } from '../../entities/ctxh-category.entity';
+import { CtxhLimitConfig, LimitConfigStatus } from '../../entities/ctxh-limit-config.entity';
 import { Organization } from '../../entities/organization.entity';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
@@ -27,6 +28,8 @@ export class ActivitiesService {
     private activityRepository: Repository<CtxhActivity>,
     @InjectRepository(CtxhCategory)
     private categoryRepository: Repository<CtxhCategory>,
+    @InjectRepository(CtxhLimitConfig)
+    private limitConfigRepository: Repository<CtxhLimitConfig>,
     @InjectRepository(Organization)
     private organizationRepository: Repository<Organization>,
   ) {}
@@ -54,6 +57,23 @@ export class ActivitiesService {
       throw new ConflictException(
         `Hoạt động "${createActivityDto.name}" đã tồn tại trong tổ chức này`
       );
+    }
+
+    // Check organization day limit if total_days is provided and status is ACTIVE
+    if (createActivityDto.total_days && createActivityDto.status === 'ACTIVE') {
+      const limitConfig = await this.limitConfigRepository.findOne({
+        where: { 
+          organization_id: createActivityDto.organization_id,
+          status: LimitConfigStatus.ACTIVE,
+          deleted_at: IsNull() 
+        },
+      });
+
+      if (limitConfig && createActivityDto.total_days > limitConfig.max_days) {
+        throw new BadRequestException(
+          `Tổng số ngày hoạt động (${createActivityDto.total_days}) vượt quá giới hạn cho phép (${limitConfig.max_days} ngày)`
+        );
+      }
     }
 
     const activity = this.activityRepository.create({
@@ -374,6 +394,27 @@ export class ActivitiesService {
       if (existingActivity && existingActivity.id !== id) {
         throw new ConflictException(
           `Hoạt động "${updateActivityDto.name}" đã tồn tại trong tổ chức này`
+        );
+      }
+    }
+
+    // Check organization day limit if total_days is being updated and status is ACTIVE
+    const finalTotalDays = updateActivityDto.total_days ?? activity.total_days;
+    const finalStatus = updateActivityDto.status ?? activity.status;
+    const finalOrgId = updateActivityDto.organization_id ?? activity.organization_id;
+
+    if (finalTotalDays && finalStatus === 'ACTIVE') {
+      const limitConfig = await this.limitConfigRepository.findOne({
+        where: { 
+          organization_id: finalOrgId,
+          status: LimitConfigStatus.ACTIVE,
+          deleted_at: IsNull() 
+        },
+      });
+
+      if (limitConfig && finalTotalDays > limitConfig.max_days) {
+        throw new BadRequestException(
+          `Tổng số ngày hoạt động (${finalTotalDays}) vượt quá giới hạn cho phép (${limitConfig.max_days} ngày)`
         );
       }
     }

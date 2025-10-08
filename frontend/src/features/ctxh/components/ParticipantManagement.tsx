@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Users, Plus, Upload, Download, Search, Edit2, Trash2, FileSpreadsheet, X, ChevronDown } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { CtxhActivity, ParticipationResponse } from '../types';
 import { activityService } from '../services';
 import { userService } from '../../../shared/services/userService';
@@ -17,6 +19,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   activity,
   onRefresh
 }) => {
+  const { t } = useTranslation(['ctxh', 'common']);
   const [participants, setParticipants] = useState<ParticipationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,6 +53,11 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError, showConfirm, confirmDialog } = useToast();
 
+  // Format number to remove unnecessary decimal places
+  const formatNumber = (num: number): string => {
+    return num % 1 === 0 ? Math.floor(num).toString() : num.toString();
+  };
+
   // Download template function
   const downloadStudentTemplate = async () => {
     try {
@@ -76,14 +84,14 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to download template:', error);
-      showError('Không thể tải file mẫu!');
+      showError(t('participant.templateDownloadError'));
     }
   };
 
   const downloadGradingTemplate = async () => {
     // Kiểm tra xem có participants không trước khi download
     if (participants.length === 0) {
-      showError('Chưa có sinh viên nào tham gia hoạt động này. Vui lòng thêm sinh viên trước khi tải template chấm điểm!');
+      showError(t('participant.noParticipantsForTemplate'));
       return;
     }
 
@@ -103,7 +111,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         if (response.status === 404) {
           throw new Error('Hoạt động không tồn tại hoặc chưa có sinh viên tham gia');
         } else {
-          throw new Error('Không thể tải template chấm điểm');
+          throw new Error(t('participant.templateLoadFailure'));
         }
       }
       
@@ -118,51 +126,366 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       window.URL.revokeObjectURL(url);
     } catch (error: any) {
       console.error('Failed to download template:', error);
-      showError(error.message || 'Không thể tải file mẫu chấm điểm!');
+      showError(error.message || t('participant.templateLoadError'));
     }
   };
 
-  // ImportModal configurations
-  const studentImportConfig: ImportModalConfig = {
+  // Helper function to lookup student info
+  const lookupStudentInfo = async (studentCode: string) => {
+    try {
+      const user = await userService.findByExactCode(studentCode);
+      
+      if (user) {
+        return {
+          full_name: user.familyName + ' ' + user.givenName,
+          email: user.email
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Student lookup error:', error);
+      return null;
+    }
+  };
+
+  // Store last processed data for validateServerData
+  const lastProcessedDataRef = useRef<any[]>([]);
+  
+  // Store original grading file for upload
+  const originalGradingFileRef = useRef<File | null>(null);
+
+  // ImportModal configurations - using functions to ensure translations are evaluated correctly
+  const getStudentImportConfig = (): ImportModalConfig => ({
     entityName: 'participants',
-    title: 'Thêm sinh viên',
+    title: '', // Will be overridden by titleKey
     downloadTemplate: downloadStudentTemplate,
     templateFileName: 'participants_template.xlsx',
     acceptedFileTypes: ['.xlsx', '.xls'],
     maxFileSize: 10 * 1024 * 1024, // 10MB
     instructions: [
-      'Tải file mẫu Excel tại đây và điền đầy đủ thông tin các sinh viên',
-      'Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi',
-      'Tải file lên để tiến hành thêm vào hệ thống'
+      t('participant.downloadTemplateAndFillStudentInfo'),
+      t('participant.checkDataFormat'),
+      t('participant.uploadFileToImport')
     ],
     columns: [
-      { key: 'MSSV', label: 'MSSV', required: true, type: 'text', width: '120px' },
-      { key: 'Họ tên', label: 'Họ tên', required: true, type: 'text', width: '200px' },
-      { key: 'Email', label: 'Email', required: false, type: 'email', width: '200px' }
+      { key: 'STUDENT ID', label: t('participant.studentCodeLabel'), required: true, type: 'text', width: '150px' },
+      { key: 'NAME', label: t('common:fields.name'), required: false, type: 'text', width: '200px' },
+      { key: 'EMAIL', label: t('common:fields.email'), required: false, type: 'email', width: '200px' }
     ],
     uploadFile: async (file: File) => {
-      const token = authService.getAccessToken();
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await fetch(`/api/ctxh/activities/${activity.id}/participants/upload`, {
-        method: 'POST',
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: formData
-      });
-      return response.json();
+      // Validate file format first
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        throw new Error(t('participant.invalidFileFormat'));
+      }
+      
+      // Read and validate Excel file content locally first
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        // Check if file has data
+        if (!jsonData || jsonData.length < 2) {
+          throw new Error(t('participant.templateFormatError'));
+        }
+        
+        // Check for required column (MSSV/Student Code) and validate template structure
+        const headers = jsonData[0] as string[];
+        
+        console.log('Student import - Headers detected:', headers);
+        
+        // For student import, check basic template requirements
+        const hasStudentCodeColumn = headers.some(header => 
+          header && (
+            header.toLowerCase().includes('mssv') ||
+            header.toLowerCase().includes('mã số') ||
+            header.toLowerCase().includes('student code')
+          )
+        );
+        
+        if (!hasStudentCodeColumn) {
+          throw new Error(t('participant.templateFormatError'));
+        }
+        
+        // Check if this looks like a grading template (has grading-specific columns)
+        const hasGradingColumns = headers.some(header => 
+          header && (
+            header.toLowerCase().includes('số ngày') ||
+            header.toLowerCase().includes('ctxh') ||
+            header.toLowerCase().includes('ghi chú') ||
+            header.toLowerCase().includes('họ tên') ||
+            header.toLowerCase().includes('stt')
+          )
+        );
+        
+        // If it has grading columns, reject it for student import
+        if (hasGradingColumns) {
+          console.log('Detected grading template in student import');
+          throw new Error(t('participant.templateFormatError'));
+        }
+        
+        // Also check if there are too many columns (grading templates usually have 4+ columns)
+        if (headers.length > 3) {
+          console.log('Too many columns for student template:', headers.length);
+          throw new Error(t('participant.templateFormatError'));
+        }
+        
+        // Process data rows
+        const dataRows = jsonData.slice(1).filter(row => 
+          row && Array.isArray(row) && row.some(cell => cell !== null && cell !== undefined && cell !== '')
+        ) as any[][];
+        
+        if (dataRows.length === 0) {
+          throw new Error(t('participant.templateFormatError'));
+        }
+        
+        // Transform data to expected format and lookup students
+        const processedData = await Promise.all(dataRows.map(async (row: any[], index: number) => {
+          // Find student code in the row
+          let studentCode = '';
+          headers.forEach((header, colIndex) => {
+            if (header && (
+              header.toLowerCase().includes('mssv') ||
+              header.toLowerCase().includes('mã số') ||
+              header.toLowerCase().includes('student code')
+            )) {
+              studentCode = row[colIndex]?.toString().trim() || '';
+            }
+          });
+          
+          if (!studentCode) {
+            return {
+              'STUDENT ID': '',
+              'NAME': t('participant.studentNotFoundInDB'),
+              'EMAIL': '',
+              _hasError: true,
+              _errorMessage: t('participant.invalidStudentCode', { studentCode: `Row ${index + 2}` }),
+              _studentExists: false,
+              _originalStudentCode: ''
+            };
+          }
+          
+          // Lookup student info
+          try {
+            const studentInfo = await lookupStudentInfo(studentCode);
+            
+            // Check if student is already participating in this activity
+            const isAlreadyParticipating = participants.some(p => 
+              p.student_code === studentCode || 
+              (p.student?.student_code === studentCode)
+            );
+            
+            let hasError = false;
+            let errorMessage = null;
+            
+            if (!studentInfo) {
+              hasError = true;
+              errorMessage = t('participant.studentNotFoundWithCode', { studentCode });
+            } else if (isAlreadyParticipating) {
+              hasError = true;
+              errorMessage = t('participant.studentAlreadyParticipatedInActivity', { studentCode });
+            }
+            
+            return {
+              'STUDENT ID': studentCode,
+              'NAME': studentInfo?.full_name || t('participant.studentNotFoundInDB'),
+              'EMAIL': studentInfo?.email || '',
+              _studentExists: !!studentInfo,
+              _originalStudentCode: studentCode,
+              _hasError: hasError,
+              _errorMessage: errorMessage,
+              _isDuplicate: isAlreadyParticipating
+            };
+          } catch (error) {
+            return {
+              'STUDENT ID': studentCode,
+              'NAME': t('participant.studentNotFoundInDB'),
+              'EMAIL': '',
+              _studentExists: false,
+              _originalStudentCode: studentCode,
+              _hasError: true,
+              _errorMessage: t('participant.studentNotFoundWithCode', { studentCode }),
+              _isDuplicate: false
+            };
+          }
+        }));
+        
+        // Return processed data in expected format
+        const sessionId = `local_${Date.now()}`;
+        const result = {
+          sessionId,
+          fileName: file.name,
+          message: 'File processed successfully',
+          data: processedData,
+          previewData: processedData, // Add previewData directly here for ImportModal
+          totalRows: processedData.length,
+          validRows: processedData.filter(row => !row._hasError).length,
+          errorRows: processedData.filter(row => row._hasError).length
+        };
+        
+        console.log('Upload completed, processed data:', processedData);
+        
+        // Store in ref for validateServerData
+        lastProcessedDataRef.current = processedData;
+        
+        return result;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error(t('participant.templateFormatError'));
+      }
     },
     validateServerData: async (sessionId: string) => {
+      // For local sessions, data is already processed and returned from uploadFile
+      if (sessionId.startsWith('local_')) {
+        console.log('ValidateServerData called for local session - skipping as data already processed');
+        
+        // Get processed data from ref
+        const processedData = lastProcessedDataRef.current || [];
+        const validRows = processedData.filter((row: any) => !row._hasError);
+        const errorRows = processedData.filter((row: any) => row._hasError);
+        
+        // Create error list for display
+        const errors = errorRows.map((row: any) => {
+          // Find original row number in the full data
+          const originalRowIndex = processedData.findIndex(r => r === row);
+          return {
+            row: originalRowIndex + 1,
+            field: 'STUDENT ID', 
+            value: row['STUDENT ID'],
+            message: row._errorMessage || 'Unknown error',
+            type: row._isDuplicate ? 'duplicate' : 'validation'
+          };
+        });
+        
+        console.log('ValidateServerData using ref data:', processedData.length, 'items');
+        console.log('Valid rows for preview:', validRows.length);
+        console.log('Error rows for error list:', errorRows.length);
+        console.log('Generated errors:', errors);
+        
+        // Return response with only valid rows in previewData
+        return {
+          sessionId,
+          data: [],
+          previewData: validRows, // Only show valid rows in preview table
+          message: 'Local validation completed',
+          summary: {
+            total: processedData.length,
+            valid: validRows.length,
+            invalid: errorRows.length,
+            duplicates: processedData.filter((row: any) => row._isDuplicate).length,
+            conflicts: 0
+          },
+          errors: errors,
+          warnings: []
+        };
+      }
+      
       const token = authService.getAccessToken();
+      
+      if (!sessionId) {
+        throw new Error('SessionId is undefined');
+      }
+      
       const response = await fetch(`/api/ctxh/activities/import/${sessionId}/validate`, {
         headers: {
           ...(token && { 'Authorization': `Bearer ${token}` })
         }
       });
-      return response.json();
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Student import validate error:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Student import validate result:', result);
+      
+      // Add error information for conflicts and validation issues
+      if (result.data && Array.isArray(result.data)) {
+        result.data = result.data.map((row: any) => {
+          const hasConflict = row.conflict || row._conflict;
+          const validationError = row.validationError || row._validationError;
+          const studentCode = row['STUDENT ID'] || row.MSSV || row._originalStudentCode;
+          
+          let errorMessage = null;
+          if (hasConflict) {
+            errorMessage = t('participant.studentAlreadyParticipatedInActivity', { studentCode });
+          } else if (validationError) {
+            errorMessage = validationError;
+          } else if (!row._studentExists) {
+            errorMessage = t('participant.studentNotFoundWithCode', { studentCode });
+          }
+          
+          return {
+            ...row,
+            _hasError: hasConflict || !!validationError || !row._studentExists,
+            _errorMessage: errorMessage
+          };
+        });
+      }
+      
+      return result;
     },
     executeServerImport: async (sessionId: string, options?: { skipConflicts?: boolean }) => {
+      // For local sessions, we need to actually send data to server for import
+      if (sessionId.startsWith('local_')) {
+        // Get all processed data and separate valid/invalid
+        const allProcessedData = lastProcessedDataRef.current || [];
+        const validRows = allProcessedData.filter((row: any) => !row._hasError);
+        const skippedRows = allProcessedData.filter((row: any) => row._hasError);
+        
+        if (validRows.length === 0) {
+          throw new Error('No valid rows to import');
+        }
+        
+        // Send valid data to server using existing addParticipant API
+        const token = authService.getAccessToken();
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const row of validRows) {
+          try {
+            const response = await fetch(`/api/ctxh/activities/${activity.id}/participants`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+              },
+              body: JSON.stringify({
+                student_code: row['STUDENT ID']
+              })
+            });
+            
+            if (response.ok) {
+              successCount++;
+            } else {
+              errorCount++;
+            }
+          } catch (error) {
+            errorCount++;
+          }
+        }
+        
+        if (successCount === 0) {
+          throw new Error('Failed to import any students');
+        }
+        
+        return {
+          success: true,
+          importedCount: successCount,
+          failedCount: errorCount,
+          skippedCount: skippedRows.length, // Count of rows skipped due to validation errors
+          errors: errorCount > 0 ? [`Failed to import ${errorCount} students`] : [],
+          message: `Successfully imported ${successCount} students`
+        };
+      }
+      
       const token = authService.getAccessToken();
       const response = await fetch(`/api/ctxh/activities/import/${sessionId}/execute`, {
         method: 'POST',
@@ -175,57 +498,274 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       return response.json();
     },
     onSuccess: (result) => {
-      showSuccess(`Đã thêm thành công ${result.importedCount} sinh viên`);
+      showSuccess(t('participant.importSuccess', { count: result.importedCount }));
       loadParticipants();
-      setShowStudentImportModal(false);
+      // Don't auto-close modal - let user see the result step
+      // setShowStudentImportModal(false);
     },
     onError: (error) => {
-      showError(`Lỗi import: ${error.message || 'Có lỗi xảy ra'}`);
+      console.error('Student import error:', error);
+      
+      // Handle specific template errors with better messages
+      const errorMessage = error.message || '';
+      if (errorMessage.includes(t('participant.invalidFileFormat'))) {
+        showError(t('participant.invalidFileFormat'));
+      } else if (errorMessage.includes(t('participant.templateFormatError'))) {
+        showError(t('participant.templateFormatError'));
+      } else if (errorMessage.includes(t('participant.missingRequiredColumns'))) {
+        showError(t('participant.missingRequiredColumns'));
+      } else {
+        // Generic import error
+        showError(t('participant.importError', { message: errorMessage || t('common:messages.error.unknown') }));
+      }
     }
-  };
+  });
 
-  const gradingImportConfig: ImportModalConfig = {
+  const getGradingImportConfig = (): ImportModalConfig => ({
     entityName: 'grading',
-    title: 'Chấm điểm',
+    title: '', // Will be overridden by titleKey
     downloadTemplate: downloadGradingTemplate,
     templateFileName: 'grading_template.xlsx',
     acceptedFileTypes: ['.xlsx', '.xls'],
     maxFileSize: 10 * 1024 * 1024, // 10MB
     instructions: [
-      'Tải file mẫu Excel tại đây và điền đầy đủ thông tin chấm điểm',
-      'Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi',
-      'Tải file lên để tiến hành cập nhật điểm cho sinh viên'
+      t('participant.downloadTemplateInstruction'),
+      t('participant.checkDataFormat'),
+      t('participant.uploadFileToUpdate')
     ],
     columns: [
-      { key: 'Mã số sinh viên', label: 'Mã số sinh viên', required: true, type: 'text', width: '150px' },
-      { key: 'Họ tên', label: 'Họ tên', required: false, type: 'text', width: '200px' },
-      { key: 'Số ngày CTXH', label: 'Số ngày CTXH', required: true, type: 'number', width: '120px' },
-      { key: 'Ghi chú', label: 'Ghi chú', required: false, type: 'text', width: '200px' }
+      { key: 'STUDENT ID', label: t('participant.studentCodeLabel'), required: true, type: 'text', width: '150px' },
+      { key: 'NAME', label: t('common:fields.name'), required: false, type: 'text', width: '200px' },
+      { key: 'DAYS', label: t('participant.communityServiceDays'), required: true, type: 'number', width: '120px' },
+      { key: 'NOTE', label: t('participant.note'), required: false, type: 'text', width: '200px' }
     ],
     uploadFile: async (file: File) => {
-      const token = authService.getAccessToken();
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await fetch(`/api/ctxh/activities/${activity.id}/participants/grading-upload`, {
-        method: 'POST',
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Grading upload error response:', errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      // Validate file format first
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        throw new Error(t('participant.invalidFileFormat'));
       }
       
-      const result = await response.json();
-      return result;
+      // Read and validate Excel file content locally first
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        // Check if file has data
+        if (!jsonData || jsonData.length < 2) {
+          throw new Error(t('participant.templateFormatError'));
+        }
+        
+        // Check for grading template structure
+        const headers = jsonData[0] as string[];
+        
+        console.log('Grading import - Headers detected:', headers);
+        
+        const hasStudentCodeColumn = headers.some(header => 
+          header && (
+            header.toLowerCase().includes('mssv') ||
+            header.toLowerCase().includes('mã số') ||
+            header.toLowerCase().includes('student code')
+          )
+        );
+        
+        if (!hasStudentCodeColumn) {
+          throw new Error(t('participant.templateFormatError'));
+        }
+        
+        // Check for grading-specific columns
+        const hasGradingColumns = headers.some(header => 
+          header && (
+            header.toLowerCase().includes('số ngày') ||
+            header.toLowerCase().includes('ctxh') ||
+            header.toLowerCase().includes('ghi chú')
+          )
+        );
+        
+        // If it doesn't have grading columns, it might be a student template
+        if (!hasGradingColumns && headers.length <= 2) {
+          console.log('Detected student template in grading import');
+          throw new Error(t('participant.templateFormatError'));
+        }
+        
+        // Process data rows
+        const dataRows = jsonData.slice(1).filter(row => 
+          row && Array.isArray(row) && row.some(cell => cell !== null && cell !== undefined && cell !== '')
+        ) as any[][];
+        
+        if (dataRows.length === 0) {
+          throw new Error(t('participant.templateFormatError'));
+        }
+        
+        // Transform data to expected format and validate grading
+        const processedData = await Promise.all(dataRows.map(async (row: any[], index: number) => {
+          // Find data in the row based on headers
+          let studentCode = '';
+          let studentName = '';
+          let days = '';
+          let note = '';
+          
+          headers.forEach((header, colIndex) => {
+            if (header && header.toLowerCase().includes('mssv') || header.toLowerCase().includes('mã số')) {
+              studentCode = row[colIndex]?.toString().trim() || '';
+            } else if (header && header.toLowerCase().includes('họ tên')) {
+              studentName = row[colIndex]?.toString().trim() || '';
+            } else if (header && header.toLowerCase().includes('số ngày')) {
+              days = row[colIndex]?.toString().trim() || '';
+            } else if (header && header.toLowerCase().includes('ghi chú')) {
+              note = row[colIndex]?.toString().trim() || '';
+            }
+          });
+          
+          if (!studentCode) {
+            return {
+              'STUDENT ID': '',
+              'NAME': t('participant.studentNotFoundInDB'),
+              'DAYS': '',
+              'NOTE': '',
+              _hasError: true,
+              _errorMessage: t('participant.invalidStudentCode', { studentCode: `Row ${index + 2}` }),
+              _studentExists: false,
+              _originalStudentCode: ''
+            };
+          }
+          
+          // Check if student is participating in this activity
+          const participatingStudent = participants.find(p => 
+            p.student_code === studentCode || 
+            (p.student?.student_code === studentCode)
+          );
+          
+          console.log(`Row ${index + 2} - StudentCode: ${studentCode}, Found participant:`, participatingStudent);
+          
+          let hasError = false;
+          let errorMessage = null;
+          
+          if (!participatingStudent) {
+            hasError = true;
+            errorMessage = t('participant.studentNotParticipatingInActivity', { studentCode });
+          } else if (!days || isNaN(Number(days)) || Number(days) < 0) {
+            hasError = true;
+            errorMessage = t('participant.invalidDaysValue', { studentCode });
+          } else if (activity.totalDays && Number(days) > activity.totalDays) {
+            hasError = true;
+            errorMessage = t('participant.exceedsMaxDays', { studentCode, maxDays: activity.totalDays, actualDays: days });
+          }
+          
+          // Create studentData object more carefully
+          let studentData = null;
+          if (participatingStudent) {
+            if (participatingStudent.student) {
+              // Case 1: participant has nested student object
+              studentData = {
+                id: participatingStudent.student.id,
+                student_code: participatingStudent.student.student_code,
+                full_name: participatingStudent.student.full_name
+              };
+            } else if (participatingStudent.student_id) {
+              // Case 2: participant only has student_id, create minimal studentData
+              studentData = {
+                id: participatingStudent.student_id,
+                student_code: participatingStudent.student_code || studentCode,
+                full_name: studentName || studentCode // fallback to provided name or code
+              };
+            }
+          }
+          
+          console.log(`Row ${index + 2} - Created studentData:`, studentData);
+          
+          return {
+            'STUDENT ID': studentCode,
+            'NAME': participatingStudent?.student?.full_name || participatingStudent?.student_code || studentName || t('participant.studentNotFoundInDB'),
+            'DAYS': days,
+            'NOTE': note,
+            _studentExists: !!participatingStudent,
+            _originalStudentCode: studentCode,
+            _hasError: hasError,
+            _errorMessage: errorMessage,
+            _participantId: participatingStudent?.id,
+            // Add studentData for executeServerImport
+            studentData: studentData
+          };
+        }));
+        
+        // Return processed data in expected format
+        const sessionId = `local_${Date.now()}`;
+        const result = {
+          sessionId,
+          fileName: file.name,
+          message: 'File processed successfully',
+          data: processedData,
+          previewData: processedData, // Add previewData directly here for ImportModal
+          totalRows: processedData.length,
+          validRows: processedData.filter(row => !row._hasError).length,
+          errorRows: processedData.filter(row => row._hasError).length
+        };
+        
+        console.log('Grading upload completed, processed data:', processedData);
+        
+        // Store in ref for validateServerData and executeServerImport
+        lastProcessedDataRef.current = processedData;
+        // Also store the original file for upload
+        originalGradingFileRef.current = file;
+        
+        return result;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error(t('participant.templateFormatError'));
+      }
     },
     validateServerData: async (sessionId: string) => {
-      // Validating grading session
+      // For local sessions (grading), return the processed data
+      if (sessionId.startsWith('local_')) {
+        console.log('Grading ValidateServerData called for local session - using ref data');
+        
+        // Get processed data from ref
+        const processedData = lastProcessedDataRef.current || [];
+        const validRows = processedData.filter((row: any) => !row._hasError);
+        const errorRows = processedData.filter((row: any) => row._hasError);
+        
+        // Create error list for display
+        const errors = errorRows.map((row: any) => {
+          // Find original row number in the full data
+          const originalRowIndex = processedData.findIndex(r => r === row);
+          return {
+            row: originalRowIndex + 1,
+            field: 'STUDENT ID',
+            value: row['STUDENT ID'],
+            message: row._errorMessage || 'Unknown error',
+            type: 'validation'
+          };
+        });
+        
+        console.log('Grading ValidateServerData using ref data:', processedData.length, 'items');
+        console.log('Valid rows for preview:', validRows.length);
+        console.log('Error rows for error list:', errorRows.length);
+        
+        // Return response with only valid rows in previewData
+        return {
+          sessionId,
+          data: [],
+          previewData: validRows, // Only show valid rows in preview table
+          message: 'Local validation completed',
+          summary: {
+            total: Number(processedData.length) || 0,
+            valid: Number(validRows.length) || 0,
+            invalid: Number(errorRows.length) || 0,
+            duplicates: 0,
+            conflicts: 0
+          },
+          errors: errors,
+          warnings: [],
+          isValid: errorRows.length === 0
+        };
+      }
       
+      // Server validation for non-local sessions
       if (!sessionId) {
         throw new Error('SessionId is undefined');
       }
@@ -247,6 +787,119 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       return result;
     },
     executeServerImport: async (sessionId: string, options?: { skipConflicts?: boolean }) => {
+      // For local sessions (grading), process the local data
+      if (sessionId.startsWith('local_')) {
+        console.log('Grading ExecuteServerImport called for local session - processing local data');
+        
+        // Get processed data from ref
+        const processedData = lastProcessedDataRef.current || [];
+        const validRows = processedData.filter((row: any) => !row._hasError);
+        
+        console.log('Processing', validRows.length, 'valid grading records');
+        
+        // Debug: Check row structure
+        console.log('Sample valid row:', validRows[0]);
+        
+        // Prepare grading data for API with validation (using participant IDs)
+        const gradingData = [];
+        const invalidRows = [];
+        
+        for (const row of validRows) {
+          if (!row._participantId) {
+            console.error('Invalid row data - missing participant ID:', row);
+            invalidRows.push(row);
+            continue;
+          }
+          
+          gradingData.push({
+            participantId: row._participantId, // Use participant ID, not student ID
+            days: parseFloat(row['DAYS']),
+            note: row['NOTE'] || ''
+          });
+        }
+        
+        if (invalidRows.length > 0) {
+          throw new Error(`Found ${invalidRows.length} rows with invalid student data. Please check the participants.`);
+        }
+        
+        console.log('Final grading data for API:', gradingData);
+        
+        try {
+          // For grading-upload endpoint, we need to send the original file
+          // Get the original file from the ref
+          const originalFile = originalGradingFileRef.current;
+          
+          if (!originalFile) {
+            throw new Error('Original file not found. Please try uploading again.');
+          }
+          
+          // Step 1: Upload file and get session
+          const formData = new FormData();
+          formData.append('file', originalFile);
+          
+          const token = authService.getAccessToken();
+          const uploadResponse = await fetch(`/api/ctxh/activities/${activity?.id}/participants/grading-upload`, {
+            method: 'POST',
+            headers: {
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            },
+            body: formData
+          });
+          
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            console.error('Grading upload error:', errorText);
+            throw new Error(`Failed to upload grading file: ${errorText}`);
+          }
+          
+          const uploadResult = await uploadResponse.json();
+          console.log('Grading upload response:', uploadResult);
+          
+          // Step 2: Execute the grading using session
+          const executeResponse = await fetch(`/api/ctxh/activities/import/${uploadResult.sessionId}/execute`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { 'Authorization': `Bearer ${token}` })
+            },
+            body: JSON.stringify({ skipConflicts: true })
+          });
+          
+          if (!executeResponse.ok) {
+            const errorText = await executeResponse.text();
+            console.error('Grading execute error:', errorText);
+            throw new Error(`Failed to execute grading: ${errorText}`);
+          }
+          
+          const result = await executeResponse.json();
+          console.log('Grading execute response:', result);
+          
+          // Calculate counts based on our processed data
+          const totalProcessed = processedData.length;
+          const validCount = validRows.length;
+          const errorCount = totalProcessed - validCount;
+          
+          // Extract actual imported count from API response
+          const actualImportedCount = Number(result.importedCount) || Number(result.successful?.length) || validCount;
+          
+          // Since we're using skipConflicts: true, error records are skipped, not failed
+          return {
+            sessionId,
+            success: result.success,
+            importedCount: actualImportedCount,
+            skippedCount: errorCount, // Records with errors are skipped
+            failedCount: 0, // No failed records when using skipConflicts
+            message: result.message || 'Grading completed successfully',
+            errors: result.errors || [],
+            data: result
+          };
+        } catch (error) {
+          console.error('Grading execute error:', error);
+          throw error;
+        }
+      }
+      
+      // Server execution for non-local sessions
       const token = authService.getAccessToken();
       const response = await fetch(`/api/ctxh/activities/import/${sessionId}/execute`, {
         method: 'POST',
@@ -259,15 +912,28 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       return response.json();
     },
     onSuccess: (result) => {
-      showSuccess(`Đã chấm điểm thành công cho ${result.importedCount} sinh viên`);
+      showSuccess(t('participant.gradingSuccess', { count: result.importedCount }));
       loadParticipants();
-      setShowGradingImportModal(false);
+      // Don't auto-close modal - let user see the result step
+      // setShowGradingImportModal(false);
     },
     onError: (error) => {
-      console.error('Grading error:', error);
-      showError(`Lỗi chấm điểm: ${error.message || 'Có lỗi xảy ra'}`);
+      console.error('Grading import error:', error);
+      
+      // Handle specific template errors with better messages
+      const errorMessage = error.message || '';
+      if (errorMessage.includes(t('participant.invalidFileFormat'))) {
+        showError(t('participant.invalidFileFormat'));
+      } else if (errorMessage.includes(t('participant.templateFormatError'))) {
+        showError(t('participant.templateFormatError'));
+      } else if (errorMessage.includes(t('participant.missingRequiredColumns'))) {
+        showError(t('participant.missingRequiredColumns'));
+      } else {
+        // Generic grading error
+        showError(t('participant.gradingError', { message: errorMessage || t('common:messages.error.unknown') }));
+      }
     }
-  };
+  });
 
   // Load participants
   useEffect(() => {
@@ -332,10 +998,10 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         // Activity not found or no participants yet
         // Không hiển thị toast lỗi cho trường hợp này
       } else if (error.response?.status === 403) {
-        showError('Không có quyền truy cập!');
+        showError(t('common:messages.error.noPermission'));
       } else if (error.response?.status >= 500) {
         // Chỉ hiển thị lỗi cho server errors
-        showError('Có lỗi xảy ra khi tải danh sách sinh viên!');
+        showError(t('participant.loadParticipantsError'));
       } else {
         // Các lỗi khác, log nhưng không hiển thị toast
         // Non-critical error loading participants
@@ -488,7 +1154,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   // Add student manually
   const handleAddStudent = async () => {
     if (!newStudentCode.trim()) {
-      showError('Vui lòng nhập mã số sinh viên!');
+      showError(t('participant.studentCodeRequired'));
       return;
     }
 
@@ -498,7 +1164,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         student_code: newStudentCode.trim()
       });
       
-      showSuccess('Thêm sinh viên thành công!');
+      showSuccess(t('participant.addStudentSuccess'));
       setNewStudentCode('');
       setStudentInfo({});
       setShowAddStudentModal(false);
@@ -508,7 +1174,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       console.error('Failed to add student:', error);
       
       // Improved error message handling
-      let errorMessage = 'Có lỗi xảy ra khi thêm sinh viên!';
+      let errorMessage = t('participant.addStudentError');
       
       if (error.message) {
         const message = error.message.toLowerCase();
@@ -516,13 +1182,17 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         
         // Handle specific error cases from backend
         if (message.includes('đã tham gia hoạt động') || message.includes('already participated')) {
-          errorMessage = `Sinh viên ${studentCode} đã tham gia hoạt động này`;
+          errorMessage = t('participant.studentAlreadyParticipated', { studentCode });
         } else if (message.includes('không tồn tại') || message.includes('not found')) {
-          errorMessage = 'Hoạt động không tồn tại hoặc đã bị xóa';
+          errorMessage = t('participant.activityNotFound');
         } else if (message.includes('trạng thái active') || message.includes('status')) {
-          errorMessage = 'Chỉ có thể thêm sinh viên vào hoạt động có trạng thái ACTIVE';
+          errorMessage = t('participant.addStudentActiveOnly');
+        } else if (message.includes('số ngày ctxh vượt quá giới hạn') || message.includes('ctxh vượt quá') || message.includes('exceed') || message.includes('maximum')) {
+          errorMessage = t('participant.ctxhDaysExceeded');
+        } else if (message.includes('vượt quá') || message.includes('exceed')) {
+          errorMessage = t('participant.exceedsMaxDays');
         } else if (message.includes('không hợp lệ') || message.includes('invalid')) {
-          errorMessage = `Mã số sinh viên "${studentCode}" không hợp lệ`;
+          errorMessage = t('participant.invalidStudentCode', { studentCode });
         } else {
           // Use the exact error message from backend if it's in Vietnamese
           errorMessage = error.message;
@@ -538,13 +1208,11 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   // Remove participant
   const handleRemoveParticipant = async (participant: ParticipationResponse) => {
     const confirmed = await showConfirm(
-      'Xóa sinh viên',
-      `Bạn có chắc chắn muốn xóa
-
-Mã sinh viên: ${participant.student_code || 'N/A'}`,
+      t('participant.deleteStudent'),
+      t('participant.deleteConfirmMessage', { studentCode: participant.student_code || 'N/A' }),
       {
-        confirmText: 'Xóa',
-        cancelText: 'Hủy',
+        confirmText: t('common:actions.delete'),
+        cancelText: t('common:actions.cancel'),
         variant: 'danger'
       }
     );
@@ -553,12 +1221,12 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
 
     try {
       await activityService.removeParticipant(activity.id, participant.id);
-      showSuccess('Đã xóa sinh viên khỏi hoạt động!');
+      showSuccess(t('participant.removeStudentSuccess'));
       loadParticipants();
       onRefresh?.();
     } catch (error) {
       console.error('Failed to remove participant:', error);
-      showError('Có lỗi xảy ra khi xóa sinh viên!');
+      showError(t('participant.removeStudentError'));
     }
   };
 
@@ -575,13 +1243,13 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
   // Submit manual grading
   const handleSubmitGrading = async () => {
     if (!gradingParticipant || !gradingData.actualDays) {
-      showError('Vui lòng nhập số ngày CTXH!');
+      showError(t('participant.daysRequired'));
       return;
     }
 
-    const actualDays = parseInt(gradingData.actualDays);
+    const actualDays = parseFloat(gradingData.actualDays);
     if (isNaN(actualDays) || actualDays < 0) {
-      showError('Số ngày CTXH phải là số nguyên dương!');
+      showError(t('participant.positiveNumberRequired'));
       return;
     }
 
@@ -598,7 +1266,7 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
 
       await activityService.gradeParticipants(activity.id, gradeData);
       
-      showSuccess(`Đã chấm điểm thành công cho sinh viên ${gradingParticipant.student_code}!`);
+      showSuccess(t('participant.individualGradingSuccess', { studentCode: gradingParticipant.student_code }));
       
       // Reset and close modal
       setShowGradingModal(false);
@@ -611,7 +1279,21 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
       
     } catch (error: any) {
       console.error('Failed to grade participant:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Có lỗi xảy ra khi chấm điểm!';
+      
+      let errorMessage = t('participant.gradingErrorGeneral');
+      const backendMessage = error.response?.data?.message || error.message;
+      
+      if (backendMessage) {
+        const message = backendMessage.toLowerCase();
+        if (message.includes('số ngày ctxh vượt quá giới hạn') || message.includes('ctxh vượt quá')) {
+          errorMessage = t('participant.ctxhDaysExceeded');
+        } else if (message.includes('vượt quá giới hạn') || message.includes('exceed')) {
+          errorMessage = t('participant.exceedsMaxDays');
+        } else {
+          errorMessage = backendMessage;
+        }
+      }
+      
       showError(errorMessage);
     } finally {
       setGradingLoading(false);
@@ -623,7 +1305,7 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
   // Upload bulk grading Excel
   const handleBulkGrading = async () => {
     if (!bulkGradingFile) {
-      showError('Vui lòng chọn file Excel chấm điểm!');
+      showError(t('participant.selectGradingFile'));
       return;
     }
 
@@ -634,11 +1316,11 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
       console.log('Bulk grading results:', results);
       
       if (results.successful && results.successful.length > 0) {
-        showSuccess(`Chấm điểm thành công ${results.successful.length} sinh viên!`);
+        showSuccess(t('participant.gradingSuccessMultiple', { count: results.successful.length }));
       }
       
       if (results.failed && results.failed.length > 0) {
-        showError(`${results.failed.length} sinh viên không thể chấm điểm.`);
+        showError(t('participant.gradingFailedMultiple', { count: results.failed.length }));
       }
       
       // Refresh data
@@ -647,7 +1329,7 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
       
     } catch (error) {
       console.error('Failed to bulk grade:', error);
-      showError('Có lỗi xảy ra khi chấm điểm hàng loạt!');
+      showError(t('participant.bulkGradingError'));
     } finally {
       setBulkGradingLoading(false);
     }
@@ -670,7 +1352,7 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to download grading template:', error);
-      showError('Không thể tải mẫu chấm điểm!');
+      showError(t('participant.templateDownloadFailure'));
     }
   };
 
@@ -714,24 +1396,24 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden" style={{overflowX: 'hidden', maxWidth: '100%'}}>
       {/* Header Actions */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-              <Users className="mr-3 h-6 w-6 text-blue-600" />
-              Quản lý sinh viên tham gia
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+              <Users className="mr-3 h-6 w-6 text-blue-600 dark:text-blue-400" />
+              {t('participant.title')}
             </h3>
-            <p className="mt-2 text-sm text-gray-600 flex items-center">
-              <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-blue-800 font-medium">
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 flex items-center">
+              <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 font-medium">
                 {searchTerm ? (
                   <>
-                    {filteredParticipants.length} / {participants.length} sinh viên
+                    {filteredParticipants.length} / {participants.length} {t('activity.students')}
                     {filteredParticipants.length !== participants.length && (
-                      <span className="ml-1 text-xs">(đã lọc)</span>
+                      <span className="ml-1 text-xs">({t('common:filtered')})</span>
                     )}
                   </>
                 ) : (
-                  `${participants.length} sinh viên`
+                  `${participants.length} ${t('activity.students')}`
                 )}
               </span>
             </p>
@@ -747,27 +1429,27 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
                 }
               }}
               disabled={activity.status !== 'ACTIVE'}
-              className="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[140px]"
+              className="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[140px]"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Thêm sinh viên
+              {t('participant.addStudent')}
               <ChevronDown className="ml-2 h-4 w-4" />
             </button>
             
             {showAddStudentDropdown && activity.status === 'ACTIVE' && (
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 overflow-hidden">
                 <div className="py-1">
                   <button
                     onClick={() => {
                       setShowAddStudentModal(true);
                       setShowAddStudentDropdown(false);
                     }}
-                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors"
                   >
-                    <Plus className="mr-3 h-4 w-4 text-gray-400" />
+                    <Plus className="mr-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
                     <div>
-                      <div className="font-medium">Thêm từng sinh viên</div>
-                      <div className="text-xs text-gray-500">Tạo sinh viên mới bằng form</div>
+                      <div className="font-medium">{t('participant.addIndividualStudent')}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{t('participant.addIndividualStudentDesc')}</div>
                     </div>
                   </button>
                   
@@ -776,12 +1458,12 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
                       setShowStudentImportModal(true);
                       setShowAddStudentDropdown(false);
                     }}
-                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors"
                   >
-                    <Upload className="mr-3 h-4 w-4 text-gray-400" />
+                    <Upload className="mr-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
                     <div>
-                      <div className="font-medium">Thêm từ file</div>
-                      <div className="text-xs text-gray-500">Thêm nhiều sinh viên từ file Excel</div>
+                      <div className="font-medium">{t('participant.addFromFile')}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{t('participant.addFromFileDesc')}</div>
                     </div>
                   </button>
                 </div>
@@ -798,17 +1480,17 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
                 }
               }}
               disabled={participants.length === 0 || (activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED')}
-              className="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[120px]"
+              className="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[120px]"
               title={
                 participants.length === 0 
                   ? "Chưa có sinh viên tham gia" 
                   : (activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED')
-                    ? `Chỉ có thể chấm điểm khi hoạt động ở trạng thái ACTIVE hoặc COMPLETED (hiện tại: ${activity.status})`
-                    : "Chấm điểm từ file Excel"
+                    ? t('participant.gradingStatusRestriction', { status: activity.status })
+                    : t('participant.gradeFromExcel')
               }
             >
               <FileSpreadsheet className="mr-2 h-4 w-4" />
-              Chấm từ file
+              {t('participant.gradeFromFile')}
             </button>
           </div>
 
@@ -816,10 +1498,10 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
           {participants.length > 0 && (
             <button
               onClick={handleExportParticipants}
-              className="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors min-w-[130px]"
+              className="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-gray-800 transition-colors min-w-[130px]"
             >
               <Download className="mr-2 h-4 w-4" />
-              Xuất danh sách
+              {t('participant.exportList')}
             </button>
           )}
         </div>
@@ -828,40 +1510,40 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
         <input
           type="text"
           placeholder="Tìm kiếm sinh viên..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm w-full"
+          className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
         />
       </div>
 
       {/* Participants Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden max-w-full">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden max-w-full">
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-sm text-gray-500">Đang tải danh sách sinh viên...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Đang tải danh sách sinh viên...</p>
           </div>
         ) : filteredParticipants.length === 0 ? (
           <div className="text-center py-12">
-            <Users className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
+            <Users className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
               {searchTerm ? 'Không tìm thấy sinh viên nào' : 'Chưa có sinh viên tham gia'}
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm ? 'Thử thay đổi từ khóa tìm kiếm' : 'Bắt đầu bằng cách thêm sinh viên vào hoạt động.'}
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {searchTerm ? t('participant.changeSearchKeyword') : t('participant.startByAddingStudents')}
             </p>
             {!searchTerm && activity.status === 'ACTIVE' && (
               <div className="mt-6">
                 <button 
                   onClick={() => setShowAddStudentModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Thêm sinh viên đầu tiên
+                  {t('participant.addFirstStudent')}
                 </button>
               </div>
             )}
@@ -869,67 +1551,67 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
         ) : (
           <>
             <div className="overflow-hidden max-w-full">
-            <table className="w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Sinh viên
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {t('participant.studentName')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Số ngày thực tế
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {t('participant.actualDays')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Trạng thái
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {t('participant.status')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ghi chú
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {t('participant.note')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ngày tham gia
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {t('participant.joinDate')}
                   </th>
                   <th className="relative px-6 py-3">
-                    <span className="sr-only">Hành động</span>
+                    <span className="sr-only">{t('common:fields.actions')}</span>
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {paginatedParticipants.map((participant) => (
-                  <tr key={participant.id} className="hover:bg-gray-50">
+                  <tr key={participant.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
                           {getStudentName(participant)}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          MSSV: {participant.student_code || participant.student?.student_code || 'N/A'}
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {t('participant.studentCodeLabel')}: {participant.student_code || participant.student?.student_code || 'N/A'}
                         </div>
                         {getStudentEmail(participant) && (
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
                             {getStudentEmail(participant)}
                           </div>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900">
-                        {participant.actual_days ? `${participant.actual_days} ngày` : 'Chưa chấm'}
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {participant.actual_days ? `${formatNumber(participant.actual_days)} ${t('activity.days')}` : t('participant.notGraded')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        participant.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                        participant.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
+                        participant.status === 'COMPLETED' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+                        participant.status === 'CANCELLED' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
+                        'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
                       }`}>
-                        {participant.status === 'COMPLETED' ? 'Hoàn thành' :
-                         participant.status === 'CANCELLED' ? 'Đã hủy' :
-                         'Đang tham gia'}
+                        {participant.status === 'COMPLETED' ? t('participant.statusOptions.completed') :
+                         participant.status === 'CANCELLED' ? t('participant.statusOptions.cancelled') :
+                         t('participant.statusOptions.registered')}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {participant.note || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatDate(participant.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
@@ -940,22 +1622,22 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
                           }
                         }}
                         disabled={activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED'}
-                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900 rounded disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                         title={
                           (activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED')
-                            ? `Chỉ có thể chấm điểm khi hoạt động ở trạng thái ACTIVE hoặc COMPLETED (hiện tại: ${activity.status})`
-                            : "Chấm điểm cho sinh viên này"
+                            ? t('participant.gradingStatusRestriction', { status: activity.status })
+                            : t('participant.gradeThisStudent')
                         }
                       >
                         <Edit2 className="h-3 w-3 mr-1" />
-                        Chấm điểm
+                        {t('participant.grade')}
                       </button>
                       <button 
                         onClick={() => handleRemoveParticipant(participant)}
-                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded"
+                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900 rounded"
                       >
                         <Trash2 className="h-3 w-3 mr-1" />
-                        Xóa
+                        {t('common:actions.delete')}
                       </button>
                     </td>
                   </tr>
@@ -991,57 +1673,57 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
               setStudentInfo({});
             }}></div>
 
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <Plus className="h-6 w-6 text-blue-600" />
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 sm:mx-0 sm:h-10 sm:w-10">
+                    <Plus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Thêm sinh viên vào hoạt động
+                    <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                      {t('participant.addStudentToActivity')}
                     </h3>
                     <div className="mt-4">
-                      <label htmlFor="student-code" className="block text-sm font-medium text-gray-700">
-                        Mã số sinh viên
+                      <label htmlFor="student-code" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('participant.studentCodeLabel')}
                       </label>
                       <input
                         type="text"
                         id="student-code"
                         value={newStudentCode}
                         onChange={(e) => setNewStudentCode(e.target.value)}
-                        placeholder="VD: 2150001"
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder={t('participant.studentCodePlaceholder')}
+                        className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                         onKeyPress={(e) => e.key === 'Enter' && handleAddStudent()}
                       />
                       
                       {/* Student info display */}
                       {lookingUpStudent && (
-                        <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                        <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
                           <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                            <span className="text-sm text-gray-600">Đang tra cứu thông tin sinh viên...</span>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400 mr-2"></div>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">{t('participant.lookingUpStudent')}</span>
                           </div>
                         </div>
                       )}
                       
                       {!lookingUpStudent && newStudentCode.trim() && studentInfo.name && (
-                        <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                        <div className="mt-2 p-3 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-md">
                           <div className="flex items-start">
-                            <div className="text-green-600">
+                            <div className="text-green-600 dark:text-green-400">
                               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                               </svg>
                             </div>
                             <div className="ml-3">
-                              <p className="text-sm font-medium text-green-800">
-                                Tìm thấy sinh viên
+                              <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                                {t('participant.studentFound')}
                               </p>
-                              <p className="text-sm text-green-700">
+                              <p className="text-sm text-green-700 dark:text-green-300">
                                 <strong>Họ tên:</strong> {studentInfo.name}
                               </p>
                               {studentInfo.email && (
-                                <p className="text-sm text-green-700">
+                                <p className="text-sm text-green-700 dark:text-green-300">
                                   <strong>Email:</strong> {studentInfo.email}
                                 </p>
                               )}
@@ -1051,40 +1733,36 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
                       )}
                       
                       {!lookingUpStudent && newStudentCode.trim() && !studentInfo.name && (
-                        <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                        <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-md">
                           <div className="flex items-start">
-                            <div className="text-yellow-600">
+                            <div className="text-yellow-600 dark:text-yellow-400">
                               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                               </svg>
                             </div>
                             <div className="ml-3">
-                              <p className="text-sm font-medium text-yellow-800">
-                                Không tìm thấy sinh viên
+                              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                {t('participant.studentNotFound')}
                               </p>
-                              <p className="text-sm text-yellow-700">
-                                Mã số sinh viên "{newStudentCode}" không có trong hệ thống. Bạn vẫn có thể thêm sinh viên này.
+                              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                {t('participant.studentCodeNotFound', { studentCode: newStudentCode })}
                               </p>
                             </div>
                           </div>
                         </div>
                       )}
-                      
-                      <p className="mt-1 text-sm text-gray-500">
-                        Nhập mã số sinh viên để thêm vào hoạt động
-                      </p>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <button
                   type="button"
                   onClick={handleAddStudent}
                   disabled={addingStudent || !newStudentCode.trim()}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
                 >
-                  {addingStudent ? 'Đang thêm...' : 'Thêm sinh viên'}
+                  {addingStudent ? t('common:states.adding') : t('participant.addStudent')}
                 </button>
                 <button
                   type="button"
@@ -1093,9 +1771,9 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
                     setNewStudentCode('');
                     setStudentInfo({});
                   }}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-gray-800 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                 >
-                  Hủy
+                  {t('common:actions.cancel')}
                 </button>
               </div>
             </div>
@@ -1122,7 +1800,7 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
           }}
         >
           <div 
-            className="bg-white rounded-lg p-6 w-full max-w-md"
+            className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md"
             style={{
               maxWidth: '28rem',
               width: '90%',
@@ -1131,8 +1809,8 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
             }}
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                Chấm điểm sinh viên
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                {t('participant.gradeStudent')}
               </h3>
               <button
                 onClick={() => {
@@ -1148,35 +1826,36 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
 
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-600 mb-2">
-                  <strong>Sinh viên:</strong> {gradingParticipant.student_code || 'N/A'} - {gradingParticipant.student?.full_name || 'N/A'}
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                  <strong>{t('participant.studentLabel')}:</strong> {gradingParticipant.student_code || 'N/A'} - {gradingParticipant.student?.full_name || 'N/A'}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Số ngày CTXH <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('participant.communityServiceDays')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
                   min="0"
+                  step="0.1"
                   value={gradingData.actualDays}
                   onChange={(e) => setGradingData(prev => ({ ...prev, actualDays: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Nhập số ngày"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder={t('participant.actualDaysPlaceholder')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ghi chú
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('participant.note')}
                 </label>
                 <textarea
                   value={gradingData.note}
                   onChange={(e) => setGradingData(prev => ({ ...prev, note: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   rows={3}
-                  placeholder="Nhập ghi chú (tùy chọn)"
+                  placeholder={t('participant.notePlaceholder')}
                 />
               </div>
             </div>
@@ -1188,22 +1867,22 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
                   setGradingParticipant(null);
                   setGradingData({ actualDays: '', note: '' });
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md"
               >
-                Hủy
+                {t('common:actions.cancel')}
               </button>
               <button
                 onClick={handleSubmitGrading}
                 disabled={!gradingData.actualDays || gradingLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {gradingLoading ? (
                   <span className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Đang chấm điểm...
+                    {t('common:states.grading')}
                   </span>
                 ) : (
-                  'Chấm điểm'
+                  t('participant.grade')
                 )}
               </button>
             </div>
@@ -1214,9 +1893,9 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
       {/* Bulk Grading Modal */}
       {showBulkGradingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Nhập danh sách chấm điểm</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('participant.enterGradingList')}</h3>
               <button
                 onClick={() => {
                   setShowBulkGradingModal(false);
@@ -1259,11 +1938,11 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
             <div className="space-y-4">
               {/* Instructions */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-blue-800 mb-2">📋 Hướng dẫn nhập dữ liệu chấm điểm</h4>
+                <h4 className="text-sm font-medium text-blue-800 mb-2">📋 {t('participant.gradingDataGuide')}</h4>
                 <ul className="text-sm text-blue-700 space-y-1">
-                  <li>1. Tải file mẫu Excel <button onClick={handleDownloadGradingTemplate} className="text-blue-600 underline hover:text-blue-800">tại đây</button> và điền đầy đủ thông tin chấm điểm</li>
-                  <li>2. Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi</li>
-                  <li>3. Tải file lên để tiến hành cập nhật điểm</li>
+                  <li>1. {t('participant.downloadTemplateInstruction')} <button onClick={handleDownloadGradingTemplate} className="text-blue-600 underline hover:text-blue-800">{t('common:downloadHere')}</button></li>
+                  <li>2. {t('participant.checkDataFormat')}</li>
+                  <li>3. {t('participant.uploadFileToUpdate')}</li>
                 </ul>
               </div>
 
@@ -1287,7 +1966,7 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
                       </p>
                       <label 
                         htmlFor="bulk-grading-file"
-                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
                       >
                         <Upload className="mr-2 h-4 w-4" />
                         Chọn file từ máy tính
@@ -1309,22 +1988,22 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
                   setShowBulkGradingModal(false);
                   setBulkGradingFile(null);
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-800"
               >
                 Hủy
               </button>
               <button
                 onClick={handleBulkGrading}
                 disabled={!bulkGradingFile || bulkGradingLoading}
-                className="px-4 py-2 bg-green-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-green-600 dark:bg-green-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-green-700 dark:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {bulkGradingLoading ? (
                   <span className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Đang chấm điểm...
+                    {t('common:states.grading')}
                   </span>
                 ) : (
-                  'Chấm điểm hàng loạt'
+                  t('participant.bulkGrade')
                 )}
               </button>
             </div>
@@ -1335,7 +2014,7 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
       {/* ImportModal for Students */}
       {showStudentImportModal && (
         <ImportModal
-          config={studentImportConfig}
+          config={getStudentImportConfig()}
           isOpen={showStudentImportModal}
           onClose={() => setShowStudentImportModal(false)}
         />
@@ -1344,7 +2023,7 @@ Mã sinh viên: ${participant.student_code || 'N/A'}`,
       {/* ImportModal for Grading */}
       {showGradingImportModal && (
         <ImportModal
-          config={gradingImportConfig}
+          config={getGradingImportConfig()}
           isOpen={showGradingImportModal}
           onClose={() => setShowGradingImportModal(false)}
         />
