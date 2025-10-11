@@ -329,7 +329,6 @@ export class ImportService {
     user.givenName = userData.givenName;
     user.email = userData.email || null; // Handle null email from "*" values
     user.code = userData.code;
-    user.studentCode = userData.code; // Enhanced: map code to studentCode
     user.phone = userData.phone || '';
     
     // Handle password

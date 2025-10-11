@@ -96,11 +96,6 @@ export class CreateUserDto {
   roles?: string[];
 
   // New fields for enhanced import system
-  @ApiPropertyOptional({ description: 'Mã số sinh viên' })
-  @IsOptional()
-  @IsString()
-  studentCode?: string;
-  
   @ApiPropertyOptional({ description: 'Số CMND/CCCD' })
   @IsOptional()
   @IsString()

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Res, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
@@ -8,6 +8,9 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { BulkDeleteUserDto } from './dto/bulk-delete-user.dto';
 import { ImportService } from './services/import.service';
+import { BatchImportService } from './services/batch-import.service';
+import { BatchImportRequestDto } from './dto/batch-import-request-simple.dto';
+import { BatchImportResponseDto } from './dto/batch-import-response.dto';
 import { RolesService } from '../roles/roles.service';
 
 @ApiTags('users')
@@ -16,6 +19,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly importService: ImportService, // Enhanced with 18-column template & auto organization creation
+    private readonly batchImportService: BatchImportService, // NEW: Client-side batch processing
     private readonly rolesService: RolesService
   ) { }
   @Post()
@@ -132,6 +136,82 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'Session không tồn tại' })
   async getSessionStatus(@Param('sessionId') sessionId: string) {
     return this.importService.getSessionStatus(sessionId);
+  }
+
+  // NEW: Client-side batch processing endpoint
+  @Post('import/batch')
+  @ApiOperation({ 
+    summary: 'Import batch users từ frontend (Client-side Processing)',
+    description: 'Nhận JSON array từ frontend và xử lý import theo batch. Hỗ trợ session tracking và error recovery cho files lớn tới 27k records. Backward compatible với existing import system.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Batch import thành công',
+    type: BatchImportResponseDto 
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dữ liệu không hợp lệ hoặc batch size vượt quá giới hạn' 
+  })
+  @ApiResponse({ 
+    status: 409, 
+    description: 'Có conflict trong dữ liệu (duplicate records)' 
+  })
+  async batchImport(
+    @Body() request: BatchImportRequestDto
+  ): Promise<BatchImportResponseDto> {
+    // Debug logging
+    console.log('Batch import request received:', {
+      usersLength: request.users?.length,
+      batchInfo: request.batchInfo,
+      options: request.options
+    });
+    
+    // Manual validation for debugging
+    if (!request.users || !Array.isArray(request.users)) {
+      throw new BadRequestException('Users array is required');
+    }
+    
+    if (request.users.length === 0) {
+      throw new BadRequestException('At least 1 user required per batch');
+    }
+    
+    if (request.users.length > 200) {
+      throw new BadRequestException('Maximum 200 users per batch');
+    }
+    
+    return this.batchImportService.processBatch(request);
+  }
+
+  @Get('import/batch/:sessionId/summary')
+  @ApiOperation({ 
+    summary: 'Lấy tổng kết session batch import',
+    description: 'Trả về thống kê tổng hợp của tất cả batches trong một session import.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Thông tin tổng kết session' 
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Session không tồn tại hoặc đã hết hạn' 
+  })
+  async getBatchSessionSummary(@Param('sessionId') sessionId: string) {
+    return this.batchImportService.getSessionSummary(sessionId);
+  }
+
+  @Delete('import/batch/:sessionId')
+  @ApiOperation({ 
+    summary: 'Xóa session batch import',
+    description: 'Dọn dẹp session data sau khi hoàn tất import.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Session đã được xóa thành công' 
+  })
+  async clearBatchSession(@Param('sessionId') sessionId: string) {
+    this.batchImportService.clearSession(sessionId);
+    return { message: `Session ${sessionId} cleared successfully` };
   }
 
   // @Post('import/:sessionId/execute-async')

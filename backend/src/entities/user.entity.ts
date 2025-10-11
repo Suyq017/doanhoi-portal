@@ -48,7 +48,7 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ nullable: true, unique: true })
   code: string; // Mã số sinh viên/cán bộ
 
   @Column()
@@ -119,9 +119,6 @@ export class User {
   userRoles: UserRole[];
 
   // New fields for enhanced import system
-  @Column({ name: 'student_code', nullable: true, unique: true })
-  studentCode: string;
-  
   @Column({ name: 'identity_card', nullable: true })
   identityCard: string;
   

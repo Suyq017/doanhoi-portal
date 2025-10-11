@@ -8,7 +8,10 @@ import {
   ImportUploadResponse,
   ImportValidationResponse,
   ImportExecuteResponse,
-  ImportSession
+  ImportSession,
+  BatchImportRequest,
+  BatchImportResponse,
+  SessionSummaryDto
 } from '../types/user';
 
 class UserService {
@@ -67,6 +70,19 @@ class UserService {
 
   async getImportStatus(sessionId: string): Promise<ImportSession> {
     return apiClient.get<ImportSession>(`/users/import/${sessionId}/status`);
+  }
+
+  // Batch Import functionality (Phase 4)
+  async batchImport(request: BatchImportRequest): Promise<BatchImportResponse> {
+    return apiClient.post<BatchImportResponse>('/users/import/batch', request);
+  }
+
+  async getBatchSummary(sessionId: string): Promise<SessionSummaryDto> {
+    return apiClient.get<SessionSummaryDto>(`/users/import/batch/${sessionId}/summary`);
+  }
+
+  async cancelBatchImport(sessionId: string): Promise<void> {
+    await apiClient.delete(`/users/import/batch/${sessionId}`);
   }
 
   // Role assignment functionality

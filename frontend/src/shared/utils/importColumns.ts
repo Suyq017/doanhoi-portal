@@ -154,13 +154,13 @@ export const organizationColumns = (level: 2 | 3, t?: (key: string) => string): 
     return [
       {
         key: 'studentCode',
-        label: t?.('organizations:fields.studentCode') || 'Mã số sinh viên | Student Code',
+        label: t?.('organizations:fields.studentCode') || 'Mã số sinh viên',
         required: true,
         type: 'text'
       },
       {
         key: 'classOrUnitCode',
-        label: t?.('organizations:fields.classOrUnitCode') || 'Mã lớp/đơn vị | Class/Unit Code',
+        label: t?.('organizations:fields.classOrUnitCode') || 'Mã lớp/đơn vị',
         required: true,
         type: 'text'
       }
@@ -169,7 +169,7 @@ export const organizationColumns = (level: 2 | 3, t?: (key: string) => string): 
     return [
       {
         key: 'studentCode',
-        label: t?.('organizations:fields.studentCode') || 'Mã số sinh viên | Student Code',
+        label: t?.('organizations:fields.studentCode') || 'Mã số sinh viên',
         required: true,
         type: 'text'
       }

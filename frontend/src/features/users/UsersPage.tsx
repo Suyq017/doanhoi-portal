@@ -25,7 +25,7 @@ import EditUserModal from "./components/EditUserModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import UserRoleAssignmentModal from "./components/UserRoleAssignmentModal";
 import GrantRolesModal from "./components/GrantRolesModal";
-import { useUserImportConfig } from "./hooks/useUserImportConfig";
+import { useUserBatchImportConfig } from "./hooks/useUserBatchImportConfig";
 import { useUserPagePermissions } from "./hooks/useUserPagePermissions";
 
 const Users: React.FC = () => {
@@ -117,7 +117,12 @@ const Users: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isRoleAssignmentModalOpen, setIsRoleAssignmentModalOpen] = useState(false);
   const [isGrantRolesModalOpen, setIsGrantRolesModalOpen] = useState(false);
-  const { importConfig } = useUserImportConfig({ onRefreshData: refreshUsers });
+  // Feature flag for Phase 4 - Enable batch processing
+  const useBatchProcessing = true; // Set to true to enable batch import
+  const importConfig = useUserBatchImportConfig({ 
+    onRefreshData: refreshUsers, 
+    useBatchProcessing 
+  });
 
   // Page-level access control (after all hooks are called)
   if (!permissions.canAccessUsers()) {
@@ -136,7 +141,8 @@ const Users: React.FC = () => {
             className="px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-md hover:bg-gray-200"
           >
             {t('common:actions.goBack')}
-          </button>        </div>
+          </button>        
+          </div>
       </div>
     );
   }

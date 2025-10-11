@@ -140,22 +140,6 @@ export class UsersService {
   }
 
   /**
-   * Find user by student code
-   */
-  async findByStudentCode(studentCode: string): Promise<User | null> {
-    return this.usersRepository.findOne({
-      where: { studentCode },
-      relations: [
-        'managementDepartment',
-        'trainingDepartment',
-        'class',
-        'organizations',
-        'organizations.organization'
-      ]
-    });
-  }
-
-  /**
    * Find user by email (required by AuthService)
    */  async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({
