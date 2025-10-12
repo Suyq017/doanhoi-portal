@@ -10,11 +10,12 @@ import { UserOrganization } from '../entities/user-organization.entity';
 import { ExcelParserService } from './services/excel-parser.service';
 import { ImportValidationService } from './services/import-validation.service';
 import { ImportSessionService } from './services/import-session.service';
-import { ImportService } from './services/import.service';
+import { ImportService } from './services/import.service'; // Enhanced with 18-column & organization auto-creation
 import { UserBatchProcessingService } from './services/batch-processing.service';
 import { UserTransactionService } from './services/transaction.service';
 import { UserImportMonitoringService } from './services/monitoring.service';
 import { UserBackgroundJobService } from './services/background-job.service';
+import { BatchImportService } from './services/batch-import.service'; // NEW: Client-side batch processing
 import { RolesModule } from '../roles/roles.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { CleanEmptyStringsMiddleware } from '../common/middleware/clean-empty-strings.middleware';
@@ -31,11 +32,12 @@ import { CleanEmptyStringsMiddleware } from '../common/middleware/clean-empty-st
     ExcelParserService,
     ImportValidationService,
     ImportSessionService,
-    ImportService,
+    ImportService, // Enhanced with all advanced features
     UserBatchProcessingService,
     UserTransactionService,
     UserImportMonitoringService,
-    UserBackgroundJobService
+    UserBackgroundJobService,
+    BatchImportService // NEW: Client-side batch processing service
   ],
   exports: [UsersService],
 })

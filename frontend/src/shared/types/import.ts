@@ -18,8 +18,6 @@ export interface ServerImportSession {
   fileName: string;
   totalRows: number;
   message: string;
-  data?: any[]; // For local processing
-  previewData?: any[]; // For local processing preview
 }
 
 export interface ServerValidationResult {
@@ -58,31 +56,85 @@ export interface ImportColumn {
   width?: string;
 }
 
-// Enhanced config interface for server-side processing only
+// Client-side import types
+export interface ClientValidationResult {
+  isValid: boolean;
+  data: any[];
+  errors: ValidationError[];
+  warnings: ValidationError[];
+  summary: {
+    total: number;
+    valid: number;
+    invalid: number;
+    duplicates: number;
+  };
+}
+
+export interface BatchInfo {
+  batchNumber: number;
+  totalBatches: number;
+  sessionId: string;
+}
+
+export interface ProgressInfo {
+  currentBatch: number;
+  totalBatches: number;
+  processedRecords: number;
+  totalRecords: number;
+  percentage: number;
+  currentOperation: 'parsing' | 'validating' | 'importing';
+}
+
+export interface BatchResult {
+  processed: number;
+  successful: number;
+  failed: number;
+  errors: string[];
+}
+
+export interface ClientImportResult {
+  success: boolean;
+  sessionSummary: {
+    totalProcessed: number;
+    totalSuccessful: number;
+    totalFailed: number;
+    isComplete: boolean;
+  };
+  errors: string[];
+}
+
+// Enhanced config interface supporting both server-side and client-side processing
 export interface ImportModalConfig {
   // Template & File handling
   templateUrl?: string;
-  templateFileName: string;
-  downloadTemplate?: () => Promise<void>;
+  templateFileName?: string;
   acceptedFileTypes: string[];
   maxFileSize: number;
 
-  // Server-side data processing functions
-  uploadFile: (file: File) => Promise<ServerImportSession>;
-  validateServerData: (sessionId: string) => Promise<ServerValidationResult>;
-  executeServerImport: (sessionId: string, options?: { skipConflicts?: boolean }) => Promise<ServerImportResult>;
+  // Processing mode
+  useClientSideProcessing?: boolean;
+  enableBatchProcessing?: boolean;
+  batchSize?: number;
+
+  // Server-side data processing functions (legacy)
+  uploadFile?: (file: File) => Promise<ServerImportSession>;
+  validateServerData?: (sessionId: string) => Promise<ServerValidationResult>;
+  executeServerImport?: (sessionId: string, options?: { skipConflicts?: boolean }) => Promise<ServerImportResult>;
   getImportStatus?: (sessionId: string) => Promise<any>;
 
+  // Client-side data processing functions (new)
+  parseFile?: (file: File, onProgress?: (progress: number) => void) => Promise<any[]>;
+  validateClientData?: (data: any[]) => Promise<ClientValidationResult>;
+  submitClientData?: (data: any[], onProgress?: (progress: ProgressInfo) => void) => Promise<ClientImportResult>;
+
   // UI Configuration
-  title?: string; // Custom title for the modal
   columns: ImportColumn[];
   entityName: string; // Used for i18n keys like 'departments', 'users', 'classes'
   previewRowCount?: number;
   allowPartialImport?: boolean;
-  instructions?: string[]; // Custom instructions for upload process
 
   // Optional callbacks
-  onSuccess?: (result: ServerImportResult) => void;
+  onSuccess?: (result: ServerImportResult | ClientImportResult) => void;
   onError?: (error: Error) => void;
   onValidationComplete?: (result: ServerValidationResult) => void;
 }
@@ -92,14 +144,22 @@ export type ImportStep = 'upload' | 'preview' | 'importing' | 'result';
 export interface ImportState {
   step: ImportStep;
   selectedFile: File | null;
-  // Remove client-side fields
-  importData: null;
-  importResult: null;
 
-  // Server-side state
+  // Server-side state (legacy)
   serverSession: ServerImportSession | null;
   serverValidation: ServerValidationResult | null;
   serverResult: ServerImportResult | null;
+
+  // Client-side state (new)
+  clientData: any[] | null;
+  clientValidation: ClientValidationResult | null;
+  clientResult: ClientImportResult | null;
+  
+  // Batch processing state
+  batchProgress: ProgressInfo | null;
+  sessionId: string | null;
+  totalRecords: number | null;
+  isBatchProcessing: boolean;
 
   options: ImportOptions;
   loading: boolean;

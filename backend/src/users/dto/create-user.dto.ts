@@ -1,7 +1,7 @@
-import { IsString, IsEmail, IsOptional, IsEnum, IsUUID, IsArray, ValidateIf, ValidateNested } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsEnum, IsUUID, IsArray, ValidateIf, ValidateNested, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { UserType, MembershipStatus } from '../../entities/user.entity';
+import { UserType, MembershipStatus, Gender, TrainingSystem, TrainingLevel } from '../../entities/user.entity';
 import { UserRoleAssignmentDto } from './user-role-assignment.dto';
 
 export class CreateUserDto {
@@ -17,13 +17,15 @@ export class CreateUserDto {
   @IsString()
   givenName: string;
 
-  @ApiProperty({ description: 'Email' })
+  @ApiPropertyOptional({ description: 'Email' })
+  @IsOptional()
   @IsEmail()
-  email: string;
+  email?: string;
 
-  @ApiProperty({ description: 'Số điện thoại' })
+  @ApiPropertyOptional({ description: 'Số điện thoại' })
+  @IsOptional()
   @IsString()
-  phone: string;
+  phone?: string;
 
   @ApiPropertyOptional({ description: 'Mật khẩu' })
   @IsOptional()
@@ -53,7 +55,9 @@ export class CreateUserDto {
   @ApiPropertyOptional({ description: 'ID đơn vị đào tạo' })
   @IsOptional()
   @IsUUID()
-  trainingDepartmentId?: string; @ApiPropertyOptional({ description: 'ID lớp' })
+  trainingDepartmentId?: string; 
+  
+  @ApiPropertyOptional({ description: 'ID lớp' })
   @IsOptional()
   @IsUUID()
   classId?: string;
@@ -90,4 +94,45 @@ export class CreateUserDto {
   @IsArray()
   @IsUUID(4, { each: true })
   roles?: string[];
+
+  // New fields for enhanced import system
+  @ApiPropertyOptional({ description: 'Số CMND/CCCD' })
+  @IsOptional()
+  @IsString()
+  identityCard?: string;
+  
+  @ApiPropertyOptional({ description: 'Ngày sinh (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsDateString()
+  birthDate?: string;
+  
+  @ApiPropertyOptional({ enum: Gender, description: 'Giới tính' })
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
+  
+  @ApiPropertyOptional({ description: 'Năm vào trường' })
+  @IsOptional()
+  @IsString()
+  admissionYear?: string;
+  
+  @ApiPropertyOptional({ description: 'Năm chương trình đào tạo' })
+  @IsOptional()
+  @IsString()
+  curriculumYear?: string;
+  
+  @ApiPropertyOptional({ description: 'Mã khoa' })
+  @IsOptional()
+  @IsString()
+  facultyCode?: string;
+  
+  @ApiPropertyOptional({ enum: TrainingSystem, description: 'Hệ đào tạo' })
+  @IsOptional()
+  @IsEnum(TrainingSystem)
+  trainingSystem?: TrainingSystem;
+  
+  @ApiPropertyOptional({ enum: TrainingLevel, description: 'Bậc đào tạo' })
+  @IsOptional()
+  @IsEnum(TrainingLevel)
+  trainingLevel?: TrainingLevel;
 }

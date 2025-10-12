@@ -55,9 +55,8 @@ export class ImportValidationService {
     
     // Get existing data for validation
     const existingUsers = await this.userRepository.find({
-      select: ['email', 'code']
+      select: ['code']
     });
-    const existingEmails = new Set(existingUsers.map(u => u.email.toLowerCase()));
     const existingCodes = new Set(existingUsers.map(u => u.code.toLowerCase()));
     
     const classes = await this.classRepository.find({ select: ['id', 'name'] });
@@ -70,7 +69,6 @@ export class ImportValidationService {
     const organizationMap = new Map(organizations.map(o => [o.code.toLowerCase(), o.id]));
 
     // Track duplicates within the import data
-    const importEmails = new Set<string>();
     const importCodes = new Set<string>();
 
     for (let i = 0; i < data.length; i++) {
@@ -116,17 +114,8 @@ export class ImportValidationService {
         });
       }
 
-      if (!row.email?.trim()) {
-        validation.errors.push('Email is required');
-        validation.isValid = false;
-        _errors.push({
-          row: rowNumber,
-          column: 'email',
-          message: 'Email is required',
-          severity: 'error'
-        });
-      } else {
-        // Validate email format
+      // Validate email format only if email is provided and not "*"
+      if (row.email && row.email.trim() && row.email.trim() !== '*') {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(row.email)) {
           validation.errors.push('Invalid email format');
@@ -137,34 +126,6 @@ export class ImportValidationService {
             message: 'Invalid email format',
             severity: 'error'
           });
-        } else {
-          const normalizedEmail = row.email.toLowerCase();
-          
-          // Check for duplicates in existing data
-          if (existingEmails.has(normalizedEmail)) {
-            validation.errors.push('Email already exists in database');
-            validation.isValid = false;
-            _errors.push({
-              row: rowNumber,
-              column: 'email',
-              message: 'Email already exists in database',
-              severity: 'error'
-            });
-          }
-          
-          // Check for duplicates within import data
-          if (importEmails.has(normalizedEmail)) {
-            validation.errors.push('Duplicate email in import data');
-            validation.isValid = false;
-            _errors.push({
-              row: rowNumber,
-              column: 'email',
-              message: 'Duplicate email in import data',
-              severity: 'error'
-            });
-          } else {
-            importEmails.add(normalizedEmail);
-          }
         }
       }
 
@@ -377,7 +338,12 @@ export class ImportValidationService {
     return results;
   }
 
-  async validateEmailUniqueness(email: string, excludeId?: string): Promise<boolean> {
+  async validateEmailUniqueness(email: string | null, excludeId?: string): Promise<boolean> {
+    // Null email is always valid (no uniqueness constraint)
+    if (!email) {
+      return true;
+    }
+    
     const query = this.userRepository.createQueryBuilder('user')
       .where('LOWER(user.email) = LOWER(:email)', { email });
     

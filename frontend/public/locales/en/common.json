@@ -283,6 +283,7 @@
     "dryRunDescriptionPhonetic": "Only validate data",
     "validate": "Validate",
     "validatePhonetic": "Validate",
+    "validationErrors": "There are errors in the validation process. Please fix the errors and try again.",
     "startImport": "Start Import",
     "startImportPhonetic": "Start Import",
     "importing": "Importing data...",

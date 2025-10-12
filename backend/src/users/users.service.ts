@@ -40,7 +40,13 @@ export class UsersService {
       userData.password = await bcrypt.hash(userPassword, 10);
     }
 
-    const user = this.usersRepository.create(userData);
+    // Handle date conversion
+    const userDataWithDates = {
+      ...userData,
+      birthDate: userData.birthDate ? new Date(userData.birthDate) : undefined
+    };
+
+    const user = this.usersRepository.create(userDataWithDates);
     const savedUser = await this.usersRepository.save(user);    // Handle organization membership (including parent organizations)
     if (organizationId && organizationId.trim() !== '') {
       try {
