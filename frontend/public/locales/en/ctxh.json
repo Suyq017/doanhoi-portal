@@ -12,6 +12,7 @@
     "description": "Description",
     "descriptionPlaceholder": "Enter category description (optional)",
         "note": "Community service activity categories will be applied university-wide and can be used by all organizations.",
+    "noteLabel": "Note:",
     "addNew": "Add New Category",
     "saveError": "An error occurred while saving the category",
     "organization": "Organization",
@@ -171,6 +172,7 @@
     "wrongTemplateType": "You are using the wrong template type. This is a grading template, please use the student registration template",
     "wrongTemplateTypeGrading": "You are using the wrong template type. This is a student registration template, please use the grading template",
     "missingRequiredColumns": "Missing required columns in file. Please check the template again",
+    "studentNotFound": "Student not found",
     "studentNotFoundInDB": "Not found in system",
     "studentNotParticipatingInActivity": "Student with code {{studentCode}} is not participating in this activity",
     "invalidDaysValue": "Invalid community service days value for student {{studentCode}}",
@@ -180,6 +182,11 @@
     "actualDays": "Actual Days",
     "actualDaysPlaceholder": "Enter number of days...",
     "status": "Status",
+    "statusOptions": {
+      "registered": "Registered",
+      "completed": "Completed", 
+      "cancelled": "Cancelled"
+    },
     "note": "Note",
     "notePlaceholder": "Enter note (optional)...",
     "joinDate": "Join Date",
@@ -230,7 +237,7 @@
     "gradingStatusRestriction": "Can only grade when activity is in ACTIVE or COMPLETED status (current: {{status}})",
     "studentCodeShort": "Student Code",
     "studentCodePlaceholder": "Enter student code to add to activity",
-    "studentCodeNotFound": "Student code \"{{studentCode}}\" not found in system. You can still add this student.",
+    "studentCodeNotFound": "Student code \"{{studentCode}}\" not found in system.",
     "invalidStudentCode": "Student code \"{{studentCode}}\" is invalid",
     "studentNotFoundWithCode": "Student not found with code: {{studentCode}}",
     "studentAlreadyParticipatedInActivity": "Student with code {{studentCode}} has already participated in this activity",
@@ -240,6 +247,7 @@
     "positiveIntegerRequired": "Community service days must be a positive integer!",
     "positiveNumberRequired": "Community service days must be a positive number!",
     "ctxhDaysExceeded": "Community service days exceed the limit",
+    "studentAlreadyParticipating": "Student already participating",
     "studentAlreadyParticipated": "Student {{studentCode}} has already participated in this activity",
     "activityNotFound": "Activity not found",
     "addStudentActiveOnly": "Can only add students to activities with ACTIVE status",
@@ -247,12 +255,7 @@
     "selectGradingFile": "Please select Excel grading file!",
     "added": "Student added successfully",
     "graded": "Student graded successfully",
-    "removed": "Student removed successfully",
-    "statusOptions": {
-      "registered": "Registered",
-      "completed": "Completed",
-      "cancelled": "Cancelled"
-    }
+    "removed": "Student removed successfully"
   },
   "limitConfig": {
     "title": "Limit Configuration",
@@ -367,5 +370,19 @@
     "email": "Invalid email format",
     "studentCode": "Invalid student code format (7-10 digits)",
     "positiveNumber": "{{field}} must be a positive number"
+  },
+  "grading": {
+    "activityNotFound": "Activity not found",
+    "addStudentActiveOnly": "Can only add students to activities with ACTIVE status",
+    "individualGradingSuccess": "Successfully graded student {{studentCode}}!",
+    "selectGradingFile": "Please select Excel grading file!",
+    "added": "Student added successfully",
+    "graded": "Student graded successfully",
+    "removed": "Student removed successfully",
+    "statusOptions": {
+      "registered": "Registered",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
   }
 }

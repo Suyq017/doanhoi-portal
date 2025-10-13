@@ -46,6 +46,34 @@ export class ActivitiesController {
     private readonly excelService: ExcelService,
   ) {}
 
+  @Get('participants/template')
+  @ApiOperation({ 
+    summary: 'Tải template Excel để upload sinh viên (generic)',
+    description: 'Tạo và download file Excel mẫu để upload danh sách sinh viên tham gia hoạt động CTXH'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Tải template thành công',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        schema: {
+          type: 'string',
+          format: 'binary'
+        }
+      }
+    }
+  })
+  async downloadGenericParticipantsTemplate(@Res() res) {
+    const buffer = await this.excelService.generateParticipantsTemplate();
+    
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename="template-danh-sach-sinh-vien.xlsx"',
+    });
+    
+    res.send(buffer);
+  }
+
   @Post()
   @ApiOperation({ 
     summary: 'Tạo hoạt động CTXH mới',
@@ -244,6 +272,121 @@ export class ActivitiesController {
   @RequirePermissions('ctxh_activity:read')
   getParticipants(@Param('id') id: string) {
     return this.participationService.findByActivity(id);
+  }
+
+  @Post(':id/participants/batch')
+  @ApiOperation({ 
+    summary: 'Thêm sinh viên theo batch (Client-side processing)',
+    description: 'Nhận dữ liệu sinh viên đã được xử lý từ frontend và thêm vào hoạt động theo batch'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Batch import thành công' 
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dữ liệu batch không hợp lệ' 
+  })
+  @RequirePermissions('ctxh_activity:update')
+  async addParticipantsBatch(
+    @Param('id') id: string,
+    @Body() batchData: { students: Array<{ student_code: string }> },
+    @Request() req,
+  ) {
+    const results = {
+      successful: [],
+      failed: [],
+      total: batchData.students.length
+    };
+
+    for (const student of batchData.students) {
+      try {
+        const participant = await this.participationService.addStudent(
+          id,
+          student.student_code,
+          req.user.id,
+        );
+        results.successful.push({
+          student_code: student.student_code,
+          participant_id: participant.id
+        });
+      } catch (error) {
+        results.failed.push({
+          student_code: student.student_code,
+          error: error.message
+        });
+      }
+    }
+
+    return results;
+  }
+
+  @Post(':id/participants/grade-batch')
+  @ApiOperation({ 
+    summary: 'Chấm điểm theo batch (Client-side processing)',
+    description: 'Nhận dữ liệu chấm điểm đã được xử lý từ frontend và cập nhật điểm theo batch'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Batch grading thành công' 
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Dữ liệu batch không hợp lệ' 
+  })
+  @RequirePermissions('ctxh_activity:update')
+  async gradeParticipantsBatch(
+    @Param('id') id: string,
+    @Body() batchData: { 
+      participants: Array<{ 
+        participation_id: string; 
+        actual_days: number; 
+        note?: string; 
+      }> 
+    },
+    @Request() req,
+  ) {
+    // Validate activity status
+    const activity = await this.activitiesService.findOne(id);
+    if (activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED') {
+      throw new BadRequestException(`Chỉ có thể chấm điểm khi hoạt động ở trạng thái ACTIVE hoặc COMPLETED (hiện tại: ${activity.status})`);
+    }
+
+    const maxDays = activity.total_days;
+    const results = {
+      successful: [],
+      failed: [],
+      total: batchData.participants.length
+    };
+
+    for (const participant of batchData.participants) {
+      try {
+        // Validate days
+        if (participant.actual_days > maxDays) {
+          throw new Error(`Số ngày CTXH vượt quá giới hạn (tối đa ${maxDays} ngày)`);
+        }
+
+        const gradedParticipant = await this.participationService.gradeParticipation(
+          participant.participation_id,
+          participant.actual_days,
+          participant.note || '',
+          req.user.id,
+        );
+        
+        results.successful.push({
+          participation_id: participant.participation_id,
+          actual_days: participant.actual_days,
+          graded_participant: gradedParticipant
+        });
+      } catch (error) {
+        results.failed.push({
+          participation_id: participant.participation_id,
+          error: error.message
+        });
+      }
+    }
+
+    return results;
   }
 
   @Post(':id/participants')
@@ -538,34 +681,6 @@ export class ActivitiesController {
     res.set({
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename="${filename}"`,
-    });
-    
-    res.send(buffer);
-  }
-
-  @Get('participants/template')
-  @ApiOperation({ 
-    summary: 'Tải template Excel để upload sinh viên (generic)',
-    description: 'Tạo và download file Excel mẫu để upload danh sách sinh viên tham gia hoạt động CTXH'
-  })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Tải template thành công',
-    content: {
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
-        schema: {
-          type: 'string',
-          format: 'binary'
-        }
-      }
-    }
-  })
-  async downloadGenericParticipantsTemplate(@Res() res) {
-    const buffer = await this.excelService.generateParticipantsTemplate();
-    
-    res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': 'attachment; filename="template-danh-sach-sinh-vien.xlsx"',
     });
     
     res.send(buffer);

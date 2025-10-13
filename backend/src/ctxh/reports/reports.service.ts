@@ -63,8 +63,23 @@ export class ReportsService {
 
     // Calculate total days completed
     const completedParticipations = participations.filter(p => p.status === 'COMPLETED');
-    const totalDaysCompleted = completedParticipations.reduce((sum, p) => sum + (p.actual_days || 0), 0);
+    const totalDaysCompleted = completedParticipations.reduce((sum, p) => {
+      const days = Number(p.actual_days) || 0;
+      console.log(`Adding ${days} days for student ${p.student_code}, activity: ${p.activity_name}`);
+      return sum + days;
+    }, 0);
     const totalActivities = participations.length;
+    
+    console.log('Total days calculation:', {
+      completedCount: completedParticipations.length,
+      totalDaysCompleted,
+      individualDays: completedParticipations.map(p => ({ 
+        student_code: p.student_code, 
+        activity: p.activity_name, 
+        actual_days: p.actual_days, 
+        type: typeof p.actual_days 
+      }))
+    });
     
     // Debug: Log participation data
     console.log('Participations found:', participations.map(p => ({

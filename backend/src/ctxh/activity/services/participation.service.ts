@@ -29,17 +29,20 @@ export class ParticipationService {
     // Get unique student codes
     const studentCodes = [...new Set(participations.map(p => p.student_code))];
     
-    // Load user info for these student codes
-    const users = await this.userRepository
-      .createQueryBuilder('user')
-      .where('user.code IN (:...codes)', { codes: studentCodes })
-      .getMany();
-    
     // Create lookup map
     const userMap = new Map();
-    users.forEach(user => {
-      userMap.set(user.code, user);
-    });
+    
+    // Only load user info if there are student codes
+    if (studentCodes.length > 0) {
+      const users = await this.userRepository
+        .createQueryBuilder('user')
+        .where('user.code IN (:...codes)', { codes: studentCodes })
+        .getMany();
+      
+      users.forEach(user => {
+        userMap.set(user.code, user);
+      });
+    }
 
     return participations.map(p => {
       const user = userMap.get(p.student_code);
@@ -79,6 +82,18 @@ export class ParticipationService {
       );
     }
 
+    // BACKEND VALIDATION: Check if student exists in users table
+    const user = await this.userRepository.findOne({
+      where: { code: studentCode },
+      select: ['id', 'code', 'familyName', 'givenName', 'email']
+    });
+
+    if (!user) {
+      throw new BadRequestException(
+        `Không tìm thấy sinh viên với mã số ${studentCode} trong hệ thống`
+      );
+    }
+
     // Check if student code already participated in this activity
     const existingParticipation = await this.participationRepository.findOne({
       where: {
@@ -94,11 +109,11 @@ export class ParticipationService {
       );
     }
 
-    // Create participation with student_code directly (no validation against users table)
+    // Create participation with validated user information
     const participation = this.participationRepository.create({
       activity_id: activityId,
-      student_code: studentCode, // Store student code directly
-      student_id: null, // No user validation needed
+      student_code: studentCode,
+      student_id: user.id, // Now we have the user ID
       status: ParticipationStatus.REGISTERED,
       created_by: createdBy,
     });
@@ -107,12 +122,12 @@ export class ParticipationService {
 
     return plainToClass(ParticipationResponseDto, {
       ...savedParticipation,
-      student_code: studentCode, // Map student_code to root level
+      student_code: studentCode,
       student: {
-        id: null, // No user ID since we're not validating against users table
+        id: user.id,
         student_code: studentCode,
-        full_name: null, // Will be null since we don't fetch user data
-        email: null,
+        full_name: `${user.familyName} ${user.givenName}`.trim(),
+        email: user.email,
       }
     }, { excludeExtraneousValues: true });
   }
@@ -167,11 +182,25 @@ export class ParticipationService {
           continue;
         }
 
-        // Create participation directly since we've already validated activity
+        // BACKEND VALIDATION: Check if student exists in users table
+        const user = await this.userRepository.findOne({
+          where: { code: studentCode },
+          select: ['id', 'code', 'familyName', 'givenName', 'email']
+        });
+
+        if (!user) {
+          failed.push({
+            studentCode,
+            error: `Không tìm thấy sinh viên với mã số ${studentCode} trong hệ thống`,
+          });
+          continue;
+        }
+
+        // Create participation with validated user information
         const participation = this.participationRepository.create({
           activity_id: activityId,
           student_code: studentCode,
-          student_id: null,
+          student_id: user.id, // Now we have the user ID
           status: ParticipationStatus.REGISTERED,
           created_by: createdBy,
         });
@@ -180,12 +209,12 @@ export class ParticipationService {
 
         const participationResponse = plainToClass(ParticipationResponseDto, {
           ...savedParticipation,
-          student_code: studentCode, // Map student_code to root level
+          student_code: studentCode,
           student: {
-            id: null,
+            id: user.id,
             student_code: studentCode,
-            full_name: null,
-            email: null,
+            full_name: `${user.familyName} ${user.givenName}`.trim(),
+            email: user.email,
           }
         }, { excludeExtraneousValues: true });
 

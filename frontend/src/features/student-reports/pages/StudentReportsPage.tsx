@@ -25,6 +25,13 @@ const StudentReportsPage: React.FC = () => {
   const [report, setReport] = useState<StudentReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [studentInfo, setStudentInfo] = useState<{name?: string, email?: string}>({});
+
+  // Format days to show integers when possible (e.g., 3.0 -> 3, 3.5 -> 3.5)
+  const formatDays = (days: number | null | undefined): string => {
+    if (days === null || days === undefined) return '0';
+    // Remove trailing zeros after decimal point
+    return parseFloat(days.toString()).toString();
+  };
     
   // Load report data
   useEffect(() => {
@@ -174,7 +181,7 @@ const StudentReportsPage: React.FC = () => {
                   <div>
                     <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('summary.totalDays')}</label>
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {report?.total_days_completed || 0} {t('summary.days')}
+                      {formatDays(report?.total_days_completed)} {t('summary.days')}
                     </div>
                   </div>
                 </div>
@@ -201,7 +208,7 @@ const StudentReportsPage: React.FC = () => {
                   </div>
                   <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
                     <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                      {report?.total_days_completed || 0}
+                      {formatDays(report?.total_days_completed)}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">{t('summary.accumulatedDays')}</div>
                   </div>
@@ -267,7 +274,7 @@ const StudentReportsPage: React.FC = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right">
                               <div className="text-sm font-semibold text-green-600 dark:text-green-400">
-                                {activity.days_completed || 0}
+                                {formatDays(activity.days_completed)}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -275,7 +282,7 @@ const StudentReportsPage: React.FC = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                               {activity.created_at 
-                                ? new Date(activity.created_at).toLocaleDateString()
+                                ? new Date(activity.created_at).toLocaleDateString('vi-VN')
                                 : t('studentInfo.unknown')
                               }
                             </td>

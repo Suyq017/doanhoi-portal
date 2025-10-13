@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Users, Plus, Upload, Download, Search, Edit2, Trash2, FileSpreadsheet, X, ChevronDown } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { CtxhActivity, ParticipationResponse } from '../types';
 import { activityService } from '../services';
 import { userService } from '../../../shared/services/userService';
+import { authService } from '../../auth/services/authService';
 import { useToast } from '../../../shared/hooks';
 import { Toast, ConfirmDialog, Pagination, ImportModal } from '../../../shared/components';
 import { ImportModalConfig } from '../../../shared/types/import';
-import { authService } from '../../auth/services/authService';
+import { excelParserService, importValidationService, batchImportService } from '../services';
 
 interface ParticipantManagementProps {
   activity: CtxhActivity;
@@ -26,7 +26,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [newStudentCode, setNewStudentCode] = useState('');
   const [addingStudent, setAddingStudent] = useState(false);
-  const [studentInfo, setStudentInfo] = useState<{name?: string, email?: string}>({});
+  const [studentInfo, setStudentInfo] = useState<{name?: string, email?: string, alreadyParticipating?: boolean}>({});
   const [lookingUpStudent, setLookingUpStudent] = useState(false);
   const [participantsStudentInfo, setParticipantsStudentInfo] = useState<Record<string, {name?: string, email?: string}>>({});
   
@@ -58,880 +58,229 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     return num % 1 === 0 ? Math.floor(num).toString() : num.toString();
   };
 
-  // Download template function
-  const downloadStudentTemplate = async () => {
-    try {
-      const token = authService.getAccessToken();
-      const response = await fetch(`/api/ctxh/activities/participants/template`, {
-        method: 'GET',
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to download template');
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'participants_template.xlsx';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to download template:', error);
-      showError(t('participant.templateDownloadError'));
-    }
-  };
+  // Template URLs with authentication
+  const [studentTemplateUrl, setStudentTemplateUrl] = useState<string>('');
+  const [gradingTemplateUrl, setGradingTemplateUrl] = useState<string>('');
 
-  const downloadGradingTemplate = async () => {
-    // Kiểm tra xem có participants không trước khi download
-    if (participants.length === 0) {
-      showError(t('participant.noParticipantsForTemplate'));
-      return;
-    }
-
-    try {
-      const token = authService.getAccessToken();
-      const response = await fetch(`/api/ctxh/activities/${activity.id}/participants/grading-template`, {
-        method: 'GET',
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        }
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Download template error:', errorText);
+  // Generate authenticated template URLs
+  useEffect(() => {
+    const generateTemplateUrls = async () => {
+      try {
+        const token = authService.getAccessToken();
         
-        if (response.status === 404) {
-          throw new Error('Hoạt động không tồn tại hoặc chưa có sinh viên tham gia');
-        } else {
-          throw new Error(t('participant.templateLoadFailure'));
+        // Generate student template URL
+        const studentResponse = await fetch('/api/ctxh/activities/participants/template', {
+          method: 'GET',
+          headers: {
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          }
+        });
+        
+        if (studentResponse.ok) {
+          const studentBlob = await studentResponse.blob();
+          const studentUrl = window.URL.createObjectURL(studentBlob);
+          setStudentTemplateUrl(studentUrl);
         }
+
+        // Generate grading template URL
+        const gradingResponse = await fetch(`/api/ctxh/activities/${activity.id}/participants/grading-template`, {
+          method: 'GET',
+          headers: {
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          }
+        });
+        
+        if (gradingResponse.ok) {
+          const gradingBlob = await gradingResponse.blob();
+          const gradingUrl = window.URL.createObjectURL(gradingBlob);
+          setGradingTemplateUrl(gradingUrl);
+        }
+      } catch (error) {
+        console.error('Failed to generate template URLs:', error);
       }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'grading_template.xlsx';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error: any) {
-      console.error('Failed to download template:', error);
-      showError(error.message || t('participant.templateLoadError'));
-    }
-  };
+    };
 
-  // Helper function to lookup student info
-  const lookupStudentInfo = async (studentCode: string) => {
-    try {
-      const user = await userService.findByExactCode(studentCode);
-      
-      if (user) {
-        return {
-          full_name: user.familyName + ' ' + user.givenName,
-          email: user.email
-        };
+    generateTemplateUrls();
+
+    // Cleanup blob URLs on unmount
+    return () => {
+      if (studentTemplateUrl) {
+        window.URL.revokeObjectURL(studentTemplateUrl);
       }
-      
-      return null;
-    } catch (error) {
-      console.error('Student lookup error:', error);
-      return null;
-    }
-  };
+      if (gradingTemplateUrl) {
+        window.URL.revokeObjectURL(gradingTemplateUrl);
+      }
+    };
+  }, [activity.id]);
 
-  // Store last processed data for validateServerData
-  const lastProcessedDataRef = useRef<any[]>([]);
-  
-  // Store original grading file for upload
-  const originalGradingFileRef = useRef<File | null>(null);
-
-  // ImportModal configurations - using functions to ensure translations are evaluated correctly
+  // ImportModal configurations - NEW: Using client-side processing
   const getStudentImportConfig = (): ImportModalConfig => ({
     entityName: 'participants',
-    title: '', // Will be overridden by titleKey
-    downloadTemplate: downloadStudentTemplate,
+    // Use blob URL with authentication
+    templateUrl: studentTemplateUrl,
     templateFileName: 'participants_template.xlsx',
     acceptedFileTypes: ['.xlsx', '.xls'],
     maxFileSize: 10 * 1024 * 1024, // 10MB
-    instructions: [
-      t('participant.downloadTemplateAndFillStudentInfo'),
-      t('participant.checkDataFormat'),
-      t('participant.uploadFileToImport')
-    ],
+    useClientSideProcessing: true,
+    batchSize: 50, // Smaller batch size for CTXH
+    
     columns: [
-      { key: 'STUDENT ID', label: t('participant.studentCodeLabel'), required: true, type: 'text', width: '150px' },
-      { key: 'NAME', label: t('common:fields.name'), required: false, type: 'text', width: '200px' },
-      { key: 'EMAIL', label: t('common:fields.email'), required: false, type: 'email', width: '200px' }
+      { key: 'studentCode', label: t('participant.studentCodeLabel'), required: true, type: 'text', width: '150px' },
+      { key: 'name', label: t('common:fields.name'), required: false, type: 'text', width: '200px' },
+      { key: 'email', label: t('common:fields.email'), required: false, type: 'email', width: '200px' }
     ],
-    uploadFile: async (file: File) => {
-      // Validate file format first
-      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-        throw new Error(t('participant.invalidFileFormat'));
-      }
-      
-      // Read and validate Excel file content locally first
+    
+    // Client-side file parsing
+    parseFile: async (file: File, onProgress?: (progress: number) => void) => {
       try {
-        const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const parseResult = await excelParserService.parseParticipantFile(file, onProgress);
         
-        // Check if file has data
-        if (!jsonData || jsonData.length < 2) {
-          throw new Error(t('participant.templateFormatError'));
+        if (parseResult.errors.length > 0) {
+          console.warn('Parse errors:', parseResult.errors);
         }
         
-        // Check for required column (MSSV/Student Code) and validate template structure
-        const headers = jsonData[0] as string[];
-        
-        console.log('Student import - Headers detected:', headers);
-        
-        // For student import, check basic template requirements
-        const hasStudentCodeColumn = headers.some(header => 
-          header && (
-            header.toLowerCase().includes('mssv') ||
-            header.toLowerCase().includes('mã số') ||
-            header.toLowerCase().includes('student code')
-          )
-        );
-        
-        if (!hasStudentCodeColumn) {
-          throw new Error(t('participant.templateFormatError'));
-        }
-        
-        // Check if this looks like a grading template (has grading-specific columns)
-        const hasGradingColumns = headers.some(header => 
-          header && (
-            header.toLowerCase().includes('số ngày') ||
-            header.toLowerCase().includes('ctxh') ||
-            header.toLowerCase().includes('ghi chú') ||
-            header.toLowerCase().includes('họ tên') ||
-            header.toLowerCase().includes('stt')
-          )
-        );
-        
-        // If it has grading columns, reject it for student import
-        if (hasGradingColumns) {
-          console.log('Detected grading template in student import');
-          throw new Error(t('participant.templateFormatError'));
-        }
-        
-        // Also check if there are too many columns (grading templates usually have 4+ columns)
-        if (headers.length > 3) {
-          console.log('Too many columns for student template:', headers.length);
-          throw new Error(t('participant.templateFormatError'));
-        }
-        
-        // Process data rows
-        const dataRows = jsonData.slice(1).filter(row => 
-          row && Array.isArray(row) && row.some(cell => cell !== null && cell !== undefined && cell !== '')
-        ) as any[][];
-        
-        if (dataRows.length === 0) {
-          throw new Error(t('participant.templateFormatError'));
-        }
-        
-        // Transform data to expected format and lookup students
-        const processedData = await Promise.all(dataRows.map(async (row: any[], index: number) => {
-          // Find student code in the row
-          let studentCode = '';
-          headers.forEach((header, colIndex) => {
-            if (header && (
-              header.toLowerCase().includes('mssv') ||
-              header.toLowerCase().includes('mã số') ||
-              header.toLowerCase().includes('student code')
-            )) {
-              studentCode = row[colIndex]?.toString().trim() || '';
-            }
-          });
-          
-          if (!studentCode) {
-            return {
-              'STUDENT ID': '',
-              'NAME': t('participant.studentNotFoundInDB'),
-              'EMAIL': '',
-              _hasError: true,
-              _errorMessage: t('participant.invalidStudentCode', { studentCode: `Row ${index + 2}` }),
-              _studentExists: false,
-              _originalStudentCode: ''
-            };
-          }
-          
-          // Lookup student info
-          try {
-            const studentInfo = await lookupStudentInfo(studentCode);
-            
-            // Check if student is already participating in this activity
-            const isAlreadyParticipating = participants.some(p => 
-              p.student_code === studentCode || 
-              (p.student?.student_code === studentCode)
-            );
-            
-            let hasError = false;
-            let errorMessage = null;
-            
-            if (!studentInfo) {
-              hasError = true;
-              errorMessage = t('participant.studentNotFoundWithCode', { studentCode });
-            } else if (isAlreadyParticipating) {
-              hasError = true;
-              errorMessage = t('participant.studentAlreadyParticipatedInActivity', { studentCode });
-            }
-            
-            return {
-              'STUDENT ID': studentCode,
-              'NAME': studentInfo?.full_name || t('participant.studentNotFoundInDB'),
-              'EMAIL': studentInfo?.email || '',
-              _studentExists: !!studentInfo,
-              _originalStudentCode: studentCode,
-              _hasError: hasError,
-              _errorMessage: errorMessage,
-              _isDuplicate: isAlreadyParticipating
-            };
-          } catch (error) {
-            return {
-              'STUDENT ID': studentCode,
-              'NAME': t('participant.studentNotFoundInDB'),
-              'EMAIL': '',
-              _studentExists: false,
-              _originalStudentCode: studentCode,
-              _hasError: true,
-              _errorMessage: t('participant.studentNotFoundWithCode', { studentCode }),
-              _isDuplicate: false
-            };
-          }
-        }));
-        
-        // Return processed data in expected format
-        const sessionId = `local_${Date.now()}`;
-        const result = {
-          sessionId,
-          fileName: file.name,
-          message: 'File processed successfully',
-          data: processedData,
-          previewData: processedData, // Add previewData directly here for ImportModal
-          totalRows: processedData.length,
-          validRows: processedData.filter(row => !row._hasError).length,
-          errorRows: processedData.filter(row => row._hasError).length
-        };
-        
-        console.log('Upload completed, processed data:', processedData);
-        
-        // Store in ref for validateServerData
-        lastProcessedDataRef.current = processedData;
-        
-        return result;
+        return parseResult.data;
       } catch (error) {
-        if (error instanceof Error) {
-          throw error;
-        }
-        throw new Error(t('participant.templateFormatError'));
+        console.error('Parse error:', error);
+        throw new Error(error instanceof Error ? error.message : 'Lỗi khi đọc file Excel');
       }
     },
-    validateServerData: async (sessionId: string) => {
-      // For local sessions, data is already processed and returned from uploadFile
-      if (sessionId.startsWith('local_')) {
-        console.log('ValidateServerData called for local session - skipping as data already processed');
+    
+    // Client-side validation
+    validateClientData: async (data: any[]) => {
+      try {
+        const validationResult = await importValidationService.validateParticipantData(
+          data,
+          participants // Pass existing participants to check for duplicates
+        );
         
-        // Get processed data from ref
-        const processedData = lastProcessedDataRef.current || [];
-        const validRows = processedData.filter((row: any) => !row._hasError);
-        const errorRows = processedData.filter((row: any) => row._hasError);
-        
-        // Create error list for display
-        const errors = errorRows.map((row: any) => {
-          // Find original row number in the full data
-          const originalRowIndex = processedData.findIndex(r => r === row);
-          return {
-            row: originalRowIndex + 1,
-            field: 'STUDENT ID', 
-            value: row['STUDENT ID'],
-            message: row._errorMessage || 'Unknown error',
-            type: row._isDuplicate ? 'duplicate' : 'validation'
-          };
-        });
-        
-        console.log('ValidateServerData using ref data:', processedData.length, 'items');
-        console.log('Valid rows for preview:', validRows.length);
-        console.log('Error rows for error list:', errorRows.length);
-        console.log('Generated errors:', errors);
-        
-        // Return response with only valid rows in previewData
-        return {
-          sessionId,
-          data: [],
-          previewData: validRows, // Only show valid rows in preview table
-          message: 'Local validation completed',
-          summary: {
-            total: processedData.length,
-            valid: validRows.length,
-            invalid: errorRows.length,
-            duplicates: processedData.filter((row: any) => row._isDuplicate).length,
-            conflicts: 0
-          },
-          errors: errors,
-          warnings: []
-        };
+        return batchImportService.createValidationResult(validationResult.data, validationResult);
+      } catch (error) {
+        console.error('Validation error:', error);
+        throw new Error('Lỗi khi kiểm tra dữ liệu');
       }
-      
-      const token = authService.getAccessToken();
-      
-      if (!sessionId) {
-        throw new Error('SessionId is undefined');
-      }
-      
-      const response = await fetch(`/api/ctxh/activities/import/${sessionId}/validate`, {
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        }
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Student import validate error:', errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-      
-      const result = await response.json();
-      console.log('Student import validate result:', result);
-      
-      // Add error information for conflicts and validation issues
-      if (result.data && Array.isArray(result.data)) {
-        result.data = result.data.map((row: any) => {
-          const hasConflict = row.conflict || row._conflict;
-          const validationError = row.validationError || row._validationError;
-          const studentCode = row['STUDENT ID'] || row.MSSV || row._originalStudentCode;
-          
-          let errorMessage = null;
-          if (hasConflict) {
-            errorMessage = t('participant.studentAlreadyParticipatedInActivity', { studentCode });
-          } else if (validationError) {
-            errorMessage = validationError;
-          } else if (!row._studentExists) {
-            errorMessage = t('participant.studentNotFoundWithCode', { studentCode });
-          }
-          
-          return {
-            ...row,
-            _hasError: hasConflict || !!validationError || !row._studentExists,
-            _errorMessage: errorMessage
-          };
-        });
-      }
-      
-      return result;
     },
-    executeServerImport: async (sessionId: string, options?: { skipConflicts?: boolean }) => {
-      // For local sessions, we need to actually send data to server for import
-      if (sessionId.startsWith('local_')) {
-        // Get all processed data and separate valid/invalid
-        const allProcessedData = lastProcessedDataRef.current || [];
-        const validRows = allProcessedData.filter((row: any) => !row._hasError);
-        const skippedRows = allProcessedData.filter((row: any) => row._hasError);
-        
-        if (validRows.length === 0) {
-          throw new Error('No valid rows to import');
-        }
-        
-        // Send valid data to server using existing addParticipant API
-        const token = authService.getAccessToken();
-        let successCount = 0;
-        let errorCount = 0;
-        
-        for (const row of validRows) {
-          try {
-            const response = await fetch(`/api/ctxh/activities/${activity.id}/participants`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                ...(token && { 'Authorization': `Bearer ${token}` })
-              },
-              body: JSON.stringify({
-                student_code: row['STUDENT ID']
-              })
-            });
-            
-            if (response.ok) {
-              successCount++;
-            } else {
-              errorCount++;
-            }
-          } catch (error) {
-            errorCount++;
-          }
-        }
-        
-        if (successCount === 0) {
-          throw new Error('Failed to import any students');
-        }
+    
+    // Client-side batch submission
+    submitClientData: async (validData: any[], onProgress?: (progress: any) => void) => {
+      try {
+        const result = await batchImportService.submitParticipantBatches(
+          activity.id,  // Don't convert UUID to number!
+          validData,
+          onProgress
+        );
         
         return {
-          success: true,
-          importedCount: successCount,
-          failedCount: errorCount,
-          skippedCount: skippedRows.length, // Count of rows skipped due to validation errors
-          errors: errorCount > 0 ? [`Failed to import ${errorCount} students`] : [],
-          message: `Successfully imported ${successCount} students`
+          success: result.success,
+          sessionSummary: result.sessionSummary,
+          errors: result.errors,
+          message: result.message
         };
+      } catch (error) {
+        console.error('Submission error:', error);
+        throw new Error(error instanceof Error ? error.message : 'Lỗi khi import dữ liệu');
       }
-      
-      const token = authService.getAccessToken();
-      const response = await fetch(`/api/ctxh/activities/import/${sessionId}/execute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify(options)
-      });
-      return response.json();
     },
+    
     onSuccess: (result) => {
-      showSuccess(t('participant.importSuccess', { count: result.importedCount }));
+      // Handle both old and new result structures
+      const count = (result as any).sessionSummary?.totalSuccessful || 
+                   (result as any).importedCount || 
+                   (result as any).successful?.length || 
+                   0;
+      showSuccess(t('participant.importSuccess', { count }));
       loadParticipants();
-      // Don't auto-close modal - let user see the result step
-      // setShowStudentImportModal(false);
     },
+    
     onError: (error) => {
       console.error('Student import error:', error);
-      
-      // Handle specific template errors with better messages
-      const errorMessage = error.message || '';
-      if (errorMessage.includes(t('participant.invalidFileFormat'))) {
-        showError(t('participant.invalidFileFormat'));
-      } else if (errorMessage.includes(t('participant.templateFormatError'))) {
-        showError(t('participant.templateFormatError'));
-      } else if (errorMessage.includes(t('participant.missingRequiredColumns'))) {
-        showError(t('participant.missingRequiredColumns'));
-      } else {
-        // Generic import error
-        showError(t('participant.importError', { message: errorMessage || t('common:messages.error.unknown') }));
-      }
+      const errorMessage = error.message || 'Lỗi không xác định';
+      showError(t('participant.importError', { message: errorMessage }));
     }
   });
 
   const getGradingImportConfig = (): ImportModalConfig => ({
     entityName: 'grading',
-    title: '', // Will be overridden by titleKey
-    downloadTemplate: downloadGradingTemplate,
+    // Use blob URL with authentication
+    templateUrl: gradingTemplateUrl,
     templateFileName: 'grading_template.xlsx',
     acceptedFileTypes: ['.xlsx', '.xls'],
     maxFileSize: 10 * 1024 * 1024, // 10MB
-    instructions: [
-      t('participant.downloadTemplateInstruction'),
-      t('participant.checkDataFormat'),
-      t('participant.uploadFileToUpdate')
-    ],
+    useClientSideProcessing: true,
+    batchSize: 50, // Smaller batch size for CTXH
     columns: [
-      { key: 'STUDENT ID', label: t('participant.studentCodeLabel'), required: true, type: 'text', width: '150px' },
-      { key: 'NAME', label: t('common:fields.name'), required: false, type: 'text', width: '200px' },
-      { key: 'DAYS', label: t('participant.communityServiceDays'), required: true, type: 'number', width: '120px' },
-      { key: 'NOTE', label: t('participant.note'), required: false, type: 'text', width: '200px' }
+      { key: 'studentCode', label: t('participant.studentCodeLabel'), required: true, type: 'text', width: '150px' },
+      { key: 'name', label: t('common:fields.name'), required: false, type: 'text', width: '200px' },
+      { key: 'actualDays', label: t('participant.communityServiceDays'), required: true, type: 'number', width: '120px' },
+      { key: 'note', label: t('participant.note'), required: false, type: 'text', width: '200px' }
     ],
-    uploadFile: async (file: File) => {
-      // Validate file format first
-      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-        throw new Error(t('participant.invalidFileFormat'));
-      }
-      
-      // Read and validate Excel file content locally first
+    
+    // Client-side file parsing for grading
+    parseFile: async (file: File, onProgress?: (progress: number) => void) => {
       try {
-        const arrayBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const parseResult = await excelParserService.parseGradingFile(file, onProgress);
         
-        // Check if file has data
-        if (!jsonData || jsonData.length < 2) {
-          throw new Error(t('participant.templateFormatError'));
+        if (parseResult.errors.length > 0) {
+          console.warn('Parse errors:', parseResult.errors);
         }
         
-        // Check for grading template structure
-        const headers = jsonData[0] as string[];
-        
-        console.log('Grading import - Headers detected:', headers);
-        
-        const hasStudentCodeColumn = headers.some(header => 
-          header && (
-            header.toLowerCase().includes('mssv') ||
-            header.toLowerCase().includes('mã số') ||
-            header.toLowerCase().includes('student code')
-          )
-        );
-        
-        if (!hasStudentCodeColumn) {
-          throw new Error(t('participant.templateFormatError'));
-        }
-        
-        // Check for grading-specific columns
-        const hasGradingColumns = headers.some(header => 
-          header && (
-            header.toLowerCase().includes('số ngày') ||
-            header.toLowerCase().includes('ctxh') ||
-            header.toLowerCase().includes('ghi chú')
-          )
-        );
-        
-        // If it doesn't have grading columns, it might be a student template
-        if (!hasGradingColumns && headers.length <= 2) {
-          console.log('Detected student template in grading import');
-          throw new Error(t('participant.templateFormatError'));
-        }
-        
-        // Process data rows
-        const dataRows = jsonData.slice(1).filter(row => 
-          row && Array.isArray(row) && row.some(cell => cell !== null && cell !== undefined && cell !== '')
-        ) as any[][];
-        
-        if (dataRows.length === 0) {
-          throw new Error(t('participant.templateFormatError'));
-        }
-        
-        // Transform data to expected format and validate grading
-        const processedData = await Promise.all(dataRows.map(async (row: any[], index: number) => {
-          // Find data in the row based on headers
-          let studentCode = '';
-          let studentName = '';
-          let days = '';
-          let note = '';
-          
-          headers.forEach((header, colIndex) => {
-            if (header && header.toLowerCase().includes('mssv') || header.toLowerCase().includes('mã số')) {
-              studentCode = row[colIndex]?.toString().trim() || '';
-            } else if (header && header.toLowerCase().includes('họ tên')) {
-              studentName = row[colIndex]?.toString().trim() || '';
-            } else if (header && header.toLowerCase().includes('số ngày')) {
-              days = row[colIndex]?.toString().trim() || '';
-            } else if (header && header.toLowerCase().includes('ghi chú')) {
-              note = row[colIndex]?.toString().trim() || '';
-            }
-          });
-          
-          if (!studentCode) {
-            return {
-              'STUDENT ID': '',
-              'NAME': t('participant.studentNotFoundInDB'),
-              'DAYS': '',
-              'NOTE': '',
-              _hasError: true,
-              _errorMessage: t('participant.invalidStudentCode', { studentCode: `Row ${index + 2}` }),
-              _studentExists: false,
-              _originalStudentCode: ''
-            };
-          }
-          
-          // Check if student is participating in this activity
-          const participatingStudent = participants.find(p => 
-            p.student_code === studentCode || 
-            (p.student?.student_code === studentCode)
-          );
-          
-          console.log(`Row ${index + 2} - StudentCode: ${studentCode}, Found participant:`, participatingStudent);
-          
-          let hasError = false;
-          let errorMessage = null;
-          
-          if (!participatingStudent) {
-            hasError = true;
-            errorMessage = t('participant.studentNotParticipatingInActivity', { studentCode });
-          } else if (!days || isNaN(Number(days)) || Number(days) < 0) {
-            hasError = true;
-            errorMessage = t('participant.invalidDaysValue', { studentCode });
-          } else if (activity.totalDays && Number(days) > activity.totalDays) {
-            hasError = true;
-            errorMessage = t('participant.exceedsMaxDays', { studentCode, maxDays: activity.totalDays, actualDays: days });
-          }
-          
-          // Create studentData object more carefully
-          let studentData = null;
-          if (participatingStudent) {
-            if (participatingStudent.student) {
-              // Case 1: participant has nested student object
-              studentData = {
-                id: participatingStudent.student.id,
-                student_code: participatingStudent.student.student_code,
-                full_name: participatingStudent.student.full_name
-              };
-            } else if (participatingStudent.student_id) {
-              // Case 2: participant only has student_id, create minimal studentData
-              studentData = {
-                id: participatingStudent.student_id,
-                student_code: participatingStudent.student_code || studentCode,
-                full_name: studentName || studentCode // fallback to provided name or code
-              };
-            }
-          }
-          
-          console.log(`Row ${index + 2} - Created studentData:`, studentData);
-          
-          return {
-            'STUDENT ID': studentCode,
-            'NAME': participatingStudent?.student?.full_name || participatingStudent?.student_code || studentName || t('participant.studentNotFoundInDB'),
-            'DAYS': days,
-            'NOTE': note,
-            _studentExists: !!participatingStudent,
-            _originalStudentCode: studentCode,
-            _hasError: hasError,
-            _errorMessage: errorMessage,
-            _participantId: participatingStudent?.id,
-            // Add studentData for executeServerImport
-            studentData: studentData
-          };
-        }));
-        
-        // Return processed data in expected format
-        const sessionId = `local_${Date.now()}`;
-        const result = {
-          sessionId,
-          fileName: file.name,
-          message: 'File processed successfully',
-          data: processedData,
-          previewData: processedData, // Add previewData directly here for ImportModal
-          totalRows: processedData.length,
-          validRows: processedData.filter(row => !row._hasError).length,
-          errorRows: processedData.filter(row => row._hasError).length
-        };
-        
-        console.log('Grading upload completed, processed data:', processedData);
-        
-        // Store in ref for validateServerData and executeServerImport
-        lastProcessedDataRef.current = processedData;
-        // Also store the original file for upload
-        originalGradingFileRef.current = file;
-        
-        return result;
+        return parseResult.data;
       } catch (error) {
-        if (error instanceof Error) {
-          throw error;
-        }
-        throw new Error(t('participant.templateFormatError'));
+        console.error('Parse error:', error);
+        throw new Error(error instanceof Error ? error.message : 'Lỗi khi đọc file Excel');
       }
     },
-    validateServerData: async (sessionId: string) => {
-      // For local sessions (grading), return the processed data
-      if (sessionId.startsWith('local_')) {
-        console.log('Grading ValidateServerData called for local session - using ref data');
+    
+    // Client-side validation for grading
+    validateClientData: async (data: any[]) => {
+      try {
+        const validationResult = await importValidationService.validateGradingData(
+          data,
+          participants, // Pass existing participants
+          activity.totalDays // Pass activity total days for validation
+        );
         
-        // Get processed data from ref
-        const processedData = lastProcessedDataRef.current || [];
-        const validRows = processedData.filter((row: any) => !row._hasError);
-        const errorRows = processedData.filter((row: any) => row._hasError);
+        return batchImportService.createValidationResult(validationResult.data, validationResult);
+      } catch (error) {
+        console.error('Validation error:', error);
+        throw new Error('Lỗi khi kiểm tra dữ liệu');
+      }
+    },
+    
+    // Client-side batch submission for grading
+    submitClientData: async (validData: any[], onProgress?: (progress: any) => void) => {
+      try {
+        const result = await batchImportService.submitGradingBatches(
+          activity.id,  // Don't convert UUID to number!
+          validData,
+          onProgress
+        );
         
-        // Create error list for display
-        const errors = errorRows.map((row: any) => {
-          // Find original row number in the full data
-          const originalRowIndex = processedData.findIndex(r => r === row);
-          return {
-            row: originalRowIndex + 1,
-            field: 'STUDENT ID',
-            value: row['STUDENT ID'],
-            message: row._errorMessage || 'Unknown error',
-            type: 'validation'
-          };
-        });
-        
-        console.log('Grading ValidateServerData using ref data:', processedData.length, 'items');
-        console.log('Valid rows for preview:', validRows.length);
-        console.log('Error rows for error list:', errorRows.length);
-        
-        // Return response with only valid rows in previewData
         return {
-          sessionId,
-          data: [],
-          previewData: validRows, // Only show valid rows in preview table
-          message: 'Local validation completed',
-          summary: {
-            total: Number(processedData.length) || 0,
-            valid: Number(validRows.length) || 0,
-            invalid: Number(errorRows.length) || 0,
-            duplicates: 0,
-            conflicts: 0
-          },
-          errors: errors,
-          warnings: [],
-          isValid: errorRows.length === 0
+          success: result.success,
+          sessionSummary: result.sessionSummary,
+          errors: result.errors,
+          message: result.message
         };
+      } catch (error) {
+        console.error('Submission error:', error);
+        throw new Error(error instanceof Error ? error.message : 'Lỗi khi chấm điểm');
       }
-      
-      // Server validation for non-local sessions
-      if (!sessionId) {
-        throw new Error('SessionId is undefined');
-      }
-      
-      const token = authService.getAccessToken();
-      const response = await fetch(`/api/ctxh/activities/import/${sessionId}/validate`, {
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        }
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Grading - Validate error response:', errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-      
-      const result = await response.json();
-      return result;
     },
-    executeServerImport: async (sessionId: string, options?: { skipConflicts?: boolean }) => {
-      // For local sessions (grading), process the local data
-      if (sessionId.startsWith('local_')) {
-        console.log('Grading ExecuteServerImport called for local session - processing local data');
-        
-        // Get processed data from ref
-        const processedData = lastProcessedDataRef.current || [];
-        const validRows = processedData.filter((row: any) => !row._hasError);
-        
-        console.log('Processing', validRows.length, 'valid grading records');
-        
-        // Debug: Check row structure
-        console.log('Sample valid row:', validRows[0]);
-        
-        // Prepare grading data for API with validation (using participant IDs)
-        const gradingData = [];
-        const invalidRows = [];
-        
-        for (const row of validRows) {
-          if (!row._participantId) {
-            console.error('Invalid row data - missing participant ID:', row);
-            invalidRows.push(row);
-            continue;
-          }
-          
-          gradingData.push({
-            participantId: row._participantId, // Use participant ID, not student ID
-            days: parseFloat(row['DAYS']),
-            note: row['NOTE'] || ''
-          });
-        }
-        
-        if (invalidRows.length > 0) {
-          throw new Error(`Found ${invalidRows.length} rows with invalid student data. Please check the participants.`);
-        }
-        
-        console.log('Final grading data for API:', gradingData);
-        
-        try {
-          // For grading-upload endpoint, we need to send the original file
-          // Get the original file from the ref
-          const originalFile = originalGradingFileRef.current;
-          
-          if (!originalFile) {
-            throw new Error('Original file not found. Please try uploading again.');
-          }
-          
-          // Step 1: Upload file and get session
-          const formData = new FormData();
-          formData.append('file', originalFile);
-          
-          const token = authService.getAccessToken();
-          const uploadResponse = await fetch(`/api/ctxh/activities/${activity?.id}/participants/grading-upload`, {
-            method: 'POST',
-            headers: {
-              ...(token && { 'Authorization': `Bearer ${token}` })
-            },
-            body: formData
-          });
-          
-          if (!uploadResponse.ok) {
-            const errorText = await uploadResponse.text();
-            console.error('Grading upload error:', errorText);
-            throw new Error(`Failed to upload grading file: ${errorText}`);
-          }
-          
-          const uploadResult = await uploadResponse.json();
-          console.log('Grading upload response:', uploadResult);
-          
-          // Step 2: Execute the grading using session
-          const executeResponse = await fetch(`/api/ctxh/activities/import/${uploadResult.sessionId}/execute`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token && { 'Authorization': `Bearer ${token}` })
-            },
-            body: JSON.stringify({ skipConflicts: true })
-          });
-          
-          if (!executeResponse.ok) {
-            const errorText = await executeResponse.text();
-            console.error('Grading execute error:', errorText);
-            throw new Error(`Failed to execute grading: ${errorText}`);
-          }
-          
-          const result = await executeResponse.json();
-          console.log('Grading execute response:', result);
-          
-          // Calculate counts based on our processed data
-          const totalProcessed = processedData.length;
-          const validCount = validRows.length;
-          const errorCount = totalProcessed - validCount;
-          
-          // Extract actual imported count from API response
-          const actualImportedCount = Number(result.importedCount) || Number(result.successful?.length) || validCount;
-          
-          // Since we're using skipConflicts: true, error records are skipped, not failed
-          return {
-            sessionId,
-            success: result.success,
-            importedCount: actualImportedCount,
-            skippedCount: errorCount, // Records with errors are skipped
-            failedCount: 0, // No failed records when using skipConflicts
-            message: result.message || 'Grading completed successfully',
-            errors: result.errors || [],
-            data: result
-          };
-        } catch (error) {
-          console.error('Grading execute error:', error);
-          throw error;
-        }
-      }
-      
-      // Server execution for non-local sessions
-      const token = authService.getAccessToken();
-      const response = await fetch(`/api/ctxh/activities/import/${sessionId}/execute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify(options)
-      });
-      return response.json();
-    },
+    
     onSuccess: (result) => {
-      showSuccess(t('participant.gradingSuccess', { count: result.importedCount }));
+      const count = (result as any).sessionSummary?.totalSuccessful || 
+                   (result as any).importedCount || 
+                   (result as any).successful?.length || 
+                   0;
+      showSuccess(t('participant.gradingSuccess', { count }));
       loadParticipants();
-      // Don't auto-close modal - let user see the result step
-      // setShowGradingImportModal(false);
     },
+    
     onError: (error) => {
       console.error('Grading import error:', error);
-      
-      // Handle specific template errors with better messages
-      const errorMessage = error.message || '';
-      if (errorMessage.includes(t('participant.invalidFileFormat'))) {
-        showError(t('participant.invalidFileFormat'));
-      } else if (errorMessage.includes(t('participant.templateFormatError'))) {
-        showError(t('participant.templateFormatError'));
-      } else if (errorMessage.includes(t('participant.missingRequiredColumns'))) {
-        showError(t('participant.missingRequiredColumns'));
-      } else {
-        // Generic grading error
-        showError(t('participant.gradingError', { message: errorMessage || t('common:messages.error.unknown') }));
-      }
+      const errorMessage = error.message || 'Lỗi không xác định';
+      showError(t('participant.gradingError', { message: errorMessage }));
     }
   });
 
@@ -995,16 +344,17 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       
       // Chỉ hiển thị lỗi khi thực sự có lỗi nghiêm trọng
       if (error.response?.status === 404) {
-        // Activity not found or no participants yet
-        // Không hiển thị toast lỗi cho trường hợp này
+        // Activity not found or no participants yet - This is normal for new activities
+        // Don't show error toast for this case
+        console.log('No participants found for activity - this is normal for new activities');
       } else if (error.response?.status === 403) {
         showError(t('common:messages.error.noPermission'));
       } else if (error.response?.status >= 500) {
-        // Chỉ hiển thị lỗi cho server errors
+        // Only show error for server errors
         showError(t('participant.loadParticipantsError'));
-      } else {
-        // Các lỗi khác, log nhưng không hiển thị toast
-        // Non-critical error loading participants
+      } else if (error.message && !error.message.includes('404')) {
+        // Only show error if it's not a 404-related message
+        console.warn('Non-critical error loading participants:', error.message);
       }
       setParticipants([]);
     } finally {
@@ -1120,19 +470,37 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
 
     try {
       setLookingUpStudent(true);
+      
+      // Check if student already participating in this activity
+      const isAlreadyParticipating = participants.some(p => 
+        p.student_code === studentCode.trim()
+      );
+      
+      if (isAlreadyParticipating) {
+        setStudentInfo({
+          alreadyParticipating: true
+        });
+        return;
+      }
+      
       const user = await userService.findByExactCode(studentCode.trim());
       
       if (user) {
         setStudentInfo({
           name: user.familyName + ' ' + user.givenName,
-          email: user.email
+          email: user.email,
+          alreadyParticipating: false
         });
       } else {
-        setStudentInfo({});
+        setStudentInfo({
+          alreadyParticipating: false
+        });
       }
     } catch (error) {
       // Could not fetch student info - non-critical error
-      setStudentInfo({});
+      setStudentInfo({
+        alreadyParticipating: false
+      });
     } finally {
       setLookingUpStudent(false);
     }
@@ -1183,7 +551,9 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         // Handle specific error cases from backend
         if (message.includes('đã tham gia hoạt động') || message.includes('already participated')) {
           errorMessage = t('participant.studentAlreadyParticipated', { studentCode });
-        } else if (message.includes('không tồn tại') || message.includes('not found')) {
+        } else if (message.includes('không tìm thấy sinh viên') || message.includes('student not found')) {
+          errorMessage = t('participant.studentNotFoundWithCode', { studentCode });
+        } else if (message.includes('hoạt động') && (message.includes('không tồn tại') || message.includes('not found'))) {
           errorMessage = t('participant.activityNotFound');
         } else if (message.includes('trạng thái active') || message.includes('status')) {
           errorMessage = t('participant.addStudentActiveOnly');
@@ -1608,8 +978,24 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                          t('participant.statusOptions.registered')}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {participant.note || '-'}
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+                      {participant.note ? (
+                        <div 
+                          className="line-clamp-3 cursor-help" 
+                          title={participant.note}
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            wordBreak: 'break-word'
+                          }}
+                        >
+                          {participant.note}
+                        </div>
+                      ) : (
+                        '-'
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatDate(participant.created_at)}
@@ -1732,19 +1118,39 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                         </div>
                       )}
                       
-                      {!lookingUpStudent && newStudentCode.trim() && !studentInfo.name && (
-                        <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-md">
+                      {!lookingUpStudent && newStudentCode.trim() && studentInfo.alreadyParticipating && (
+                        <div className="mt-2 p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-md">
                           <div className="flex items-start">
-                            <div className="text-yellow-600 dark:text-yellow-400">
+                            <div className="text-red-600 dark:text-red-400">
                               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                               </svg>
                             </div>
                             <div className="ml-3">
-                              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                              <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                                {t('participant.studentAlreadyParticipating')}
+                              </p>
+                              <p className="text-sm text-red-700 dark:text-red-300">
+                                {t('participant.studentAlreadyParticipated', { studentCode: newStudentCode })}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {!lookingUpStudent && newStudentCode.trim() && !studentInfo.name && !studentInfo.alreadyParticipating && (
+                        <div className="mt-2 p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-md">
+                          <div className="flex items-start">
+                            <div className="text-red-600 dark:text-red-400">
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-sm font-medium text-red-800 dark:text-red-200">
                                 {t('participant.studentNotFound')}
                               </p>
-                              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                              <p className="text-sm text-red-700 dark:text-red-300">
                                 {t('participant.studentCodeNotFound', { studentCode: newStudentCode })}
                               </p>
                             </div>
@@ -1759,7 +1165,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                 <button
                   type="button"
                   onClick={handleAddStudent}
-                  disabled={addingStudent || !newStudentCode.trim()}
+                  disabled={addingStudent || !newStudentCode.trim() || (!studentInfo.name && !!newStudentCode.trim() && !lookingUpStudent) || studentInfo.alreadyParticipating}
                   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
                 >
                   {addingStudent ? t('common:states.adding') : t('participant.addStudent')}

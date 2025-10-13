@@ -209,7 +209,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                 <div className="flex items-start">
                   <div className="ml-0">
                     <p className="text-sm text-blue-700">
-                      <strong>Lưu ý:</strong> {t('category.note')}
+                      <strong>{t('category.noteLabel')}</strong> {t('category.note')}
                     </p>
                   </div>
                 </div>
