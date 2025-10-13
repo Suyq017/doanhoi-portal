@@ -52,13 +52,13 @@ export class ImportValidationService {
     private classesRepository: Repository<Class>,
     @InjectRepository(Department)
     private departmentsRepository: Repository<Department>,
-  ) {}
+  ) { }
 
   async validateClassData(data: ClassImportData[]): Promise<ValidationResult> {
-    const validatedData: ClassImportDataWithValidation[] = data.map(item => ({ 
-      ...item, 
-      _errors: [] as ValidationError[], 
-      _warnings: [] as ValidationError[] 
+    const validatedData: ClassImportDataWithValidation[] = data.map(item => ({
+      ...item,
+      _errors: [] as ValidationError[],
+      _warnings: [] as ValidationError[]
     }));
     const allErrors: ValidationError[] = [];
     const allWarnings: ValidationError[] = [];
@@ -133,7 +133,7 @@ export class ImportValidationService {
       }
     }
 
-    // Department code validation - only add warnings for rows without errors
+    // Department code validation - add errors for non-existent department codes
     for (let i = 0; i < validatedData.length; i++) {
       const item = validatedData[i];
       const rowNumber = i + 2;
@@ -142,16 +142,16 @@ export class ImportValidationService {
         const departmentId = departmentMap.get(item.departmentCode.toLowerCase());
         if (departmentId) {
           item._departmentId = departmentId;
-        } else if (item._errors.length === 0) {
-          // Only add warning if no errors exist for this row
-          const warning: ValidationError = {
+        } else {
+          // Add error if department code doesn't exist (blocks import)
+          const error: ValidationError = {
             row: rowNumber,
             column: 'departmentCode',
-            message: `Department with code '${item.departmentCode}' not found`,
-            severity: 'warning'
+            message: `Không tìm thấy khoa/đơn vị với mã '${item.departmentCode}'`,
+            severity: 'error'
           };
-          item._warnings.push(warning);
-          allWarnings.push(warning);
+          item._errors.push(error);
+          allErrors.push(error);
         }
       }
     }
@@ -191,7 +191,7 @@ export class ImportValidationService {
 
   checkDuplicates(data: ClassImportData[]): Array<{ rows: number[]; type: 'name' | 'code' }> {
     const duplicates: Array<{ rows: number[]; type: 'name' | 'code' }> = [];
-    
+
     // Check name duplicates within same year
     const nameYearMap = new Map<string, number[]>();
     data.forEach((item, index) => {
@@ -220,16 +220,16 @@ export class ImportValidationService {
 
     for (let i = 0; i < data.length; i++) {
       const item = data[i];
-      
+
       // Check name conflicts within same year
       if (item.name && item.year) {
         const existingByName = await this.classesRepository.findOne({
-          where: { 
+          where: {
             name: item.name,
             year: item.year
           }
         });
-        
+
         if (existingByName) {
           conflicts.push({
             row: i,

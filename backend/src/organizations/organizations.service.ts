@@ -793,4 +793,48 @@ export class OrganizationsService {
     };
   }
 
+  /**
+   * Validate a list of organization codes
+   * Returns which codes exist and which don't
+   */
+  async validateOrganizationCodes(codes: string[]): Promise<{
+    validCodes: string[];
+    invalidCodes: string[];
+  }> {
+    if (!codes || codes.length === 0) {
+      return {
+        validCodes: [],
+        invalidCodes: []
+      };
+    }
+
+    // Remove duplicates and normalize codes
+    const uniqueCodes = [...new Set(codes.map(code => code.trim().toUpperCase()))];
+
+    // Find all organizations with these codes
+    const organizations = await this.organizationsRepository.find({
+      where: {
+        code: In(uniqueCodes)
+      },
+      select: ['code']
+    });
+
+    const foundCodes = new Set(organizations.map(org => org.code.toUpperCase()));
+    const validCodes: string[] = [];
+    const invalidCodes: string[] = [];
+
+    uniqueCodes.forEach(code => {
+      if (foundCodes.has(code)) {
+        validCodes.push(code);
+      } else {
+        invalidCodes.push(code);
+      }
+    });
+
+    return {
+      validCodes,
+      invalidCodes
+    };
+  }
+
 }

@@ -17,7 +17,7 @@ export class DepartmentsController {
     private readonly departmentsService: DepartmentsService,
     private readonly importService: ImportService,
     //private readonly monitoringService: DepartmentBatchImportMonitoringService,
-  ) {}
+  ) { }
 
   @Post()
   @ApiOperation({ summary: 'Tạo đơn vị mới' })
@@ -39,7 +39,7 @@ export class DepartmentsController {
   @ApiResponse({ status: 200, description: 'File mẫu Excel' })
   async downloadTemplate(@Res() res: Response) {
     const templateBuffer = await this.importService.generateTemplate();
-    
+
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="departments_template.xlsx"');
     res.send(templateBuffer);
@@ -105,7 +105,7 @@ export class DepartmentsController {
   @ApiResponse({ status: 404, description: 'Session không tồn tại' })
   async executeImport(
     @Param('sessionId') sessionId: string,
-    @Body() options?: { 
+    @Body() options?: {
       skipConflicts?: boolean;
       batchSize?: number;
       enableFallback?: boolean;
@@ -199,4 +199,12 @@ export class DepartmentsController {
   // async getPerformanceHistory() {
   //   return this.monitoringService.getPerformanceHistory();
   // }
+
+  @Post('validate-codes')
+  @ApiOperation({ summary: 'Validate danh sách mã khoa/đơn vị' })
+  @ApiResponse({ status: 200, description: 'Kết quả validation với mã hợp lệ và không hợp lệ' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
+  async validateDepartmentCodes(@Body() body: { codes: string[] }) {
+    return this.departmentsService.validateDepartmentCodes(body.codes);
+  }
 }

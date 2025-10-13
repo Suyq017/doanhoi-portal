@@ -39,25 +39,25 @@ const ImportModal = ({
   const [state, setState] = useState<ImportState>({
     step: 'upload',
     selectedFile: null,
-    
+
     // Server-side state (legacy)
     serverSession: null,
     serverValidation: null,
     serverResult: null,
-    
+
     // Client-side state (new)
     clientData: null,
     clientValidation: null,
     clientResult: null,
-    
+
     // Batch processing state
     batchProgress: null,
     sessionId: null,
     totalRecords: null,
     isBatchProcessing: false,
-    
+
     options: {
-      skipErrors: true,
+      skipErrors: false, // Allow importing rows with warnings (only skip rows with errors)
       updateExisting: false,
       dryRun: false,
       batchSize: config.batchSize || 200
@@ -91,9 +91,9 @@ const ImportModal = ({
   const handleFileSelect = async (file: File) => {
     if (!isValidFile(file)) return;
 
-    setState(prev => ({ 
-      ...prev, 
-      selectedFile: file, 
+    setState(prev => ({
+      ...prev,
+      selectedFile: file,
       loading: true,
       sessionId: config.useClientSideProcessing ? `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : null
     }));
@@ -120,15 +120,15 @@ const ImportModal = ({
     }
 
     // Step 1: Parse file
-    setState(prev => ({ 
-      ...prev, 
-      batchProgress: { 
-        currentBatch: 0, 
-        totalBatches: 0, 
-        processedRecords: 0, 
-        totalRecords: 0, 
-        percentage: 0, 
-        currentOperation: 'parsing' 
+    setState(prev => ({
+      ...prev,
+      batchProgress: {
+        currentBatch: 0,
+        totalBatches: 0,
+        processedRecords: 0,
+        totalRecords: 0,
+        percentage: 0,
+        currentOperation: 'parsing'
       }
     }));
 
@@ -144,8 +144,8 @@ const ImportModal = ({
     });
 
     // Step 2: Validate data
-    setState(prev => ({ 
-      ...prev, 
+    setState(prev => ({
+      ...prev,
       batchProgress: prev.batchProgress ? {
         ...prev.batchProgress,
         currentOperation: 'validating',
@@ -177,39 +177,39 @@ const ImportModal = ({
 
     // Auto-fill dữ liệu cho server-side processing
     if (validationResult.previewData) {
-        validationResult.previewData = validationResult.previewData.map((item: any) => {
-          const modified: Record<string, boolean> = {};
+      validationResult.previewData = validationResult.previewData.map((item: any) => {
+        const modified: Record<string, boolean> = {};
 
-          // Tìm field email (case-insensitive và nhiều pattern khác nhau)
-          const emailField = Object.keys(item).find(key => {
-            const lowerKey = key.toLowerCase();
-            return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
-          });
-
-          // Tìm field password (case-insensitive) hoặc tạo mới
-          let passwordField = Object.keys(item).find(key => {
-            const lowerKey = key.toLowerCase();
-            return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
-          });
-
-          // Nếu không tìm thấy field password, tạo field mới
-          if (!passwordField) {
-            passwordField = 'password';
-            item[passwordField] = ''; // Khởi tạo với giá trị rỗng
-          }
-
-          const emailValue = emailField ? item[emailField] : null;
-
-          // Auto-fill password từ email prefix nếu trống hoặc là '-'
-          if (emailValue && passwordField && (!item[passwordField] || item[passwordField] === '' || item[passwordField] === '-')) {
-            const emailPrefix = emailValue.split('@')[0];
-            item[passwordField] = emailPrefix;
-            modified[passwordField] = true;
-          }
-
-          return item;
+        // Tìm field email (case-insensitive và nhiều pattern khác nhau)
+        const emailField = Object.keys(item).find(key => {
+          const lowerKey = key.toLowerCase();
+          return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
         });
-      }
+
+        // Tìm field password (case-insensitive) hoặc tạo mới
+        let passwordField = Object.keys(item).find(key => {
+          const lowerKey = key.toLowerCase();
+          return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
+        });
+
+        // Nếu không tìm thấy field password, tạo field mới
+        if (!passwordField) {
+          passwordField = 'password';
+          item[passwordField] = ''; // Khởi tạo với giá trị rỗng
+        }
+
+        const emailValue = emailField ? item[emailField] : null;
+
+        // Auto-fill password từ email prefix nếu trống hoặc là '-'
+        if (emailValue && passwordField && (!item[passwordField] || item[passwordField] === '' || item[passwordField] === '-')) {
+          const emailPrefix = emailValue.split('@')[0];
+          item[passwordField] = emailPrefix;
+          modified[passwordField] = true;
+        }
+
+        return item;
+      });
+    }
 
     config.onValidationComplete?.(validationResult);
 
@@ -297,9 +297,7 @@ const ImportModal = ({
       batchProgress: null
     }));
 
-    if (result.success) {
-      config.onSuccess?.(result);
-    }
+    // Don't call onSuccess here - will be called when modal closes if successful
   };
 
   // Server-side import (legacy)
@@ -320,9 +318,27 @@ const ImportModal = ({
       loading: false
     }));
 
-    if (result.success) {
-      config.onSuccess?.(result);
+    // Don't call onSuccess here - will be called when modal closes if successful
+  };
+
+  // Custom close handler that calls onSuccess if import was executed
+  const handleClose = () => {
+    // Check if import was executed (regardless of success or failure)
+    const hasServerResult = state.serverResult !== null;
+    const hasClientResult = state.clientResult !== null;
+    const importWasExecuted = state.step === 'result' && (hasServerResult || hasClientResult);
+
+    // Call onSuccess if import was executed (even with errors)
+    // This allows parent component to refresh data and show appropriate toast
+    if (importWasExecuted) {
+      const result = state.serverResult || state.clientResult;
+      if (result) {
+        config.onSuccess?.(result);
+      }
     }
+
+    // Close the modal
+    onClose();
   };
 
   // Reset state
@@ -330,25 +346,25 @@ const ImportModal = ({
     setState({
       step: 'upload',
       selectedFile: null,
-      
+
       // Server-side state (legacy)
       serverSession: null,
       serverValidation: null,
       serverResult: null,
-      
+
       // Client-side state (new)
       clientData: null,
       clientValidation: null,
       clientResult: null,
-      
+
       // Batch processing state
       batchProgress: null,
       sessionId: null,
       totalRecords: null,
       isBatchProcessing: false,
-      
+
       options: {
-        skipErrors: true,
+        skipErrors: false, // Allow importing rows with warnings (only skip rows with errors)
         updateExisting: false,
         dryRun: false,
         batchSize: config.batchSize || 200
@@ -393,7 +409,7 @@ const ImportModal = ({
     if (!validation) return [];
 
     // For client-side, use data directly; for server-side, use previewData
-    let rows: any[] = state.clientData || 
+    let rows: any[] = state.clientData ||
       (state.serverValidation?.previewData) || [];
 
     // Apply error filtering - check both hasErrors and _hasError for compatibility
@@ -417,7 +433,7 @@ const ImportModal = ({
     const validation = state.clientValidation || state.serverValidation;
     if (!validation) return 0;
 
-    const data: any[] = state.clientData || 
+    const data: any[] = state.clientData ||
       (state.serverValidation?.previewData) || [];
     let totalRows = data.length;
 
@@ -455,26 +471,26 @@ const ImportModal = ({
       <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {state.batchProgress.currentOperation === 'parsing' 
+            {state.batchProgress.currentOperation === 'parsing'
               ? t('import.progress.parsing')
               : state.batchProgress.currentOperation === 'validating'
-              ? t('import.progress.validating')
-              : t('import.progress.importing')
+                ? t('import.progress.validating')
+                : t('import.progress.importing')
             }
           </span>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {state.batchProgress.percentage}%
           </span>
         </div>
-        
+
         {/* Progress Bar */}
         <div className="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
-          <div 
+          <div
             className="h-2 transition-all duration-300 bg-blue-600 rounded-full"
             style={{ width: `${state.batchProgress.percentage}%` }}
           />
         </div>
-        
+
         {/* Batch Info */}
         {state.batchProgress.currentBatch && state.batchProgress.totalBatches && (
           <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -851,7 +867,7 @@ const ImportModal = ({
       <p className="mb-4 text-gray-500 dark:text-gray-400">
         {t('import.pleaseWait')}
       </p>
-      
+
       {/* Show batch progress for client-side processing */}
       {config.useClientSideProcessing && state.batchProgress ? (
         <div className="max-w-md mx-auto">
@@ -872,7 +888,7 @@ const ImportModal = ({
 
     // Determine result structure based on type
     let total: number, success: number, failed: number, skipped: number, errors: string[], warnings: string[];
-    
+
     if (state.clientResult) {
       // Client-side result structure
       const summary = state.clientResult.sessionSummary;
@@ -1010,7 +1026,7 @@ const ImportModal = ({
         {/* Background overlay */}
         <div
           className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-80"
-          onClick={onClose}
+          onClick={handleClose}
         />
 
         {/* Modal panel */}
@@ -1021,7 +1037,7 @@ const ImportModal = ({
               {t(`${config.entityName}:import.title`)}
             </h3>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <XCircle className="w-6 h-6" />
@@ -1105,7 +1121,7 @@ const ImportModal = ({
 
               {(state.step === 'upload' || state.step === 'result') && (
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   {state.step === 'result' ? t('common:actions.close') : t('common:actions.cancel')}

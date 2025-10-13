@@ -19,10 +19,10 @@ export const departmentColumns = (t: (key: string) => string): ImportColumn[] =>
  */
 export const classColumns = (t: (key: string) => string): ImportColumn[] => [
   { key: 'name', label: t('classes:fields.name'), required: true, type: 'text' },
-  { key: 'code', label: t('classes:fields.code'), required: false, type: 'text' },
   { key: 'year', label: t('classes:fields.year'), required: false, type: 'number' },
   { key: 'departmentCode', label: t('classes:fields.departmentCode'), required: false, type: 'text' }
   // Đã bỏ cột isActive vì backend tự động set mặc định là true
+  // Đã bỏ cột code (Mã lớp) theo yêu cầu
 ];
 
 /**
@@ -36,7 +36,7 @@ export const userColumns = (t?: (key: string) => string): ImportColumn[] => [
   { key: 'identityCard', label: t?.('users:fields.identityCard') || 'CMND/CCCD | Identity Card', required: false, type: 'text' },
   { key: 'familyName', label: t?.('users:fields.familyName') || 'Họ và tên lót | Family Name', required: true, type: 'text' },
   { key: 'givenName', label: t?.('users:fields.givenName') || 'Tên | Given Name', required: true, type: 'text' },
-  
+
   // Personal information
   { key: 'birthDate', label: t?.('users:fields.birthDate') || 'Ngày sinh | Date of Birth', required: false, type: 'date' },
   {
@@ -51,14 +51,14 @@ export const userColumns = (t?: (key: string) => string): ImportColumn[] => [
   },
   { key: 'password', label: t?.('users:fields.password') || 'Mật khẩu | Password', required: false, type: 'text' },
   { key: 'phone', label: t?.('users:fields.phone') || 'Số điện thoại | Phone Number', required: false, type: 'text' },
-  
+
   // Academic information
   { key: 'admissionYear', label: t?.('users:fields.admissionYear') || 'Năm nhập học | Admission Year', required: false, type: 'text' },
   { key: 'curriculumYear', label: t?.('users:fields.curriculumYear') || 'Năm chương trình đào tạo | Curriculum Year', required: false, type: 'text' },
   { key: 'className', label: t?.('users:fields.className') || 'Tên lớp | Class Name', required: false, type: 'text' },
   { key: 'facultyCode', label: t?.('users:fields.facultyCode') || 'Mã khoa | Faculty Code', required: false, type: 'text' },
   { key: 'managementDepartmentCode', label: t?.('users:fields.departmentCode') || 'Mã đơn vị quản lý | Management Dept Code', required: false, type: 'text' },
-  
+
   // Training information
   {
     key: 'trainingSystem',
@@ -81,7 +81,7 @@ export const userColumns = (t?: (key: string) => string): ImportColumn[] => [
       { value: 'DH', label: t?.('users:trainingLevel.dh') || 'Đại học | University' }
     ]
   },
-  
+
   // User classification
   {
     key: 'userType',
