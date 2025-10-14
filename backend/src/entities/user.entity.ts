@@ -7,8 +7,6 @@ import { UserRole } from './user-role.entity';
 export enum UserType {
   STUDENT = 'student',
   STAFF = 'staff',
-  SINH_VIEN = 'SINH_VIEN',
-  CAN_BO = 'CAN_BO',
 }
 
 export enum MembershipStatus {
@@ -25,17 +23,6 @@ export enum MembershipStatus {
 export enum Gender {
   NAM = 'NAM',
   NU = 'NU'
-}
-
-export enum TrainingSystem {
-  VLVH = 'VLVH',  // Vừa làm Vừa học
-  CQ = 'CQ',      // Chính quy
-  QT = 'QT',      // Quốc tế
-  DTTX = 'DTTX'   // Đào tạo từ xa
-}
-
-export enum TrainingLevel {
-  DH = 'DH'       // Đại học (có thể mở rộng)
 }
 
 export enum AuthProvider {
@@ -137,11 +124,11 @@ export class User {
   @Column({ name: 'faculty_code', nullable: true })
   facultyCode: string;
   
-  @Column({ name: 'training_system', type: 'enum', enum: TrainingSystem, nullable: true })
-  trainingSystem: TrainingSystem;
+  @Column({ name: 'training_system', nullable: true })
+  trainingSystem: string;
   
-  @Column({ name: 'training_level', type: 'enum', enum: TrainingLevel, nullable: true })
-  trainingLevel: TrainingLevel;
+  @Column({ name: 'training_level', nullable: true })
+  trainingLevel: string;
 
   // Getter cho fullName để tương thích với code cũ
   get fullName(): string {

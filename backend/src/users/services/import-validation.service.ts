@@ -182,19 +182,6 @@ export class ImportValidationService {
         }
       }
 
-      // Validate password (optional but if provided, check complexity)
-      if (row.password && row.password.trim()) {
-        if (row.password.length < 6) {
-          validation.warnings.push('Password should be at least 6 characters long');
-          _warnings.push({
-            row: rowNumber,
-            column: 'password',
-            message: 'Password should be at least 6 characters long',
-            severity: 'warning'
-          });
-        }
-      }
-
       // Validate and resolve class reference (optional - only warn if not found)
       if (row.className && row.className.trim()) {
         const normalizedClassName = row.className.toLowerCase();

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { exportService } from '../services/exportService';
+import { exportService } from '../services/users-import-service';
 
 export interface UseExportOptions {
   onSuccess?: (fileName: string) => void;

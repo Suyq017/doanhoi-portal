@@ -124,7 +124,10 @@ export interface ImportModalConfig {
 
   // Client-side data processing functions (new)
   parseFile?: (file: File, onProgress?: (progress: number) => void) => Promise<any[]>;
-  validateClientData?: (data: any[]) => Promise<ClientValidationResult>;
+  validateClientData?: (
+    data: any[], 
+    onProgress?: (progress: { current: number; total: number; percentage: number }) => void
+  ) => Promise<ClientValidationResult>;
   submitClientData?: (data: any[], onProgress?: (progress: ProgressInfo) => void) => Promise<ClientImportResult>;
 
   // UI Configuration

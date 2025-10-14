@@ -6,7 +6,7 @@ import { activityService } from '../services';
 import { userService } from '../../../shared/services/userService';
 import { authService } from '../../auth/services/authService';
 import { useToast } from '../../../shared/hooks';
-import { Toast, ConfirmDialog, Pagination, ImportModal } from '../../../shared/components';
+import { Toast, ConfirmDialog, Pagination, SimpleImportModal } from '../../../shared/components';
 import { ImportModalConfig } from '../../../shared/types/import';
 import { excelParserService, importValidationService, batchImportService } from '../services';
 
@@ -1465,18 +1465,18 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         </div>
       )}
 
-      {/* ImportModal for Students */}
+      {/* SimpleImportModal for Students */}
       {showStudentImportModal && (
-        <ImportModal
+        <SimpleImportModal
           config={getStudentImportConfig()}
           isOpen={showStudentImportModal}
           onClose={() => setShowStudentImportModal(false)}
         />
       )}
 
-      {/* ImportModal for Grading */}
+      {/* SimpleImportModal for Grading */}
       {showGradingImportModal && (
-        <ImportModal
+        <SimpleImportModal
           config={getGradingImportConfig()}
           isOpen={showGradingImportModal}
           onClose={() => setShowGradingImportModal(false)}
