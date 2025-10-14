@@ -158,7 +158,7 @@ export const UserTable: React.FC<UserTableProps> = ({
     } return (
         <div className={`overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 ${className}`}>            {/* Bulk Actions Toolbar */}
             {finalActions.showSelection && isSomeSelected && (
-                <div className="flex items-center justify-between px-6 py-3 bg-blue-50 border-b border-gray-200 dark:bg-blue-900/20 dark:border-gray-700">
+                <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-blue-50 dark:bg-blue-900/20 dark:border-gray-700">
                     <div className="flex items-center space-x-3">
                         <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
                             {t('common:actions.select')} ({selectedUserIds.length})
@@ -191,7 +191,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                                     type="checkbox"
                                     checked={isAllSelected}
                                     onChange={handleSelectAll}
-                                    className="w-4 h-4 text-doan-600 border-gray-300 rounded focus:ring-doan-500 dark:border-gray-600 dark:bg-gray-700"
+                                    className="w-4 h-4 border-gray-300 rounded text-doan-600 focus:ring-doan-500 dark:border-gray-600 dark:bg-gray-700"
                                 />
                             </th>
                         )}
@@ -230,7 +230,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                                         type="checkbox"
                                         checked={selectedUserIds.includes(user.id)}
                                         onChange={() => handleSelectUser(user.id)}
-                                        className="w-4 h-4 text-doan-600 border-gray-300 rounded focus:ring-doan-500 dark:border-gray-600 dark:bg-gray-700"
+                                        className="w-4 h-4 border-gray-300 rounded text-doan-600 focus:ring-doan-500 dark:border-gray-600 dark:bg-gray-700"
                                     />
                                 </td>
                             )}

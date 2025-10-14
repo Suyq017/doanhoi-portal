@@ -287,11 +287,13 @@ const Users: React.FC = () => {
         onClose={closeModal}
         onSubmit={handleCreateUser}
         loading={isCreating}
-      />      <ViewUserModal
+      />      
+      <ViewUserModal
         isOpen={isViewModalOpen}
         onClose={closeModal}
         user={selectedUser}
-      />      <EditUserModal
+      />      
+      <EditUserModal
         isOpen={isEditModalOpen}
         onClose={closeModal}
         onSubmit={customHandleUpdateUser}
@@ -300,7 +302,8 @@ const Users: React.FC = () => {
         showSuccess={showSuccess}
         showError={showError}
         onRefreshData={refreshUsers}
-      /><DeleteConfirmModal
+      />
+      <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={closeModal}
         onConfirm={confirmDeleteUser}
@@ -312,21 +315,24 @@ const Users: React.FC = () => {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         config={importConfig}
-      />      <ExportModal
+      />      
+      <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         onExport={handleExport}
         title={t('users:export.title', { defaultValue: 'Xuất danh sách người dùng' })}
         description={t('users:export.description', { defaultValue: 'Chọn các trường dữ liệu bạn muốn xuất ra file Excel' })}
         availableFields={USER_EXPORT_FIELDS}
-      />      <UserRoleAssignmentModal
+      />      
+      <UserRoleAssignmentModal
         isOpen={isRoleAssignmentModalOpen}
         onClose={() => setIsRoleAssignmentModalOpen(false)}
         onSuccess={() => {
           showSuccess(t('users:messages.assignRolesSuccess'));
           refreshUsers();
         }}
-      />      <GrantRolesModal
+      />      
+      <GrantRolesModal
         isOpen={isGrantRolesModalOpen}
         onClose={() => setIsGrantRolesModalOpen(false)}
         onSuccess={() => {

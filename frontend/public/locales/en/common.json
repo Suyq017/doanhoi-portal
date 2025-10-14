@@ -256,6 +256,7 @@
     "showingRows": "Showing {{count}} / {{total}} rows",
     "showingRowsPhonetic": "Showing {{count}} / {{total}} rows",
     "validationErrors": "Error list",
+    "validationWarnings": "Warning list",
     "validationErrorsPhonetic": "Error list",
     "autoFilled": "Auto-filled",
     "autoFilledPhonetic": "Auto-filled",
@@ -290,6 +291,12 @@
     "importingPhonetic": "Importing",
     "validating": "Validating data...",
     "validatingPhonetic": "Validating",
+    "progress": {
+      "parsing": "Parsing file...",
+      "validating": "Validating data...",
+      "importing": "Importing data...",
+      "batch": "Batch {{current}}/{{total}} - Processed: {{records}}/{{totalRecords}} records"
+    },
     "pleaseWait": "Please wait a moment...",
     "pleaseWaitPhonetic": "Please wait",
     "importComplete": "Import process completed",

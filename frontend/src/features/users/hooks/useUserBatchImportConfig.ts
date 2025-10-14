@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '../../../shared/hooks/useToast';
 import { ImportModalConfig } from '../../../shared/types/import';
 import { userColumns } from '../../../shared/utils/importColumns';
-import { batchImportService } from '../../../shared/services/import-service/batchImportService';
+import { batchImportService } from '../../../shared/services/users-import-service';
 
 interface UseUserBatchImportConfigParams {
     onRefreshData?: () => void;
@@ -59,7 +59,7 @@ export const useUserBatchImportConfig = (params: UseUserBatchImportConfigParams 
         enableBatchProcessing: true,
         batchSize: 200, // Match backend batch size
         
-        // Client-side processing functions
+        // Client-side processing functions with backend validation and pagination
         parseFile: batchImportService.parseUserFile.bind(batchImportService),
         validateClientData: batchImportService.validateClientData.bind(batchImportService),
         submitClientData: batchImportService.submitClientData.bind(batchImportService),
