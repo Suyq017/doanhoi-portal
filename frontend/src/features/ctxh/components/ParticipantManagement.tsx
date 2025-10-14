@@ -636,7 +636,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
 
       await activityService.gradeParticipants(activity.id, gradeData);
       
-      showSuccess(t('participant.individualGradingSuccess', { studentCode: gradingParticipant.student_code }));
+      showSuccess(t('grading.individualGradingSuccess', { studentCode: gradingParticipant.student_code }));
       
       // Reset and close modal
       setShowGradingModal(false);

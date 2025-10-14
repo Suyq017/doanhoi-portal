@@ -257,7 +257,6 @@
     "studentAlreadyParticipated": "Student {{studentCode}} has already participated in this activity",
     "activityNotFound": "Activity not found",
     "addStudentActiveOnly": "Can only add students to activities with ACTIVE status",
-    "individualGradingSuccess": "Successfully graded student {{studentCode}}!",
     "selectGradingFile": "Please select Excel grading file!",
     "added": "Student added successfully",
     "graded": "Student graded successfully",
