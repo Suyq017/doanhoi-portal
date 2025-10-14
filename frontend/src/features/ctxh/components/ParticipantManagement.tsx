@@ -62,13 +62,34 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   const [studentTemplateUrl, setStudentTemplateUrl] = useState<string>('');
   const [gradingTemplateUrl, setGradingTemplateUrl] = useState<string>('');
 
+  // Function to generate fresh grading template URL
+  const generateGradingTemplateUrl = async (): Promise<string> => {
+    try {
+      const token = authService.getAccessToken();
+      const response = await fetch(`/api/ctxh/activities/${activity.id}/participants/grading-template`, {
+        method: 'GET',
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        return window.URL.createObjectURL(blob);
+      }
+    } catch (error) {
+      console.error('Failed to generate grading template URL:', error);
+    }
+    return '';
+  };
+
   // Generate authenticated template URLs
   useEffect(() => {
     const generateTemplateUrls = async () => {
       try {
         const token = authService.getAccessToken();
         
-        // Generate student template URL
+        // Generate student template URL (this is static and doesn't change)
         const studentResponse = await fetch('/api/ctxh/activities/participants/template', {
           method: 'GET',
           headers: {
@@ -82,19 +103,9 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           setStudentTemplateUrl(studentUrl);
         }
 
-        // Generate grading template URL
-        const gradingResponse = await fetch(`/api/ctxh/activities/${activity.id}/participants/grading-template`, {
-          method: 'GET',
-          headers: {
-            ...(token && { 'Authorization': `Bearer ${token}` })
-          }
-        });
-        
-        if (gradingResponse.ok) {
-          const gradingBlob = await gradingResponse.blob();
-          const gradingUrl = window.URL.createObjectURL(gradingBlob);
-          setGradingTemplateUrl(gradingUrl);
-        }
+        // Generate initial grading template URL
+        const gradingUrl = await generateGradingTemplateUrl();
+        setGradingTemplateUrl(gradingUrl);
       } catch (error) {
         console.error('Failed to generate template URLs:', error);
       }
@@ -112,6 +123,15 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       }
     };
   }, [activity.id]);
+
+  // Refresh grading template URL after participants change
+  const refreshGradingTemplate = async () => {
+    if (gradingTemplateUrl) {
+      window.URL.revokeObjectURL(gradingTemplateUrl);
+    }
+    const newUrl = await generateGradingTemplateUrl();
+    setGradingTemplateUrl(newUrl);
+  };
 
   // ImportModal configurations - NEW: Using client-side processing
   const getStudentImportConfig = (): ImportModalConfig => ({
@@ -190,6 +210,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                    0;
       showSuccess(t('participant.importSuccess', { count }));
       loadParticipants();
+      // Refresh grading template after importing students
+      refreshGradingTemplate();
     },
     
     onError: (error) => {
@@ -201,7 +223,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
 
   const getGradingImportConfig = (): ImportModalConfig => ({
     entityName: 'grading',
-    // Use blob URL with authentication
+    // Use current grading template URL
     templateUrl: gradingTemplateUrl,
     templateFileName: 'grading_template.xlsx',
     acceptedFileTypes: ['.xlsx', '.xls'],
@@ -275,6 +297,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                    0;
       showSuccess(t('participant.gradingSuccess', { count }));
       loadParticipants();
+      // Refresh grading template after grading import
+      refreshGradingTemplate();
     },
     
     onError: (error) => {
@@ -537,6 +561,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       setStudentInfo({});
       setShowAddStudentModal(false);
       loadParticipants();
+      // Refresh grading template after adding student
+      refreshGradingTemplate();
       onRefresh?.();
     } catch (error: any) {
       console.error('Failed to add student:', error);
@@ -593,6 +619,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       await activityService.removeParticipant(activity.id, participant.id);
       showSuccess(t('participant.removeStudentSuccess'));
       loadParticipants();
+      // Refresh grading template after removing student
+      refreshGradingTemplate();
       onRefresh?.();
     } catch (error) {
       console.error('Failed to remove participant:', error);
@@ -645,6 +673,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       
       // Refresh data
       loadParticipants();
+      // Refresh grading template after grading
+      refreshGradingTemplate();
       onRefresh?.();
       
     } catch (error: any) {
@@ -695,6 +725,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       
       // Refresh data
       loadParticipants();
+      // Refresh grading template after bulk grading
+      refreshGradingTemplate();
       onRefresh?.();
       
     } catch (error) {
@@ -710,8 +742,24 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   // Download grading template
   const handleDownloadGradingTemplate = async () => {
     try {
-      // Export current participants list as grading template
-      const blob = await activityService.exportParticipants(activity.id);
+      // Refresh template to get latest participants data
+      await refreshGradingTemplate();
+      
+      const token = authService.getAccessToken();
+      
+      // Call API to get fresh grading template with current participants
+      const response = await fetch(`/api/ctxh/activities/${activity.id}/participants/grading-template`, {
+        method: 'GET',
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch grading template');
+      }
+      
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
