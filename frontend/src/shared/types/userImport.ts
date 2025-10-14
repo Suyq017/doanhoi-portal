@@ -19,7 +19,7 @@ export interface UserImportData {
   organizationCodes?: string; // "ORG1;ORG2;ORG3"
   
   // User classification
-  userType?: 'student' | 'staff' | 'SINH_VIEN' | 'CAN_BO';
+  userType?: 'student' | 'staff';
   membershipStatus?: 'doan_vien' | 'hoi_vien' | 'both' | 'none' | 'ACTIVE' | 'INACTIVE' | 'GRADUATED';
   isActive?: boolean;
   
@@ -30,8 +30,8 @@ export interface UserImportData {
   admissionYear?: string;
   curriculumYear?: string;
   facultyCode?: string;
-  trainingSystem?: 'VLVH' | 'CQ' | 'QT' | 'DTTX';
-  trainingLevel?: 'DH';
+  trainingSystem?: string;
+  trainingLevel?: string;
 }
 
 export interface ValidationError {

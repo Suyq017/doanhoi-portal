@@ -66,7 +66,7 @@ export class ExcelParserService {
     for (let i = 0; i < data.length; i += chunkSize) {
       const chunk = data.slice(i, i + chunkSize);
       
-      // Process chunk (can add validation here)
+      // Process chunk
       results.push(...chunk);
       
       // Update progress
@@ -78,6 +78,35 @@ export class ExcelParserService {
     }
     
     return results;
+  }
+
+  /**
+   * Parse file with detailed progress tracking
+   */
+  async parseWithProgress(
+    file: File,
+    onProgress?: (progress: { 
+      phase: 'parsing' | 'processing'; 
+      percentage: number; 
+      current?: number; 
+      total?: number; 
+    }) => void
+  ): Promise<UserImportData[]> {
+    
+    // Phase 1: Parse file
+    onProgress?.({ phase: 'parsing', percentage: 0 });
+    const rawData = await this.parseUserImportFile(file);
+    onProgress?.({ phase: 'parsing', percentage: 100, current: rawData.length, total: rawData.length });
+    
+    // Phase 2: Process data
+    onProgress?.({ phase: 'processing', percentage: 0 });
+    const processedData = rawData.map((item, index) => ({
+      ...item,
+      _originalIndex: index
+    }));
+    onProgress?.({ phase: 'processing', percentage: 100, current: processedData.length, total: processedData.length });
+    
+    return processedData;
   }
 
   private validateFileType(file: File): void {
@@ -137,14 +166,23 @@ export class ExcelParserService {
     for (let i = 0; i < dataRows.length; i++) {
       try {
         const userData = this.mapRowToUserData(dataRows[i], headerMapping);
-        if (userData) {
+        if (userData !== null) {
           results.push(userData);
+        } else {
+          // Log skipped completely empty rows
         }
       } catch (error) {
-        console.warn(`Skipping row ${i + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        // Still try to create a minimal userData object for error tracking
+        const minimalUserData: UserImportData = {
+          code: '',
+          familyName: '',
+          givenName: '',
+          email: null,
+          isActive: true
+        };
+        results.push(minimalUserData);
       }
     }
-
     return results;
   }
 
@@ -154,28 +192,28 @@ export class ExcelParserService {
     // Expected header patterns (case-insensitive) - Order matters: specific patterns first!
     const headerPatterns: Record<string, string[]> = {
       // Specific patterns first to avoid conflicts
-      className: ['tên lớp', 'class name', 'lớp học', 'lớp'],
-      familyName: ['họ và tên lót', 'họ tên lót', 'family name', 'surname', 'last name', 'họ'],
-      givenName: ['tên gọi', 'given name', 'first name', 'tên'],
-      managementDepartmentCode: ['mã đơn vị quản lý', 'management dept code', 'đơn vị quản lý'],
-      trainingDepartmentCode: ['mã đơn vị đào tạo', 'training dept code', 'đơn vị đào tạo'],
-      admissionYear: ['năm nhập học', 'admission year', 'năm vào học', 'năm vào'],
-      curriculumYear: ['năm chương trình', 'năm ct', 'curriculum year'],
-      trainingSystem: ['hệ đào tạo', 'training system', 'hệ học'],
-      trainingLevel: ['bậc đào tạo', 'training level', 'bậc học'],
-      identityCard: ['số cmnd', 'số cccd', 'identity card', 'id card', 'cmnd', 'cccd'],
-      birthDate: ['ngày sinh', 'date of birth', 'birth date', 'dob'],
+      className: ['mã lớp','class name', 'MALOP'],
+      familyName: ['họ và tên lót', 'họ tên lót','last name', 'họ', 'HOLOT'],
+      givenName: ['tên gọi', 'given name', 'first name', 'TEN'], // Removed 'tên' to avoid partial matching with TENLOP
+      managementDepartmentCode: ['mã đơn vị quản lý', 'management dept code', 'đơn vị quản lý', 'DVQLY'],
+      trainingDepartmentCode: ['mã ngành', 'training dept code', 'NGANH'],
+      admissionYear: ['năm nhập học', 'admission year', 'năm vào học', 'năm vào', 'NAMVAO'],
+      curriculumYear: ['năm chương trình', 'năm ct', 'curriculum year', 'NAMCTDT'],
+      trainingSystem: [ 'training system', 'hệ đào tạo', 'HEDAOTAO'],
+      trainingLevel: ['training level', 'bậc đào tạo', 'BACDAOTAO'],
+      identityCard: ['số cmnd', 'số cccd', 'identity card', 'id card', 'cmnd', 'cccd', 'CMND'],
+      birthDate: ['ngày sinh', 'date of birth', 'birth date', 'dob', 'NGAYSINH'],
       userType: ['loại người dùng', 'user type', 'loại user'],
       membershipStatus: ['tình trạng thành viên', 'membership status', 'tình trạng'],
       organizationCodes: ['mã tổ chức', 'organization codes', 'tổ chức'],
-      facultyCode: ['mã khoa', 'faculty code', 'mã faculty'],
+      facultyCode: ['mã khoa', 'faculty code', 'mã faculty', 'KHOA'],
       
       // General patterns after specific ones
-      code: ['mã số sinh viên', 'mã sinh viên', 'student code', 'staff code', 'mã cán bộ', 'mã số', 'code'],
-      email: ['địa chỉ email', 'email address', 'e-mail', 'thư điện tử', 'email'],
+      code: ['mã số sinh viên', 'mã sinh viên', 'student code', 'staff code', 'mã cán bộ', 'mã số', 'code', 'MSSV'],
+      email: ['địa chỉ email', 'email address', 'e-mail', 'thư điện tử', 'email', 'EMAIL'],
       password: ['mật khẩu', 'password', 'pass'],
-      phone: ['số điện thoại', 'điện thoại', 'phone number', 'mobile', 'phone'],
-      gender: ['giới tính', 'gender', 'sex']
+      phone: ['số điện thoại', 'điện thoại', 'phone number', 'mobile', 'phone', 'SDT'],
+      gender: ['giới tính', 'gender', 'sex', 'GIOITINH']
     };
 
     headers.forEach((header, index) => {
@@ -196,7 +234,12 @@ export class ExcelParserService {
             return; // Exit early for exact match
           }
           
-          // Partial match - prefer longer matches
+          // For short patterns (3 chars or less), only allow exact match to avoid conflicts
+          if (patternLower.length <= 3) {
+            continue; // Skip partial matching for short patterns like "TEN"
+          }
+          
+          // Partial match for longer patterns - prefer longer matches
           if (headerStr.includes(patternLower)) {
             if (!bestMatch || patternLower.length > bestMatch.matchLength) {
               bestMatch = { fieldName, matchLength: patternLower.length };
@@ -211,31 +254,31 @@ export class ExcelParserService {
       }
     });
 
-    // Debug logging
-    console.log('Excel Header Mapping:', {
-      headers,
-      mapping,
-      mappedFields: Object.keys(mapping)
-    });
-
     return mapping;
   }
 
   private mapRowToUserData(row: any[], headerMapping: Record<string, number>): UserImportData | null {
-    // Check if row has required data
+    // Check if row exists
     if (!row || row.length === 0) {
       return null;
     }
 
-    // Extract required fields
+    // Check if row is completely empty (all cells are empty)
+    const hasAnyData = row.some(cell => 
+      cell !== null && cell !== undefined && cell !== '' && String(cell).trim() !== ''
+    );
+    
+    if (!hasAnyData) {
+      return null; // Skip completely empty rows
+    }
+
+    // Extract required fields - don't skip any rows, let validation handle missing data
     const code = this.getCellValue(row, headerMapping.code);
     const familyName = this.getCellValue(row, headerMapping.familyName);
     const givenName = this.getCellValue(row, headerMapping.givenName);
 
-    // Skip row if missing required fields
-    if (!code || !familyName || !givenName) {
-      return null;
-    }
+    // Don't skip rows with missing data - include all rows for validation
+    // Backend validation will handle missing required fields
 
     // Extract email and normalize
     const emailValue = this.getCellValue(row, headerMapping.email);
@@ -244,67 +287,69 @@ export class ExcelParserService {
     // Debug logging for first few rows
     const genderRaw = this.getCellValue(row, headerMapping.gender);
     const classNameRaw = this.getCellValue(row, headerMapping.className);
-    
-    if (row === row && Math.random() < 0.1) { // Log ~10% of rows for debugging
-      console.log('Row mapping debug:', {
-        row,
-        headerMapping: {
-          givenName: headerMapping.givenName,
-          gender: headerMapping.gender,
-          className: headerMapping.className
-        },
-        extractedValues: {
-          code,
-          familyName,
-          givenName,
-          genderRaw,
-          genderNormalized: this.normalizeGender(genderRaw),
-          classNameRaw
-        }
-      });
-    }
 
     const userData: UserImportData = {
-      code: String(code).trim(),
-      familyName: String(familyName).trim(),
-      givenName: String(givenName).trim(),
+      code: code ? String(code).trim() : '', // Handle empty code
+      familyName: familyName ? String(familyName).trim() : '', // Handle empty family name
+      givenName: givenName ? String(givenName).trim() : '', // Handle empty given name
       email,
-      password: this.getCellValue(row, headerMapping.password),
-      phone: this.getCellValue(row, headerMapping.phone),
-      identityCard: this.getCellValue(row, headerMapping.identityCard),
+      password: this.getCellValue(row, headerMapping.password) || undefined,
+      phone: this.getCellValue(row, headerMapping.phone) || undefined,
+      identityCard: this.getCellValue(row, headerMapping.identityCard) || undefined,
       birthDate: this.parseDateValue(this.getCellValue(row, headerMapping.birthDate)),
       gender: this.normalizeGender(genderRaw),
-      className: classNameRaw,
-      admissionYear: this.getCellValue(row, headerMapping.admissionYear),
-      curriculumYear: this.getCellValue(row, headerMapping.curriculumYear),
-      facultyCode: this.getCellValue(row, headerMapping.facultyCode),
-      managementDepartmentCode: this.getCellValue(row, headerMapping.managementDepartmentCode),
-      trainingDepartmentCode: this.getCellValue(row, headerMapping.trainingDepartmentCode),
-      trainingSystem: this.normalizeTrainingSystem(this.getCellValue(row, headerMapping.trainingSystem)),
-      trainingLevel: this.normalizeTrainingLevel(this.getCellValue(row, headerMapping.trainingLevel)),
+      className: classNameRaw || undefined,
+      admissionYear: this.getCellValue(row, headerMapping.admissionYear) || undefined,
+      curriculumYear: this.getCellValue(row, headerMapping.curriculumYear) || undefined,
+      facultyCode: this.extractCodeFromCodeNameFormat(this.getCellValue(row, headerMapping.facultyCode)) || undefined,
+      managementDepartmentCode: this.extractCodeFromCodeNameFormat(this.getCellValue(row, headerMapping.managementDepartmentCode)) || undefined,
+      trainingDepartmentCode: this.getCellValue(row, headerMapping.trainingDepartmentCode) || undefined,
+      trainingSystem: this.getCellValue(row, headerMapping.trainingSystem),
+      trainingLevel: this.getCellValue(row, headerMapping.trainingLevel),
       userType: this.normalizeUserType(this.getCellValue(row, headerMapping.userType)),
       membershipStatus: this.normalizeMembershipStatus(this.getCellValue(row, headerMapping.membershipStatus)),
-      organizationCodes: this.getCellValue(row, headerMapping.organizationCodes),
+      organizationCodes: this.getCellValue(row, headerMapping.organizationCodes) || undefined,
       isActive: true // Default to active
     };
 
     return userData;
   }
 
-  private getCellValue(row: any[], index: number | undefined): string | undefined {
+  private getCellValue(row: any[], index: number | undefined): string {
     if (index === undefined || index < 0 || index >= row.length) {
-      return undefined;
+      return '';
     }
     
     const value = row[index];
     if (value === null || value === undefined || value === '') {
-      return undefined;
+      return '';
     }
     
     return String(value).trim();
   }
 
-  private normalizeEmail(email: string | undefined): string | null {
+  /**
+   * Extract code from "Code - Name" format
+   * Example: "PDT - Phòng Đào Tạo" -> "PDT"
+   * Example: "DD - Khoa Điện - Điện tử" -> "DD"
+   */
+  private extractCodeFromCodeNameFormat(value: string): string {
+    if (!value) return '';
+    
+    const trimmed = value.trim();
+    
+    // Check if it contains " - " separator
+    if (trimmed.includes(' - ')) {
+      // Split by " - " and take the first part as code
+      const parts = trimmed.split(' - ');
+      return parts[0].trim();
+    }
+    
+    // If no separator found, return the original value
+    return trimmed;
+  }
+
+  private normalizeEmail(email: string): string | null {
     if (!email || email === '*' || email === '-') {
       return null;
     }
@@ -312,7 +357,7 @@ export class ExcelParserService {
     return email.toLowerCase().trim();
   }
 
-  private parseDateValue(dateStr: string | undefined): Date | undefined {
+  private parseDateValue(dateStr: string): Date | undefined {
     if (!dateStr) return undefined;
     
     try {
@@ -341,7 +386,7 @@ export class ExcelParserService {
     return undefined;
   }
 
-  private normalizeGender(gender: string | undefined): 'NAM' | 'NU' | undefined {
+  private normalizeGender(gender: string): 'NAM' | 'NU' | undefined {
     if (!gender) return undefined;
     
     const normalized = gender.toLowerCase().trim();
@@ -357,59 +402,59 @@ export class ExcelParserService {
     return undefined;
   }
 
-  private normalizeTrainingSystem(system: string | undefined): 'VLVH' | 'CQ' | 'QT' | 'DTTX' | undefined {
-    if (!system) return undefined;
+  // private normalizeTrainingSystem(system: string): 'VLVH' | 'CQ' | 'QT' | 'DTTX' | undefined {
+  //   if (!system) return undefined;
     
-    const normalized = system.toLowerCase().trim();
+  //   const normalized = system.toLowerCase().trim();
     
-    if (['vlvh', 'vừa làm vừa học'].includes(normalized)) {
-      return 'VLVH';
-    }
+  //   if (['vlvh', 'vừa làm vừa học'].includes(normalized)) {
+  //     return 'VLVH';
+  //   }
     
-    if (['cq', 'chính quy'].includes(normalized)) {
-      return 'CQ';
-    }
+  //   if (['cq', 'chính quy'].includes(normalized)) {
+  //     return 'CQ';
+  //   }
     
-    if (['qt', 'quốc tế'].includes(normalized)) {
-      return 'QT';
-    }
+  //   if (['qt', 'quốc tế'].includes(normalized)) {
+  //     return 'QT';
+  //   }
     
-    if (['dttx', 'đào tạo từ xa'].includes(normalized)) {
-      return 'DTTX';
-    }
+  //   if (['dttx', 'đào tạo từ xa'].includes(normalized)) {
+  //     return 'DTTX';
+  //   }
     
-    return undefined;
-  }
+  //   return undefined;
+  // }
 
-  private normalizeTrainingLevel(level: string | undefined): 'DH' | undefined {
-    if (!level) return undefined;
+  // private normalizeTrainingLevel(level: string): 'DH' | undefined {
+  //   if (!level) return undefined;
     
-    const normalized = level.toLowerCase().trim();
+  //   const normalized = level.toLowerCase().trim();
     
-    if (['dh', 'đại học'].includes(normalized)) {
-      return 'DH';
-    }
+  //   if (['dh', 'đại học'].includes(normalized)) {
+  //     return 'DH';
+  //   }
     
-    return undefined;
-  }
+  //   return undefined;
+  // }
 
-  private normalizeUserType(type: string | undefined): 'student' | 'staff' | 'SINH_VIEN' | 'CAN_BO' | undefined {
+  private normalizeUserType(type: string): 'student' | 'staff' | undefined {
     if (!type) return undefined;
     
     const normalized = type.toLowerCase().trim();
     
     if (['sinh viên', 'sinh_vien', 'student', 'sv'].includes(normalized)) {
-      return 'SINH_VIEN';
+      return 'student';
     }
     
     if (['cán bộ', 'can_bo', 'staff', 'cb', 'giảng viên'].includes(normalized)) {
-      return 'CAN_BO';
+      return 'staff';
     }
     
     return undefined;
   }
 
-  private normalizeMembershipStatus(status: string | undefined): 'doan_vien' | 'hoi_vien' | 'both' | 'none' | 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | undefined {
+  private normalizeMembershipStatus(status: string): 'doan_vien' | 'hoi_vien' | 'both' | 'none' | 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | undefined {
     if (!status) return undefined;
     
     const normalized = status.toLowerCase().trim();

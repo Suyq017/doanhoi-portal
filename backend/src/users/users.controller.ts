@@ -43,7 +43,7 @@ export class UsersController {
     const buffer = await this.importService.generateTemplate();
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="users_import_template_enhanced.xlsx"');
+    res.setHeader('Content-Disposition', 'attachment; filename="users_import_template.xlsx"');
     res.send(buffer);
   }
 
@@ -136,6 +136,36 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'Session không tồn tại' })
   async getSessionStatus(@Param('sessionId') sessionId: string) {
     return this.importService.getSessionStatus(sessionId);
+  }
+
+  // NEW: Validation endpoint for client-side parsed data
+  @Post('validate-batch')
+  @ApiOperation({
+    summary: 'Validate parsed user data from frontend',
+    description: 'Validate JSON array of user data parsed from Excel on frontend. Returns validation results with enhanced field validation.'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Validation completed successfully'
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request data'
+  })
+  async validateBatchData(@Body() data: { 
+    users: any[];
+    pagination?: {
+      errorPage?: number;
+      errorLimit?: number;
+      warningPage?: number;
+      warningLimit?: number;
+    }
+  }) {
+    if (!data || !Array.isArray(data.users)) {
+      throw new BadRequestException('Invalid data format. Expected { users: [], pagination?: {} }');
+    }
+
+    return this.batchImportService.validateParsedData(data.users, data.pagination || {});
   }
 
   // NEW: Client-side batch processing endpoint

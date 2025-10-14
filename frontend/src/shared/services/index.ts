@@ -4,4 +4,4 @@ export * from './dashboardService';
 export * from './departmentService';
 export * from './classService';
 export * from './fee-collection-service';
-export * from './import-service/batchImportService';
+export * from './users-import-service';

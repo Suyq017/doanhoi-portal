@@ -262,6 +262,7 @@
     "validate": "Kiểm tra",
     "validatePhonetic": "Kiểm tra",
     "validationErrors": "Có lỗi trong quá trình kiểm tra. Vui lòng sửa các lỗi và thử lại.",
+    "validationWarnings": "Có cảnh báo trong quá trình kiểm tra. Vui lòng xem lại.",
     "startImport": "Bắt đầu import",
     "startImportPhonetic": "Bắt đầu import",
     "importing": "Đang import dữ liệu...",
