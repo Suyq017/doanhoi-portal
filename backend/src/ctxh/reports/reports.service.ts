@@ -27,6 +27,16 @@ export class ReportsService {
   ) {}
 
   async getStudentReportByCode(studentCode: string): Promise<StudentReportDto> {
+    // First, check if student exists in users table
+    const student = await this.userRepository.findOne({
+      where: { code: studentCode },
+      select: ['id', 'code', 'familyName', 'givenName', 'email'],
+    });
+
+    if (!student) {
+      throw new NotFoundException(`Không tìm thấy sinh viên với mã số ${studentCode}`);
+    }
+
     // Get student's participations with manual joins to ensure data is loaded
     const participations = await this.participationRepository
       .createQueryBuilder('participation')
@@ -49,17 +59,6 @@ export class ReportsService {
 
     // Debug: Log raw query results
     console.log('Raw query results:', participations);
-
-    if (participations.length === 0) {
-      // Check if student code exists in any participation
-      const anyParticipation = await this.participationRepository.findOne({
-        where: { student_code: studentCode }
-      });
-      
-      if (!anyParticipation) {
-        throw new NotFoundException(`Không tìm thấy sinh viên với mã số ${studentCode}`);
-      }
-    }
 
     // Calculate total days completed
     const completedParticipations = participations.filter(p => p.status === 'COMPLETED');
@@ -108,10 +107,10 @@ export class ReportsService {
     const isQualified = totalDaysCompleted >= requiredDays;
 
     return plainToClass(StudentReportDto, {
-      student_id: null, // No student ID available
-      student_code: studentCode,
-      student_name: null, // No user data available
-      student_email: null, // No user data available  
+      student_id: student.id,
+      student_code: student.code,
+      student_name: `${student.familyName} ${student.givenName}`.trim(),
+      student_email: student.email,
       total_days_completed: totalDaysCompleted,
       total_activities_participated: totalActivities,
       required_days: requiredDays,
