@@ -1,0 +1,16 @@
+{
+  "import": {
+    "title": "Nhập danh sách sinh viên tham gia",
+    "instructions": "Hướng dẫn thêm dữ liệu sinh viên",
+    "step1": "Tải file mẫu Excel tại đây và điền đầy đủ thông tin các sinh viên",
+    "step2": "Kiểm tra định dạng dữ liệu và đảm bảo không có lỗi",
+    "step3": "Tải file lên để tiến hành thêm vào hệ thống",
+    "templateLinkText": "tại đây",
+    "note": "Lưu ý: Mã sinh viên phải chính xác và tồn tại trong hệ thống",
+    "validation": {
+      "required": "Trường này là bắt buộc",
+      "invalidEmail": "Email không hợp lệ",
+      "duplicateCode": "Mã sinh viên bị trùng lặp"
+    }
+  }
+}

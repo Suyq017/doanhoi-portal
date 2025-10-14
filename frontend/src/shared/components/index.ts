@@ -8,6 +8,8 @@ export { default as Combobox } from './Combobox';
 export { default as SearchableCombobox } from './SearchableCombobox';
 export { default as TagInput } from './TagInput';
 export { default as ConfirmDialog } from './ConfirmDialog';
+export { default as Pagination } from './Pagination';
 export type { SelectOption } from './Select';
 export type { DropdownOption } from './AddDropdownButton';
+export type { PaginationProps } from './Pagination';
 export * from './UserTable';

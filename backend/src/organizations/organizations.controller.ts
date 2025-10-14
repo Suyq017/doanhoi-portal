@@ -93,6 +93,39 @@ export class OrganizationsController {
         }
     }
 
+    @Get('ctxh-activity-accessible')
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({
+        summary: 'Get organizations user can use for CTXH activity creation',
+        description: 'Returns organizations based on ctxh.activities.create permission and hierarchy level'
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Organizations retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                organizations: {
+                    type: 'array',
+                    items: { type: 'object' }
+                },
+                canSelectMultiple: {
+                    type: 'boolean',
+                    description: 'Whether user can choose from multiple organizations'
+                },
+                fixedOrganization: {
+                    type: 'object',
+                    nullable: true,
+                    description: 'If user is restricted to single org (level 2), this is set'
+                }
+            }
+        }
+    })
+    async getCtxhActivityAccessibleOrganizations(@Request() req: any) {
+        const userId = req.user.id;
+        return this.organizationsService.getCtxhActivityAccessibleOrganizations(userId);
+    }
+
     @Get(':id/children')
     @ApiOperation({ summary: 'Lấy danh sách tổ chức con trực tiếp' })
     @ApiParam({ name: 'id', description: 'ID của tổ chức cha' })

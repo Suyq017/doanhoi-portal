@@ -116,14 +116,14 @@
     "bulkDelete": "Delete Selected ({{count}})",
     "allStatuses": "All Statuses",
     "activeStatus": "Active",
-    "inactiveStatus": "Inactive", 
+    "inactiveStatus": "Inactive",
     "clearFilters": "Clear Filters",
     "permissionCount": "{{count}} permissions",
     "systemRole": "System Role",
     "table": {
         "roleName": "Role Name",
         "displayName": "Display Name",
-        "permissions": "Permissions", 
+        "permissions": "Permissions",
         "status": "Status",
         "actions": "Actions"
     },
@@ -134,7 +134,7 @@
     "modals": {
         "createTitle": "Create New Role",
         "editTitle": "Edit Role",
-        "viewTitle": "Role Details", 
+        "viewTitle": "Role Details",
         "deleteTitle": "Confirm Role Deletion",
         "bulkDeleteTitle": "Confirm Bulk Deletion"
     },
@@ -148,6 +148,7 @@
             "permissions": "Permission Management",
             "payments": "Fee Collection Management",
             "myPayments": "My Payments",
+            "ctxh": "Community Service Management",
             "dashboardShort": "Dashboard",
             "usersShort": "Users",
             "organizationsShort": "Organizations",
@@ -155,7 +156,8 @@
             "classesShort": "Classes",
             "permissionsShort": "Permissions",
             "paymentsShort": "Payments",
-            "myPaymentsShort": "My Payments"
+            "myPaymentsShort": "My Payments",
+            "ctxhShort": "CTXH"
         },
         "definitions": {
             "dashboard.access": "Access dashboard",

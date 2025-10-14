@@ -12,6 +12,7 @@ import { RolesModule } from './roles/roles.module';
 import { CleanEmptyStringsMiddleware } from './common/middleware/clean-empty-strings.middleware';
 import { PaymentModule } from './payment/payment.module';
 import { PayosModule } from './payos/payos.module';
+import { CtxhModule } from './ctxh/ctxh.module';
 
 
 @Module({
@@ -43,6 +44,7 @@ import { PayosModule } from './payos/payos.module';
     RolesModule,
     PaymentModule,
     PayosModule, // Import module PayOS của chúng ta
+    CtxhModule, // CTXH Management System Module
   ],
 })
 export class AppModule implements NestModule {

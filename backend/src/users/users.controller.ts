@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Res, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Res, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
@@ -12,6 +12,7 @@ import { BatchImportService } from './services/batch-import.service';
 import { BatchImportRequestDto } from './dto/batch-import-request-simple.dto';
 import { BatchImportResponseDto } from './dto/batch-import-response.dto';
 import { RolesService } from '../roles/roles.service';
+import { User } from '../entities/user.entity';
 
 @ApiTags('users')
 @Controller('users')
@@ -72,6 +73,18 @@ export class UsersController {
   @ApiOperation({ summary: 'Get available roles for user assignment' })
   async getAvailableRoles() {
     return this.rolesService.getAllRoles();
+  }
+
+  @Get('find-by-code/:code')
+  @ApiOperation({ summary: 'Tìm người dùng theo mã code chính xác' })
+  @ApiResponse({ status: 200, description: 'Thông tin người dùng', type: User })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy người dùng' })
+  async findByCode(@Param('code') code: string) {
+    const user = await this.usersService.findByExactCode(code);
+    if (!user) {
+      throw new NotFoundException(`Không tìm thấy người dùng với mã ${code}`);
+    }
+    return user;
   }
 
   @Get(':id')

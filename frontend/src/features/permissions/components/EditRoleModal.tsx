@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Shield, ChevronDown, ChevronRight, Users, Building, LayoutDashboard, Building2, GraduationCap, Check, Minus, CreditCard } from 'lucide-react';
+import { X, Shield, ChevronDown, ChevronRight, Users, Building, LayoutDashboard, Building2, GraduationCap, Check, Minus, CreditCard, Heart } from 'lucide-react';
 import { roleService, type UpdateRoleRequest, type Permission, type Role } from '../services/roleService';
 
 interface EditRoleModalProps {
@@ -62,6 +62,13 @@ const usePermissionGroups = () => {
             icon: CreditCard,
             color: 'emerald',
             description: t('permissions.categories.myPayments')
+        },
+        {
+            id: 'ctxh',
+            name: t('permissions.categories.ctxh'),
+            icon: Heart,
+            color: 'pink',
+            description: t('permissions.categories.ctxh')
         },
         {
             id: 'permissions',
@@ -158,6 +165,21 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
                 { id: '41', code: 'my-payments.view', name: 'Xem thông tin đóng phí được phân công', category: 'my-payments', context: 'organization', isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
                 { id: '42', code: 'my-payments.pay', name: 'Thực hiện thanh toán', category: 'my-payments', context: 'organization', isActive: true, sortOrder: 3, createdAt: '', updatedAt: '' },
                 { id: '43', code: 'my-payments.history', name: 'Xem lịch sử thanh toán', category: 'my-payments', context: 'organization', isActive: true, sortOrder: 4, createdAt: '', updatedAt: '' },
+
+                // CTXH permissions
+                { id: '51', code: 'ctxh.access', name: 'Truy cập module quản lý CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
+                { id: '52', code: 'ctxh.categories.view', name: 'Xem danh mục CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
+                { id: '53', code: 'ctxh.categories.create', name: 'Tạo danh mục CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 3, createdAt: '', updatedAt: '' },
+                { id: '54', code: 'ctxh.categories.update', name: 'Cập nhật danh mục CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 4, createdAt: '', updatedAt: '' },
+                { id: '55', code: 'ctxh.categories.delete', name: 'Xóa danh mục CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 5, createdAt: '', updatedAt: '' },
+                { id: '56', code: 'ctxh.activities.view', name: 'Xem hoạt động CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 6, createdAt: '', updatedAt: '' },
+                { id: '57', code: 'ctxh.activities.create', name: 'Tạo hoạt động CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 7, createdAt: '', updatedAt: '' },
+                { id: '58', code: 'ctxh.activities.update', name: 'Cập nhật hoạt động CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 8, createdAt: '', updatedAt: '' },
+                { id: '59', code: 'ctxh.activities.delete', name: 'Xóa hoạt động CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 9, createdAt: '', updatedAt: '' },
+                { id: '60', code: 'ctxh.activities.manage_participants', name: 'Quản lý người tham gia CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 10, createdAt: '', updatedAt: '' },
+                { id: '61', code: 'ctxh.reports.view', name: 'Xem báo cáo CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 11, createdAt: '', updatedAt: '' },
+                { id: '62', code: 'ctxh.reports.export', name: 'Xuất báo cáo CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 12, createdAt: '', updatedAt: '' },
+                { id: '63', code: 'ctxh.config.manage', name: 'Quản lý cấu hình CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 13, createdAt: '', updatedAt: '' },
 
                 // Permissions permissions
                 { id: '24', code: 'permissions.access', name: 'Truy cập trang phân quyền', category: 'permissions', context: 'system', isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
@@ -281,6 +303,13 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
                     border: 'border-yellow-200 dark:border-yellow-800',
                     text: 'text-yellow-700 dark:text-yellow-300',
                     icon: 'text-yellow-500 dark:text-yellow-400'
+                };
+            case 'pink':
+                return {
+                    bg: 'bg-pink-50 dark:bg-pink-900/20',
+                    border: 'border-pink-200 dark:border-pink-800',
+                    text: 'text-pink-700 dark:text-pink-300',
+                    icon: 'text-pink-500 dark:text-pink-400'
                 };
             default:
                 return {

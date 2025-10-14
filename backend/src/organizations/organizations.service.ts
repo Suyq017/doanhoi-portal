@@ -837,4 +837,298 @@ export class OrganizationsService {
     };
   }
 
+  /**
+   * Calculate organization level in hierarchy
+   * Level 1: Root organizations (no parent)
+   * Level 2: Organizations with 1 parent
+   * Level 3+: Deeper nested organizations
+   */
+  async getOrganizationLevel(organizationId: string): Promise<number> {
+    const org = await this.organizationsRepository.findOne({
+      where: { id: organizationId },
+      relations: ['parent']
+    });
+
+    if (!org) return 0;
+
+    let level = 1;
+    let current = org;
+
+    while (current.parent) {
+      level++;
+      current = await this.organizationsRepository.findOne({
+        where: { id: current.parent.id },
+        relations: ['parent']
+      });
+      if (!current) break;
+    }
+
+    return level;
+  }
+
+  /**
+   * Get all child organizations (recursively)
+   */
+  async getAllDescendants(organizationId: string): Promise<Organization[]> {
+    const treeRepo = this.organizationsRepository.manager.getTreeRepository(Organization);
+    const organization = await treeRepo.findOne({
+      where: { id: organizationId }
+    });
+
+    if (!organization) return [];
+
+    const descendants = await treeRepo.findDescendants(organization);
+    // Remove the parent organization itself from the result
+    return descendants.filter(d => d.id !== organizationId);
+  }
+
+  /**
+   * Get organizations user can access for CTXH activity creation
+   * Based on ctxh.activities.create permission and hierarchy level
+   */
+  async getCtxhActivityAccessibleOrganizations(userId: string): Promise<{
+    organizations: Organization[];
+    canSelectMultiple: boolean;
+    fixedOrganization: Organization | null;
+  }> {
+    console.log(`[OrganizationsService] Getting CTXH activity organizations for user: ${userId}`);
+
+    // 1. Check if user is super admin
+    const superAdminQuery = `
+      SELECT ur.id
+      FROM user_roles ur
+      JOIN roles r ON ur."roleId" = r.id
+      JOIN role_permissions rp ON r.id = rp."roleId"
+      JOIN permissions p ON rp."permissionId" = p.id
+      WHERE ur."userId" = $1 
+      AND ur."organizationId" IS NULL
+      AND ur."isActive" = true
+      AND r.name = 'super_admin'
+      AND p."isActive" = true
+      LIMIT 1
+    `;
+
+    const superAdminResult = await this.organizationsRepository.query(superAdminQuery, [userId]);
+
+    if (superAdminResult.length > 0) {
+      console.log(`[OrganizationsService] User is super_admin - can access all organizations`);
+
+      const allOrgs = await this.organizationsRepository.find({
+        where: { isActive: true },
+        relations: ['parent'],
+        order: { name: 'ASC' }
+      });
+
+      return {
+        organizations: allOrgs,
+        canSelectMultiple: true,
+        fixedOrganization: null
+      };
+    }
+
+    // 2. Get organizations where user has ctxh.activities.create permission
+    const accessibleOrgsQuery = `
+      SELECT DISTINCT 
+        o.id, o.name, o.code, o.type, o."parentId", 
+        o."createdAt", o."updatedAt", o."isActive",
+        o.description
+      FROM user_roles ur
+      JOIN roles r ON ur."roleId" = r.id
+      JOIN role_permissions rp ON r.id = rp."roleId"
+      JOIN permissions p ON rp."permissionId" = p.id
+      JOIN organizations o ON ur."organizationId" = o.id
+      WHERE ur."userId" = $1 
+      AND ur."isActive" = true
+      AND p.code = 'ctxh.activities.create'
+      AND p."isActive" = true
+      AND o."isActive" = true
+      ORDER BY o.name ASC
+    `;
+
+    const accessibleOrganizations = await this.organizationsRepository.query(
+      accessibleOrgsQuery,
+      [userId]
+    );
+
+    console.log(`[OrganizationsService] Found ${accessibleOrganizations.length} organizations with ctxh.activities.create`);
+
+    if (accessibleOrganizations.length === 0) {
+      return {
+        organizations: [],
+        canSelectMultiple: false,
+        fixedOrganization: null
+      };
+    }
+
+    // 3. Analyze organization levels and build accessible list
+    const organizationsWithLevel = await Promise.all(
+      accessibleOrganizations.map(async (org) => {
+        const level = await this.getOrganizationLevel(org.id);
+        return { ...org, level };
+      })
+    );
+
+    // 4. Check for Level 3 restriction (Chi đoàn/Chi hội)
+    // Level 3 organizations CANNOT create CTXH activities
+    const hasLevel3Only = organizationsWithLevel.every(o => o.level === 3);
+    
+    if (hasLevel3Only) {
+      console.log(`[OrganizationsService] User restricted to Level 3 org(s) - CANNOT create activities`);
+      return {
+        organizations: [],
+        canSelectMultiple: false,
+        fixedOrganization: null
+      };
+    }
+
+    // 5. Determine selection behavior based on levels
+    const hasLevel2Only = organizationsWithLevel.every(o => o.level === 2) &&
+      organizationsWithLevel.length === 1;
+
+    if (hasLevel2Only) {
+      // User has permission only on a single Level 2 organization
+      // Return Level 2 org + all its Level 3 children for selection
+      const level2Org = await this.organizationsRepository.findOne({
+        where: { id: organizationsWithLevel[0].id },
+        relations: ['parent']
+      });
+
+      console.log(`[OrganizationsService] User restricted to Level 2 org: ${level2Org.name} - including children`);
+
+      // Get all descendants (Level 3 children)
+      const descendants = await this.getAllDescendants(level2Org.id);
+      const allOrgs = [level2Org, ...descendants];
+
+      console.log(`[OrganizationsService] Level 2 accessible organizations: ${allOrgs.length} (Level 2 + ${descendants.length} children)`);
+
+      return {
+        organizations: allOrgs.sort((a, b) => a.name.localeCompare(b.name)),
+        canSelectMultiple: true, // Changed: Allow selection from dropdown
+        fixedOrganization: level2Org // Keep reference to parent Level 2 org
+      };
+    }
+
+    // 6. Build full accessible list (Level 1 + descendants, SKIP Level 3)
+    const allAccessibleOrgs: Organization[] = [];
+    const processedIds = new Set<string>();
+
+    for (const orgData of organizationsWithLevel) {
+      // IMPORTANT: Skip Level 3 organizations - they cannot create activities
+      if (orgData.level === 3) {
+        console.log(`[OrganizationsService] Skipping Level 3 org: ${orgData.name}`);
+        continue;
+      }
+
+      const org = await this.organizationsRepository.findOne({
+        where: { id: orgData.id },
+        relations: ['parent']
+      });
+
+      if (!org || processedIds.has(org.id)) continue;
+
+      allAccessibleOrgs.push(org);
+      processedIds.add(org.id);
+
+      // If Level 1, add all descendants
+      if (orgData.level === 1) {
+        const descendants = await this.getAllDescendants(org.id);
+        descendants.forEach(desc => {
+          if (!processedIds.has(desc.id)) {
+            allAccessibleOrgs.push(desc);
+            processedIds.add(desc.id);
+          }
+        });
+      }
+    }
+
+    console.log(`[OrganizationsService] Total accessible organizations: ${allAccessibleOrgs.length}`);
+
+    return {
+      organizations: allAccessibleOrgs.sort((a, b) => a.name.localeCompare(b.name)),
+      canSelectMultiple: true,
+      fixedOrganization: null
+    };
+  }
+
+  /**
+   * Get organizations user can view CTXH activities for
+   * Based on ctxh.activities.view permission
+   */
+  async getCtxhActivityViewableOrganizations(userId: string): Promise<Organization[]> {
+    try {
+      console.log(`[OrganizationsService] Getting viewable CTXH activity organizations for user: ${userId}`);
+
+      // Validate userId
+      if (!userId) {
+        console.error('[OrganizationsService] Invalid userId provided');
+        throw new BadRequestException('Invalid user ID');
+      }
+
+      // Check if user is super admin (has global system.access_admin permission)
+      const superAdminQuery = `
+        SELECT ur.id
+        FROM user_roles ur
+        JOIN roles r ON ur."roleId" = r.id
+        JOIN role_permissions rp ON r.id = rp."roleId"
+        JOIN permissions p ON rp."permissionId" = p.id
+        WHERE ur."userId" = $1 
+        AND ur."organizationId" IS NULL
+        AND ur."isActive" = true
+        AND (p.code = 'system.access_admin' OR r.name = 'super_admin')
+        AND p."isActive" = true
+        LIMIT 1
+      `;
+
+      const superAdminResult = await this.organizationsRepository.query(superAdminQuery, [userId]);
+
+      if (superAdminResult.length > 0) {
+        console.log(`[OrganizationsService] User ${userId} is super admin, returning all organizations for CTXH view`);
+        // Super admin can see all organizations
+        return this.organizationsRepository.find({
+          where: { isActive: true },
+          order: { name: 'ASC' }
+        });
+      }
+
+      // Query for organizations where user has ctxh.activities.view permission
+      const accessibleOrgsQuery = `
+        SELECT DISTINCT o.id, o.name, o.code, o.type, o."parentId", o."createdAt", o."updatedAt", o."isActive"
+        FROM user_roles ur
+        JOIN roles r ON ur."roleId" = r.id
+        JOIN role_permissions rp ON r.id = rp."roleId"
+        JOIN permissions p ON rp."permissionId" = p.id
+        JOIN organizations o ON ur."organizationId" = o.id
+        WHERE ur."userId" = $1 
+        AND ur."isActive" = true
+        AND p.code = 'ctxh.activities.view'
+        AND p."isActive" = true
+        AND o."isActive" = true
+        ORDER BY o.name ASC
+      `;
+
+      const accessibleOrganizations = await this.organizationsRepository.query(accessibleOrgsQuery, [userId]);
+
+      console.log(`[OrganizationsService] Found ${accessibleOrganizations.length} organizations with ctxh.activities.view permission for user ${userId}`);
+
+      // Convert query results to Organization entities
+      const organizationIds = accessibleOrganizations.map(row => row.id);
+
+      if (organizationIds.length === 0) {
+        return [];
+      }
+
+      // Fetch full Organization entities with relations
+      const organizations = await this.organizationsRepository.find({
+        where: { id: In(organizationIds) },
+        relations: ['parent'],
+        order: { name: 'ASC' }
+      });
+
+      return organizations;
+    } catch (error) {
+      console.error('[OrganizationsService] Error getting viewable CTXH organizations:', error);
+      throw error;
+    }
+  }
+
 }

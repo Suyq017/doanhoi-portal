@@ -6,8 +6,6 @@ import {
   AlertTriangle,
   AlertCircle,
   FileText,
-  Eye,
-  EyeOff,
   RefreshCw
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -411,10 +409,31 @@ const ImportModal = ({
     // For client-side, use data directly; for server-side, use previewData
     let rows: any[] = state.clientData ||
       (state.serverValidation?.previewData) || [];
+    // For client-side, check if validation has previewData property (custom property we added)
+    // For server-side, use previewData
+    // let rows: any[] = [];
 
-    // Apply error filtering - check both hasErrors and _hasError for compatibility
+    // if (state.clientValidation && (validation as any).previewData) {
+    //   // Client-side with previewData (has error flags)
+    //   rows = (validation as any).previewData;
+    // } else if (state.serverValidation?.previewData) {
+    //   // Server-side with previewData
+    //   rows = state.serverValidation.previewData;
+    // } else {
+    //   // Fallback to clientData or validation data
+    //   rows = state.clientData || (validation as any).data || [];
+    // }
+
+
+
+    // // Always filter out rows with errors - only show valid records in preview table
+    // rows = rows.filter((row: any) => !(row.hasErrors || row._hasError));
+
+    // Apply additional error filtering if showOnlyErrors is true (though this won't show anything now)
     if (showOnlyErrors) {
-      rows = rows.filter((row: any) => row.hasErrors || row._hasError);
+      // Since we already filtered out error rows, this will return empty array
+      // but keeping for consistency with the UI toggle
+      rows = [];
     }
 
     // Calculate pagination
@@ -441,17 +460,42 @@ const ImportModal = ({
       totalRows = data.filter((row: any) => row.hasErrors || row._hasError).length;
     }
 
+    //     // Get data from appropriate source
+    // let data: any[] = [];
+
+    // if (state.clientValidation && (validation as any).previewData) {
+    //   data = (validation as any).previewData;
+    // } else if (state.serverValidation?.previewData) {
+    //   data = state.serverValidation.previewData;
+    // } else {
+    //   data = state.clientData || (validation as any).data || [];
+    // }
+
+    // // Filter to only valid records (since we only display valid records now)
+    // const validRows = data.filter((row: any) => !(row.hasErrors || row._hasError));
+    // const totalRows = validRows.length;
+
     return Math.ceil(totalRows / previewLimit);
   };
 
   const getCurrentRowRange = () => {
-    if (!state.serverValidation) return { start: 0, end: 0, total: 0 };
+    const validation = state.clientValidation || state.serverValidation;
+    if (!validation) return { start: 0, end: 0, total: 0 };
 
-    let totalRows = state.serverValidation.previewData?.length || 0;
+    // Get data from appropriate source
+    let data: any[] = [];
 
-    if (showOnlyErrors) {
-      totalRows = state.serverValidation.previewData?.filter(row => row.hasErrors || row._hasError).length || 0;
+    if (state.clientValidation && (validation as any).previewData) {
+      data = (validation as any).previewData;
+    } else if (state.serverValidation?.previewData) {
+      data = state.serverValidation.previewData;
+    } else {
+      data = state.clientData || (validation as any).data || [];
     }
+
+    // Filter to only valid records (since we only display valid records now)
+    const validRows = data.filter((row: any) => !(row.hasErrors || row._hasError));
+    const totalRows = validRows.length;
 
     if (showAllRows) {
       return { start: 1, end: totalRows, total: totalRows };
@@ -649,7 +693,8 @@ const ImportModal = ({
         {/* Filter Controls */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <button
+            {/* Hide "Show Only Errors" button since we filter out errors from preview table */}
+            {/* <button
               onClick={() => {
                 setShowOnlyErrors(!showOnlyErrors);
                 setPreviewPage(1); // Reset to first page when filter changes
@@ -661,7 +706,7 @@ const ImportModal = ({
             >
               {showOnlyErrors ? <Eye className="w-4 h-4 mr-1" /> : <EyeOff className="w-4 h-4 mr-1" />}
               {t('import.showOnlyErrors')}
-            </button>
+            </button> */}
 
             <button
               onClick={() => {
@@ -1111,7 +1156,10 @@ const ImportModal = ({
                   </button>
                   <button
                     onClick={handleImport}
-                    disabled={!true}
+                    disabled={(() => {
+                      const validation = state.clientValidation || state.serverValidation;
+                      return !validation || (validation.errors && validation.errors.length > 0);
+                    })()}
                     className="px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {t('import.startImport')}
