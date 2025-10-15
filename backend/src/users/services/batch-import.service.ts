@@ -65,8 +65,8 @@ interface ResolvedUserData {
 export class BatchImportService {
   private readonly logger = new Logger(BatchImportService.name);
   private readonly sessionCache = new Map<string, SessionData>();
-  private readonly BATCH_SIZE_LIMIT = 200;
-  private readonly SUB_BATCH_SIZE = 50; // Process in smaller chunks within transaction
+  private readonly BATCH_SIZE_LIMIT = 500;
+  private readonly SUB_BATCH_SIZE = 100; // Process in smaller chunks within transaction
   private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
   constructor(
@@ -201,7 +201,7 @@ export class BatchImportService {
   }
 
   /**
-   * Process a sub-batch of users within a transaction
+   * Process a sub-batch of users within a transaction using bulk insert
    */
   private async processSubBatch(
     users: UserImportDto[], 
@@ -216,30 +216,175 @@ export class BatchImportService {
       errors: []
     };
 
+    // Step 1: Prepare all resolved user data first
+    const resolvedUsersData: Array<{
+      resolvedData: ResolvedUserData;
+      originalIndex: number;
+      rowNumber: number;
+    }> = [];
+
+    // Process each user to get resolved data
     for (let i = 0; i < users.length; i++) {
       const user = users[i];
       const rowNumber = startRowNumber + i;
 
       try {
-        await this.processUser(user, queryRunner, options);
-        result.successful++;
-        this.logger.debug(`Row ${rowNumber}: User ${user.code} processed successfully`);
+        const resolvedData = await this.convertToResolvedUserData(user, queryRunner);
+        resolvedUsersData.push({
+          resolvedData,
+          originalIndex: i,
+          rowNumber
+        });
       } catch (error) {
         result.failed++;
-        const errorMessage = `Row ${rowNumber}: ${error.message}`;
+        const errorMessage = `Row ${rowNumber}: Failed to resolve user data - ${error.message}`;
         result.errors.push(errorMessage);
         this.logger.warn(errorMessage);
-        
-        // If not skipping errors, fail the entire batch
-        if (!options?.skipDuplicates && error instanceof ConflictException) {
-          throw error;
-        }
       }
       
       result.processed++;
     }
 
+    // Step 2: Bulk insert valid users
+    if (resolvedUsersData.length > 0) {
+      try {
+        const userEntities = await this.createUserEntitiesFromResolved(resolvedUsersData, queryRunner);
+        
+        if (userEntities.length > 0) {
+          // Bulk insert users
+          const insertResult = await queryRunner.manager.insert(User, userEntities);
+          
+          // Handle organization assignments for each inserted user
+          for (let i = 0; i < resolvedUsersData.length; i++) {
+            const { resolvedData } = resolvedUsersData[i];
+            const insertedUserId = insertResult.identifiers[i]?.id;
+            
+            if (insertedUserId && resolvedData.className && resolvedData.facultyCode) {
+              try {
+                await this.handleClassOrganizationCreation(
+                  queryRunner, 
+                  resolvedData.className, 
+                  resolvedData.facultyCode, 
+                  insertedUserId
+                );
+              } catch (orgError) {
+                this.logger.warn(`Failed to create organizations for user ${resolvedData.code}: ${orgError.message}`);
+                // Don't fail the entire batch for organization creation errors
+              }
+            }
+          }
+          
+          result.successful += userEntities.length;
+          this.logger.log(`Bulk inserted ${userEntities.length} users successfully`);
+        }
+      } catch (bulkError) {
+        // If bulk insert fails, fall back to individual processing
+        this.logger.warn(`Bulk insert failed, falling back to individual processing: ${bulkError.message}`);
+        
+        for (const { resolvedData, rowNumber } of resolvedUsersData) {
+          try {
+            await this.importUserWithImportService(queryRunner, resolvedData);
+            result.successful++;
+          } catch (individualError) {
+            result.failed++;
+            const errorMessage = `Row ${rowNumber}: ${individualError.message}`;
+            result.errors.push(errorMessage);
+            this.logger.warn(errorMessage);
+          }
+        }
+      }
+    }
+
     return result;
+  }
+
+  /**
+   * Create User entities from resolved data for bulk insert
+   */
+  private async createUserEntitiesFromResolved(
+    resolvedUsersData: Array<{
+      resolvedData: ResolvedUserData;
+      originalIndex: number;
+      rowNumber: number;
+    }>,
+    queryRunner: QueryRunner
+  ): Promise<User[]> {
+    const userEntities: User[] = [];
+
+    for (const { resolvedData } of resolvedUsersData) {
+      try {
+        const user = new User();
+        user.familyName = resolvedData.familyName;
+        user.givenName = resolvedData.givenName;
+        user.email = resolvedData.email || null;
+        user.code = resolvedData.code;
+        user.phone = resolvedData.phone || '';
+        
+        // Handle password generation
+        if (resolvedData.password && resolvedData.password.trim()) {
+          const userPassword = resolvedData.password.trim();
+          user.password = await bcrypt.hash(userPassword, 10);
+        } else if (resolvedData.email) {
+          const userPassword = this.generatePasswordFromEmail(resolvedData.email);
+          user.password = await bcrypt.hash(userPassword, 10);
+        } else {
+          const userPassword = resolvedData.code;
+          user.password = await bcrypt.hash(userPassword, 10);
+        }
+
+        // Set user type and membership status
+        user.userType = resolvedData.userType as UserType || UserType.STUDENT;
+        user.membershipStatus = resolvedData.membershipStatus as MembershipStatus || MembershipStatus.ACTIVE;
+
+        // Set authentication fields
+        user.authProvider = AuthProvider.LOCAL;
+        user.isActive = true;
+
+        // Set additional fields
+        if (resolvedData.identityCard) user.identityCard = resolvedData.identityCard;
+        if (resolvedData.birthDate) user.birthDate = new Date(resolvedData.birthDate);
+        if (resolvedData.gender) {
+          user.gender = resolvedData.gender.toUpperCase() === 'NAM' ? Gender.NAM : Gender.NU;
+        }
+        if (resolvedData.admissionYear) user.admissionYear = resolvedData.admissionYear;
+        if (resolvedData.curriculumYear) user.curriculumYear = resolvedData.curriculumYear;
+        if (resolvedData.facultyCode) user.facultyCode = resolvedData.facultyCode;
+        if (resolvedData.trainingSystem) user.trainingSystem = resolvedData.trainingSystem;
+        if (resolvedData.trainingLevel) user.trainingLevel = resolvedData.trainingLevel;
+
+        // Set class reference
+        if (resolvedData.classId) {
+          const classEntity = await queryRunner.manager.findOne(Class, { 
+            where: { id: resolvedData.classId } 
+          });
+          if (classEntity) user.class = classEntity;
+        }
+
+        // Set management department reference
+        if (resolvedData.managementDepartmentId) {
+          const managementDept = await queryRunner.manager.findOne(Department, { 
+            where: { id: resolvedData.managementDepartmentId } 
+          });
+          if (managementDept) user.managementDepartment = managementDept;
+        }
+
+        // Set training department reference
+        if (resolvedData.trainingDepartmentId) {
+          const trainingDept = await queryRunner.manager.findOne(Department, { 
+            where: { id: resolvedData.trainingDepartmentId } 
+          });
+          if (trainingDept) user.trainingDepartment = trainingDept;
+        }
+
+        userEntities.push(user);
+      } catch (error) {
+        this.logger.warn(`Failed to create user entity for ${resolvedData.code}: ${error.message}`);
+        // Skip this user, continue with others
+        continue;
+      }
+    }
+
+    return userEntities;
   }
 
   /**
@@ -250,24 +395,24 @@ export class BatchImportService {
     queryRunner: QueryRunner, 
     options: ImportOptionsDto
   ): Promise<User> {
-    // Check if user already exists
-    const existingUser = await queryRunner.manager.findOne(User, {
-      where: { code: userData.code }
-    });
+    // // Check if user already exists
+    // const existingUser = await queryRunner.manager.findOne(User, {
+    //   where: { code: userData.code }
+    // });
 
-    if (existingUser) {
-      if (options?.updateExisting) {
-        // Update existing user
-        await this.updateExistingUser(existingUser, userData, queryRunner);
-        return existingUser;
-      } else if (options?.skipDuplicates) {
-        // Skip duplicate
-        throw new ConflictException(`User with code ${userData.code} already exists (skipped)`);
-      } else {
-        // Fail on duplicate
-        throw new ConflictException(`User with code ${userData.code} already exists`);
-      }
-    }
+    // if (existingUser) {
+    //   if (options?.updateExisting) {
+    //     // Update existing user
+    //     await this.updateExistingUser(existingUser, userData, queryRunner);
+    //     return existingUser;
+    //   } else if (options?.skipDuplicates) {
+    //     // Skip duplicate
+    //     throw new ConflictException(`User with code ${userData.code} already exists (skipped)`);
+    //   } else {
+    //     // Fail on duplicate
+    //     throw new ConflictException(`User with code ${userData.code} already exists`);
+    //   }
+    // }
 
     // Convert UserImportDto to ResolvedUserData format for importSingleUser
     const resolvedUserData: ResolvedUserData = await this.convertToResolvedUserData(userData, queryRunner);
@@ -275,7 +420,6 @@ export class BatchImportService {
     // Use ImportService's importSingleUser method with proper access
     const savedUser = await this.importUserWithImportService(queryRunner, resolvedUserData);
     
-    this.logger.debug(`Created user: ${savedUser.code}`);
     return savedUser;
   }
 
@@ -697,7 +841,6 @@ export class BatchImportService {
 
     if (!department) {
       // Log warning but don't throw error - allow user creation without department
-      this.logger.warn(`Department with code ${departmentCode} not found - user will be created without department assignment`);
       return null;
     }
 
@@ -716,7 +859,6 @@ export class BatchImportService {
 
     if (!classEntity) {
       // Log warning but don't throw error - allow user creation without class
-      this.logger.warn(`Class with name ${className} not found - user will be created without class assignment`);
       return null;
     }
 
@@ -747,7 +889,6 @@ export class BatchImportService {
     setTimeout(() => {
       if (this.sessionCache.has(sessionId)) {
         this.sessionCache.delete(sessionId);
-        this.logger.warn(`Session ${sessionId} expired and was cleaned up`);
       }
     }, this.SESSION_TIMEOUT);
   }
