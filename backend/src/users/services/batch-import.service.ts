@@ -66,7 +66,7 @@ export class BatchImportService {
   private readonly logger = new Logger(BatchImportService.name);
   private readonly sessionCache = new Map<string, SessionData>();
   private readonly BATCH_SIZE_LIMIT = 500;
-  private readonly SUB_BATCH_SIZE = 100; // Process in smaller chunks within transaction
+  private readonly SUB_BATCH_SIZE = 25; // Process in smaller chunks within transaction
   private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
   constructor(
