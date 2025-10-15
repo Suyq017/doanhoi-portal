@@ -445,11 +445,22 @@ export const seedPermissions = async (dataSource: DataSource) => {
         if (!existingPermission) {
             const permission = permissionRepository.create(permissionData);
             await permissionRepository.save(permission);
-            console.log(`Created permission: ${permissionData.code}`);
+            console.log(`✅ Created permission: ${permissionData.code}`);
         } else {
-            console.log(`Permission already exists: ${permissionData.code}`);
+            // Update existing permission with new data
+            await permissionRepository.update(
+                { code: permissionData.code },
+                {
+                    name: permissionData.name,
+                    description: permissionData.description,
+                    category: permissionData.category,
+                    context: permissionData.context,
+                    sortOrder: permissionData.sortOrder,
+                }
+            );
+            console.log(`🔄 Updated permission: ${permissionData.code}`);
         }
     }
 
-    console.log('Permissions seeding completed!');
+    console.log('✅ Permissions seeding completed!');
 };
