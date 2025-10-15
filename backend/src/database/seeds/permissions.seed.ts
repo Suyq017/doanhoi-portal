@@ -329,6 +329,112 @@ export const seedPermissions = async (dataSource: DataSource) => {
             context: PermissionContext.ORGANIZATION,
             sortOrder: 70,
         },
+
+        // CTXH permissions
+        {
+            code: 'ctxh.access',
+            name: 'Truy cập quản lý CTXH',
+            description: 'Cho phép truy cập module quản lý công tác xã hội',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 80,
+        },
+        {
+            code: 'ctxh.categories.view',
+            name: 'Xem danh mục CTXH',
+            description: 'Cho phép xem danh mục hoạt động CTXH',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 81,
+        },
+        {
+            code: 'ctxh.categories.create',
+            name: 'Tạo danh mục CTXH',
+            description: 'Cho phép tạo danh mục hoạt động CTXH mới',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 82,
+        },
+        {
+            code: 'ctxh.categories.update',
+            name: 'Cập nhật danh mục CTXH',
+            description: 'Cho phép chỉnh sửa danh mục hoạt động CTXH',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 83,
+        },
+        {
+            code: 'ctxh.categories.delete',
+            name: 'Xóa danh mục CTXH',
+            description: 'Cho phép xóa danh mục hoạt động CTXH',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 84,
+        },
+        {
+            code: 'ctxh.activities.view',
+            name: 'Xem hoạt động CTXH',
+            description: 'Cho phép xem hoạt động CTXH',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 85,
+        },
+        {
+            code: 'ctxh.activities.create',
+            name: 'Tạo hoạt động CTXH',
+            description: 'Cho phép tạo hoạt động CTXH mới',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 86,
+        },
+        {
+            code: 'ctxh.activities.update',
+            name: 'Cập nhật hoạt động CTXH',
+            description: 'Cho phép chỉnh sửa hoạt động CTXH',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 87,
+        },
+        {
+            code: 'ctxh.activities.delete',
+            name: 'Xóa hoạt động CTXH',
+            description: 'Cho phép xóa hoạt động CTXH',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 88,
+        },
+        {
+            code: 'ctxh.activities.manage_participants',
+            name: 'Quản lý người tham gia CTXH',
+            description: 'Cho phép quản lý người tham gia hoạt động CTXH',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 89,
+        },
+        {
+            code: 'ctxh.reports.view',
+            name: 'Xem báo cáo CTXH',
+            description: 'Cho phép xem báo cáo hoạt động CTXH',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 90,
+        },
+        {
+            code: 'ctxh.reports.export',
+            name: 'Xuất báo cáo CTXH',
+            description: 'Cho phép xuất báo cáo hoạt động CTXH',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 91,
+        },
+        {
+            code: 'ctxh.config.manage',
+            name: 'Quản lý cấu hình CTXH',
+            description: 'Cho phép quản lý cấu hình giới hạn CTXH',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 92,
+        },
     ];
 
     for (const permissionData of permissions) {
@@ -339,11 +445,22 @@ export const seedPermissions = async (dataSource: DataSource) => {
         if (!existingPermission) {
             const permission = permissionRepository.create(permissionData);
             await permissionRepository.save(permission);
-            console.log(`Created permission: ${permissionData.code}`);
+            console.log(`✅ Created permission: ${permissionData.code}`);
         } else {
-            console.log(`Permission already exists: ${permissionData.code}`);
+            // Update existing permission with new data
+            await permissionRepository.update(
+                { code: permissionData.code },
+                {
+                    name: permissionData.name,
+                    description: permissionData.description,
+                    category: permissionData.category,
+                    context: permissionData.context,
+                    sortOrder: permissionData.sortOrder,
+                }
+            );
+            console.log(`🔄 Updated permission: ${permissionData.code}`);
         }
     }
 
-    console.log('Permissions seeding completed!');
+    console.log('✅ Permissions seeding completed!');
 };

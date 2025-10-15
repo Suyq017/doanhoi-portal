@@ -8,10 +8,10 @@ stages:
 
 variables:
   # Production server config
-  PRODUCTION_SERVER: "103.88.121.146"
-  PRODUCTION_USER: "root"
-  DEPLOY_PATH: "/opt/doanhoi-portal"
-  DOMAIN: "doanhoi.hcmut.edu.vn"
+  # PRODUCTION_SERVER: "103.88.121.146"
+  # PRODUCTION_USER: "root"
+  # DEPLOY_PATH: "/opt/doanhoi-portal"
+  # DOMAIN: "doanhoi.hcmut.edu.vn"
   
   # Docker config
   DOCKER_DRIVER: overlay2
@@ -105,6 +105,10 @@ deploy_production:
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
     - chmod 600 ~/.ssh/config
   script:
+    - echo "PRODUCTION_USER=$PRODUCTION_USER"
+    - echo "PRODUCTION_SERVER=$PRODUCTION_SERVER"
+    - echo "DEPLOY_PATH=$DEPLOY_PATH"
+    - echo "DOMAIN=$DOMAIN"
     - echo "🚀 Deploying Doanhoi Portal on $PRODUCTION_SERVER ..."
     - |
       ssh $PRODUCTION_USER@$PRODUCTION_SERVER << DEPLOY_SCRIPT

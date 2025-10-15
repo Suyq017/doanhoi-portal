@@ -115,14 +115,14 @@
     "createNewRole": "Tạo Vai trò Mới",
     "bulkDelete": "Xóa đã chọn ({{count}})",
     "allStatuses": "Tất cả trạng thái",
-    "activeStatus": "Hoạt động", 
+    "activeStatus": "Hoạt động",
     "inactiveStatus": "Không hoạt động",
     "clearFilters": "Xóa bộ lọc",
     "permissionCount": "{{count}} quyền",
     "systemRole": "Vai trò hệ thống",
     "table": {
         "roleName": "Tên vai trò",
-        "displayName": "Tên hiển thị", 
+        "displayName": "Tên hiển thị",
         "permissions": "Quyền hạn",
         "status": "Trạng thái",
         "actions": "Thao tác"
@@ -133,7 +133,7 @@
     "retry": "Thử lại",
     "modals": {
         "createTitle": "Tạo Vai trò Mới",
-        "editTitle": "Chỉnh sửa Vai trò", 
+        "editTitle": "Chỉnh sửa Vai trò",
         "viewTitle": "Chi tiết Vai trò",
         "deleteTitle": "Xác nhận xóa vai trò",
         "bulkDeleteTitle": "Xác nhận xóa nhiều vai trò"
@@ -148,6 +148,7 @@
             "permissions": "Quản lý phân quyền",
             "payments": "Quản lý đóng phí",
             "myPayments": "Đóng phí của tôi",
+            "ctxh": "Quản lý Công tác xã hội",
             "dashboardShort": "Dashboard",
             "usersShort": "Người dùng",
             "organizationsShort": "Tổ chức",
@@ -155,7 +156,8 @@
             "classesShort": "Lớp học",
             "permissionsShort": "Phân quyền",
             "paymentsShort": "Đóng phí",
-            "myPaymentsShort": "Đóng phí của tôi"
+            "myPaymentsShort": "Đóng phí của tôi",
+            "ctxhShort": "CTXH"
         },
         "definitions": {
             "dashboard.access": "Truy cập bảng điều khiển",

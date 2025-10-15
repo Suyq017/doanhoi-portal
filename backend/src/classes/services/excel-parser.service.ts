@@ -12,14 +12,14 @@ export interface ClassImportData {
 
 @Injectable()
 export class ExcelParserService {
-  private readonly expectedHeaders = ['tên lớp', 'mã lớp', 'năm học', 'mã đơn vị'];
+  private readonly expectedHeaders = ['tên lớp', 'năm học', 'mã đơn vị'];
   private readonly requiredHeaders = ['tên lớp'];
 
   async parseExcelFile(buffer: Buffer): Promise<ClassImportData[]> {
     try {
       const workbook = XLSX.read(buffer, { type: 'buffer' });
       const sheetName = workbook.SheetNames[0];
-      
+
       if (!sheetName) {
         throw new BadRequestException('Excel file must contain at least one sheet');
       }
@@ -46,7 +46,7 @@ export class ExcelParserService {
 
   validateHeaders(headers: string[]): boolean {
     const normalizedHeaders = headers.map(h => h?.toString().toLowerCase().trim());
-    
+
     // Check required headers
     for (const required of this.requiredHeaders) {
       if (!normalizedHeaders.includes(required.toLowerCase())) {
@@ -72,9 +72,6 @@ export class ExcelParserService {
         case 'tên lớp':
           data.name = cellValue?.toString().trim() || '';
           break;
-        case 'mã lớp':
-          data.code = cellValue?.toString().trim() || undefined;
-          break;
         case 'năm học':
           data.year = this.parseYear(cellValue);
           break;
@@ -94,12 +91,12 @@ export class ExcelParserService {
     if (value === undefined || value === null || value === '') {
       return undefined;
     }
-    
+
     const yearValue = parseInt(value.toString());
     if (isNaN(yearValue) || yearValue < 2000 || yearValue > 2100) {
       return undefined;
     }
-    
+
     return yearValue;
   }
 
@@ -107,25 +104,24 @@ export class ExcelParserService {
     if (value === undefined || value === null || value === '') {
       return true; // Default to active
     }
-    
+
     const strValue = value.toString().toLowerCase().trim();
     return strValue === 'true' || strValue === '1' || strValue === 'yes' || strValue === 'active';
   }
 
   async generateTemplate(): Promise<Buffer> {
     const templateData = [
-      ['Tên lớp', 'Mã lớp', 'Năm học', 'Mã đơn vị'],
-      ['Tin học A', 'TH-A', '2024', 'CNTT'],
-      ['Toán học B', 'TOAN-B', '2024', 'TOAN'],
-      ['Vật lý C', 'VL-C', '2023', 'VL']
+      ['Tên lớp', 'Năm học', 'Mã đơn vị'],
+      ['Tin học A', '2024', 'CNTT'],
+      ['Toán học B', '2024', 'TOAN'],
+      ['Vật lý C', '2023', 'VL']
     ];
 
     const worksheet = XLSX.utils.aoa_to_sheet(templateData);
-    
+
     // Set column widths
     worksheet['!cols'] = [
       { width: 25 }, // Tên lớp
-      { width: 15 }, // Mã lớp
       { width: 10 }, // Năm học
       { width: 20 }  // Mã đơn vị
     ];

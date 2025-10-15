@@ -396,4 +396,19 @@ export class UsersService {
 
     return duplicates;
   }
+
+  // Tìm kiếm chính xác theo mã số sinh viên
+  async findByExactCode(code: string): Promise<User | null> {
+    if (!code || !code.trim()) {
+      return null;
+    }
+
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.managementDepartment', 'managementDepartment')
+      .leftJoinAndSelect('user.trainingDepartment', 'trainingDepartment')
+      .leftJoinAndSelect('user.class', 'class')
+      .where('user.code = :code', { code: code.trim() })
+      .getOne();
+  }
 }

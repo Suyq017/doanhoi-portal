@@ -64,18 +64,26 @@ const Toast: React.FC<ToastProps> = ({
   };
 
   return (
-    <div className={`fixed top-4 right-4 z-50 max-w-sm w-full shadow-lg rounded-lg border ${getBackgroundColor()} animate-in slide-in-from-right duration-300`}>
+    <div 
+      className={`shadow-lg rounded-lg border ${getBackgroundColor()} animate-in slide-in-from-right duration-300`}
+      style={{
+        width: '100%',
+        maxWidth: '280px',
+        wordWrap: 'break-word',
+        overflowWrap: 'break-word'
+      }}
+    >
       <div className="p-4">
         <div className="flex items-start">
           <div className="flex-shrink-0">
             {getIcon()}
           </div>
-          <div className="ml-3 w-0 flex-1">
-            <p className={`text-sm font-medium ${getTextColor()}`}>
+          <div className="ml-3 flex-1 min-w-0" style={{wordWrap: 'break-word', overflowWrap: 'break-word'}}>
+            <p className={`text-sm font-medium break-words ${getTextColor()}`} style={{wordWrap: 'break-word', overflowWrap: 'break-word'}}>
               {message}
             </p>
           </div>
-          <div className="ml-4 flex flex-shrink-0">
+          <div className="ml-4 flex-shrink-0">
             <button
               onClick={onClose}
               className={`inline-flex rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${getTextColor()} hover:opacity-75`}

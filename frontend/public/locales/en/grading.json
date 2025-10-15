@@ -1,0 +1,16 @@
+{
+  "import": {
+    "title": "Import Grading Results",
+    "instructions": "Download the template file with student list, fill in scores and upload to update the system",
+    "step1": "Download template file with student list",
+    "step2": "Fill in scores and notes for each student",
+    "step3": "Upload completed file",
+    "templateLinkText": "Download template",
+    "note": "Note: Scores must be numbers from 0-10, can be left empty if not graded yet",
+    "validation": {
+      "required": "This field is required",
+      "invalidScore": "Score must be a number from 0 to 10",
+      "studentNotFound": "Student not found"
+    }
+  }
+}

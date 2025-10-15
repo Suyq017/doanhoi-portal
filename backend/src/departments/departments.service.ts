@@ -11,7 +11,7 @@ export class DepartmentsService {
   constructor(
     @InjectRepository(Department)
     private departmentsRepository: Repository<Department>,
-  ) {}
+  ) { }
 
   async create(createDepartmentDto: CreateDepartmentDto): Promise<Department> {
     // Check if department with same name or code already exists
@@ -32,7 +32,7 @@ export class DepartmentsService {
 
   async findAll(query: QueryDepartmentDto): Promise<{ departments: Department[], total: number }> {
     const { page = 1, limit = 10, search, isActive } = query;
-    
+
     const queryBuilder = this.departmentsRepository.createQueryBuilder('department');
 
     // Search filter
@@ -56,7 +56,7 @@ export class DepartmentsService {
     queryBuilder.skip(offset).take(limit);
 
     const [departments, total] = await queryBuilder.getManyAndCount();
-    
+
     return { departments, total };
   }
 
@@ -96,7 +96,7 @@ export class DepartmentsService {
 
   async remove(id: string): Promise<void> {
     const department = await this.findOne(id);
-    
+
     // Check if department has users
     const hasUsers = department.managementUsers?.length > 0 || department.trainingUsers?.length > 0;
     if (hasUsers) {
@@ -145,5 +145,48 @@ export class DepartmentsService {
       deleted,
       errors
     };
+  }
+
+  /**
+   * Validate department codes existence
+   * @param codes - Array of department codes to validate
+   * @returns Object with valid and invalid codes
+   */
+  async validateDepartmentCodes(codes: string[]): Promise<{
+    validCodes: string[];
+    invalidCodes: string[];
+  }> {
+    if (!codes || codes.length === 0) {
+      return { validCodes: [], invalidCodes: [] };
+    }
+
+    // Get unique codes (case-insensitive)
+    const uniqueCodes = [...new Set(codes.map(code => code.toUpperCase()))];
+
+    // Find departments with these codes
+    const departments = await this.departmentsRepository
+      .createQueryBuilder('department')
+      .where('UPPER(department.code) IN (:...codes)', { codes: uniqueCodes })
+      .getMany();
+
+    // Create set of found codes
+    const foundCodesSet = new Set(
+      departments.map(dept => dept.code.toUpperCase())
+    );
+
+    // Separate valid and invalid codes
+    const validCodes: string[] = [];
+    const invalidCodes: string[] = [];
+
+    for (const code of codes) {
+      const upperCode = code.toUpperCase();
+      if (foundCodesSet.has(upperCode)) {
+        validCodes.push(code);
+      } else {
+        invalidCodes.push(code);
+      }
+    }
+
+    return { validCodes, invalidCodes };
   }
 }

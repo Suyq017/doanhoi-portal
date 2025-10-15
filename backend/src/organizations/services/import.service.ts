@@ -183,6 +183,12 @@ export class OrganizationImportService {
 
           // Chỉ kiểm tra membership nếu không có error mới
           if (item._errors.length === 0) {
+            console.log(`[DEBUG] Checking membership for user ${item.studentCode}:`);
+            console.log(`  - Session Organization ID: ${session.organizationId}`);
+            console.log(`  - Target Organization ID: ${targetOrganizationId}`);
+            console.log(`  - ClassOrUnitCode: ${item.classOrUnitCode || 'N/A'}`);
+            console.log(`  - User ID: ${user.id}`);
+
             // Kiểm tra existing membership
             const existingMembership = await this.userOrganizationsRepository.findOne({
               where: {
@@ -190,6 +196,8 @@ export class OrganizationImportService {
                 organizationId: targetOrganizationId
               }
             });
+
+            console.log(`  - Existing Membership: ${existingMembership ? 'YES (ID: ' + existingMembership.id + ')' : 'NO'}`);
 
             if (existingMembership) {
               console.log(`User ${item.studentCode} already exists in target organization`);
