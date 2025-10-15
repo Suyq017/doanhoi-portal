@@ -12,7 +12,7 @@ import { organizationService } from '../../../shared/services';
 
 const ActivityManagement: React.FC = () => {
   const { t } = useTranslation('ctxh');
-  
+
   // ActivityManagement component
   const navigate = useNavigate();
   const [showActivityForm, setShowActivityForm] = useState(false);
@@ -30,14 +30,14 @@ const ActivityManagement: React.FC = () => {
       try {
         setCheckingPermissions(true);
         const response = await organizationService.getCtxhActivityAccessibleOrganizations();
-        
+
         // User can create if they have at least one accessible organization
         // - Super Admin / Level 1: organizations.length > 0, fixedOrganization = null
         // - Level 2: organizations.length = 1, fixedOrganization = Organization
         // - Level 3 / No permission: organizations.length = 0
         const canCreate = response.organizations.length > 0;
         setCanCreateActivity(canCreate);
-        
+
         console.log('[ActivityManagement] Create permission check:', {
           organizationsCount: response.organizations.length,
           fixedOrganization: response.fixedOrganization?.name || 'null',
@@ -67,7 +67,7 @@ const ActivityManagement: React.FC = () => {
 
   const handleDeleteActivity = async (activity: CtxhActivity) => {
     // Deleting activity
-    
+
     const confirmed = await showConfirm(
       t('activity.deleteConfirm'),
       t('activity.deleteMessage', { name: activity.name }),
@@ -86,10 +86,10 @@ const ActivityManagement: React.FC = () => {
       showSuccess(t('activity.deleted'));
     } catch (error: any) {
       console.error('Failed to delete activity:', error);
-      
+
       // Handle different error formats
       let errorMessage = t('activity.deleteError');
-      
+
       // The error message is now in error.message (thanks to updated apiClient)
       if (error.message) {
         // Check if it's the specific "has participants" error
@@ -103,7 +103,7 @@ const ActivityManagement: React.FC = () => {
         // Fallback to response data message
         errorMessage = error.response.data.message;
       }
-      
+
       showError(errorMessage);
     }
   };
@@ -129,11 +129,11 @@ const ActivityManagement: React.FC = () => {
       handleActivitySaved();
     } catch (error: any) {
       console.error('Failed to save activity:', error);
-      
+
       // Handle specific server errors
       if (error.response?.data?.message) {
         const serverMessage = error.response.data.message;
-        
+
         // Check if it's a duplicate error
         if (serverMessage.includes('duplicate') || serverMessage.includes('already exists') || serverMessage.includes('đã tồn tại')) {
           showError(t('activity.validation.duplicateNameCategory'));

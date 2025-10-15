@@ -26,10 +26,10 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [newStudentCode, setNewStudentCode] = useState('');
   const [addingStudent, setAddingStudent] = useState(false);
-  const [studentInfo, setStudentInfo] = useState<{name?: string, email?: string, alreadyParticipating?: boolean}>({});
+  const [studentInfo, setStudentInfo] = useState<{ name?: string, email?: string, alreadyParticipating?: boolean }>({});
   const [lookingUpStudent, setLookingUpStudent] = useState(false);
-  const [participantsStudentInfo, setParticipantsStudentInfo] = useState<Record<string, {name?: string, email?: string}>>({});
-  
+  const [participantsStudentInfo, setParticipantsStudentInfo] = useState<Record<string, { name?: string, email?: string }>>({});
+
   // Grading states
   const [showGradingModal, setShowGradingModal] = useState(false);
   const [gradingParticipant, setGradingParticipant] = useState<ParticipationResponse | null>(null);
@@ -38,18 +38,18 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   const [showBulkGradingModal, setShowBulkGradingModal] = useState(false);
   const [bulkGradingFile, setBulkGradingFile] = useState<File | null>(null);
   const [bulkGradingLoading, setBulkGradingLoading] = useState(false);
-  
+
   // Dropdown states
   const [showAddStudentDropdown, setShowAddStudentDropdown] = useState(false);
-  
+
   // ImportModal states
   const [showStudentImportModal, setShowStudentImportModal] = useState(false);
   const [showGradingImportModal, setShowGradingImportModal] = useState(false);
-  
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
-  
+
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError, showConfirm, confirmDialog } = useToast();
 
@@ -72,7 +72,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           ...(token && { 'Authorization': `Bearer ${token}` })
         }
       });
-      
+
       if (response.ok) {
         const blob = await response.blob();
         return window.URL.createObjectURL(blob);
@@ -88,7 +88,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     const generateTemplateUrls = async () => {
       try {
         const token = authService.getAccessToken();
-        
+
         // Generate student template URL (this is static and doesn't change)
         const studentResponse = await fetch('/api/ctxh/activities/participants/template', {
           method: 'GET',
@@ -96,7 +96,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
             ...(token && { 'Authorization': `Bearer ${token}` })
           }
         });
-        
+
         if (studentResponse.ok) {
           const studentBlob = await studentResponse.blob();
           const studentUrl = window.URL.createObjectURL(studentBlob);
@@ -143,29 +143,29 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     maxFileSize: 10 * 1024 * 1024, // 10MB
     useClientSideProcessing: true,
     batchSize: 50, // Smaller batch size for CTXH
-    
+
     columns: [
       { key: 'studentCode', label: t('participant.studentCodeLabel'), required: true, type: 'text', width: '150px' },
       { key: 'name', label: t('common:fields.name'), required: false, type: 'text', width: '200px' },
       { key: 'email', label: t('common:fields.email'), required: false, type: 'email', width: '200px' }
     ],
-    
+
     // Client-side file parsing
     parseFile: async (file: File, onProgress?: (progress: number) => void) => {
       try {
         const parseResult = await excelParserService.parseParticipantFile(file, onProgress);
-        
+
         if (parseResult.errors.length > 0) {
           console.warn('Parse errors:', parseResult.errors);
         }
-        
+
         return parseResult.data;
       } catch (error) {
         console.error('Parse error:', error);
         throw new Error(error instanceof Error ? error.message : 'Lỗi khi đọc file Excel');
       }
     },
-    
+
     // Client-side validation
     validateClientData: async (data: any[]) => {
       try {
@@ -173,14 +173,14 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           data,
           participants // Pass existing participants to check for duplicates
         );
-        
+
         return batchImportService.createValidationResult(validationResult.data, validationResult);
       } catch (error) {
         console.error('Validation error:', error);
         throw new Error('Lỗi khi kiểm tra dữ liệu');
       }
     },
-    
+
     // Client-side batch submission
     submitClientData: async (validData: any[], onProgress?: (progress: any) => void) => {
       try {
@@ -189,7 +189,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           validData,
           onProgress
         );
-        
+
         return {
           success: result.success,
           sessionSummary: result.sessionSummary,
@@ -201,19 +201,19 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         throw new Error(error instanceof Error ? error.message : 'Lỗi khi import dữ liệu');
       }
     },
-    
+
     onSuccess: (result) => {
       // Handle both old and new result structures
-      const count = (result as any).sessionSummary?.totalSuccessful || 
-                   (result as any).importedCount || 
-                   (result as any).successful?.length || 
-                   0;
+      const count = (result as any).sessionSummary?.totalSuccessful ||
+        (result as any).importedCount ||
+        (result as any).successful?.length ||
+        0;
       showSuccess(t('participant.importSuccess', { count }));
       loadParticipants();
       // Refresh grading template after importing students
       refreshGradingTemplate();
     },
-    
+
     onError: (error) => {
       console.error('Student import error:', error);
       const errorMessage = error.message || 'Lỗi không xác định';
@@ -236,23 +236,23 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       { key: 'actualDays', label: t('participant.communityServiceDays'), required: true, type: 'number', width: '120px' },
       { key: 'note', label: t('participant.note'), required: false, type: 'text', width: '200px' }
     ],
-    
+
     // Client-side file parsing for grading
     parseFile: async (file: File, onProgress?: (progress: number) => void) => {
       try {
         const parseResult = await excelParserService.parseGradingFile(file, onProgress);
-        
+
         if (parseResult.errors.length > 0) {
           console.warn('Parse errors:', parseResult.errors);
         }
-        
+
         return parseResult.data;
       } catch (error) {
         console.error('Parse error:', error);
         throw new Error(error instanceof Error ? error.message : 'Lỗi khi đọc file Excel');
       }
     },
-    
+
     // Client-side validation for grading
     validateClientData: async (data: any[]) => {
       try {
@@ -261,14 +261,14 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           participants, // Pass existing participants
           activity.totalDays // Pass activity total days for validation
         );
-        
+
         return batchImportService.createValidationResult(validationResult.data, validationResult);
       } catch (error) {
         console.error('Validation error:', error);
         throw new Error('Lỗi khi kiểm tra dữ liệu');
       }
     },
-    
+
     // Client-side batch submission for grading
     submitClientData: async (validData: any[], onProgress?: (progress: any) => void) => {
       try {
@@ -277,7 +277,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           validData,
           onProgress
         );
-        
+
         return {
           success: result.success,
           sessionSummary: result.sessionSummary,
@@ -289,18 +289,18 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         throw new Error(error instanceof Error ? error.message : 'Lỗi khi chấm điểm');
       }
     },
-    
+
     onSuccess: (result) => {
-      const count = (result as any).sessionSummary?.totalSuccessful || 
-                   (result as any).importedCount || 
-                   (result as any).successful?.length || 
-                   0;
+      const count = (result as any).sessionSummary?.totalSuccessful ||
+        (result as any).importedCount ||
+        (result as any).successful?.length ||
+        0;
       showSuccess(t('participant.gradingSuccess', { count }));
       loadParticipants();
       // Refresh grading template after grading import
       refreshGradingTemplate();
     },
-    
+
     onError: (error) => {
       console.error('Grading import error:', error);
       const errorMessage = error.message || 'Lỗi không xác định';
@@ -337,7 +337,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
     }
-    
+
     return () => {
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
@@ -353,19 +353,19 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         console.log('First participant status:', response[0].status);
       }
       setParticipants(Array.isArray(response) ? response : []);
-      
+
       // Tra cứu thông tin sinh viên cho những participant chưa có tên
-      const participantsNeedingLookup = response.filter((p: ParticipationResponse) => 
+      const participantsNeedingLookup = response.filter((p: ParticipationResponse) =>
         !p.student?.full_name && p.student_code
       );
-      
+
       if (participantsNeedingLookup.length > 0) {
         // Looking up student info for participants without names
         await lookupParticipantsInfo(participantsNeedingLookup);
       }
     } catch (error: any) {
       console.error('Failed to load participants:', error);
-      
+
       // Chỉ hiển thị lỗi khi thực sự có lỗi nghiêm trọng
       if (error.response?.status === 404) {
         // Activity not found or no participants yet - This is normal for new activities
@@ -388,13 +388,13 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
 
   // Tra cứu thông tin sinh viên cho participants
   const lookupParticipantsInfo = async (participants: ParticipationResponse[]) => {
-    const studentInfoMap: Record<string, {name?: string, email?: string}> = {};
-    
+    const studentInfoMap: Record<string, { name?: string, email?: string }> = {};
+
     for (const participant of participants) {
       if (participant.student_code) {
         try {
           const user = await userService.findByExactCode(participant.student_code);
-          
+
           if (user) {
             studentInfoMap[participant.student_code] = {
               name: user.familyName + ' ' + user.givenName,
@@ -406,7 +406,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         }
       }
     }
-    
+
     setParticipantsStudentInfo(studentInfoMap);
   };
 
@@ -416,12 +416,12 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     if (participant.student?.full_name) {
       return participant.student.full_name;
     }
-    
+
     // Nếu không có, tra cứu từ cache
     if (participant.student_code && participantsStudentInfo[participant.student_code]?.name) {
       return participantsStudentInfo[participant.student_code].name!;
     }
-    
+
     return 'N/A';
   };
 
@@ -431,46 +431,46 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     if (participant.student?.email) {
       return participant.student.email;
     }
-    
+
     // Nếu không có, tra cứu từ cache
     if (participant.student_code && participantsStudentInfo[participant.student_code]?.email) {
       return participantsStudentInfo[participant.student_code].email!;
     }
-    
+
     return null;
   };
 
   // Filter participants by search term
   const filteredParticipants = participants.filter(participant => {
     const searchLower = searchTerm.toLowerCase();
-    
+
     // Search by student code
     if (participant.student_code && participant.student_code.toLowerCase().includes(searchLower)) {
       return true;
     }
-    
+
     // Search by student name from original data
     if (participant.student?.full_name && participant.student.full_name.toLowerCase().includes(searchLower)) {
       return true;
     }
-    
+
     // Search by student name from cache
     const cachedName = participant.student_code && participantsStudentInfo[participant.student_code]?.name;
     if (cachedName && cachedName.toLowerCase().includes(searchLower)) {
       return true;
     }
-    
+
     // Search by email from original data
     if (participant.student?.email && participant.student.email.toLowerCase().includes(searchLower)) {
       return true;
     }
-    
+
     // Search by email from cache
     const cachedEmail = participant.student_code && participantsStudentInfo[participant.student_code]?.email;
     if (cachedEmail && cachedEmail.toLowerCase().includes(searchLower)) {
       return true;
     }
-    
+
     return false;
   });
 
@@ -494,21 +494,21 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
 
     try {
       setLookingUpStudent(true);
-      
+
       // Check if student already participating in this activity
-      const isAlreadyParticipating = participants.some(p => 
+      const isAlreadyParticipating = participants.some(p =>
         p.student_code === studentCode.trim()
       );
-      
+
       if (isAlreadyParticipating) {
         setStudentInfo({
           alreadyParticipating: true
         });
         return;
       }
-      
+
       const user = await userService.findByExactCode(studentCode.trim());
-      
+
       if (user) {
         setStudentInfo({
           name: user.familyName + ' ' + user.givenName,
@@ -555,7 +555,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       await activityService.addStudent(activity.id, {
         student_code: newStudentCode.trim()
       });
-      
+
       showSuccess(t('participant.addStudentSuccess'));
       setNewStudentCode('');
       setStudentInfo({});
@@ -566,14 +566,14 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       onRefresh?.();
     } catch (error: any) {
       console.error('Failed to add student:', error);
-      
+
       // Improved error message handling
       let errorMessage = t('participant.addStudentError');
-      
+
       if (error.message) {
         const message = error.message.toLowerCase();
         const studentCode = newStudentCode.trim();
-        
+
         // Handle specific error cases from backend
         if (message.includes('đã tham gia hoạt động') || message.includes('already participated')) {
           errorMessage = t('participant.studentAlreadyParticipated', { studentCode });
@@ -594,7 +594,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           errorMessage = error.message;
         }
       }
-      
+
       showError(errorMessage);
     } finally {
       setAddingStudent(false);
@@ -653,7 +653,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
 
     try {
       setGradingLoading(true);
-      
+
       const gradeData = {
         participants: [{
           participation_id: gradingParticipant.id,
@@ -663,26 +663,26 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       };
 
       await activityService.gradeParticipants(activity.id, gradeData);
-      
+
       showSuccess(t('grading.individualGradingSuccess', { studentCode: gradingParticipant.student_code }));
-      
+
       // Reset and close modal
       setShowGradingModal(false);
       setGradingParticipant(null);
       setGradingData({ actualDays: '', note: '' });
-      
+
       // Refresh data
       loadParticipants();
       // Refresh grading template after grading
       refreshGradingTemplate();
       onRefresh?.();
-      
+
     } catch (error: any) {
       console.error('Failed to grade participant:', error);
-      
+
       let errorMessage = t('participant.gradingErrorGeneral');
       const backendMessage = error.response?.data?.message || error.message;
-      
+
       if (backendMessage) {
         const message = backendMessage.toLowerCase();
         if (message.includes('số ngày ctxh vượt quá giới hạn') || message.includes('ctxh vượt quá')) {
@@ -693,7 +693,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           errorMessage = backendMessage;
         }
       }
-      
+
       showError(errorMessage);
     } finally {
       setGradingLoading(false);
@@ -712,23 +712,23 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     try {
       setBulkGradingLoading(true);
       const results = await activityService.gradeParticipantsFromExcel(activity.id, bulkGradingFile);
-      
+
       console.log('Bulk grading results:', results);
-      
+
       if (results.successful && results.successful.length > 0) {
         showSuccess(t('participant.gradingSuccessMultiple', { count: results.successful.length }));
       }
-      
+
       if (results.failed && results.failed.length > 0) {
         showError(t('participant.gradingFailedMultiple', { count: results.failed.length }));
       }
-      
+
       // Refresh data
       loadParticipants();
       // Refresh grading template after bulk grading
       refreshGradingTemplate();
       onRefresh?.();
-      
+
     } catch (error) {
       console.error('Failed to bulk grade:', error);
       showError(t('participant.bulkGradingError'));
@@ -744,9 +744,9 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     try {
       // Refresh template to get latest participants data
       await refreshGradingTemplate();
-      
+
       const token = authService.getAccessToken();
-      
+
       // Call API to get fresh grading template with current participants
       const response = await fetch(`/api/ctxh/activities/${activity.id}/participants/grading-template`, {
         method: 'GET',
@@ -754,11 +754,11 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           ...(token && { 'Authorization': `Bearer ${token}` })
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch grading template');
       }
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -781,7 +781,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      
+
       // Create safe filename without Vietnamese characters
       const safeActivityName = activity.name
         .normalize('NFD') // Decompose Vietnamese characters
@@ -790,7 +790,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
         .replace(/\s+/g, '-') // Replace spaces with hyphens
         .toLowerCase();
-        
+
       link.download = `danh-sach-${safeActivityName}.xlsx`;
       document.body.appendChild(link);
       link.click();
@@ -812,7 +812,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   };
 
   return (
-    <div className="space-y-6 max-w-full overflow-x-hidden" style={{overflowX: 'hidden', maxWidth: '100%'}}>
+    <div className="space-y-6 max-w-full overflow-x-hidden" style={{ overflowX: 'hidden', maxWidth: '100%' }}>
       {/* Header Actions */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
@@ -836,93 +836,93 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
               </span>
             </p>
           </div>
-        
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Thêm sinh viên Dropdown - disable khi hoạt động không ACTIVE */}
-          <div className="relative dropdown-container">
-            <button
-              onClick={() => {
-                if (activity.status === 'ACTIVE') {
-                  setShowAddStudentDropdown(!showAddStudentDropdown);
-                }
-              }}
-              disabled={activity.status !== 'ACTIVE'}
-              className="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[140px]"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {t('participant.addStudent')}
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </button>
-            
-            {showAddStudentDropdown && activity.status === 'ACTIVE' && (
-              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 overflow-hidden">
-                <div className="py-1">
-                  <button
-                    onClick={() => {
-                      setShowAddStudentModal(true);
-                      setShowAddStudentDropdown(false);
-                    }}
-                    className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors"
-                  >
-                    <Plus className="mr-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                    <div>
-                      <div className="font-medium">{t('participant.addIndividualStudent')}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{t('participant.addIndividualStudentDesc')}</div>
-                    </div>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      setShowStudentImportModal(true);
-                      setShowAddStudentDropdown(false);
-                    }}
-                    className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors"
-                  >
-                    <Upload className="mr-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                    <div>
-                      <div className="font-medium">{t('participant.addFromFile')}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{t('participant.addFromFileDesc')}</div>
-                    </div>
-                  </button>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Thêm sinh viên Dropdown - disable khi hoạt động không ACTIVE */}
+            <div className="relative dropdown-container">
+              <button
+                onClick={() => {
+                  if (activity.status === 'ACTIVE') {
+                    setShowAddStudentDropdown(!showAddStudentDropdown);
+                  }
+                }}
+                disabled={activity.status !== 'ACTIVE'}
+                className="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[140px]"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t('participant.addStudent')}
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </button>
+
+              {showAddStudentDropdown && activity.status === 'ACTIVE' && (
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 overflow-hidden">
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setShowAddStudentModal(true);
+                        setShowAddStudentDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors"
+                    >
+                      <Plus className="mr-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                      <div>
+                        <div className="font-medium">{t('participant.addIndividualStudent')}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{t('participant.addIndividualStudentDesc')}</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowStudentImportModal(true);
+                        setShowAddStudentDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors"
+                    >
+                      <Upload className="mr-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                      <div>
+                        <div className="font-medium">{t('participant.addFromFile')}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{t('participant.addFromFileDesc')}</div>
+                      </div>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             </div>
 
-          {/* Chấm từ file */}
-          <div className="relative dropdown-container">
-            <button
-              onClick={() => {
-                if (participants.length > 0 && (activity.status === 'ACTIVE' || activity.status === 'COMPLETED')) {
-                  setShowGradingImportModal(true);
+            {/* Chấm từ file */}
+            <div className="relative dropdown-container">
+              <button
+                onClick={() => {
+                  if (participants.length > 0 && (activity.status === 'ACTIVE' || activity.status === 'COMPLETED')) {
+                    setShowGradingImportModal(true);
+                  }
+                }}
+                disabled={participants.length === 0 || (activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED')}
+                className="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[120px]"
+                title={
+                  participants.length === 0
+                    ? "Chưa có sinh viên tham gia"
+                    : (activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED')
+                      ? t('participant.gradingStatusRestriction', { status: activity.status })
+                      : t('participant.gradeFromExcel')
                 }
-              }}
-              disabled={participants.length === 0 || (activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED')}
-              className="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[120px]"
-              title={
-                participants.length === 0 
-                  ? "Chưa có sinh viên tham gia" 
-                  : (activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED')
-                    ? t('participant.gradingStatusRestriction', { status: activity.status })
-                    : t('participant.gradeFromExcel')
-              }
-            >
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              {t('participant.gradeFromFile')}
-            </button>
-          </div>
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                {t('participant.gradeFromFile')}
+              </button>
+            </div>
 
-          {/* Xuất danh sách */}
-          {participants.length > 0 && (
-            <button
-              onClick={handleExportParticipants}
-              className="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-gray-800 transition-colors min-w-[130px]"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              {t('participant.exportList')}
-            </button>
-          )}
-        </div>
+            {/* Xuất danh sách */}
+            {participants.length > 0 && (
+              <button
+                onClick={handleExportParticipants}
+                className="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-gray-800 transition-colors min-w-[130px]"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {t('participant.exportList')}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -956,7 +956,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
             </p>
             {!searchTerm && activity.status === 'ACTIVE' && (
               <div className="mt-6">
-                <button 
+                <button
                   onClick={() => setShowAddStudentModal(true)}
                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
                 >
@@ -969,130 +969,129 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         ) : (
           <>
             <div className="overflow-hidden max-w-full">
-            <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    {t('participant.studentName')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    {t('participant.actualDays')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    {t('participant.status')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    {t('participant.note')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    {t('participant.joinDate')}
-                  </th>
-                  <th className="relative px-6 py-3">
-                    <span className="sr-only">{t('common:fields.actions')}</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {paginatedParticipants.map((participant) => (
-                  <tr key={participant.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {getStudentName(participant)}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {t('participant.studentCodeLabel')}: {participant.student_code || participant.student?.student_code || 'N/A'}
-                        </div>
-                        {getStudentEmail(participant) && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {getStudentEmail(participant)}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 dark:text-white">
-                        {participant.actual_days ? `${formatNumber(participant.actual_days)} ${t('activity.days')}` : t('participant.notGraded')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        participant.status === 'COMPLETED' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
-                        participant.status === 'CANCELLED' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
-                        'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
-                      }`}>
-                        {participant.status === 'COMPLETED' ? t('participant.statusOptions.completed') :
-                         participant.status === 'CANCELLED' ? t('participant.statusOptions.cancelled') :
-                         t('participant.statusOptions.registered')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs">
-                      {participant.note ? (
-                        <div 
-                          className="line-clamp-3 cursor-help" 
-                          title={participant.note}
-                          style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 3,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            wordBreak: 'break-word'
-                          }}
-                        >
-                          {participant.note}
-                        </div>
-                      ) : (
-                        '-'
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(participant.created_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <button 
-                        onClick={() => {
-                          if (activity.status === 'ACTIVE' || activity.status === 'COMPLETED') {
-                            handleGradeParticipant(participant);
-                          }
-                        }}
-                        disabled={activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED'}
-                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900 rounded disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                        title={
-                          (activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED')
-                            ? t('participant.gradingStatusRestriction', { status: activity.status })
-                            : t('participant.gradeThisStudent')
-                        }
-                      >
-                        <Edit2 className="h-3 w-3 mr-1" />
-                        {t('participant.grade')}
-                      </button>
-                      <button 
-                        onClick={() => handleRemoveParticipant(participant)}
-                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900 rounded"
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        {t('common:actions.delete')}
-                      </button>
-                    </td>
+              <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('participant.studentName')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('participant.actualDays')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('participant.status')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('participant.note')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('participant.joinDate')}
+                    </th>
+                    <th className="relative px-6 py-3">
+                      <span className="sr-only">{t('common:fields.actions')}</span>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {paginatedParticipants.map((participant) => (
+                    <tr key={participant.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {getStudentName(participant)}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {t('participant.studentCodeLabel')}: {participant.student_code || participant.student?.student_code || 'N/A'}
+                          </div>
+                          {getStudentEmail(participant) && (
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {getStudentEmail(participant)}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-900 dark:text-white">
+                          {participant.actual_days ? `${formatNumber(participant.actual_days)} ${t('activity.days')}` : t('participant.notGraded')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${participant.status === 'COMPLETED' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+                            participant.status === 'CANCELLED' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
+                              'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                          }`}>
+                          {participant.status === 'COMPLETED' ? t('participant.statusOptions.completed') :
+                            participant.status === 'CANCELLED' ? t('participant.statusOptions.cancelled') :
+                              t('participant.statusOptions.registered')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+                        {participant.note ? (
+                          <div
+                            className="line-clamp-3 cursor-help"
+                            title={participant.note}
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              wordBreak: 'break-word'
+                            }}
+                          >
+                            {participant.note}
+                          </div>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {formatDate(participant.created_at)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button
+                          onClick={() => {
+                            if (activity.status === 'ACTIVE' || activity.status === 'COMPLETED') {
+                              handleGradeParticipant(participant);
+                            }
+                          }}
+                          disabled={activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED'}
+                          className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900 rounded disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          title={
+                            (activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED')
+                              ? t('participant.gradingStatusRestriction', { status: activity.status })
+                              : t('participant.gradeThisStudent')
+                          }
+                        >
+                          <Edit2 className="h-3 w-3 mr-1" />
+                          {t('participant.grade')}
+                        </button>
+                        <button
+                          onClick={() => handleRemoveParticipant(participant)}
+                          className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900 rounded"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          {t('common:actions.delete')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          {/* Pagination Controls */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            total={filteredParticipants.length}
-            limit={itemsPerPage}
-            onPageChange={(page) => setCurrentPage(page)}
-            onLimitChange={(newLimit) => {
-              setItemsPerPage(newLimit);
-              setCurrentPage(1); // Reset to first page when changing items per page
-            }}
-            showLimitSelector={true}
-          />
+            {/* Pagination Controls */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              total={filteredParticipants.length}
+              limit={itemsPerPage}
+              onPageChange={(page) => setCurrentPage(page)}
+              onLimitChange={(newLimit) => {
+                setItemsPerPage(newLimit);
+                setCurrentPage(1); // Reset to first page when changing items per page
+              }}
+              showLimitSelector={true}
+            />
           </>
         )}
       </div>
@@ -1130,7 +1129,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                         className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                         onKeyPress={(e) => e.key === 'Enter' && handleAddStudent()}
                       />
-                      
+
                       {/* Student info display */}
                       {lookingUpStudent && (
                         <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
@@ -1140,7 +1139,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                           </div>
                         </div>
                       )}
-                      
+
                       {!lookingUpStudent && newStudentCode.trim() && studentInfo.name && (
                         <div className="mt-2 p-3 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-md">
                           <div className="flex items-start">
@@ -1165,7 +1164,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                           </div>
                         </div>
                       )}
-                      
+
                       {!lookingUpStudent && newStudentCode.trim() && studentInfo.alreadyParticipating && (
                         <div className="mt-2 p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-md">
                           <div className="flex items-start">
@@ -1185,7 +1184,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                           </div>
                         </div>
                       )}
-                      
+
                       {!lookingUpStudent && newStudentCode.trim() && !studentInfo.name && !studentInfo.alreadyParticipating && (
                         <div className="mt-2 p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-md">
                           <div className="flex items-start">
@@ -1237,7 +1236,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
 
       {/* Individual Grading Modal */}
       {showGradingModal && gradingParticipant && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           style={{
             position: 'fixed',
@@ -1253,7 +1252,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
             justifyContent: 'center'
           }}
         >
-          <div 
+          <div
             className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md"
             style={{
               maxWidth: '28rem',
@@ -1418,7 +1417,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                         Định dạng hỗ trợ: .xlsx, .xls<br />
                         Kích thước tối đa: 5.0MB
                       </p>
-                      <label 
+                      <label
                         htmlFor="bulk-grading-file"
                         className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
                       >
@@ -1484,8 +1483,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       )}
 
       {/* Toast Notifications */}
-      <div 
-        className="fixed top-4 right-4 z-[9999] space-y-2 pointer-events-none" 
+      <div
+        className="fixed top-4 right-4 z-[9999] space-y-2 pointer-events-none"
         style={{
           maxWidth: '300px',
           right: '1rem',
@@ -1495,7 +1494,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         }}
       >
         {toasts.map((toast) => (
-          <div key={toast.id} className="pointer-events-auto" style={{maxWidth: '100%', overflow: 'hidden'}}>
+          <div key={toast.id} className="pointer-events-auto" style={{ maxWidth: '100%', overflow: 'hidden' }}>
             <Toast
               type={toast.type}
               message={toast.message}
@@ -1505,7 +1504,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           </div>
         ))}
       </div>
-      
+
       {/* Confirm Dialog */}
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
@@ -1514,8 +1513,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         confirmText={confirmDialog.confirmText}
         cancelText={confirmDialog.cancelText}
         variant={confirmDialog.variant}
-        onConfirm={confirmDialog.onConfirm || (() => {})}
-        onCancel={confirmDialog.onCancel || (() => {})}
+        onConfirm={confirmDialog.onConfirm || (() => { })}
+        onCancel={confirmDialog.onCancel || (() => { })}
       />
     </div>
   );

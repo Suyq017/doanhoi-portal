@@ -553,8 +553,8 @@ const ClassesPage: React.FC = () => {
                 <tr
                   key={classItem.id}
                   className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedClassIds.includes(classItem.id)
-                      ? 'bg-blue-50 dark:bg-blue-900/20'
-                      : ''
+                    ? 'bg-blue-50 dark:bg-blue-900/20'
+                    : ''
                     }`}
                 >
                   <td className="px-6 py-4 text-center whitespace-nowrap">
@@ -742,15 +742,17 @@ const ClassesPage: React.FC = () => {
       )}
 
       {/* Toast Notifications */}
-      {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          type={toast.type}
-          message={toast.message}
-          duration={toast.duration}
-          onClose={() => hideToast(toast.id)}
-        />
-      ))}
+      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            duration={toast.duration}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 };

@@ -1273,7 +1273,7 @@ const ImportModal = ({
                   </button>
                   <button
                     onClick={handleImport}
-                    disabled={(state.clientValidation && state.clientValidation.summary.invalid > 0) || (state.serverValidation && state.serverValidation.summary.invalid > 0) || state.loading}
+                    disabled={state.loading}
                     className="px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {t('import.startImport')}

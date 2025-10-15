@@ -633,8 +633,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 className={`w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ${!fieldValidation.name.isValid
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                    : 'border-gray-300'
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                  : 'border-gray-300'
                   }`}
                 placeholder={t('activity.form.namePlaceholder')}
               />
@@ -683,8 +683,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                       setTimeout(() => setCategoryDropdownOpen(false), 200);
                     }}
                     className={`w-full border rounded-md px-3 py-2 pr-10 focus:ring-blue-500 focus:border-blue-500 ${!fieldValidation.categoryId.isValid
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                        : 'border-gray-300'
+                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
                       }`}
                     disabled={categoriesLoading}
                   />
@@ -777,8 +777,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                         setTimeout(() => setOrganizationDropdownOpen(false), 200);
                       }}
                       className={`w-full border rounded-md px-3 py-2 pr-10 focus:ring-blue-500 focus:border-blue-500 ${!fieldValidation.organizationId.isValid
-                          ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                          : 'border-gray-300'
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
                         }`}
                       disabled={organizationsLoading}
                     />
@@ -827,8 +827,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                     {/* Hint for Level 2 users */}
                     {organizationConstraints.fixedOrganization && organizations.length > 1 && (
                       <p className="mt-1 text-xs text-gray-500">
-                        {t('activity.form.organizationLevel2Hint', { 
-                          org: organizationConstraints.fixedOrganization.name 
+                        {t('activity.form.organizationLevel2Hint', {
+                          org: organizationConstraints.fixedOrganization.name
                         })}
                       </p>
                     )}
@@ -871,8 +871,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                   value={formData.startDate}
                   onChange={(e) => handleInputChange('startDate', e.target.value)}
                   className={`w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ${!dateValidation.startDate.isValid || !fieldValidation.startDate.isValid
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300'
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                    : 'border-gray-300'
                     }`}
                 />
                 {!dateValidation.startDate.isValid && (
@@ -898,8 +898,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                   value={formData.endDate}
                   onChange={(e) => handleInputChange('endDate', e.target.value)}
                   className={`w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ${!dateValidation.endDate.isValid || !fieldValidation.endDate.isValid
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300'
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                    : 'border-gray-300'
                     }`}
                 />
                 {!dateValidation.endDate.isValid && (
@@ -928,8 +928,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 value={formData.totalDays}
                 onChange={(e) => handleInputChange('totalDays', e.target.value)}
                 className={`w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ${!fieldValidation.totalDays.isValid
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                    : 'border-gray-300'
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                  : 'border-gray-300'
                   }`}
                 placeholder={t('activity.form.totalDaysPlaceholder')}
               />
