@@ -121,7 +121,7 @@ export class ActivitiesService {
       // Get user's accessible organizations for CTXH activities
       const accessibleOrgs = await this.organizationsService.getCtxhActivityViewableOrganizations(user_id);
       const accessibleOrgIds = accessibleOrgs.map(org => org.id);
-      
+
       if (accessibleOrgIds.length > 0) {
         // Get all children organizations using recursive CTE (Common Table Expression)
         // This is more reliable than closure table and works natively in PostgreSQL
@@ -141,21 +141,21 @@ export class ActivitiesService {
           )
           SELECT DISTINCT id FROM org_tree
         `;
-        
+
         const childrenResult = await this.organizationRepository.query(
           childrenQuery,
           accessibleOrgIds
         );
-        
+
         // Extract org IDs from query result
         const allAccessibleOrgIds = childrenResult.map((row: any) => row.id);
-        
+
         console.log('[ActivitiesService] Filtering by accessible organizations:', {
           userId: user_id,
           parentOrgs: accessibleOrgIds.length,
           totalAccessible: allAccessibleOrgIds.length
         });
-        
+
         queryBuilder.andWhere('activity.organization_id IN (:...orgIds)', { orgIds: allAccessibleOrgIds });
       } else {
         // User has no accessible organizations, return empty result

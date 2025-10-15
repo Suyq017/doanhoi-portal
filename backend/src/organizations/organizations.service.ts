@@ -971,7 +971,7 @@ export class OrganizationsService {
     // 4. Check for Level 3 restriction (Chi đoàn/Chi hội)
     // Level 3 organizations CANNOT create CTXH activities
     const hasLevel3Only = organizationsWithLevel.every(o => o.level === 3);
-    
+
     if (hasLevel3Only) {
       console.log(`[OrganizationsService] User restricted to Level 3 org(s) - CANNOT create activities`);
       return {
