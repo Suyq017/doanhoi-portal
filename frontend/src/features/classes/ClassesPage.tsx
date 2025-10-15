@@ -12,17 +12,27 @@ import {
   AddDropdownButton,
   DropdownOption,
   ImportModal,
-  useImportConfig, 
+  useImportConfig,
   ConditionalRender,
   createPermissionBasedDropdownOptions,
   ConfirmDialog,
 } from '../../shared';
 import { classColumns } from '../../shared/utils/importColumns';
+// TODO: Import client-side processing functions when ImportModal supports them
+// import { 
+//   frontendParseClassFile, 
+//   frontendValidateClassData, 
+//   frontendSubmitClassImport 
+// } from '../../shared/services/classImportService';
 import { useClassPagePermissions } from './hooks/useClassPagePermissions';
 import CreateClassModal from './components/CreateClassModal';
 import EditClassModal from './components/EditClassModal';
 import ViewClassModal from './components/ViewClassModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
+
+// Feature flag for new class import system
+// TODO: Set to true when ImportModal supports client-side processing (parseFile, validateClientData, submitClientData)
+const USE_NEW_CLASS_IMPORT_SYSTEM = false; // Set to false to use old server-side processing
 
 const ClassesPage: React.FC = () => {
   const { t } = useTranslation(['classes', 'common']);
@@ -70,18 +80,58 @@ const ClassesPage: React.FC = () => {
     closeImportModal
   } = useImportConfig({
     entityName: 'classes',
-    entityService: {
+
+    // Entity service - use real service or dummy based on feature flag
+    entityService: USE_NEW_CLASS_IMPORT_SYSTEM ? {
+      // Dummy service for client-side processing (required by interface but not used)
+      getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL}/classes/template`,
+      uploadImportFile: async () => ({ sessionId: 'dummy' } as any),
+      validateImportData: async () => ({} as any),
+      executeImport: async () => ({} as any),
+      getImportStatus: async () => ({} as any),
+    } : {
+      // Real server-side service
       getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL}/classes/template`,
       uploadImportFile: classService.uploadImportFile.bind(classService),
       validateImportData: classService.validateImportData.bind(classService),
       executeImport: classService.executeImport.bind(classService),
       getImportStatus: classService.getImportStatus.bind(classService),
     },
+
     columns: classColumns(t),
     templateFileName: t('classes:import.templateFile', { defaultValue: 'classes_template.xlsx' }),
-    onSuccess: () => {
+
+    // Configuration
+    processingMode: USE_NEW_CLASS_IMPORT_SYSTEM ? 'client' : 'server',
+    maxFileSize: 10 * 1024 * 1024,
+    acceptedFileTypes: ['.xlsx', '.xls'],
+
+    onSuccess: (result: any) => {
+      // Always refresh data after import (whether success or partial failure)
       loadClasses();
-      showSuccess(t('classes:import.importSuccess', { defaultValue: 'Import lớp học thành công!' }));
+
+      // Show appropriate toast based on result
+      if (result.success) {
+        // All records imported successfully
+        showSuccess(t('classes:import.importSuccess', { defaultValue: 'Import lớp học thành công!' }));
+      } else if (result.importedCount > 0) {
+        // Partial success - some imported, some failed
+        showError(
+          t('classes:import.importPartialSuccess', {
+            defaultValue: `Import hoàn tất: ${result.importedCount} thành công, ${result.failedCount} thất bại`,
+            imported: result.importedCount,
+            failed: result.failedCount
+          })
+        );
+      } else {
+        // All failed
+        showError(
+          t('classes:import.importAllFailed', {
+            defaultValue: `Import thất bại: ${result.failedCount} lớp không thể import`,
+            failed: result.failedCount
+          })
+        );
+      }
     },
     onError: (error: Error) => {
       console.error('Import error:', error);
@@ -291,8 +341,8 @@ const ClassesPage: React.FC = () => {
       await classService.bulkDeleteClasses(selectedClassIds);
       setSelectedClassIds([]);
       await loadClasses();
-      showSuccess(t('common:messages.success.bulkDelete', { 
-        count: selectedClassIds.length 
+      showSuccess(t('common:messages.success.bulkDelete', {
+        count: selectedClassIds.length
       }));
       setShowBulkDeleteModal(false);
     } catch (error) {
@@ -500,13 +550,12 @@ const ClassesPage: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {classes.map((classItem) => (
-                <tr 
-                  key={classItem.id} 
-                  className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                    selectedClassIds.includes(classItem.id)
-                      ? 'bg-blue-50 dark:bg-blue-900/20'
-                      : ''
-                  }`}
+                <tr
+                  key={classItem.id}
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedClassIds.includes(classItem.id)
+                    ? 'bg-blue-50 dark:bg-blue-900/20'
+                    : ''
+                    }`}
                 >
                   <td className="px-6 py-4 text-center whitespace-nowrap">
                     <input
@@ -539,23 +588,23 @@ const ClassesPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${classItem.isActive
-                        ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
-                        : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
+                      : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
                       }`}>
                       {classItem.isActive ? t('common:status.active') : t('common:status.inactive')}
                     </span>
                   </td>                  <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                     <ConditionalRender condition={permissions.showActionColumn}>
-                      <div className="flex items-center space-x-2">                        
+                      <div className="flex items-center space-x-2">
                         <ConditionalRender condition={permissions.canView}>
-                        <button
-                          onClick={() => handleView(classItem)}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                          title={t('common:actions.view')}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </ConditionalRender>
+                          <button
+                            onClick={() => handleView(classItem)}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            title={t('common:actions.view')}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </ConditionalRender>
                         <ConditionalRender condition={permissions.canEdit}>
                           <button
                             onClick={() => handleEdit(classItem)}
@@ -581,12 +630,12 @@ const ClassesPage: React.FC = () => {
               ))}
             </tbody>
           </table>
-        </div>        
+        </div>
         {/* Empty State */}
         {classes.length === 0 && !loading && (
           <div className="py-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">
-              {!permissions.canView 
+              {!permissions.canView
                 ? t('common:noPermissionToView', { entity: t('classes:entityName', { defaultValue: 'lớp học' }), defaultValue: `Bạn không có quyền xem danh sách ${t('classes:entityName', { defaultValue: 'lớp học' })}` })
                 : !permissions.canCreate
                   ? t('common:noItemsContactAdmin', { entity: t('classes:entityName', { defaultValue: 'lớp học' }), defaultValue: `Không có ${t('classes:entityName', { defaultValue: 'lớp học' })} nào. Liên hệ quản trị viên để thêm ${t('classes:entityName', { defaultValue: 'lớp học' })}.` })
@@ -693,15 +742,17 @@ const ClassesPage: React.FC = () => {
       )}
 
       {/* Toast Notifications */}
-      {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          type={toast.type}
-          message={toast.message}
-          duration={toast.duration}
-          onClose={() => hideToast(toast.id)}
-        />
-      ))}
+      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            duration={toast.duration}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 };

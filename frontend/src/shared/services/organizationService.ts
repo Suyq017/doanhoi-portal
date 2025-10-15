@@ -187,7 +187,22 @@ class OrganizationService {
     return `${apiClient.getBaseURL()}/organizations/template/${level}`;
   }
 
-
+  /**
+   * Get organizations user can access for CTXH activity creation
+   * Based on ctxh.activities.create permission and hierarchy level
+   */
+  async getCtxhActivityAccessibleOrganizations(): Promise<{
+    organizations: Organization[];
+    canSelectMultiple: boolean;
+    fixedOrganization: Organization | null;
+  }> {
+    const response = await apiClient.get<{
+      organizations: Organization[];
+      canSelectMultiple: boolean;
+      fixedOrganization: Organization | null;
+    }>('/organizations/ctxh-activity-accessible');
+    return response;
+  }
 
 }
 

@@ -35,7 +35,7 @@ export interface UseImportConfigOptions {
   templateFileName?: string; // Override default template filename
 
   // Callbacks
-  onSuccess?: () => void;
+  onSuccess?: (result?: any) => void; // Receives import result (success, counts, errors, etc.)
   onError?: (error: Error) => void;
 
   // Advanced options (with sensible defaults)

@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import * as XLSX from 'xlsx';
 import { Organization } from '../entities/organization.entity';
 import { User } from '../entities/user.entity';
@@ -173,12 +173,44 @@ export class OrganizationImportService {
             throw new NotFoundException('Session không tồn tại hoặc đã hết hạn');
         }
 
-        const validationResults: ImportValidationResult[] = [];
+        const startTime = Date.now();
+        console.log(`🔍 [Validation] Starting validation for ${session.data.length} rows...`);
 
-        for (let i = 0; i < session.data.length; i++) {
-            const memberData = session.data[i];
+        // ✅ OPTIMIZATION 1: Extract all student codes (O(n) - single pass)
+        const studentCodes = session.data
+            .map(row => row.studentCode?.trim())
+            .filter(code => code && code !== '');
+
+        console.log(`   📝 Found ${studentCodes.length} student codes to validate`);
+
+        // ✅ OPTIMIZATION 2: Bulk lookup users (1 query instead of N queries)
+        const users = await this.usersRepository.find({
+            where: { code: In(studentCodes) },
+            select: ['id', 'code', 'fullName', 'email']
+        });
+
+        // Create lookup map for O(1) access
+        const userMap = new Map(users.map(u => [u.code, u]));
+        console.log(`   👥 Found ${users.length}/${studentCodes.length} existing users in database`);
+
+        // ✅ OPTIMIZATION 3: Bulk check existing members (1 query instead of N queries)
+        const userIds = users.map(u => u.id);
+        const existingMembers = await this.userOrganizationsRepository.find({
+            where: {
+                userId: In(userIds),
+                organizationId: session.organizationId
+            },
+            select: ['userId']
+        });
+
+        // Create lookup set for O(1) access
+        const existingMemberSet = new Set(existingMembers.map(m => m.userId));
+        console.log(`   ✓ Found ${existingMembers.length} existing members in organization`);
+
+        // ✅ OPTIMIZATION 4: Process validation results in memory (O(n))
+        const validationResults: ImportValidationResult[] = session.data.map((memberData, i) => {
             const result: ImportValidationResult = {
-                rowIndex: i + 1,
+                rowIndex: i + 2, // Excel row number (header is row 1, data starts at row 2)
                 data: memberData,
                 isValid: true,
                 errors: [],
@@ -186,33 +218,38 @@ export class OrganizationImportService {
             };
 
             // Validate student code
-            if (!memberData.studentCode || memberData.studentCode.trim() === '') {
+            const studentCode = memberData.studentCode?.trim();
+            if (!studentCode || studentCode === '') {
                 result.errors.push('Mã số sinh viên không được để trống');
                 result.isValid = false;
-            } else {
-                // Check if user exists
-                const user = await this.usersRepository.findOne({
-                    where: { code: memberData.studentCode }
-                });
-                if (!user) {
-                    result.errors.push(`Không tìm thấy sinh viên với mã: ${memberData.studentCode}`);
-                    result.isValid = false;
-                } else {
-                    // Check if user is already member
-                    const existingMember = await this.userOrganizationsRepository.findOne({
-                        where: {
-                            userId: user.id,
-                            organizationId: session.organizationId
-                        }
-                    });
-                    if (existingMember) {
-                        result.warnings.push(`Sinh viên ${memberData.studentCode} đã là thành viên của tổ chức`);
-                    }
-                }
+                return result;
             }
 
-            validationResults.push(result);
-        }
+            // Check if user exists (O(1) lookup from map)
+            const user = userMap.get(studentCode);
+            if (!user) {
+                result.errors.push(`Không tìm thấy sinh viên với mã: ${studentCode}`);
+                result.isValid = false;
+                return result;
+            }
+
+            // Check if already member (O(1) lookup from set)
+            if (existingMemberSet.has(user.id)) {
+                result.warnings.push(`Sinh viên ${studentCode} đã là thành viên của tổ chức`);
+            }
+
+            return result;
+        });
+
+        // Calculate summary statistics
+        const validCount = validationResults.filter(r => r.isValid).length;
+        const invalidCount = validationResults.length - validCount;
+        const warningCount = validationResults.filter(r => r.warnings.length > 0).length;
+
+        const duration = Date.now() - startTime;
+        console.log(`✅ [Validation] Completed in ${duration}ms`);
+        console.log(`   📊 Results: Valid: ${validCount}, Invalid: ${invalidCount}, Warnings: ${warningCount}`);
+        console.log(`   ⚡ Performance: ${(validationResults.length / (duration / 1000)).toFixed(0)} rows/second`);
 
         // Update session with validation results
         session.validationResults = validationResults;
@@ -231,6 +268,12 @@ export class OrganizationImportService {
             throw new BadRequestException('Dữ liệu chưa được validate. Vui lòng validate trước khi import');
         }
 
+        const startTime = Date.now();
+        const BATCH_SIZE = 500; // Process 500 records per batch
+
+        console.log(`🚀 [Import] Starting import for ${session.data.length} rows...`);
+        console.log(`   Batch size: ${BATCH_SIZE}, Skip errors: ${skipErrors}`);
+
         const result: ImportExecutionResult = {
             total: session.data.length,
             successful: 0,
@@ -238,6 +281,7 @@ export class OrganizationImportService {
             errors: []
         };
 
+        // Get valid records to import
         const validRecords = skipErrors
             ? session.validationResults.filter(r => r.isValid)
             : session.validationResults;
@@ -249,60 +293,107 @@ export class OrganizationImportService {
             }
         }
 
-        // Execute import for valid records
-        for (const validationResult of validRecords) {
-            try {
-                const memberData = validationResult.data;
+        console.log(`   📝 Valid records to import: ${validRecords.length}`);
 
-                // Find user
-                const user = await this.usersRepository.findOne({
-                    where: { code: memberData.studentCode }
-                });
+        // ✅ OPTIMIZATION 1: Bulk lookup users (1 query instead of N)
+        const studentCodes = validRecords.map(r => r.data.studentCode?.trim()).filter(Boolean);
+        const users = await this.usersRepository.find({
+            where: { code: In(studentCodes) },
+            select: ['id', 'code']
+        });
+        const userMap = new Map(users.map(u => [u.code, u]));
+        console.log(`   👥 Found ${users.length} users to import`);
 
+        // ✅ OPTIMIZATION 2: Bulk check existing members (1 query instead of N)
+        const userIds = users.map(u => u.id);
+        const existingMembers = await this.userOrganizationsRepository.find({
+            where: {
+                userId: In(userIds),
+                organizationId: session.organizationId
+            },
+            select: ['userId']
+        });
+        const existingSet = new Set(existingMembers.map(m => m.userId));
+        console.log(`   ✓ ${existingMembers.length} users are already members (will be skipped)`);
+
+        // ✅ OPTIMIZATION 3: Filter out users that don't exist or are already members
+        const usersToImport = validRecords
+            .map(r => {
+                const user = userMap.get(r.data.studentCode?.trim());
                 if (!user) {
                     result.failed++;
                     result.errors.push({
-                        rowIndex: validationResult.rowIndex,
-                        data: memberData,
-                        error: `Không tìm thấy sinh viên với mã: ${memberData.studentCode}`
+                        rowIndex: r.rowIndex,
+                        data: r.data,
+                        error: `Không tìm thấy sinh viên với mã: ${r.data.studentCode}`
                     });
-                    continue;
+                    return null;
                 }
-
-                // Check if already member
-                const existingMember = await this.userOrganizationsRepository.findOne({
-                    where: {
-                        userId: user.id,
-                        organizationId: session.organizationId
-                    }
-                });
-
-                if (existingMember) {
-                    // Skip if already member
-                    result.successful++;
-                    continue;
+                if (existingSet.has(user.id)) {
+                    result.successful++; // Count as successful (already member)
+                    return null;
                 }
+                return { user, rowIndex: r.rowIndex, data: r.data };
+            })
+            .filter(Boolean);
 
-                // Add member
-                const userOrganization = this.userOrganizationsRepository.create({
-                    userId: user.id,
-                    organizationId: session.organizationId,
-                    role: UserOrgRole.MEMBER,
-                    joinedAt: new Date()
-                });
+        console.log(`   📊 New members to add: ${usersToImport.length}`);
 
-                await this.userOrganizationsRepository.save(userOrganization);
-                result.successful++;
+        // ✅ OPTIMIZATION 4: Batch insert (500 records per batch)
+        const totalBatches = Math.ceil(usersToImport.length / BATCH_SIZE);
+
+        for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+            const start = batchIndex * BATCH_SIZE;
+            const end = Math.min(start + BATCH_SIZE, usersToImport.length);
+            const batch = usersToImport.slice(start, end);
+
+            try {
+                // Create entities for this batch
+                const entities = batch.map(item =>
+                    this.userOrganizationsRepository.create({
+                        userId: item.user.id,
+                        organizationId: session.organizationId,
+                        role: UserOrgRole.MEMBER,
+                        joinedAt: new Date()
+                    })
+                );
+
+                // Bulk insert
+                await this.userOrganizationsRepository.save(entities);
+
+                result.successful += batch.length;
+                console.log(`   ✓ Batch ${batchIndex + 1}/${totalBatches}: Imported ${batch.length} members`);
 
             } catch (error) {
-                result.failed++;
-                result.errors.push({
-                    rowIndex: validationResult.rowIndex,
-                    data: validationResult.data,
-                    error: error.message || 'Lỗi không xác định'
-                });
+                console.error(`   ✗ Batch ${batchIndex + 1}/${totalBatches} failed:`, error.message);
+
+                // If batch fails, try individual inserts for error handling
+                for (const item of batch) {
+                    try {
+                        const entity = this.userOrganizationsRepository.create({
+                            userId: item.user.id,
+                            organizationId: session.organizationId,
+                            role: UserOrgRole.MEMBER,
+                            joinedAt: new Date()
+                        });
+                        await this.userOrganizationsRepository.save(entity);
+                        result.successful++;
+                    } catch (individualError) {
+                        result.failed++;
+                        result.errors.push({
+                            rowIndex: item.rowIndex,
+                            data: item.data,
+                            error: individualError.message || 'Lỗi không xác định'
+                        });
+                    }
+                }
             }
         }
+
+        const duration = Date.now() - startTime;
+        console.log(`✅ [Import] Completed in ${duration}ms`);
+        console.log(`   📊 Results: Successful: ${result.successful}, Failed: ${result.failed}`);
+        console.log(`   ⚡ Performance: ${(result.successful / (duration / 1000)).toFixed(0)} rows/second`);
 
         // Clean up session
         this.importSessions.delete(sessionId);

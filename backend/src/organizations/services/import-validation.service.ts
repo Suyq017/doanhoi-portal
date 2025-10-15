@@ -198,12 +198,43 @@ export class OrganizationImportValidationService {
       });
 
       if (user) {
+        // For Level 2, determine the actual target organization based on classOrUnitCode
+        let targetOrganizationId = organizationId;
+
+        if (row.classOrUnitCode) {
+          // Level 2: Look up the child organization by code
+          const childOrg = await this.organizationsRepository.findOne({
+            where: {
+              code: row.classOrUnitCode,
+              parent: { id: organizationId } // Must be a child of the session org
+            }
+          });
+
+          if (childOrg) {
+            targetOrganizationId = childOrg.id;
+            console.log(`[DEBUG] Level 2: Row ${rowNumber}, ClassOrUnitCode ${row.classOrUnitCode} -> Org ${childOrg.name} (${childOrg.id})`);
+          } else {
+            console.log(`[DEBUG] Level 2: Row ${rowNumber}, ClassOrUnitCode ${row.classOrUnitCode} -> NOT FOUND`);
+            // Organization not found - add error
+            row._errors.push({
+              row: rowNumber,
+              column: 'classOrUnitCode',
+              message: `Organization with code ${row.classOrUnitCode} not found`,
+              severity: 'error'
+            });
+            return;
+          }
+        }
+
+        // Check if user is already a member of the TARGET organization
         const existingMembership = await this.userOrganizationsRepository.findOne({
           where: {
             userId: user.id,
-            organizationId: organizationId
+            organizationId: targetOrganizationId
           }
         });
+
+        console.log(`[DEBUG] Checking membership for ${row.studentCode} in org ${targetOrganizationId}: ${existingMembership ? 'EXISTS' : 'NO'}`);
 
         if (existingMembership) {
           row._warnings.push({
@@ -212,6 +243,44 @@ export class OrganizationImportValidationService {
             message: `User ${row.studentCode} is already a member of this organization`,
             severity: 'warning'
           });
+          return;
+        }
+
+        // Get the target organization with its tree structure
+        const targetOrganization = await this.organizationsRepository.findOne({
+          where: { id: targetOrganizationId },
+          relations: ['parent']
+        });
+
+        if (!targetOrganization) {
+          return;
+        }
+
+        // Check if user is a member of any CHILD organizations of the target
+        // (being a member of parent is OK, being a member of child is a warning)
+        const userMemberships = await this.userOrganizationsRepository.find({
+          where: { userId: user.id },
+          relations: ['organization', 'organization.parent']
+        });
+
+        console.log(`[DEBUG] User ${row.studentCode} has ${userMemberships.length} memberships`);
+        for (const membership of userMemberships) {
+          console.log(`  - Member of: ${membership.organization.name} (ID: ${membership.organization.id})`);
+          console.log(`    Parent: ${membership.organization.parent?.name || 'None'} (ID: ${membership.organization.parent?.id || 'None'})`);
+          console.log(`    Target Org ID: ${targetOrganizationId}`);
+          console.log(`    Is child of target? ${membership.organization.parent?.id === targetOrganizationId}`);
+
+          // Check if this membership's organization is a child of our target organization
+          if (membership.organization.parent?.id === targetOrganizationId) {
+            console.log(`  ⚠️ WARNING: User is member of child org!`);
+            row._warnings.push({
+              row: rowNumber,
+              column: 'studentCode',
+              message: `User ${row.studentCode} is already a member of child organization: ${membership.organization.name}`,
+              severity: 'warning'
+            });
+            break;
+          }
         }
       }
     } catch (error) {

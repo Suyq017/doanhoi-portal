@@ -6,8 +6,6 @@ import {
   AlertTriangle,
   AlertCircle,
   FileText,
-  Eye,
-  EyeOff,
   RefreshCw
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -39,25 +37,25 @@ const ImportModal = ({
   const [state, setState] = useState<ImportState>({
     step: 'upload',
     selectedFile: null,
-    
+
     // Server-side state (legacy)
     serverSession: null,
     serverValidation: null,
     serverResult: null,
-    
+
     // Client-side state (new)
     clientData: null,
     clientValidation: null,
     clientResult: null,
-    
+
     // Batch processing state
     batchProgress: null,
     sessionId: null,
     totalRecords: null,
     isBatchProcessing: false,
-    
+
     options: {
-      skipErrors: true,
+      skipErrors: false, // Allow importing rows with warnings (only skip rows with errors)
       updateExisting: false,
       dryRun: false,
       batchSize: config.batchSize
@@ -96,9 +94,9 @@ const ImportModal = ({
   const handleFileSelect = async (file: File) => {
     if (!isValidFile(file)) return;
 
-    setState(prev => ({ 
-      ...prev, 
-      selectedFile: file, 
+    setState(prev => ({
+      ...prev,
+      selectedFile: file,
       loading: true,
       sessionId: config.useClientSideProcessing ? `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : null
     }));
@@ -125,15 +123,15 @@ const ImportModal = ({
     }
 
     // Step 1: Parse file
-    setState(prev => ({ 
-      ...prev, 
-      batchProgress: { 
-        currentBatch: 0, 
-        totalBatches: 0, 
-        processedRecords: 0, 
-        totalRecords: 0, 
-        percentage: 0, 
-        currentOperation: 'parsing' 
+    setState(prev => ({
+      ...prev,
+      batchProgress: {
+        currentBatch: 0,
+        totalBatches: 0,
+        processedRecords: 0,
+        totalRecords: 0,
+        percentage: 0,
+        currentOperation: 'parsing'
       }
     }));
 
@@ -149,8 +147,8 @@ const ImportModal = ({
     });
 
     // Step 2: Validate data
-    setState(prev => ({ 
-      ...prev, 
+    setState(prev => ({
+      ...prev,
       batchProgress: prev.batchProgress ? {
         ...prev.batchProgress,
         currentOperation: 'validating',
@@ -196,39 +194,39 @@ const ImportModal = ({
 
     // Auto-fill dữ liệu cho server-side processing
     if (validationResult.previewData) {
-        validationResult.previewData = validationResult.previewData.map((item: any) => {
-          const modified: Record<string, boolean> = {};
+      validationResult.previewData = validationResult.previewData.map((item: any) => {
+        const modified: Record<string, boolean> = {};
 
-          // Tìm field email (case-insensitive và nhiều pattern khác nhau)
-          const emailField = Object.keys(item).find(key => {
-            const lowerKey = key.toLowerCase();
-            return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
-          });
-
-          // Tìm field password (case-insensitive) hoặc tạo mới
-          let passwordField = Object.keys(item).find(key => {
-            const lowerKey = key.toLowerCase();
-            return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
-          });
-
-          // Nếu không tìm thấy field password, tạo field mới
-          if (!passwordField) {
-            passwordField = 'password';
-            item[passwordField] = ''; // Khởi tạo với giá trị rỗng
-          }
-
-          const emailValue = emailField ? item[emailField] : null;
-
-          // Auto-fill password từ email prefix nếu trống hoặc là '-'
-          if (emailValue && passwordField && (!item[passwordField] || item[passwordField] === '' || item[passwordField] === '-')) {
-            const emailPrefix = emailValue.split('@')[0];
-            item[passwordField] = emailPrefix;
-            modified[passwordField] = true;
-          }
-
-          return item;
+        // Tìm field email (case-insensitive và nhiều pattern khác nhau)
+        const emailField = Object.keys(item).find(key => {
+          const lowerKey = key.toLowerCase();
+          return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
         });
-      }
+
+        // Tìm field password (case-insensitive) hoặc tạo mới
+        let passwordField = Object.keys(item).find(key => {
+          const lowerKey = key.toLowerCase();
+          return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
+        });
+
+        // Nếu không tìm thấy field password, tạo field mới
+        if (!passwordField) {
+          passwordField = 'password';
+          item[passwordField] = ''; // Khởi tạo với giá trị rỗng
+        }
+
+        const emailValue = emailField ? item[emailField] : null;
+
+        // Auto-fill password từ email prefix nếu trống hoặc là '-'
+        if (emailValue && passwordField && (!item[passwordField] || item[passwordField] === '' || item[passwordField] === '-')) {
+          const emailPrefix = emailValue.split('@')[0];
+          item[passwordField] = emailPrefix;
+          modified[passwordField] = true;
+        }
+
+        return item;
+      });
+    }
 
     config.onValidationComplete?.(validationResult);
 
@@ -316,9 +314,7 @@ const ImportModal = ({
       batchProgress: null
     }));
 
-    if (result.success) {
-      config.onSuccess?.(result);
-    }
+    // Don't call onSuccess here - will be called when modal closes if successful
   };
 
   // Server-side import (legacy)
@@ -339,9 +335,27 @@ const ImportModal = ({
       loading: false
     }));
 
-    if (result.success) {
-      config.onSuccess?.(result);
+    // Don't call onSuccess here - will be called when modal closes if successful
+  };
+
+  // Custom close handler that calls onSuccess if import was executed
+  const handleClose = () => {
+    // Check if import was executed (regardless of success or failure)
+    const hasServerResult = state.serverResult !== null;
+    const hasClientResult = state.clientResult !== null;
+    const importWasExecuted = state.step === 'result' && (hasServerResult || hasClientResult);
+
+    // Call onSuccess if import was executed (even with errors)
+    // This allows parent component to refresh data and show appropriate toast
+    if (importWasExecuted) {
+      const result = state.serverResult || state.clientResult;
+      if (result) {
+        config.onSuccess?.(result);
+      }
     }
+
+    // Close the modal
+    onClose();
   };
 
   // Reset state
@@ -349,25 +363,25 @@ const ImportModal = ({
     setState({
       step: 'upload',
       selectedFile: null,
-      
+
       // Server-side state (legacy)
       serverSession: null,
       serverValidation: null,
       serverResult: null,
-      
+
       // Client-side state (new)
       clientData: null,
       clientValidation: null,
       clientResult: null,
-      
+
       // Batch processing state
       batchProgress: null,
       sessionId: null,
       totalRecords: null,
       isBatchProcessing: false,
-      
+
       options: {
-        skipErrors: true,
+        skipErrors: false, // Allow importing rows with warnings (only skip rows with errors)
         updateExisting: false,
         dryRun: false,
         batchSize: config.batchSize
@@ -416,7 +430,7 @@ const ImportModal = ({
     // For client-side processing, use validation data with merged original data
     // For server-side processing, use previewData
     let rows: any[];
-    
+
     if (state.clientValidation && state.clientData) {
       // Client-side: merge validation result with original data for display
       rows = state.clientData.map((originalRow: any, index: number) => {
@@ -425,13 +439,13 @@ const ImportModal = ({
         const rowErrors = (state.clientValidation?.errors || []).filter((error: any) => {
           return typeof error === 'object' && error.row === (index + 2); // +2 for Excel row (header is row 1)
         });
-        
+
         const rowWarnings = (state.clientValidation?.warnings || []).filter((warning: any) => {
           return typeof warning === 'object' && warning.row === (index + 2);
         });
-        
+
         const hasError = rowErrors.length > 0;
-        
+
         return {
           ...originalRow, // Original data for display
           _hasError: hasError,
@@ -447,7 +461,9 @@ const ImportModal = ({
 
     // Apply error filtering - check both hasErrors and _hasError for compatibility
     if (showOnlyErrors) {
-      rows = rows.filter((row: any) => row.hasErrors || row._hasError);
+      // Since we already filtered out error rows, this will return empty array
+      // but keeping for consistency with the UI toggle
+      rows = [];
     }
 
     // Calculate pagination
@@ -473,7 +489,7 @@ const ImportModal = ({
     } else {
       data = state.serverValidation?.previewData || [];
     }
-    
+
     let totalRows = data.length;
 
     if (showOnlyErrors) {
@@ -536,38 +552,38 @@ const ImportModal = ({
       <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {state.batchProgress.currentOperation === 'parsing' 
+            {state.batchProgress.currentOperation === 'parsing'
               ? t('import.progress.parsing')
               : state.batchProgress.currentOperation === 'validating'
-              ? t('import.progress.validating')
-              : t('import.progress.importing')
+                ? t('import.progress.validating')
+                : t('import.progress.importing')
             }
           </span>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {state.batchProgress.percentage}%
           </span>
         </div>
-        
+
         {/* Progress Bar */}
         <div className="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
-          <div 
+          <div
             className="h-2 transition-all duration-300 bg-blue-600 rounded-full"
             style={{ width: `${state.batchProgress.percentage}%` }}
           />
         </div>
-        
+
         {/* Batch Info - only show for validation and importing, not parsing */}
-        {state.batchProgress.totalBatches && state.batchProgress.totalBatches > 0 && 
-         state.batchProgress.currentOperation !== 'validating' && (
-          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            {t('import.progress.batch', {
-              current: state.batchProgress.currentBatch || 0,
-              total: state.batchProgress.totalBatches,
-              records: state.batchProgress.processedRecords || 0,
-              totalRecords: state.batchProgress.totalRecords || 0
-            })}
-          </div>
-        )}
+        {state.batchProgress.totalBatches && state.batchProgress.totalBatches > 0 &&
+          state.batchProgress.currentOperation !== 'validating' && (
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              {t('import.progress.batch', {
+                current: state.batchProgress.currentBatch || 0,
+                total: state.batchProgress.totalBatches,
+                records: state.batchProgress.processedRecords || 0,
+                totalRecords: state.batchProgress.totalRecords || 0
+              })}
+            </div>
+          )}
       </div>
     );
   };
@@ -695,15 +711,15 @@ const ImportModal = ({
 
           <div className="p-4 text-center bg-red-100 rounded-lg dark:bg-red-900/20">
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {state.clientData ? 
+              {state.clientData ?
                 // For client-side, count rows with errors
                 state.clientData.filter((_: any, index: number) => {
                   const rowErrors = (errors || []).filter((error: any) => {
                     return typeof error === 'object' && error.row === (index + 2);
                   });
                   return rowErrors.length > 0;
-                }).length 
-                : 
+                }).length
+                :
                 // For server-side, use summary
                 summary.invalid
               }
@@ -715,15 +731,15 @@ const ImportModal = ({
 
           <div className="p-4 text-center bg-yellow-100 rounded-lg dark:bg-yellow-900/20">
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {state.clientData ? 
+              {state.clientData ?
                 // For client-side, count rows with warnings
                 state.clientData.filter((_: any, index: number) => {
                   const rowWarnings = (warnings || []).filter((warning: any) => {
                     return typeof warning === 'object' && warning.row === (index + 2);
                   });
                   return rowWarnings.length > 0;
-                }).length 
-                : 
+                }).length
+                :
                 // For server-side, use warnings length
                 warnings.length
               }
@@ -737,7 +753,8 @@ const ImportModal = ({
         {/* Filter Controls */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <button
+            {/* Hide "Show Only Errors" button since we filter out errors from preview table */}
+            {/* <button
               onClick={() => {
                 setShowOnlyErrors(!showOnlyErrors);
                 setPreviewPage(1); // Reset to first page when filter changes
@@ -749,7 +766,7 @@ const ImportModal = ({
             >
               {showOnlyErrors ? <Eye className="w-4 h-4 mr-1" /> : <EyeOff className="w-4 h-4 mr-1" />}
               {t('import.showOnlyErrors')}
-            </button>
+            </button> */}
 
             <button
               onClick={() => {
@@ -849,8 +866,8 @@ const ImportModal = ({
                       className={`transition-colors ${hasErrors
                         ? 'bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20'
                         : hasWarnings
-                        ? 'bg-yellow-50 dark:bg-yellow-900/10 hover:bg-yellow-100 dark:hover:bg-yellow-900/20'
-                        : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+                          ? 'bg-yellow-50 dark:bg-yellow-900/10 hover:bg-yellow-100 dark:hover:bg-yellow-900/20'
+                          : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
                         }`}
                     >
                       <td className="px-4 py-3 font-mono text-sm text-gray-500 dark:text-gray-400">
@@ -898,7 +915,7 @@ const ImportModal = ({
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 {t('import.validationErrors')} ({errors.length})
               </h5>
-              
+
               {/* Error Pagination Controls */}
               {errors.length > errorLimit && (
                 <div className="flex items-center space-x-2">
@@ -922,7 +939,7 @@ const ImportModal = ({
                 </div>
               )}
             </div>
-            
+
             <div className="overflow-auto max-h-32">
               <ul className="space-y-1 text-sm text-red-700 dark:text-red-300">
                 {errors
@@ -953,7 +970,7 @@ const ImportModal = ({
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 {t('import.validationWarnings')} ({warnings.length})
               </h5>
-              
+
               {/* Warning Pagination Controls */}
               {warnings.length > errorLimit && (
                 <div className="flex items-center space-x-2">
@@ -977,7 +994,7 @@ const ImportModal = ({
                 </div>
               )}
             </div>
-            
+
             <div className="overflow-auto max-h-32">
               <ul className="space-y-1 text-sm text-yellow-700 dark:text-yellow-300">
                 {warnings
@@ -1012,7 +1029,7 @@ const ImportModal = ({
       <p className="mb-4 text-gray-500 dark:text-gray-400">
         {t('import.pleaseWait')}
       </p>
-      
+
       {/* Show batch progress for client-side processing */}
       {config.useClientSideProcessing && state.batchProgress ? (
         <div className="max-w-md mx-auto">
@@ -1033,7 +1050,7 @@ const ImportModal = ({
 
     // Determine result structure based on type
     let total: number, success: number, failed: number, skipped: number, errors: string[], warnings: string[];
-    
+
     if (state.clientResult) {
       // Client-side result structure
       const summary = state.clientResult.sessionSummary;
@@ -1171,7 +1188,7 @@ const ImportModal = ({
         {/* Background overlay */}
         <div
           className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-80"
-          onClick={onClose}
+          onClick={handleClose}
         />
 
         {/* Modal panel */}
@@ -1182,7 +1199,7 @@ const ImportModal = ({
               {t(`${config.entityName}:import.title`)}
             </h3>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <XCircle className="w-6 h-6" />
@@ -1256,7 +1273,7 @@ const ImportModal = ({
                   </button>
                   <button
                     onClick={handleImport}
-                    // disabled={(state.clientValidation && state.clientValidation.summary.invalid > 0) || (state.serverValidation && state.serverValidation.summary.invalid > 0) || state.loading}
+                    disabled={state.loading}
                     className="px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {t('import.startImport')}
@@ -1266,7 +1283,7 @@ const ImportModal = ({
 
               {(state.step === 'upload' || state.step === 'result') && (
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   {state.step === 'result' ? t('common:actions.close') : t('common:actions.cancel')}
