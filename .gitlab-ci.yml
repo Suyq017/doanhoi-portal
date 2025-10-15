@@ -8,10 +8,10 @@ stages:
 
 variables:
   # Production server config
-  PRODUCTION_SERVER: "103.88.121.146"
-  PRODUCTION_USER: "root"
-  DEPLOY_PATH: "/opt/doanhoi-portal"
-  DOMAIN: "doanhoi.hcmut.edu.vn"
+  # PRODUCTION_SERVER: "103.88.121.146"
+  # PRODUCTION_USER: "root"
+  # DEPLOY_PATH: "/opt/doanhoi-portal"
+  # DOMAIN: "doanhoi.hcmut.edu.vn"
   
   # Docker config
   DOCKER_DRIVER: overlay2
