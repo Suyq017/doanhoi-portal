@@ -105,6 +105,10 @@ deploy_production:
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
     - chmod 600 ~/.ssh/config
   script:
+    - echo "PRODUCTION_USER=$PRODUCTION_USER"
+    - echo "PRODUCTION_SERVER=$PRODUCTION_SERVER"
+    - echo "DEPLOY_PATH=$DEPLOY_PATH"
+    - echo "DOMAIN=$DOMAIN"
     - echo "🚀 Deploying Doanhoi Portal on $PRODUCTION_SERVER ..."
     - |
       ssh $PRODUCTION_USER@$PRODUCTION_SERVER << DEPLOY_SCRIPT
