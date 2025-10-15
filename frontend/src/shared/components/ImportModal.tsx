@@ -60,7 +60,7 @@ const ImportModal = ({
       skipErrors: true,
       updateExisting: false,
       dryRun: false,
-      batchSize: config.batchSize || 200
+      batchSize: config.batchSize
     },
     loading: false,
     dragActive: false
@@ -285,7 +285,7 @@ const ImportModal = ({
     }
 
     const validData = state.clientValidation.data;
-    const totalBatches = Math.ceil(validData.length / (config.batchSize || 200));
+    const totalBatches = Math.ceil(validData.length / (config?.batchSize || 500));
 
     setState(prev => ({
       ...prev,
@@ -370,7 +370,7 @@ const ImportModal = ({
         skipErrors: true,
         updateExisting: false,
         dryRun: false,
-        batchSize: config.batchSize || 200
+        batchSize: config.batchSize
       },
       loading: false,
       dragActive: false
@@ -1256,7 +1256,7 @@ const ImportModal = ({
                   </button>
                   <button
                     onClick={handleImport}
-                    disabled={(state.clientValidation && state.clientValidation.summary.invalid > 0) || (state.serverValidation && state.serverValidation.summary.invalid > 0) || state.loading}
+                    // disabled={(state.clientValidation && state.clientValidation.summary.invalid > 0) || (state.serverValidation && state.serverValidation.summary.invalid > 0) || state.loading}
                     className="px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {t('import.startImport')}

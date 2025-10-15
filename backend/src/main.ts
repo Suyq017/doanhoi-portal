@@ -6,6 +6,10 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Configure request size limits
+  app.use(require('express').json({ limit: '50mb' }));
+  app.use(require('express').urlencoded({ limit: '50mb', extended: true }));
+
   // Enable CORS
   app.enableCors({
     origin: ['http://localhost:9100', 'http://localhost:3000'],

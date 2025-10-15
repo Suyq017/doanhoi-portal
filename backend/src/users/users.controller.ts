@@ -196,20 +196,6 @@ export class UsersController {
       batchInfo: request.batchInfo,
       options: request.options
     });
-    
-    // Manual validation for debugging
-    if (!request.users || !Array.isArray(request.users)) {
-      throw new BadRequestException('Users array is required');
-    }
-    
-    if (request.users.length === 0) {
-      throw new BadRequestException('At least 1 user required per batch');
-    }
-    
-    if (request.users.length > 200) {
-      throw new BadRequestException('Maximum 200 users per batch');
-    }
-    
     return this.batchImportService.processBatch(request);
   }
 

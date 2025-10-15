@@ -57,7 +57,7 @@ export const useUserBatchImportConfig = (params: UseUserBatchImportConfigParams 
         // Client-side batch processing
         useClientSideProcessing: true,
         enableBatchProcessing: true,
-        batchSize: 200, // Match backend batch size
+        batchSize: 500, // Match backend batch size
         
         // Client-side processing functions with backend validation and pagination
         parseFile: batchImportService.parseUserFile.bind(batchImportService),

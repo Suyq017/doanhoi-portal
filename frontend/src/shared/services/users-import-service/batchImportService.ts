@@ -15,7 +15,7 @@ import {
 import { UserImportData } from '../../types/userImport';
 
 export class BatchImportService {
-  private readonly BATCH_SIZE = 200;
+  private readonly BATCH_SIZE = 500;
   private excelParser = new ExcelParserService();
 
   /**
@@ -59,7 +59,7 @@ export class BatchImportService {
     data: UserImportData[],
     onProgress?: (progress: { current: number; total: number; percentage: number }) => void
   ): Promise<ClientValidationResult> {
-    const VALIDATION_CHUNK_SIZE = 50; // Validate 50 rows at a time
+    const VALIDATION_CHUNK_SIZE = 500; // Validate 50 rows at a time
     
     try {
       console.log(`Starting validation for ${data.length} rows in chunks of ${VALIDATION_CHUNK_SIZE}`);
@@ -268,7 +268,7 @@ export class BatchImportService {
     // Import options with defaults from Phase 3
     const options: ImportOptionsDto = {
       skipDuplicates: true,
-      updateExisting: true
+      updateExisting: false
     };
 
     try {
@@ -419,8 +419,10 @@ export class BatchImportService {
         const result = await this.validateSingleChunk(data, paginationOptions);
         
         // Success - return immediately
-        if (attempt > 1) {
+        if (result) {
           console.log(`Validation succeeded on attempt ${attempt}`);
+          console.log('Waiting 2000ms for backend stability...');
+          await this.delay(2000); // Small delay to ensure backend stability
         }
         return result;
         
@@ -459,8 +461,10 @@ export class BatchImportService {
         const response = await userService.batchImport(request);
         
         // Success - return immediately
-        if (attempt > 1) {
+        if (response.success) {
           console.log(`Batch import succeeded on attempt ${attempt}`);
+          console.log('Waiting 2000ms for backend stability...');
+          await this.delay(2000); // Small delay to ensure backend stability
         }
         return response;
         
