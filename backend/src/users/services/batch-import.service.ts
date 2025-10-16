@@ -66,8 +66,8 @@ export class BatchImportService {
   private readonly logger = new Logger(BatchImportService.name);
   private readonly sessionCache = new Map<string, SessionData>();
   private readonly BATCH_SIZE_LIMIT = 200;
-  private readonly SUB_BATCH_SIZE = 25; // Process in smaller chunks within transaction
-  private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+  private readonly SUB_BATCH_SIZE = 20; // Process in smaller chunks within transaction
+  private readonly SESSION_TIMEOUT = 60 * 60 * 1000; // 60 minutes
 
   constructor(
     @InjectRepository(User)
@@ -201,6 +201,26 @@ export class BatchImportService {
   }
 
   /**
+   * Reset transaction after bulk operation failure
+   */
+  private async resetTransactionSafely(queryRunner: QueryRunner): Promise<void> {
+    try {
+      // Check if transaction is still active and rollback
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+        this.logger.warn('Transaction rolled back due to bulk operation failure');
+      }
+    } catch (rollbackError) {
+      // Ignore rollback errors - transaction might already be rolled back
+      this.logger.warn(`Transaction rollback warning (ignored): ${rollbackError.message}`);
+    }
+    
+    // Start fresh transaction
+    await queryRunner.startTransaction();
+    this.logger.log('Fresh transaction started for individual processing');
+  }
+
+  /**
    * Process a sub-batch of users within a transaction using bulk insert
    */
   private async processSubBatch(
@@ -216,59 +236,88 @@ export class BatchImportService {
       errors: []
     };
 
-    // Step 1: Prepare all resolved user data first
-    const resolvedUsersData: Array<{
-      resolvedData: ResolvedUserData;
+    const validUsers: Array<{
+      userData: UserImportDto;
       originalIndex: number;
       rowNumber: number;
     }> = [];
 
-    // Process each user to get resolved data
+    // Step 1: Filter valid users (basic validation + duplicate check)
+    const seenCodes = new Set<string>();
+    const seenEmails = new Set<string>();
+    
     for (let i = 0; i < users.length; i++) {
       const user = users[i];
       const rowNumber = startRowNumber + i;
+      let hasErrors = false;
 
-      try {
-        const resolvedData = await this.convertToResolvedUserData(user, queryRunner);
-        resolvedUsersData.push({
-          resolvedData,
+      // Basic validation - check required fields
+      if (!user.code || !user.familyName || !user.givenName) {
+        result.failed++;
+        const errorMessage = `Row ${rowNumber}: Missing required fields (code, familyName, or givenName)`;
+        result.errors.push(errorMessage);
+        this.logger.warn(errorMessage);
+        hasErrors = true;
+      }
+
+      // Check for duplicates within current batch
+      if (user.code && seenCodes.has(user.code)) {
+        result.failed++;
+        const errorMessage = `Row ${rowNumber}: Duplicate code in batch: ${user.code}`;
+        result.errors.push(errorMessage);
+        this.logger.warn(errorMessage);
+        hasErrors = true;
+      } else if (user.code) {
+        seenCodes.add(user.code);
+      }
+      
+      if (user.email && seenEmails.has(user.email)) {
+        result.failed++;
+        const errorMessage = `Row ${rowNumber}: Duplicate email in batch: ${user.email}`;
+        result.errors.push(errorMessage);
+        this.logger.warn(errorMessage);
+        hasErrors = true;
+      } else if (user.email) {
+        seenEmails.add(user.email);
+      }
+
+      if (!hasErrors) {
+        validUsers.push({
+          userData: user,
           originalIndex: i,
           rowNumber
         });
-      } catch (error) {
-        result.failed++;
-        const errorMessage = `Row ${rowNumber}: Failed to resolve user data - ${error.message}`;
-        result.errors.push(errorMessage);
-        this.logger.warn(errorMessage);
       }
       
       result.processed++;
     }
 
     // Step 2: Bulk insert valid users
-    if (resolvedUsersData.length > 0) {
+    if (validUsers.length > 0) {
+      this.logger.log(`Processing batch: ${validUsers.length} users`);
+      
       try {
-        const userEntities = await this.createUserEntitiesFromResolved(resolvedUsersData, queryRunner);
+        const userEntities = await this.createUserEntitiesDirectly(validUsers, queryRunner);
         
         if (userEntities.length > 0) {
           // Bulk insert users
           const insertResult = await queryRunner.manager.insert(User, userEntities);
           
           // Handle organization assignments for each inserted user
-          for (let i = 0; i < resolvedUsersData.length; i++) {
-            const { resolvedData } = resolvedUsersData[i];
+          for (let i = 0; i < validUsers.length; i++) {
+            const { userData } = validUsers[i];
             const insertedUserId = insertResult.identifiers[i]?.id;
             
-            if (insertedUserId && resolvedData.className && resolvedData.facultyCode) {
+            if (insertedUserId && userData.className && userData.facultyCode) {
               try {
                 await this.handleClassOrganizationCreation(
                   queryRunner, 
-                  resolvedData.className, 
-                  resolvedData.facultyCode, 
+                  userData.className, 
+                  userData.facultyCode, 
                   insertedUserId
                 );
               } catch (orgError) {
-                this.logger.warn(`Failed to create organizations for user ${resolvedData.code}: ${orgError.message}`);
+                this.logger.warn(`Failed to create organizations for user ${userData.code}: ${orgError.message}`);
                 // Don't fail the entire batch for organization creation errors
               }
             }
@@ -278,18 +327,58 @@ export class BatchImportService {
           this.logger.log(`Bulk inserted ${userEntities.length} users successfully`);
         }
       } catch (bulkError) {
-        // If bulk insert fails, fall back to individual processing
-        this.logger.warn(`Bulk insert failed, falling back to individual processing: ${bulkError.message}`);
-        
-        for (const { resolvedData, rowNumber } of resolvedUsersData) {
-          try {
-            await this.importUserWithImportService(queryRunner, resolvedData);
-            result.successful++;
-          } catch (individualError) {
-            result.failed++;
-            const errorMessage = `Row ${rowNumber}: ${individualError.message}`;
-            result.errors.push(errorMessage);
-            this.logger.warn(errorMessage);
+        // Check if this is a duplicate key constraint error
+        if (bulkError.message && bulkError.message.includes('duplicate key value violates unique constraint')) {
+          this.logger.warn(`Bulk insert failed due to duplicates, resetting transaction and processing individually: ${bulkError.message}`);
+          
+          // CRITICAL: Reset transaction before individual processing
+          await this.resetTransactionSafely(queryRunner);
+          
+          // Process each user individually with duplicate check
+          for (const { userData, rowNumber } of validUsers) {
+            try {
+              // Check if user already exists
+              const existingUser = await queryRunner.manager.findOne(User, {
+                where: [
+                  { code: userData.code },
+                  ...(userData.email ? [{ email: userData.email }] : [])
+                ]
+              });
+
+              if (existingUser) {
+                this.logger.warn(`User ${userData.code} already exists, skipping`);
+                result.failed++;
+                result.errors.push(`Row ${rowNumber}: User with code ${userData.code} already exists (duplicate)`);
+                continue;
+              }
+
+              // Create individual user
+              await this.processUser(userData, queryRunner, options);
+              result.successful++;
+            } catch (individualError) {
+              result.failed++;
+              const errorMessage = `Row ${rowNumber}: ${individualError.message}`;
+              result.errors.push(errorMessage);
+              this.logger.warn(errorMessage);
+            }
+          }
+        } else {
+          // Other bulk errors - reset transaction and fall back to individual processing
+          this.logger.warn(`Bulk insert failed with non-duplicate error, resetting transaction and falling back: ${bulkError.message}`);
+          
+          // Reset transaction for clean state
+          await this.resetTransactionSafely(queryRunner);
+          
+          for (const { userData, rowNumber } of validUsers) {
+            try {
+              await this.processUser(userData, queryRunner, options);
+              result.successful++;
+            } catch (individualError) {
+              result.failed++;
+              const errorMessage = `Row ${rowNumber}: ${individualError.message}`;
+              result.errors.push(errorMessage);
+              this.logger.warn(errorMessage);
+            }
           }
         }
       }
@@ -299,11 +388,11 @@ export class BatchImportService {
   }
 
   /**
-   * Create User entities from resolved data for bulk insert
+   * Create User entities directly from UserImportDto for bulk insert
    */
-  private async createUserEntitiesFromResolved(
-    resolvedUsersData: Array<{
-      resolvedData: ResolvedUserData;
+  private async createUserEntitiesDirectly(
+    validUsers: Array<{
+      userData: UserImportDto;
       originalIndex: number;
       rowNumber: number;
     }>,
@@ -311,74 +400,66 @@ export class BatchImportService {
   ): Promise<User[]> {
     const userEntities: User[] = [];
 
-    for (const { resolvedData } of resolvedUsersData) {
+    for (const { userData } of validUsers) {
       try {
         const user = new User();
-        user.familyName = resolvedData.familyName;
-        user.givenName = resolvedData.givenName;
-        user.email = resolvedData.email || null;
-        user.code = resolvedData.code;
-        user.phone = resolvedData.phone || '';
+        user.familyName = userData.familyName;
+        user.givenName = userData.givenName;
+        user.email = userData.email || null;
+        user.code = userData.code;
+        user.phone = userData.phone || '';
         
         // Handle password generation
-        if (resolvedData.password && resolvedData.password.trim()) {
-          const userPassword = resolvedData.password.trim();
-          user.password = await bcrypt.hash(userPassword, 10);
-        } else if (resolvedData.email) {
-          const userPassword = this.generatePasswordFromEmail(resolvedData.email);
+        if (userData.email) {
+          const userPassword = this.generatePasswordFromEmail(userData.email);
           user.password = await bcrypt.hash(userPassword, 10);
         } else {
-          const userPassword = resolvedData.code;
+          const userPassword = userData.code;
           user.password = await bcrypt.hash(userPassword, 10);
         }
 
         // Set user type and membership status
-        user.userType = resolvedData.userType as UserType || UserType.STUDENT;
-        user.membershipStatus = resolvedData.membershipStatus as MembershipStatus || MembershipStatus.ACTIVE;
+        user.userType = UserType.STUDENT;
+        user.membershipStatus = MembershipStatus.ACTIVE;
 
         // Set authentication fields
         user.authProvider = AuthProvider.LOCAL;
         user.isActive = true;
 
         // Set additional fields
-        if (resolvedData.identityCard) user.identityCard = resolvedData.identityCard;
-        if (resolvedData.birthDate) user.birthDate = new Date(resolvedData.birthDate);
-        if (resolvedData.gender) {
-          user.gender = resolvedData.gender.toUpperCase() === 'NAM' ? Gender.NAM : Gender.NU;
+        if (userData.identityCard) user.identityCard = userData.identityCard;
+        if (userData.birthDate) user.birthDate = new Date(userData.birthDate);
+        if (userData.gender) {
+          user.gender = userData.gender.toUpperCase() === 'NAM' ? Gender.NAM : Gender.NU;
         }
-        if (resolvedData.admissionYear) user.admissionYear = resolvedData.admissionYear;
-        if (resolvedData.curriculumYear) user.curriculumYear = resolvedData.curriculumYear;
-        if (resolvedData.facultyCode) user.facultyCode = resolvedData.facultyCode;
-        if (resolvedData.trainingSystem) user.trainingSystem = resolvedData.trainingSystem;
-        if (resolvedData.trainingLevel) user.trainingLevel = resolvedData.trainingLevel;
+        if (userData.admissionYear) user.admissionYear = userData.admissionYear;
+        if (userData.curriculumYear) user.curriculumYear = userData.curriculumYear;
+        if (userData.facultyCode) user.facultyCode = userData.facultyCode;
+        if (userData.trainingSystem) user.trainingSystem = userData.trainingSystem;
+        if (userData.trainingLevel) user.trainingLevel = userData.trainingLevel;
 
         // Set class reference
-        if (resolvedData.classId) {
+        if (userData.className) {
           const classEntity = await queryRunner.manager.findOne(Class, { 
-            where: { id: resolvedData.classId } 
+            where: { name: userData.className } 
           });
           if (classEntity) user.class = classEntity;
         }
 
-        // Set management department reference
-        if (resolvedData.managementDepartmentId) {
-          const managementDept = await queryRunner.manager.findOne(Department, { 
-            where: { id: resolvedData.managementDepartmentId } 
+        // Set department references
+        if (userData.departmentCode) {
+          const department = await queryRunner.manager.findOne(Department, { 
+            where: { code: userData.departmentCode } 
           });
-          if (managementDept) user.managementDepartment = managementDept;
-        }
-
-        // Set training department reference
-        if (resolvedData.trainingDepartmentId) {
-          const trainingDept = await queryRunner.manager.findOne(Department, { 
-            where: { id: resolvedData.trainingDepartmentId } 
-          });
-          if (trainingDept) user.trainingDepartment = trainingDept;
+          if (department) {
+            user.managementDepartment = department;
+            user.trainingDepartment = department;
+          }
         }
 
         userEntities.push(user);
       } catch (error) {
-        this.logger.warn(`Failed to create user entity for ${resolvedData.code}: ${error.message}`);
+        this.logger.warn(`Failed to create user entity for ${userData.code}: ${error.message}`);
         // Skip this user, continue with others
         continue;
       }

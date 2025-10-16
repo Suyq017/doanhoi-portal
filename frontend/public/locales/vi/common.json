@@ -248,7 +248,7 @@
     "errorPhonetic": "Lỗi",
     "warnings": "Cảnh báo",
     "warningsPhonetic": "Cảnh báo",
-    "validationWarnings": "Cảnh báo kiểm tra",
+    "andMoreErrors": "và {{count}} lỗi khác",
     "showOnlyErrors": "Chỉ hiển thị lỗi",
     "showOnlyErrorsPhonetic": "Chỉ hiển thị lỗi",
     "showAll": "Hiển thị tất cả",
