@@ -15,7 +15,7 @@ import {
 import { UserImportData } from '../../types/userImport';
 
 export class BatchImportService {
-  private readonly BATCH_SIZE = 500;
+  private readonly BATCH_SIZE = 200; 
   private excelParser = new ExcelParserService();
 
   /**
@@ -59,7 +59,7 @@ export class BatchImportService {
     data: UserImportData[],
     onProgress?: (progress: { current: number; total: number; percentage: number }) => void
   ): Promise<ClientValidationResult> {
-    const VALIDATION_CHUNK_SIZE = 500; // Validate 50 rows at a time
+    const VALIDATION_CHUNK_SIZE = 500; // Validate 500 rows at a time
     
     try {
       console.log(`Starting validation for ${data.length} rows in chunks of ${VALIDATION_CHUNK_SIZE}`);
@@ -323,7 +323,7 @@ export class BatchImportService {
 
         // Submit batch with retry mechanism
         const MAX_RETRIES = 3;
-        const RETRY_DELAY = 2000; // 2 seconds between retries
+        const RETRY_DELAY = 10000; // 10 seconds between retries
         
         try {
           const response = await this.submitSingleBatchWithRetry(request, MAX_RETRIES, RETRY_DELAY);
@@ -463,8 +463,8 @@ export class BatchImportService {
         // Success - return immediately
         if (response.success) {
           console.log(`Batch import succeeded on attempt ${attempt}`);
-          console.log('Waiting 2000ms for backend stability...');
-          await this.delay(2000); // Small delay to ensure backend stability
+          console.log('Waiting 5000ms for backend stability...');
+          await this.delay(5000); // Small delay to ensure backend stability
         }
         return response;
         

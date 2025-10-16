@@ -65,7 +65,7 @@ interface ResolvedUserData {
 export class BatchImportService {
   private readonly logger = new Logger(BatchImportService.name);
   private readonly sessionCache = new Map<string, SessionData>();
-  private readonly BATCH_SIZE_LIMIT = 500;
+  private readonly BATCH_SIZE_LIMIT = 200;
   private readonly SUB_BATCH_SIZE = 25; // Process in smaller chunks within transaction
   private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
@@ -104,16 +104,16 @@ export class BatchImportService {
       await this.initializeSession(sessionId, totalBatches, users.length * totalBatches);
     }
 
-    // Get or validate existing session
-    const session = this.getSession(sessionId);
-    if (!session) {
-      throw new BadRequestException(`Session ${sessionId} not found or expired`);
-    }
+    // // Get or validate existing session
+    // const session = this.getSession(sessionId);
+    // if (!session) {
+    //   throw new BadRequestException(`Session ${sessionId} not found or expired`);
+    // }
 
-    // Validate batch sequence
-    if (batchNumber !== session.completedBatches + 1) {
-      throw new BadRequestException(`Expected batch ${session.completedBatches + 1}, received batch ${batchNumber}`);
-    }
+    // // Validate batch sequence
+    // if (batchNumber !== session.completedBatches + 1) {
+    //   throw new BadRequestException(`Expected batch ${session.completedBatches + 1}, received batch ${batchNumber}`);
+    // }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
