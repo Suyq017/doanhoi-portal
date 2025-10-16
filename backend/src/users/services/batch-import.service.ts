@@ -67,7 +67,7 @@ export class BatchImportService {
   private readonly sessionCache = new Map<string, SessionData>();
   private readonly BATCH_SIZE_LIMIT = 200;
   private readonly SUB_BATCH_SIZE = 20; // Process in smaller chunks within transaction
-  private readonly SESSION_TIMEOUT = 60 * 60 * 1000; // 60 minutes
+  private readonly SESSION_TIMEOUT = 120 * 60 * 1000; // 60 minutes
 
   constructor(
     @InjectRepository(User)
