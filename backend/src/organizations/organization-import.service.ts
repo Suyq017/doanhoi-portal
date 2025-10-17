@@ -6,6 +6,7 @@ import { Organization } from '../entities/organization.entity';
 import { User } from '../entities/user.entity';
 import { UserOrganization, UserOrgRole } from '../entities/user-organization.entity';
 import { ImportMemberDto, ImportMembersDto } from './dto/import-members.dto';
+import { MetricsService } from '../metrics/metrics.service';
 
 export interface ImportSession {
     sessionId: string;
@@ -45,6 +46,7 @@ export class OrganizationImportService {
         private usersRepository: Repository<User>,
         @InjectRepository(UserOrganization)
         private userOrganizationsRepository: Repository<UserOrganization>,
+        private readonly metricsService: MetricsService,
     ) { }
 
     async processUploadedFile(
@@ -247,6 +249,10 @@ export class OrganizationImportService {
         const warningCount = validationResults.filter(r => r.warnings.length > 0).length;
 
         const duration = Date.now() - startTime;
+
+        // Record metrics (convert ms to seconds for Prometheus)
+        this.metricsService.orgImportValidationDuration.observe(duration / 1000);
+
         console.log(`✅ [Validation] Completed in ${duration}ms`);
         console.log(`   📊 Results: Valid: ${validCount}, Invalid: ${invalidCount}, Warnings: ${warningCount}`);
         console.log(`   ⚡ Performance: ${(validationResults.length / (duration / 1000)).toFixed(0)} rows/second`);
@@ -270,7 +276,8 @@ export class OrganizationImportService {
 
         const startTime = Date.now();
         const BATCH_SIZE = 500; // Process 500 records per batch
-
+        this.metricsService.orgImportBatchSize.set(BATCH_SIZE);
+        this.metricsService.importSessionsActive.labels('organization').inc();
         console.log(`🚀 [Import] Starting import for ${session.data.length} rows...`);
         console.log(`   Batch size: ${BATCH_SIZE}, Skip errors: ${skipErrors}`);
 
@@ -394,6 +401,16 @@ export class OrganizationImportService {
         console.log(`✅ [Import] Completed in ${duration}ms`);
         console.log(`   📊 Results: Successful: ${result.successful}, Failed: ${result.failed}`);
         console.log(`   ⚡ Performance: ${(result.successful / (duration / 1000)).toFixed(0)} rows/second`);
+
+        this.metricsService.recordImportSession(
+            'organization',
+            result.successful,
+            result.failed,
+            duration / 1000  // Convert to seconds
+        );
+
+        // Decrement active sessions counter
+        this.metricsService.importSessionsActive.labels('organization').dec();
 
         // Clean up session
         this.importSessions.delete(sessionId);

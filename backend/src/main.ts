@@ -2,6 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
+import { MetricsService } from './metrics/metrics.service';
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,6 +14,9 @@ async function bootstrap() {
     origin: ['http://localhost:9100', 'http://localhost:3000'],
     credentials: true,
   });
+
+  const metricsService = app.get(MetricsService);
+  app.useGlobalInterceptors(new MetricsInterceptor(metricsService));
 
   // Global validation pipe
   app.useGlobalPipes(new ValidationPipe({

@@ -13,7 +13,7 @@ import { CleanEmptyStringsMiddleware } from './common/middleware/clean-empty-str
 import { PaymentModule } from './payment/payment.module';
 import { PayosModule } from './payos/payos.module';
 import { CtxhModule } from './ctxh/ctxh.module';
-
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -34,7 +34,8 @@ import { CtxhModule } from './ctxh/ctxh.module';
         logging: configService.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
-    }), UsersModule,
+    }),
+    UsersModule,
     OrganizationsModule,
     AuthModule,
     DashboardModule,
@@ -43,8 +44,9 @@ import { CtxhModule } from './ctxh/ctxh.module';
     ExportModule,
     RolesModule,
     PaymentModule,
-    PayosModule, // Import module PayOS của chúng ta
-    CtxhModule, // CTXH Management System Module
+    PayosModule,
+    CtxhModule,
+    MetricsModule,
   ],
 })
 export class AppModule implements NestModule {
