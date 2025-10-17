@@ -45,16 +45,26 @@ export const frontendParseOrganizationFile = async (
  * Validate organization import data
  * @param data - Array of organization import data to validate
  * @param level - Organization level (2 or 3)
+ * @param organizationId - Target organization ID (optional, backend supports validation without it)
+ * @param onProgress - Optional progress callback for chunked validation
  * @returns Validation result with errors and warnings
  */
 export const frontendValidateOrganizationData = async (
     data: OrganizationImportData[],
-    level: 2 | 3
+    level: 2 | 3,
+    organizationId?: string,
+    onProgress?: (progress: { current: number; total: number; percentage: number }) => void
 ): Promise<ValidationResult> => {
     try {
-        return await organizationImportValidationService.validateOrganizationImportData(
+        // ALWAYS use backend validation for FAST performance with bulk queries
+        // Backend now supports optional organizationId (Level 2 validation without specific org)
+        const { organizationBatchValidationService } = await import('./organizationBatchValidationService');
+
+        return await organizationBatchValidationService.validateMembers(
             data,
-            level
+            organizationId, // Optional: undefined for Level 2, provided for Level 3
+            level,
+            onProgress
         );
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';

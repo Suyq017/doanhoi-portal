@@ -69,6 +69,8 @@
     "addOrganizationByForm": "Add New Organization Using Form"
   },
   "import": {
+    "title": "Import Organization Members",
+    "titlePhonetic": "Import Organization Members",
     "instructions": "Organization Data Import Guide",
     "instructionsPhonetic": "Organization Data Import Guide",
     "step1": "Download the Excel template file here and fill in all member information",

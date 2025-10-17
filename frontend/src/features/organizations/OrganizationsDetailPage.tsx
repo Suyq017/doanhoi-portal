@@ -70,11 +70,12 @@ const OrganizationsDetailPage: React.FC = () => {
     showSuccess(message);
   }, [showSuccess]);
 
-  // Import modal
+  // Import modal with client-side processing for fast backend validation
   const { importConfig, handleImportModalClose } = useImportModal({
     level,
     organizationId: displayOrganization?.id,
-    onRefresh: shouldShowMemberStats ? handleRefreshAll : fetchData
+    onRefresh: shouldShowMemberStats ? handleRefreshAll : fetchData,
+    useClientSideProcessing: true // Enable fast backend validation with bulk queries
   });
   // Use breadcrumb JSX for better navigation
   const breadcrumbTitle = useBreadcrumbJSX({

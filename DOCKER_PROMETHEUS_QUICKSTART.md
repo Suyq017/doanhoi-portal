@@ -100,6 +100,7 @@ scrape_configs:
 
 Tự động cấu hình:
 - **Data Source**: Prometheus (http://prometheus:9090)
+- **Data Source UID**: PBFA97CFB590B2093 (used by imported dashboards)
 - **Dashboard Provider**: Folder để import dashboards
 
 Files:
@@ -107,7 +108,7 @@ Files:
 grafana/
   provisioning/
     datasources/
-      prometheus.yml      # Auto-configure Prometheus
+      prometheus.yml      # Auto-configure Prometheus with UID
     dashboards/
       dashboard.yml       # Dashboard provider config
 ```
@@ -203,10 +204,20 @@ curl http://localhost:3001/metrics
 docker-compose logs grafana
 ```
 
-**Fix:** Restart Grafana
+**Check:** Test connection từ Grafana container
+```bash
+docker-compose exec grafana sh -c "wget -qO- http://prometheus:9090/api/v1/query?query=up"
+```
+
+**Fix 1:** Restart Grafana
 ```bash
 docker-compose restart grafana
 ```
+
+**Fix 2:** Nếu dashboard báo "Failed getting data source"
+- Kiểm tra datasource có UID trong `grafana/provisioning/datasources/prometheus.yml`
+- UID phải match với dashboard variable (vd: `PBFA97CFB590B2093`)
+- Restart Grafana sau khi sửa config
 
 ### 3. Data không hiển thị trong Grafana
 

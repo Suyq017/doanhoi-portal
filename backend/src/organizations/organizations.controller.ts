@@ -347,6 +347,53 @@ export class OrganizationsController {
         res.send(templateBuffer);
     }
 
+    // NEW: Client-Side Validation Endpoint (Fast Bulk Validation)
+    @Post('members/validate')
+    @ApiOperation({ summary: 'Validate dữ liệu thành viên với bulk queries (nhanh)' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                data: {
+                    type: 'array',
+                    description: 'Danh sách thành viên cần validate',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            studentCode: { type: 'string' },
+                            classOrUnitCode: { type: 'string', nullable: true }
+                        }
+                    }
+                },
+                organizationId: { type: 'string', description: 'ID tổ chức đích (optional cho Level 2)' },
+                level: { type: 'number', enum: [2, 3], description: 'Level tổ chức (2 hoặc 3)' }
+            },
+            required: ['data', 'level'] // organizationId is now optional
+        }
+    })
+    @ApiResponse({ status: 200, description: 'Kết quả validation với errors/warnings' })
+    @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
+    async validateMembers(
+        @Body() body: {
+            data: Array<{ studentCode: string; classOrUnitCode?: string }>;
+            organizationId?: string; // Now optional for Level 2
+            level: 2 | 3;
+        }
+    ) {
+        const { data, organizationId, level } = body;
+
+        if (!data || !Array.isArray(data)) {
+            throw new BadRequestException('data phải là một array');
+        }
+
+        if (![2, 3].includes(level)) {
+            throw new BadRequestException('level phải là 2 hoặc 3');
+        }
+
+        // Use validation service with bulk queries
+        return this.importService.validateMemberData(data, organizationId, level);
+    }
+
     // NEW: Batch Import Endpoint for Client-Side Processing
     @Post('members/import/batch')
     @ApiOperation({ summary: 'Import thành viên theo batch với client-side processing' })

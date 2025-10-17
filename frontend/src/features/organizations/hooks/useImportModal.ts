@@ -5,6 +5,7 @@ interface UseImportModalParams {
     level: 2 | 3;
     organizationId?: string;
     onRefresh: () => Promise<void>;
+    useClientSideProcessing?: boolean; // Enable fast backend validation
 }
 
 interface UseImportModalResult {
@@ -19,11 +20,13 @@ interface UseImportModalResult {
 export const useImportModal = ({
     level,
     organizationId,
-    onRefresh
+    onRefresh,
+    useClientSideProcessing = false
 }: UseImportModalParams): UseImportModalResult => {
     const { importConfig, setIsImportModalOpen } = useOrganizationImport({
         level,
         organizationId,
+        useClientSideProcessing,
         onSuccess: () => {
             console.log('Import completed successfully');
         },

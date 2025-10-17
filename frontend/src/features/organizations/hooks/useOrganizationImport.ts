@@ -53,7 +53,8 @@ export const useOrganizationImport = (options: UseOrganizationImportOptions): Us
             parseFile: (file: File, onProgress?: (progress: number) => void) =>
                 frontendParseOrganizationFile(file, level, onProgress),
 
-            validateClientData: (data: any[]) => frontendValidateOrganizationData(data, level),
+            validateClientData: (data: any[], onProgress?: (progress: { current: number; total: number; percentage: number }) => void) =>
+                frontendValidateOrganizationData(data, level, organizationId, onProgress),
 
             submitClientData: (data: any[], onProgress?: any) =>
                 frontendSubmitOrganizationImport(data, level, organizationId, onProgress)

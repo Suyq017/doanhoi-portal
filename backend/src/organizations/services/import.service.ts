@@ -557,4 +557,31 @@ export class OrganizationImportService {
     console.log('Import completed:', importResult);
     return importResult;
   }
+
+  /**
+   * NEW: Fast validation endpoint for client-side processing
+   * Uses bulk queries to validate member data efficiently
+   * @param data - Array of member data to validate
+   * @param organizationId - Target organization ID (optional for Level 2)
+   * @param level - Organization level (2 or 3)
+   * @returns Validation result with errors/warnings
+   */
+  async validateMemberData(
+    data: Array<{ studentCode: string; classOrUnitCode?: string }>,
+    organizationId: string | undefined,
+    level: 2 | 3
+  ): Promise<OrganizationValidationResult> {
+    // Convert input format to OrganizationMemberImportData format
+    const memberData: OrganizationMemberImportData[] = data.map(item => ({
+      studentCode: item.studentCode,
+      classOrUnitCode: item.classOrUnitCode
+    }));
+
+    // Use optimized validation service with bulk queries
+    return this.validationService.validateOrganizationMemberData(
+      memberData,
+      organizationId,
+      level
+    );
+  }
 }

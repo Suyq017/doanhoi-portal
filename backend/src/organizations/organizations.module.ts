@@ -10,9 +10,13 @@ import { OrganizationImportSessionService } from './services/import-session.serv
 import { Organization } from '../entities/organization.entity';
 import { UserOrganization } from '../entities/user-organization.entity';
 import { User } from '../entities/user.entity';
+import { MetricsModule } from '../metrics/metrics.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Organization, UserOrganization, User])],
+  imports: [
+    TypeOrmModule.forFeature([Organization, UserOrganization, User]),
+    MetricsModule
+  ],
   controllers: [OrganizationsController],
   providers: [
     OrganizationsService,
