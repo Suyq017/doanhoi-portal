@@ -58,7 +58,7 @@ const ImportModal = ({
       skipErrors: false, // Allow importing rows with warnings (only skip rows with errors)
       updateExisting: false,
       dryRun: false,
-      batchSize: config.batchSize || 200
+      batchSize: config.batchSize
     },
     loading: false,
     dragActive: false
@@ -283,7 +283,7 @@ const ImportModal = ({
     }
 
     const validData = state.clientValidation.data;
-    const totalBatches = Math.ceil(validData.length / (config.batchSize || 200));
+    const totalBatches = Math.ceil(validData.length / (config?.batchSize || 500));
 
     setState(prev => ({
       ...prev,
@@ -384,7 +384,7 @@ const ImportModal = ({
         skipErrors: false, // Allow importing rows with warnings (only skip rows with errors)
         updateExisting: false,
         dryRun: false,
-        batchSize: config.batchSize || 200
+        batchSize: config.batchSize
       },
       loading: false,
       dragActive: false

@@ -17,7 +17,7 @@ export class PayOSController {
   async createPaymentLink(@Body() requestBody: any) {
     try {
       const YOUR_DOMAIN = process.env.FRONTEND_URL;
-      const orderCode = Number(String(Date.now()).slice(-6));
+      const orderCode = Math.floor(Math.random() * 900000) + 100000;
 
       // Lấy PayOS config để lưu vào payment history
       const config = await this.payosService.getPayOSConfig(requestBody.campaignId);

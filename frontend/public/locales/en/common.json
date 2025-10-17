@@ -255,7 +255,6 @@
     "showLessPhonetic": "Show less",
     "showingRows": "Showing {{count}} / {{total}} rows",
     "showingRowsPhonetic": "Showing {{count}} / {{total}} rows",
-    "validationErrors": "Error list",
     "validationWarnings": "Warning list",
     "validationErrorsPhonetic": "Error list",
     "autoFilled": "Auto-filled",

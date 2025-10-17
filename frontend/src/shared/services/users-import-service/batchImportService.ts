@@ -15,7 +15,7 @@ import {
 import { UserImportData } from '../../types/userImport';
 
 export class BatchImportService {
-  private readonly BATCH_SIZE = 200;
+  private readonly BATCH_SIZE = 200; 
   private excelParser = new ExcelParserService();
 
   /**
@@ -59,16 +59,13 @@ export class BatchImportService {
     data: UserImportData[],
     onProgress?: (progress: { current: number; total: number; percentage: number }) => void
   ): Promise<ClientValidationResult> {
-    const VALIDATION_CHUNK_SIZE = 50; // Validate 50 rows at a time
+    const VALIDATION_CHUNK_SIZE = 500; // Validate 500 rows at a time
     
     try {
       console.log(`Starting validation for ${data.length} rows in chunks of ${VALIDATION_CHUNK_SIZE}`);
       
-      // If data is small enough, send in one request with retry
+      // If data is small enough, send in one request
       if (data.length <= VALIDATION_CHUNK_SIZE) {
-        const MAX_RETRIES = 3;
-        const RETRY_DELAY = 2000;
-        
         // Update progress for single chunk
         onProgress?.({
           current: 0,
@@ -76,12 +73,12 @@ export class BatchImportService {
           percentage: 0
         });
 
-        const result = await this.validateSingleChunkWithRetry(data, {
+        const result = await this.validateSingleChunk(data, {
           errorPage: 1,
           errorLimit: 50,
           warningPage: 1,
           warningLimit: 50
-        }, MAX_RETRIES, RETRY_DELAY);
+        });
 
         // Update progress completion
         onProgress?.({
@@ -105,9 +102,6 @@ export class BatchImportService {
       let totalInvalid = 0;
       let totalDuplicates = 0;
 
-      const MAX_RETRIES = 3;
-      const RETRY_DELAY = 2000; // 2 seconds between retries
-
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
         const chunkStartIndex = i * VALIDATION_CHUNK_SIZE;
@@ -122,12 +116,12 @@ export class BatchImportService {
         });
         
         try {
-          const chunkResult = await this.validateSingleChunkWithRetry(chunk, {
+          const chunkResult = await this.validateSingleChunk(chunk, {
             errorPage: 1,
             errorLimit: 50,
             warningPage: 1,
             warningLimit: 50
-          }, MAX_RETRIES, RETRY_DELAY);
+          });
           
           // Merge results
           allValidData.push(...(chunkResult.data || []));
@@ -167,7 +161,7 @@ export class BatchImportService {
           totalInvalid += chunkResult.summary?.invalid || 0;
           totalDuplicates += chunkResult.summary?.duplicates || 0;
         } catch (chunkError) {
-          console.error(`Validation failed for chunk ${currentBatch} after all retries:`, chunkError);
+          console.error(`Validation failed for chunk ${currentBatch}:`, chunkError);
           // Continue with other chunks, but mark this chunk as all invalid
           totalInvalid += chunk.length;
           
@@ -268,7 +262,7 @@ export class BatchImportService {
     // Import options with defaults from Phase 3
     const options: ImportOptionsDto = {
       skipDuplicates: true,
-      updateExisting: true
+      updateExisting: false
     };
 
     try {
@@ -321,12 +315,9 @@ export class BatchImportService {
           batchInfo
         };
 
-        // Submit batch with retry mechanism
-        const MAX_RETRIES = 3;
-        const RETRY_DELAY = 2000; // 2 seconds between retries
-        
+        // Submit batch directly
         try {
-          const response = await this.submitSingleBatchWithRetry(request, MAX_RETRIES, RETRY_DELAY);
+          const response = await userService.batchImport(request);
 
           // Check if batch failed completely
           if (!response.success && response.batchResult.failed === response.batchResult.processed) {
@@ -340,14 +331,14 @@ export class BatchImportService {
           totalFailed += response.batchResult.failed;
           allErrors.push(...response.batchResult.errors);
         } catch (batchError) {
-          console.error(`Batch ${currentBatch} failed after all retries:`, batchError);
+          console.error(`Batch ${currentBatch} failed:`, batchError);
           // Continue with other batches, but mark this batch as all failed
           const batchSize = batchData.length;
           totalProcessed += batchSize;
           totalFailed += batchSize;
           
           // Add generic error for this batch
-          allErrors.push(`Batch ${currentBatch} failed after ${MAX_RETRIES} attempts: ${batchError instanceof Error ? batchError.message : 'Unknown error'}`);
+          allErrors.push(`Batch ${currentBatch} failed: ${batchError instanceof Error ? batchError.message : 'Unknown error'}`);
         }
       }
 
@@ -398,98 +389,7 @@ export class BatchImportService {
 
 
 
-  /**
-   * Validate single chunk with retry mechanism
-   */
-  private async validateSingleChunkWithRetry(
-    data: UserImportData[], 
-    paginationOptions: {
-      errorPage?: number;
-      errorLimit?: number;
-      warningPage?: number;
-      warningLimit?: number;
-    },
-    maxRetries: number = 3,
-    retryDelay: number = 2000
-  ): Promise<ClientValidationResult> {
-    let lastError: Error | null = null;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const result = await this.validateSingleChunk(data, paginationOptions);
-        
-        // Success - return immediately
-        if (attempt > 1) {
-          console.log(`Validation succeeded on attempt ${attempt}`);
-        }
-        return result;
-        
-      } catch (error) {
-        lastError = error as Error;
-        console.warn(`Validation attempt ${attempt}/${maxRetries} failed:`, error);
-        
-        // If this is the last attempt, don't wait
-        if (attempt === maxRetries) {
-          break;
-        }
-        
-        // Wait before retrying with exponential backoff
-        const delay = retryDelay * Math.pow(1.5, attempt - 1);
-        console.log(`Waiting ${delay}ms before retry...`);
-        await this.delay(delay);
-      }
-    }
-    
-    // All attempts failed
-    throw new Error(`Validation failed after ${maxRetries} attempts: ${lastError?.message}`);
-  }
 
-  /**
-   * Submit single batch with retry mechanism
-   */
-  private async submitSingleBatchWithRetry(
-    request: BatchImportRequest,
-    maxRetries: number = 3,
-    retryDelay: number = 2000
-  ): Promise<any> {
-    let lastError: Error | null = null;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const response = await userService.batchImport(request);
-        
-        // Success - return immediately
-        if (attempt > 1) {
-          console.log(`Batch import succeeded on attempt ${attempt}`);
-        }
-        return response;
-        
-      } catch (error) {
-        lastError = error as Error;
-        console.warn(`Batch import attempt ${attempt}/${maxRetries} failed:`, error);
-        
-        // If this is the last attempt, don't wait
-        if (attempt === maxRetries) {
-          break;
-        }
-        
-        // Wait before retrying with exponential backoff
-        const delay = retryDelay * Math.pow(1.5, attempt - 1);
-        console.log(`Waiting ${delay}ms before retry...`);
-        await this.delay(delay);
-      }
-    }
-    
-    // All attempts failed
-    throw new Error(`Batch import failed after ${maxRetries} attempts: ${lastError?.message}`);
-  }
-
-  /**
-   * Helper method for delays
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
 
   /**
    * Generate unique session ID

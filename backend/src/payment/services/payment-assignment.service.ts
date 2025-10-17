@@ -229,7 +229,7 @@ export class PaymentAssignmentService {
       amount: assignment.feeLevel.amount,
       status: PaymentHistoryStatus.PAID,
       payment_method: PaymentMethod.MANUAL,
-      order_code: Number(String(Date.now()).slice(-6)), // Generate a simple order code based on timestamp
+      order_code: Math.floor(Math.random() * 900000) + 100000, // Generate a simple order code based on timestamp
       paid_at: new Date(),
       // PayOS fields can be null for manual payments
       client_id: null,

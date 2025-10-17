@@ -129,10 +129,10 @@ export class UserImportDto {
 
 export class BatchImportRequestDto {
   @ApiProperty({
-    description: 'Array of users to import (1-200 per batch)',
+    description: 'Array of users to import (1-500 per batch)',
     type: [UserImportDto],
     minItems: 1,
-    maxItems: 200
+    maxItems: 500
   })
   @IsArray()
   @ValidateNested({ each: true })

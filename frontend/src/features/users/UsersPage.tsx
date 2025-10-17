@@ -264,7 +264,8 @@ const Users: React.FC = () => {
           total,
           limit,
           onPageChange: setCurrentPage,
-        }} tableProps={{
+        }} 
+        tableProps={{
           onUserView: handleViewUser,
           onUserEdit: handleEditUser,
           onUserDelete: handleDeleteUser,
