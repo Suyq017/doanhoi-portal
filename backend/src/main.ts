@@ -14,8 +14,16 @@ async function bootstrap() {
   app.use(require('express').urlencoded({ limit: '50mb', extended: true }));
 
   // Enable CORS
+  const allowedOrigins = process.env.NODE_ENV === 'production'
+    ? [
+        process.env.FRONTEND_URL || 'https://doanhoi.hcmut.edu.vn',
+        'https://doanhoi.hcmut.edu.vn/grafana',
+        'https://doanhoi.hcmut.edu.vn/prometheus',
+      ]
+    : ['http://localhost:9100', 'http://localhost:3000'];
+
   app.enableCors({
-    origin: ['http://localhost:9100', 'http://localhost:3000'],
+    origin: allowedOrigins,
     credentials: true,
   });
 

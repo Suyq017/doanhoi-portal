@@ -6,37 +6,37 @@ import { InjectMetric } from '@willsoto/nestjs-prometheus';
 export class MetricsService {
   constructor(
     // HTTP Request Metrics
-    @InjectMetric('http_requests_total')
+    @InjectMetric('doanhoi_http_requests_total')
     public httpRequestsCounter: Counter<string>,
 
-    @InjectMetric('http_request_duration_seconds')
+    @InjectMetric('doanhoi_http_request_duration_seconds')
     public httpRequestDuration: Histogram<string>,
 
     // Database Metrics
-    @InjectMetric('db_query_duration_seconds')
+    @InjectMetric('doanhoi_db_query_duration_seconds')
     public dbQueryDuration: Histogram<string>,
 
-    @InjectMetric('db_connections_active')
+    @InjectMetric('doanhoi_db_connections_active')
     public dbConnectionsActive: Gauge<string>,
 
     // Import Metrics
-    @InjectMetric('import_sessions_active')
+    @InjectMetric('doanhoi_import_sessions_active')
     public importSessionsActive: Gauge<string>,
 
-    @InjectMetric('import_rows_processed_total')
+    @InjectMetric('doanhoi_import_rows_processed_total')
     public importRowsProcessed: Counter<string>,
 
-    @InjectMetric('import_rows_failed_total')
+    @InjectMetric('doanhoi_import_rows_failed_total')
     public importRowsFailed: Counter<string>,
 
-    @InjectMetric('import_duration_seconds')
+    @InjectMetric('doanhoi_import_duration_seconds')
     public importDuration: Histogram<string>,
 
     // Organization Metrics
-    @InjectMetric('org_import_validation_duration_seconds')
+    @InjectMetric('doanhoi_org_import_validation_duration_seconds')
     public orgImportValidationDuration: Histogram<string>,
 
-    @InjectMetric('org_import_batch_size')
+    @InjectMetric('doanhoi_org_import_batch_size')
     public orgImportBatchSize: Gauge<string>,
   ) { }
 
@@ -44,8 +44,13 @@ export class MetricsService {
    * Record HTTP request metrics
    */
   recordHttpRequest(method: string, path: string, statusCode: number, duration: number) {
-    this.httpRequestsCounter.labels(method, path, statusCode.toString()).inc();
-    this.httpRequestDuration.labels(method, path).observe(duration);
+    try {
+      this.httpRequestsCounter.labels(method, path, statusCode.toString()).inc();
+      this.httpRequestDuration.labels(method, path).observe(duration);
+    } catch (error) {
+      console.error('❌ Error recording HTTP metrics:', error.message);
+      console.error('   Method:', method, 'Path:', path, 'Status:', statusCode);
+    }
   }
 
   /**

@@ -25,8 +25,7 @@
     "seed": "ts-node src/database/seeds/index.ts",
     "seed:permissions": "ts-node -e \"import('./src/database/seeds/permissions.seed').then(m => m.seedPermissions(require('./src/database/seeds/dataSource')))\"",
     "seed:roles": "ts-node -e \"import('./src/database/seeds/roles.seed').then(m => m.seedRoles(require('./src/database/seeds/dataSource')))\"",
-    "seed:users": "ts-node -e \"import('./src/database/seeds/default-users.seed').then(m => m.seedDefaultUsers(require('./src/database/seeds/dataSource')))\"",
-    "db:setcup": "node scripts/seed-database.js"
+    "seed:users": "ts-node -e \"import('./src/database/seeds/default-users.seed').then(m => m.seedDefaultUsers(require('./src/database/seeds/dataSource')))\""
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

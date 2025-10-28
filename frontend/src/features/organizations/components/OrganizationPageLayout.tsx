@@ -315,15 +315,17 @@ const OrganizationPageLayout: React.FC<OrganizationPageLayoutProps> = ({
             )}
 
             {/* Toasts */}
-            {toasts && onCloseToast && toasts.map((toast) => (
-                <Toast
-                    key={toast.id}
-                    type={toast.type}
-                    message={toast.message}
-                    duration={toast.duration}
-                    onClose={() => onCloseToast(toast.id)}
-                />
-            ))}
+            <div className="fixed top-4 right-4 z-[9999]">
+                {toasts && onCloseToast && toasts.map((toast) => (
+                    <Toast
+                        key={toast.id}
+                        type={toast.type}
+                        message={toast.message}
+                        duration={toast.duration}
+                        onClose={() => onCloseToast(toast.id)}
+                    />
+                ))}
+            </div>
         </div>
     );
 };

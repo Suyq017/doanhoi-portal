@@ -14,7 +14,7 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "docker:restart": "docker-compose restart",
-    "db:reset": "docker-compose down -v && docker-compose up -d",
+    "db:reset": "cd backend && npm run db:reset",
     "dev:full": "npm run docker:up && npm run dev",
     "prod:deploy": "powershell -ExecutionPolicy Bypass -File deploy.ps1",
     "prod:deploy-server": "powershell -ExecutionPolicy Bypass -File deploy-server.ps1",

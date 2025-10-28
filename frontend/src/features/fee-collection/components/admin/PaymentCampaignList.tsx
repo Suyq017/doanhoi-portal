@@ -541,7 +541,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
       )}
 
       {/* Toast Container */}
-      <div className="fixed z-50 space-y-4 top-4 right-4">
+      <div className="fixed top-4 right-4 z-[9999] space-y-2">
         {toasts.map((toast) => (
           <Toast
             key={toast.id}

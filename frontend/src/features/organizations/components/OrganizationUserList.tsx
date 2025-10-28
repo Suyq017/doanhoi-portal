@@ -217,18 +217,20 @@ export const OrganizationUserList: React.FC<OrganizationUserListProps> = ({
                 user={selectedUser}
                 loading={isDeleting}
             />            {/* Toast Notifications - Only show if using local toast (no parent handlers) */}
-            {!onShowSuccess && !onShowError && toasts.map((toast) => {
-                console.log('Rendering toast:', toast);
-                return (
-                    <Toast
-                        key={toast.id}
-                        type={toast.type}
-                        message={toast.message}
-                        duration={toast.duration}
-                        onClose={() => hideToast(toast.id)}
-                    />
-                );
-            })}
+            <div className="fixed top-4 right-4 z-[9999]">
+                {!onShowSuccess && !onShowError && toasts.map((toast) => {
+                    console.log('Rendering toast:', toast);
+                    return (
+                        <Toast
+                            key={toast.id}
+                            type={toast.type}
+                            message={toast.message}
+                            duration={toast.duration}
+                            onClose={() => hideToast(toast.id)}
+                        />
+                    );
+                })}
+            </div>
         </div>
     );
 };
