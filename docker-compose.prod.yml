@@ -91,7 +91,7 @@ services:
       - ./prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     ports:
-      - "9090:9090"  # Expose Prometheus (should be behind reverse proxy in production)
+      - "9091:9090"  # Map host port 9091 to container port 9090 (avoid conflict with systemd)
     restart: unless-stopped
     networks:
       - doanhoi-network
