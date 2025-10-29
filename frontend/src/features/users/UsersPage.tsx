@@ -119,9 +119,9 @@ const Users: React.FC = () => {
   const [isGrantRolesModalOpen, setIsGrantRolesModalOpen] = useState(false);
   // Feature flag for Phase 4 - Enable batch processing
   const useBatchProcessing = true; // Set to true to enable batch import
-  const importConfig = useUserBatchImportConfig({ 
-    onRefreshData: refreshUsers, 
-    useBatchProcessing 
+  const importConfig = useUserBatchImportConfig({
+    onRefreshData: refreshUsers,
+    useBatchProcessing
   });
 
   // Page-level access control (after all hooks are called)
@@ -141,8 +141,8 @@ const Users: React.FC = () => {
             className="px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-md hover:bg-gray-200"
           >
             {t('common:actions.goBack')}
-          </button>        
-          </div>
+          </button>
+        </div>
       </div>
     );
   }
@@ -244,7 +244,7 @@ const Users: React.FC = () => {
             />
           </ConditionalRender>
         </div>
-      </div>      
+      </div>
       {/* User Table with Filters */}
       <UserTableWithFilter
         users={users}
@@ -264,7 +264,7 @@ const Users: React.FC = () => {
           total,
           limit,
           onPageChange: setCurrentPage,
-        }} 
+        }}
         tableProps={{
           onUserView: handleViewUser,
           onUserEdit: handleEditUser,
@@ -288,12 +288,12 @@ const Users: React.FC = () => {
         onClose={closeModal}
         onSubmit={handleCreateUser}
         loading={isCreating}
-      />      
+      />
       <ViewUserModal
         isOpen={isViewModalOpen}
         onClose={closeModal}
         user={selectedUser}
-      />      
+      />
       <EditUserModal
         isOpen={isEditModalOpen}
         onClose={closeModal}
@@ -316,7 +316,7 @@ const Users: React.FC = () => {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         config={importConfig}
-      />      
+      />
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
@@ -324,7 +324,7 @@ const Users: React.FC = () => {
         title={t('users:export.title', { defaultValue: 'Xuất danh sách người dùng' })}
         description={t('users:export.description', { defaultValue: 'Chọn các trường dữ liệu bạn muốn xuất ra file Excel' })}
         availableFields={USER_EXPORT_FIELDS}
-      />      
+      />
       <UserRoleAssignmentModal
         isOpen={isRoleAssignmentModalOpen}
         onClose={() => setIsRoleAssignmentModalOpen(false)}
@@ -332,7 +332,7 @@ const Users: React.FC = () => {
           showSuccess(t('users:messages.assignRolesSuccess'));
           refreshUsers();
         }}
-      />      
+      />
       <GrantRolesModal
         isOpen={isGrantRolesModalOpen}
         onClose={() => setIsGrantRolesModalOpen(false)}

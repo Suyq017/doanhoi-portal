@@ -25,14 +25,14 @@ interface PayOSConfigFormProps {
   readOnly?: boolean;
 }
 
-const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({ 
-  campaignId, 
-  config, 
-  onSave, 
+const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
+  campaignId,
+  config,
+  onSave,
   onDelete,
   onConfirmDelete,
   loading = false,
-  readOnly = false 
+  readOnly = false
 }) => {
   const { t } = useTranslation('payosConfig');
   const { showError, toasts, hideToast } = useToast();
@@ -41,12 +41,12 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
     apiKey: '',
     checksumKey: ''
   });
-  
+
   const [showFields, setShowFields] = useState({
     apiKey: false,
     checksumKey: false
   });
-  
+
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -64,26 +64,26 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.clientId.trim()) {
       newErrors.clientId = t('validation.clientIdRequired');
     }
-    
+
     if (!formData.apiKey.trim()) {
       newErrors.apiKey = t('validation.apiKeyRequired');
     }
-    
+
     if (!formData.checksumKey.trim()) {
       newErrors.checksumKey = t('validation.checksumKeyRequired');
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -99,7 +99,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
         createdAt: config?.createdAt,
         updatedAt: new Date().toISOString()
       };
-      
+
       await onSave(configData);
     } catch (error) {
       console.error('Error saving PayOS config:', error);
@@ -156,12 +156,12 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
       const textFromClipboard = await navigator.clipboard.readText();
       // Chuyển chuỗi JSON trở lại thành object
       const parsedData = JSON.parse(textFromClipboard);
-      
+
       // Đảm bảo dữ liệu đọc được có đúng cấu trúc
-      if (parsedData && 
-          typeof parsedData.clientId !== 'undefined' && 
-          typeof parsedData.apiKey !== 'undefined' && 
-          typeof parsedData.checksumKey !== 'undefined') {
+      if (parsedData &&
+        typeof parsedData.clientId !== 'undefined' &&
+        typeof parsedData.apiKey !== 'undefined' &&
+        typeof parsedData.checksumKey !== 'undefined') {
         setFormData({
           clientId: parsedData.clientId || '',
           apiKey: parsedData.apiKey || '',
@@ -229,11 +229,10 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               type="button"
               onClick={handleCopyConfig}
               disabled={!isFormValid || saving || loading}
-              className={`inline-flex items-center px-3 py-2 text-sm font-medium border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                !isFormValid || saving || loading
+              className={`inline-flex items-center px-3 py-2 text-sm font-medium border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${!isFormValid || saving || loading
                   ? 'text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed dark:text-gray-500 dark:bg-gray-800 dark:border-gray-600'
                   : 'text-blue-700 bg-blue-50 border-blue-300 hover:bg-blue-100 focus:ring-blue-500 dark:text-blue-300 dark:bg-blue-900 dark:border-blue-700 dark:hover:bg-blue-800'
-              }`}
+                }`}
             >
               {copiedField === 'config' ? (
                 <>
@@ -251,11 +250,10 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               type="button"
               onClick={handlePasteConfig}
               disabled={saving || loading}
-              className={`inline-flex items-center px-3 py-2 text-sm font-medium border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                saving || loading
+              className={`inline-flex items-center px-3 py-2 text-sm font-medium border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${saving || loading
                   ? 'text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed dark:text-gray-500 dark:bg-gray-800 dark:border-gray-600'
                   : 'text-green-700 bg-green-50 border-green-300 hover:bg-green-100 focus:ring-green-500 dark:text-green-300 dark:bg-green-900 dark:border-green-700 dark:hover:bg-green-800'
-              }`}
+                }`}
             >
               {copiedField === 'paste' ? (
                 <>
@@ -283,9 +281,8 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               id="clientId"
               value={formData.clientId}
               onChange={(e) => handleInputChange('clientId', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${
-                errors.clientId ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
-              } ${readOnly ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : ''}`}
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${errors.clientId ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
+                } ${readOnly ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : ''}`}
               placeholder={t('form.clientIdPlaceholder')}
               disabled={saving || loading || readOnly}
               readOnly={readOnly}
@@ -320,9 +317,8 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               id="apiKey"
               value={formData.apiKey}
               onChange={(e) => handleInputChange('apiKey', e.target.value)}
-              className={`w-full px-3 py-2 pr-20 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${
-                errors.apiKey ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
-              } ${readOnly ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : ''}`}
+              className={`w-full px-3 py-2 pr-20 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${errors.apiKey ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
+                } ${readOnly ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : ''}`}
               placeholder={t('form.apiKeyPlaceholder')}
               disabled={saving || loading || readOnly}
               readOnly={readOnly}
@@ -370,9 +366,8 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
               id="checksumKey"
               value={formData.checksumKey}
               onChange={(e) => handleInputChange('checksumKey', e.target.value)}
-              className={`w-full px-3 py-2 pr-20 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${
-                errors.checksumKey ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
-              } ${readOnly ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : ''}`}
+              className={`w-full px-3 py-2 pr-20 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white dark:focus:ring-indigo-400 ${errors.checksumKey ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
+                } ${readOnly ? 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : ''}`}
               placeholder={t('form.checksumKeyPlaceholder')}
               disabled={saving || loading || readOnly}
               readOnly={readOnly}
@@ -424,7 +419,7 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
                 {t('buttons.deleteConfig')}
               </button>
             )}
-            
+
             {/* Save Button */}
             <button
               type="submit"

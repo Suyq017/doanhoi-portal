@@ -69,7 +69,7 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
     setLoading(true);
     try {
       let savedConfig: PayOSConfig;
-      
+
       // Convert form data to API request format
       const apiRequest: CreatePayOSConfigRequest = {
         organizationId: campaign.organizationId,
@@ -77,7 +77,7 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
         apiKey: configData.apiKey,
         checksumKey: configData.checksumKey
       };
-      
+
       if (config) {
         // Update existing config - use UpdatePayOSConfigRequest
         const updateRequest: UpdatePayOSConfigRequest = {
@@ -91,10 +91,10 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
         // Create new config
         savedConfig = await payosConfigService.createPayOSConfig(campaign.id, apiRequest);
       }
-      
+
       setConfig(savedConfig);
       showSuccess(t('success.message'));
-      
+
     } catch (error: any) {
       console.error('Error saving PayOS config:', error);
       // The error will be shown by the form component
@@ -106,14 +106,14 @@ const PayOSConfigTab: React.FC<PayOSConfigTabProps> = ({ campaign, onConfirmDele
 
   const handleDeleteConfig = async () => {
     if (!config) return;
-    
+
     setLoading(true);
     try {
       await payosConfigService.deletePayOSConfig(campaign.id);
       setConfig(null);
-      
+
       showSuccess(t('success.deleteMessage'));
-      
+
     } catch (error: any) {
       console.error('Error deleting PayOS config:', error);
       throw error; // Let the form handle the error display

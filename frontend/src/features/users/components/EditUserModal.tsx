@@ -191,26 +191,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
       console.log('Organization membership updated successfully');
 
-      if (showSuccess) {
-        const totalAdded = allAddedOrgIds.size;
-        const totalRemoved = safeToRemoveOrgs.length;
-        const totalKept = notRemovedOrgs.length;
-
-        let message = t('users:messages.organizationMembershipUpdated', {
-          added: totalAdded,
-          removed: totalRemoved,
-          defaultValue: `Đã cập nhật thành viên tổ chức: +${totalAdded}, -${totalRemoved}`
-        });
-        if (totalKept > 0) {
-          message = t('users:messages.organizationMembershipUpdatedWithKept', {
-            added: totalAdded,
-            removed: totalRemoved,
-            kept: totalKept,
-            defaultValue: `Đã cập nhật thành viên tổ chức: +${totalAdded}, -${totalRemoved} (giữ lại ${totalKept} tổ chức cha cần thiết)`
-          });
-        }
-        showSuccess(message);
-      }
+      // Removed the success toast notification here to avoid duplicate notifications
+      // The main success notification will be shown after all updates complete
     } catch (error) {
       console.error('Error updating organization membership:', error);
       if (showError) {

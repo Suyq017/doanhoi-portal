@@ -58,7 +58,7 @@ print_status "   - Backend sẽ được build từ source code trong container"
 print_status "   - Frontend sẽ được build từ source code trong container"
 print_status "   - PostgreSQL sẽ sử dụng image có sẵn"
 
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 
 print_status "5. Chờ services khởi động..."
 sleep 30

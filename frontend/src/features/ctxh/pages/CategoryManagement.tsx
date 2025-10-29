@@ -13,10 +13,10 @@ import { Plus } from 'lucide-react';
 
 const CategoryManagement: React.FC = () => {
   const { t } = useTranslation('ctxh');
-  
+
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError } = useToast();
-  
+
   // State management
   const [selectedCategory, setSelectedCategory] = useState<CtxhCategory | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -63,7 +63,7 @@ const CategoryManagement: React.FC = () => {
         await categoryService.create(data as CreateCategoryRequest);
         showSuccess(t('category.created'));
       }
-      
+
       setIsFormOpen(false);
       setSelectedCategory(undefined);
       // Trigger refresh of CategoryList
@@ -102,7 +102,7 @@ const CategoryManagement: React.FC = () => {
         await categoryService.restore(selectedCategory.id);
         showSuccess(t('category.restored'));
       }
-      
+
       // Trigger refresh of CategoryList
       setRefreshTrigger(prev => prev + 1);
     } catch (error) {

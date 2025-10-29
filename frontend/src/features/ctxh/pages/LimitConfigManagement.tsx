@@ -11,11 +11,11 @@ import { useToast } from '../../../shared/hooks';
 
 const LimitConfigManagement: React.FC = () => {
   const { t } = useTranslation('ctxh');
-  
+
   // Translate error messages from server
   const translateError = (error: any): string => {
     const message = error?.message || error?.toString() || '';
-    
+
     // Common server error patterns
     if (message.includes('tồn tại cấu hình') || message.includes('already exists')) {
       return t('limitConfig.errors.alreadyExists');
@@ -26,14 +26,14 @@ const LimitConfigManagement: React.FC = () => {
     if (message.includes('không có quyền') || message.includes('permission')) {
       return t('limitConfig.errors.noPermission');
     }
-    
+
     // Return original message if no translation found
     return message || t('limitConfig.errors.unknown');
   };
-  
+
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError } = useToast();
-  
+
   // State management
   const [selectedConfig, setSelectedConfig] = useState<CtxhLimitConfig | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -79,7 +79,7 @@ const LimitConfigManagement: React.FC = () => {
         await limitConfigService.create(data as CreateLimitConfigRequest);
         showSuccess(t('limitConfig.created'));
       }
-      
+
       setIsFormOpen(false);
       setSelectedConfig(undefined);
       // Trigger refresh of LimitConfigList
@@ -118,7 +118,7 @@ const LimitConfigManagement: React.FC = () => {
         await limitConfigService.restore(selectedConfig.id);
         showSuccess(t('limitConfig.restored'));
       }
-      
+
       // Trigger refresh
       setRefreshTrigger(prev => prev + 1);
     } catch (error) {
