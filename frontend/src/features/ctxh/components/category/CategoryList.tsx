@@ -17,6 +17,11 @@ interface CategoryListProps {
   onViewDetailClick: (category: CtxhCategory) => void;
   showToast: (type: 'success' | 'error' | 'info', message: string) => void;
   refreshTrigger: number;
+  permissions?: {
+    create: boolean;
+    update: boolean;
+    delete: boolean;
+  };
 }
 
 const CategoryList: React.FC<CategoryListProps> = ({
@@ -24,7 +29,8 @@ const CategoryList: React.FC<CategoryListProps> = ({
   onDeleteClick,
   onViewDetailClick,
   showToast,
-  refreshTrigger
+  refreshTrigger,
+  permissions
 }) => {
   const { t } = useTranslation('ctxh');
   
@@ -173,20 +179,24 @@ const CategoryList: React.FC<CategoryListProps> = ({
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleEdit(category)}
-                            className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
-                            title="Chỉnh sửa"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => onDeleteClick(category)}
-                            className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400"
-                            title="Xóa"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {permissions?.update && (
+                            <button
+                              onClick={() => handleEdit(category)}
+                              className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                              title="Chỉnh sửa"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          )}
+                          {permissions?.delete && (
+                            <button
+                              onClick={() => onDeleteClick(category)}
+                              className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400"
+                              title="Xóa"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

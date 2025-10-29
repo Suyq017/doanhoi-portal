@@ -58,6 +58,7 @@ export interface UpdateCategoryRequest {
 export interface CtxhActivity extends BaseEntity {
   name: string;
   description?: string;
+  location?: string; // Add location field
   categoryId: string;
   organizationId: string;
   startDate?: string; // Keep camelCase for frontend
@@ -79,6 +80,7 @@ export interface CtxhActivity extends BaseEntity {
 export interface CreateActivityRequest {
   name: string;
   description?: string;
+  location?: string; // Add location field
   categoryId: string;
   organizationId: string;
   startDate?: string;
@@ -89,6 +91,7 @@ export interface CreateActivityRequest {
 export interface UpdateActivityRequest {
   name?: string;
   description?: string;
+  location?: string; // Add location field
   startDate?: string;
   endDate?: string;
   totalDays?: number;

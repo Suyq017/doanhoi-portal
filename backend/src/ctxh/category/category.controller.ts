@@ -23,15 +23,18 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CategoryResponseDto } from './dto/category-response.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '../../auth/guards/permission.guard';
+import { RequirePermissions } from '../../auth/decorators/permissions.decorator';
 
 @ApiTags('CTXH Categories')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @Controller('ctxh/categories')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Get()
+  @RequirePermissions('ctxh.categories.view')
   @ApiOperation({ summary: 'Lấy danh sách danh mục CTXH' })
   @ApiQuery({ name: 'search', required: false, description: 'Tìm kiếm theo tên danh mục' })
   @ApiQuery({ name: 'page', required: false, description: 'Số trang' })
@@ -61,6 +64,7 @@ export class CategoryController {
   }
 
   @Get(':id')
+  @RequirePermissions('ctxh.categories.view')
   @ApiOperation({ summary: 'Lấy chi tiết danh mục CTXH' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -76,6 +80,7 @@ export class CategoryController {
   }
 
   @Post()
+  @RequirePermissions('ctxh.categories.create')
   @ApiOperation({ summary: 'Tạo danh mục CTXH mới' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -95,6 +100,7 @@ export class CategoryController {
   }
 
   @Patch(':id')
+  @RequirePermissions('ctxh.categories.update')
   @ApiOperation({ summary: 'Cập nhật danh mục CTXH' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -119,6 +125,7 @@ export class CategoryController {
   }
 
   @Delete(':id')
+  @RequirePermissions('ctxh.categories.delete')
   @ApiOperation({ summary: 'Xóa mềm danh mục CTXH' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -148,6 +155,7 @@ export class CategoryController {
   }
 
   @Post(':id/restore')
+  @RequirePermissions('ctxh.categories.create')
   @ApiOperation({ summary: 'Khôi phục danh mục CTXH đã xóa' })
   @ApiResponse({
     status: HttpStatus.OK,
