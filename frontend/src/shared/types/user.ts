@@ -144,7 +144,8 @@ export interface UserImportDto {
     facultyCode?: string;
     trainingSystem?: string;
     trainingLevel?: string;
-    departmentCode?: string;
+    trainingDepartment?: string;
+    managementDepartment?: string;
     className?: string;
 }
 

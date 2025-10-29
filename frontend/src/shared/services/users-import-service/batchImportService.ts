@@ -299,7 +299,8 @@ export class BatchImportService {
           facultyCode: user.facultyCode || undefined,
           trainingSystem: user.trainingSystem || undefined,
           trainingLevel: user.trainingLevel || undefined,
-          departmentCode: user.managementDepartmentCode || user.trainingDepartmentCode || undefined,
+          managementDepartment: user.managementDepartment || undefined,
+          trainingDepartment: user.trainingDepartment || undefined,
           className: user.className || undefined
         }));
 
@@ -386,10 +387,6 @@ export class BatchImportService {
   async cancelBatchImport(sessionId: string): Promise<void> {
     return userService.cancelBatchImport(sessionId);
   }
-
-
-
-
 
   /**
    * Generate unique session ID

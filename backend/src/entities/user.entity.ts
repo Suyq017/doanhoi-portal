@@ -14,9 +14,6 @@ export enum MembershipStatus {
   HOI_VIEN = 'hoi_vien',
   BOTH = 'both',
   NONE = 'none',
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  GRADUATED = 'GRADUATED',
 }
 
 // New enums for import system
@@ -106,7 +103,7 @@ export class User {
   userRoles: UserRole[];
 
   // New fields for enhanced import system
-  @Column({ name: 'identity_card', nullable: true })
+  @Column({ name: 'cccd', nullable: true })
   identityCard: string;
   
   @Column({ name: 'birth_date', type: 'date', nullable: true })
@@ -115,20 +112,25 @@ export class User {
   @Column({ name: 'gender', type: 'enum', enum: Gender, nullable: true })
   gender: Gender;
   
-  @Column({ name: 'admission_year', nullable: true })
+  @Column({ name: 'nam_vao', nullable: true })
   admissionYear: string;
+  //năm vào
   
-  @Column({ name: 'curriculum_year', nullable: true })
+  @Column({ name: 'nam_ctdt', nullable: true })
   curriculumYear: string;
+  //năm chương trình đào tạo
   
   @Column({ name: 'faculty_code', nullable: true })
   facultyCode: string;
+  //mã khoa
   
-  @Column({ name: 'training_system', nullable: true })
+  @Column({ name: 'he_dao_tao', nullable: true })
   trainingSystem: string;
+  //hệ đào tạo
   
-  @Column({ name: 'training_level', nullable: true })
+  @Column({ name: 'bac_dao_tao', nullable: true })
   trainingLevel: string;
+  //bậc đào tạo
 
   // Getter cho fullName để tương thích với code cũ
   get fullName(): string {

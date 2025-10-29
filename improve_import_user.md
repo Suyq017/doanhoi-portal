@@ -87,7 +87,7 @@ export class User {
   @Column({ name: 'user_type', type: 'enum', enum: UserType, default: UserType.SINH_VIEN })
   userType: UserType;
   
-  @Column({ name: 'membership_status', type: 'enum', enum: MembershipStatus, default: MembershipStatus.ACTIVE })
+  @Column({ name: 'membership_status', type: 'enum', enum: MembershipStatus, default: MembershipStatus.NONE })
   membershipStatus: MembershipStatus;
   
   // Relations
