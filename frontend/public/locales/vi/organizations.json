@@ -63,6 +63,8 @@
     "useSuggestedName": "Sử dụng tên gợi ý"
   },
   "import": {
+    "title": "Import thành viên tổ chức",
+    "titlePhonetic": "Import thành viên tổ chức",
     "instructions": "Hướng dẫn import dữ liệu tổ chức",
     "instructionsPhonetic": "Hướng dẫn import dữ liệu tổ chức",
     "step1": "Tải file mẫu Excel tại đây và điền đầy đủ thông tin thành viên",

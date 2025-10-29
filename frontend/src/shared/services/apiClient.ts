@@ -97,16 +97,23 @@ class ApiClient {
 
     if (!response.ok) {
       const errorText = await response.text();
-      let errorMessage = `HTTP error! status: ${response.status}`;
+      let errorData: any = {};
 
       try {
-        const errorData = JSON.parse(errorText);
-        errorMessage = errorData.message || errorMessage;
+        errorData = JSON.parse(errorText);
       } catch {
-        errorMessage = errorText || errorMessage;
+        errorData = { message: errorText || `HTTP error! status: ${response.status}` };
       }
 
-      throw new Error(errorMessage);
+      // Create axios-style error object for compatibility
+      const error: any = new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      error.response = {
+        status: response.status,
+        data: errorData,
+        statusText: response.statusText
+      };
+      
+      throw error;
     }
 
     // Check if response has content

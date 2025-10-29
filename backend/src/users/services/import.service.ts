@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as XLSX from 'xlsx';
-import { User, UserType, MembershipStatus, AuthProvider, Gender, TrainingSystem, TrainingLevel } from '../../entities/user.entity';
+import { User, UserType, MembershipStatus, AuthProvider } from '../../entities/user.entity';
 import { Class } from '../../entities/class.entity';
 import { Department } from '../../entities/department.entity';
 import { Organization, OrganizationType } from '../../entities/organization.entity';
@@ -329,7 +329,6 @@ export class ImportService {
     user.givenName = userData.givenName;
     user.email = userData.email || null; // Handle null email from "*" values
     user.code = userData.code;
-    user.studentCode = userData.code; // Enhanced: map code to studentCode
     user.phone = userData.phone || '';
     
     // Handle password
@@ -348,7 +347,7 @@ export class ImportService {
     }
 
     // Set user type - Enhanced: use SINH_VIEN instead of STUDENT
-    user.userType = userData.userType as UserType || UserType.SINH_VIEN;
+    user.userType = userData.userType as UserType || UserType.STUDENT;
     
     // Set membership status
     user.membershipStatus = userData.membershipStatus as MembershipStatus || MembershipStatus.NONE;
@@ -455,6 +454,7 @@ export class ImportService {
       'Tên lớp',            // L
       'Mã Khoa',            // M
       'Mã đơn vị quản lý',  // N
+      'Mã ngành',
       'Hệ đào tạo',         // O (VLVH/CQ/QT/DTTX)
       'Bậc đào tạo',        // P (DH)
       'Loại người dùng',    // Q (SINH_VIEN/CAN_BO)
@@ -474,12 +474,13 @@ export class ImportService {
         '0901234567',           // Điện thoại
         '20222',                 // Năm vào
         '2022',                 // Năm CTDT
-        'CC01',                 // Tên lớp
-        'KHMT',                 // Mã Khoa
-        'BK-KHMT',              // Mã đơn vị quản lý
-        'CQ',                   // Hệ đào tạo
-        'DH',                   // Bậc đào tạo
-        'SINH_VIEN',            // Loại người dùng
+        'MT22KH02',                 // Tên lớp
+        'MT - Khoa Khoa học và Kỹ thuật Máy tính',                 // Mã Khoa
+        'MT - Khoa Khoa học và Kỹ thuật Máy tính',          // Mã đơn vị quản lý  
+        'CN_KHM - Khoa học Máy tính',            
+        'CQ - Chính quy',                   // Hệ đào tạo
+        'DH - Đại học',                   // Bậc đào tạo
+        'Sinh viên',            // Loại người dùng
         'ACTIVE'                // Tình trạng thành viên
       ]
     ];

@@ -1,0 +1,16 @@
+{
+  "import": {
+    "title": "Import Student Participants",
+    "instructions": "Guide for adding student data",
+    "step1": "Download Excel template file here and fill in complete student information",
+    "step2": "Check data format and ensure there are no errors",
+    "step3": "Upload file to import into the system",
+    "templateLinkText": "here",
+    "note": "Note: Student codes must be accurate and exist in the system",
+    "validation": {
+      "required": "This field is required",
+      "invalidEmail": "Invalid email",
+      "duplicateCode": "Duplicate student code"
+    }
+  }
+}

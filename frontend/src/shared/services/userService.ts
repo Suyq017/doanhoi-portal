@@ -8,7 +8,10 @@ import {
   ImportUploadResponse,
   ImportValidationResponse,
   ImportExecuteResponse,
-  ImportSession
+  ImportSession,
+  BatchImportRequest,
+  BatchImportResponse,
+  SessionSummaryDto
 } from '../types/user';
 
 class UserService {
@@ -69,6 +72,19 @@ class UserService {
     return apiClient.get<ImportSession>(`/users/import/${sessionId}/status`);
   }
 
+  // Batch Import functionality (Phase 4)
+  async batchImport(request: BatchImportRequest): Promise<BatchImportResponse> {
+    return apiClient.post<BatchImportResponse>('/users/import/batch', request);
+  }
+
+  async getBatchSummary(sessionId: string): Promise<SessionSummaryDto> {
+    return apiClient.get<SessionSummaryDto>(`/users/import/batch/${sessionId}/summary`);
+  }
+
+  async cancelBatchImport(sessionId: string): Promise<void> {
+    await apiClient.delete(`/users/import/batch/${sessionId}`);
+  }
+
   // Role assignment functionality
   async assignUserRoles(userId: string, roleAssignments: {
     roleId: string;
@@ -81,6 +97,18 @@ class UserService {
   // Organization membership functionality
   async updateUserOrganizations(userId: string, organizationIds: string[]): Promise<User> {
     return apiClient.put<User>(`/users/${userId}/organizations`, { organizationIds });
+  }
+
+  // Tìm kiếm chính xác theo mã số sinh viên
+  async findByExactCode(code: string): Promise<User | null> {
+    try {
+      return await apiClient.get<User>(`/users/find-by-code/${encodeURIComponent(code.trim())}`);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
   }
 }
 

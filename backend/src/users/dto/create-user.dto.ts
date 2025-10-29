@@ -1,7 +1,7 @@
 import { IsString, IsEmail, IsOptional, IsEnum, IsUUID, IsArray, ValidateIf, ValidateNested, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { UserType, MembershipStatus, Gender, TrainingSystem, TrainingLevel } from '../../entities/user.entity';
+import { UserType, MembershipStatus, Gender } from '../../entities/user.entity';
 import { UserRoleAssignmentDto } from './user-role-assignment.dto';
 
 export class CreateUserDto {
@@ -96,11 +96,6 @@ export class CreateUserDto {
   roles?: string[];
 
   // New fields for enhanced import system
-  @ApiPropertyOptional({ description: 'Mã số sinh viên' })
-  @IsOptional()
-  @IsString()
-  studentCode?: string;
-  
   @ApiPropertyOptional({ description: 'Số CMND/CCCD' })
   @IsOptional()
   @IsString()
@@ -131,13 +126,13 @@ export class CreateUserDto {
   @IsString()
   facultyCode?: string;
   
-  @ApiPropertyOptional({ enum: TrainingSystem, description: 'Hệ đào tạo' })
+  @ApiPropertyOptional({ description: 'Hệ đào tạo' })
   @IsOptional()
-  @IsEnum(TrainingSystem)
-  trainingSystem?: TrainingSystem;
+  @IsString()
+  trainingSystem?: string;
   
-  @ApiPropertyOptional({ enum: TrainingLevel, description: 'Bậc đào tạo' })
+  @ApiPropertyOptional({description: 'Bậc đào tạo' })
   @IsOptional()
-  @IsEnum(TrainingLevel)
-  trainingLevel?: TrainingLevel;
+  @IsString()
+  trainingLevel?: string;
 }

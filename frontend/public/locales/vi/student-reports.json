@@ -1,0 +1,69 @@
+{
+  "title": "Báo cáo cá nhân",
+  "subtitle": "Bảng điểm CTXH cá nhân",
+  "studentInfo": {
+    "title": "Thông tin sinh viên",
+    "name": "Họ và tên",
+    "code": "Mã số sinh viên",
+    "email": "Email",
+    "class": "Lớp",
+    "department": "Khoa",
+    "unknown": "Chưa xác định"
+  },
+  "summary": {
+    "title": "Tổng hợp kết quả",
+    "totalDays": "Tổng số ngày CTXH",
+    "days": "ngày",
+    "totalActivities": "Tổng số hoạt động",
+    "completedActivities": "Hoạt động đã hoàn thành",
+    "registeredActivities": "Hoạt động đã đăng ký",
+    "cancelledActivities": "Hoạt động đã hủy",
+    "completionRate": "Tỷ lệ hoàn thành",
+    "accumulatedDays": "Ngày tích lũy",
+    "status": "Trạng thái",
+    "achieved": "Đạt",
+    "notAchieved": "Chưa đạt"
+  },
+  "activities": {
+    "title": "Danh sách hoạt động",
+    "name": "Tên hoạt động",
+    "category": "Danh mục",
+    "startDate": "Ngày bắt đầu",
+    "endDate": "Ngày kết thúc",
+    "actualDays": "Số ngày thực tế",
+    "status": "Trạng thái",
+    "gradedBy": "Người chấm",
+    "gradedAt": "Ngày chấm",
+    "note": "Ghi chú",
+    "noData": "Chưa có hoạt động nào",
+    "noActivitiesMessage": "Bạn chưa tham gia hoạt động CTXH nào.",
+    "statusOptions": {
+      "REGISTERED": "Đã đăng ký",
+      "COMPLETED": "Đã hoàn thành",
+      "CANCELLED": "Đã hủy"
+    }
+  },
+  "filters": {
+    "category": "Lọc theo danh mục",
+    "status": "Lọc theo trạng thái",
+    "semester": "Lọc theo học kỳ",
+    "all": "Tất cả"
+  },
+  "actions": {
+    "exportPdf": "Xuất PDF",
+    "refresh": "Làm mới",
+    "print": "In báo cáo"
+  },
+  "stats": {
+    "byCategory": "Thống kê theo danh mục",
+    "bySemester": "Thống kê theo học kỳ",
+    "byStatus": "Thống kê theo trạng thái"
+  },
+  "messages": {
+    "loading": "Đang tải dữ liệu...",
+    "error": "Có lỗi xảy ra khi tải dữ liệu",
+    "noPermission": "Bạn không có quyền xem báo cáo này",
+    "notFound": "Không tìm thấy dữ liệu sinh viên",
+    "retry": "Thử lại"
+  }
+}

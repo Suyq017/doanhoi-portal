@@ -1,0 +1,16 @@
+{
+  "import": {
+    "title": "Nhập kết quả chấm điểm",
+    "instructions": "Tải xuống tệp mẫu có danh sách sinh viên, điền điểm và tải lên để cập nhật vào hệ thống",
+    "step1": "Tải tệp mẫu tại đây với danh sách sinh viên",
+    "step2": "Điền điểm và ghi chú cho từng sinh viên", 
+    "step3": "Tải lên tệp đã hoàn thành",
+    "templateLinkText": "tại đây",
+    "note": "Lưu ý: Điểm phải là số từ 0-10, có thể để trống nếu chưa chấm",
+    "validation": {
+      "required": "Trường này là bắt buộc",
+      "invalidScore": "Điểm phải là số từ 0 đến 10",
+      "studentNotFound": "Không tìm thấy sinh viên"
+    }
+  }
+}

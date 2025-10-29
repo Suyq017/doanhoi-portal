@@ -12,7 +12,8 @@ import { RolesModule } from './roles/roles.module';
 import { CleanEmptyStringsMiddleware } from './common/middleware/clean-empty-strings.middleware';
 import { PaymentModule } from './payment/payment.module';
 import { PayosModule } from './payos/payos.module';
-
+import { CtxhModule } from './ctxh/ctxh.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { PayosModule } from './payos/payos.module';
         logging: configService.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
-    }), UsersModule,
+    }),
+    UsersModule,
     OrganizationsModule,
     AuthModule,
     DashboardModule,
@@ -42,7 +44,9 @@ import { PayosModule } from './payos/payos.module';
     ExportModule,
     RolesModule,
     PaymentModule,
-    PayosModule, // Import module PayOS của chúng ta
+    PayosModule,
+    CtxhModule,
+    MetricsModule,
   ],
 })
 export class AppModule implements NestModule {

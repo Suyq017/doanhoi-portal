@@ -6,8 +6,6 @@ import {
   AlertTriangle,
   AlertCircle,
   FileText,
-  Eye,
-  EyeOff,
   RefreshCw
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -39,26 +37,42 @@ const ImportModal = ({
   const [state, setState] = useState<ImportState>({
     step: 'upload',
     selectedFile: null,
-    importData: null,
-    importResult: null,
-    // Server-side state
+
+    // Server-side state (legacy)
     serverSession: null,
     serverValidation: null,
     serverResult: null,
+
+    // Client-side state (new)
+    clientData: null,
+    clientValidation: null,
+    clientResult: null,
+
+    // Batch processing state
+    batchProgress: null,
+    sessionId: null,
+    totalRecords: null,
+    isBatchProcessing: false,
+
     options: {
-      skipErrors: true,
+      skipErrors: false, // Allow importing rows with warnings (only skip rows with errors)
       updateExisting: false,
       dryRun: false,
-      batchSize: 100
+      batchSize: config.batchSize
     },
     loading: false,
     dragActive: false
   });
 
-  const [showAllRows, setShowAllRows] = useState(false);
+  const [showAllRows, setShowAllRows] = useState(false); // Default to show all rows for easier debugging
   const [showOnlyErrors, setShowOnlyErrors] = useState(false);
   const [previewPage, setPreviewPage] = useState(1);
   const [previewLimit] = useState(10);
+
+  // Error/Warning pagination state
+  const [errorPage, setErrorPage] = useState(1);
+  const [warningPage, setWarningPage] = useState(1);
+  const [errorLimit] = useState(5); // Show 5 errors per page
 
   // File validation
   const isValidFile = (file: File): boolean => {
@@ -76,77 +90,153 @@ const ImportModal = ({
     return true;
   };
 
-  // File handling - server-side processing only
+  // File handling - support both client-side and server-side processing
   const handleFileSelect = async (file: File) => {
     if (!isValidFile(file)) return;
 
-    setState(prev => ({ ...prev, selectedFile: file, loading: true }));
+    setState(prev => ({
+      ...prev,
+      selectedFile: file,
+      loading: true,
+      sessionId: config.useClientSideProcessing ? `import_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : null
+    }));
 
     try {
-      // Server-side processing
-      if (!config.uploadFile) {
-        throw new Error('uploadFile function not provided');
+      if (config.useClientSideProcessing) {
+        // Client-side processing
+        await handleClientSideProcessing(file);
+      } else {
+        // Server-side processing (legacy)
+        await handleServerSideProcessing(file);
       }
-
-      const serverSession = await config.uploadFile(file);
-
-      // Automatically validate after upload
-      if (!config.validateServerData) {
-        throw new Error('validateServerData function not provided');
-      }
-
-      const validationResult = await config.validateServerData(serverSession.sessionId);
-
-      // Auto-fill dữ liệu cho server-side processing
-      if (validationResult.previewData) {
-        validationResult.previewData = validationResult.previewData.map((item: any) => {
-          const modified: Record<string, boolean> = {};
-
-          // Tìm field email (case-insensitive và nhiều pattern khác nhau)
-          const emailField = Object.keys(item).find(key => {
-            const lowerKey = key.toLowerCase();
-            return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
-          });
-
-          // Tìm field password (case-insensitive) hoặc tạo mới
-          let passwordField = Object.keys(item).find(key => {
-            const lowerKey = key.toLowerCase();
-            return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
-          });
-
-          // Nếu không tìm thấy field password, tạo field mới
-          if (!passwordField) {
-            passwordField = 'password';
-            item[passwordField] = ''; // Khởi tạo với giá trị rỗng
-          }
-
-          const emailValue = emailField ? item[emailField] : null;
-
-          // Auto-fill password từ email prefix nếu trống hoặc là '-'
-          if (emailValue && passwordField && (!item[passwordField] || item[passwordField] === '' || item[passwordField] === '-')) {
-            const emailPrefix = emailValue.split('@')[0];
-            item[passwordField] = emailPrefix;
-            modified[passwordField] = true;
-          }
-
-          return item;
-        });
-      }
-
-      config.onValidationComplete?.(validationResult);
-
-      setState(prev => ({
-        ...prev,
-        serverSession,
-        serverValidation: validationResult,
-        step: 'preview',
-        loading: false
-      }));
     } catch (error) {
-      console.error('File processing error:', error);
-      showError(t('import.errors.parseFile'));
+      console.error('File processing failed:', error);
+      showError(error instanceof Error ? error.message : 'File processing failed');
       setState(prev => ({ ...prev, loading: false }));
     }
+  };
+
+  // Client-side processing handler
+  const handleClientSideProcessing = async (file: File) => {
+    if (!config.parseFile || !config.validateClientData) {
+      throw new Error('Client-side processing functions not provided');
+    }
+
+    // Step 1: Parse file
+    setState(prev => ({
+      ...prev,
+      batchProgress: {
+        currentBatch: 0,
+        totalBatches: 0,
+        processedRecords: 0,
+        totalRecords: 0,
+        percentage: 0,
+        currentOperation: 'parsing'
+      }
+    }));
+
+    const parsedData = await config.parseFile(file, (progress) => {
+      setState(prev => ({
+        ...prev,
+        batchProgress: prev.batchProgress ? {
+          ...prev.batchProgress,
+          percentage: progress,
+          currentOperation: 'parsing'
+        } : null
+      }));
+    });
+
+    // Step 2: Validate data
+    setState(prev => ({
+      ...prev,
+      batchProgress: prev.batchProgress ? {
+        ...prev.batchProgress,
+        currentOperation: 'validating',
+        totalRecords: parsedData.length,
+        currentBatch: 0,
+        totalBatches: Math.ceil(parsedData.length / 200), // Estimate validation chunks
+        percentage: 0
+      } : null
+    }));
+
+    const validationResult = await config.validateClientData(parsedData, (progress: { current: number; total: number; percentage: number }) => {
+      setState(prev => ({
+        ...prev,
+        batchProgress: prev.batchProgress ? {
+          ...prev.batchProgress,
+          currentBatch: progress.current,
+          totalBatches: progress.total,
+          percentage: progress.percentage,
+          currentOperation: 'validating'
+        } : null
+      }));
+    });
+
+    setState(prev => ({
+      ...prev,
+      clientData: parsedData,
+      clientValidation: validationResult,
+      totalRecords: parsedData.length,
+      step: 'preview',
+      loading: false,
+      batchProgress: null
+    }));
+  };
+
+  // Server-side processing handler (legacy)
+  const handleServerSideProcessing = async (file: File) => {
+    if (!config.uploadFile || !config.validateServerData) {
+      throw new Error('Server-side processing functions not provided');
+    }
+
+    const serverSession = await config.uploadFile(file);
+    const validationResult = await config.validateServerData(serverSession.sessionId);
+
+    // Auto-fill dữ liệu cho server-side processing
+    if (validationResult.previewData) {
+      validationResult.previewData = validationResult.previewData.map((item: any) => {
+        const modified: Record<string, boolean> = {};
+
+        // Tìm field email (case-insensitive và nhiều pattern khác nhau)
+        const emailField = Object.keys(item).find(key => {
+          const lowerKey = key.toLowerCase();
+          return lowerKey.includes('email') || lowerKey.includes('mail') || lowerKey.includes('gmail');
+        });
+
+        // Tìm field password (case-insensitive) hoặc tạo mới
+        let passwordField = Object.keys(item).find(key => {
+          const lowerKey = key.toLowerCase();
+          return lowerKey.includes('password') || lowerKey.includes('matkhau') || lowerKey.includes('pass');
+        });
+
+        // Nếu không tìm thấy field password, tạo field mới
+        if (!passwordField) {
+          passwordField = 'password';
+          item[passwordField] = ''; // Khởi tạo với giá trị rỗng
+        }
+
+        const emailValue = emailField ? item[emailField] : null;
+
+        // Auto-fill password từ email prefix nếu trống hoặc là '-'
+        if (emailValue && passwordField && (!item[passwordField] || item[passwordField] === '' || item[passwordField] === '-')) {
+          const emailPrefix = emailValue.split('@')[0];
+          item[passwordField] = emailPrefix;
+          modified[passwordField] = true;
+        }
+
+        return item;
+      });
+    }
+
+    config.onValidationComplete?.(validationResult);
+
+    setState(prev => ({
+      ...prev,
+      serverSession,
+      serverValidation: validationResult,
+      step: 'preview',
+      loading: false
+    }));
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -169,30 +259,15 @@ const ImportModal = ({
     setState(prev => ({ ...prev, dragActive: false }));
   };
 
-  // Import process - server-side processing only
+  // Import process - support both client-side and server-side processing
   const handleImport = async () => {
     setState(prev => ({ ...prev, step: 'importing', loading: true }));
 
     try {
-      // Server-side import
-      if (!state.serverSession || !config.executeServerImport) {
-        throw new Error('Server session or executeServerImport function not available');
-      }
-
-      const result = await config.executeServerImport(
-        state.serverSession.sessionId,
-        { skipConflicts: state.options.skipErrors }
-      );
-
-      setState(prev => ({
-        ...prev,
-        serverResult: result,
-        step: 'result',
-        loading: false
-      }));
-
-      if (result.success) {
-        config.onSuccess?.(result);
+      if (config.useClientSideProcessing) {
+        await handleClientSideImport();
+      } else {
+        await handleServerSideImport();
       }
     } catch (error) {
       console.error('Import error:', error);
@@ -201,22 +276,115 @@ const ImportModal = ({
     }
   };
 
+  // Client-side import with batch processing
+  const handleClientSideImport = async () => {
+    if (!state.clientData || !state.clientValidation || !config.submitClientData) {
+      throw new Error('Client data or submitClientData function not available');
+    }
+
+    const validData = state.clientValidation.data;
+    const totalBatches = Math.ceil(validData.length / (config?.batchSize || 500));
+
+    setState(prev => ({
+      ...prev,
+      isBatchProcessing: true,
+      batchProgress: {
+        currentBatch: 0,
+        totalBatches,
+        processedRecords: 0,
+        totalRecords: validData.length,
+        percentage: 0,
+        currentOperation: 'importing'
+      }
+    }));
+
+    const result = await config.submitClientData(validData, (progress) => {
+      setState(prev => ({
+        ...prev,
+        batchProgress: progress
+      }));
+    });
+
+    setState(prev => ({
+      ...prev,
+      clientResult: result,
+      step: 'result',
+      loading: false,
+      isBatchProcessing: false,
+      batchProgress: null
+    }));
+
+    // Don't call onSuccess here - will be called when modal closes if successful
+  };
+
+  // Server-side import (legacy)
+  const handleServerSideImport = async () => {
+    if (!state.serverSession || !config.executeServerImport) {
+      throw new Error('Server session or executeServerImport function not available');
+    }
+
+    const result = await config.executeServerImport(
+      state.serverSession.sessionId,
+      { skipConflicts: state.options.skipErrors }
+    );
+
+    setState(prev => ({
+      ...prev,
+      serverResult: result,
+      step: 'result',
+      loading: false
+    }));
+
+    // Don't call onSuccess here - will be called when modal closes if successful
+  };
+
+  // Custom close handler that calls onSuccess if import was executed
+  const handleClose = () => {
+    // Check if import was executed (regardless of success or failure)
+    const hasServerResult = state.serverResult !== null;
+    const hasClientResult = state.clientResult !== null;
+    const importWasExecuted = state.step === 'result' && (hasServerResult || hasClientResult);
+
+    // Call onSuccess if import was executed (even with errors)
+    // This allows parent component to refresh data and show appropriate toast
+    if (importWasExecuted) {
+      const result = state.serverResult || state.clientResult;
+      if (result) {
+        config.onSuccess?.(result);
+      }
+    }
+
+    // Close the modal
+    onClose();
+  };
+
   // Reset state
   const resetImport = () => {
     setState({
       step: 'upload',
       selectedFile: null,
-      importData: null,
-      importResult: null,
-      // Server-side state
+
+      // Server-side state (legacy)
       serverSession: null,
       serverValidation: null,
       serverResult: null,
+
+      // Client-side state (new)
+      clientData: null,
+      clientValidation: null,
+      clientResult: null,
+
+      // Batch processing state
+      batchProgress: null,
+      sessionId: null,
+      totalRecords: null,
+      isBatchProcessing: false,
+
       options: {
-        skipErrors: true,
+        skipErrors: false, // Allow importing rows with warnings (only skip rows with errors)
         updateExisting: false,
         dryRun: false,
-        batchSize: 100
+        batchSize: config.batchSize
       },
       loading: false,
       dragActive: false
@@ -224,6 +392,8 @@ const ImportModal = ({
     setShowAllRows(false);
     setShowOnlyErrors(false);
     setPreviewPage(1);
+    setErrorPage(1);
+    setWarningPage(1);
   };
 
   // Utility functions
@@ -253,12 +423,47 @@ const ImportModal = ({
   };
 
   const getDisplayRows = () => {
-    // Server-side processing only
-    if (!state.serverValidation) return []; let rows = state.serverValidation.previewData || [];
+    // Support both client-side and server-side processing
+    const validation = state.clientValidation || state.serverValidation;
+    if (!validation) return [];
+
+    // For client-side processing, use validation data with merged original data
+    // For server-side processing, use previewData
+    let rows: any[];
+
+    if (state.clientValidation && state.clientData) {
+      // Client-side: merge validation result with original data for display
+      rows = state.clientData.map((originalRow: any, index: number) => {
+        // Check if this row has validation errors
+        // Backend validation returns errors array with row numbers
+        const rowErrors = (state.clientValidation?.errors || []).filter((error: any) => {
+          return typeof error === 'object' && error.row === (index + 2); // +2 for Excel row (header is row 1)
+        });
+
+        const rowWarnings = (state.clientValidation?.warnings || []).filter((warning: any) => {
+          return typeof warning === 'object' && warning.row === (index + 2);
+        });
+
+        const hasError = rowErrors.length > 0;
+
+        return {
+          ...originalRow, // Original data for display
+          _hasError: hasError,
+          _errors: rowErrors,
+          _warnings: rowWarnings,
+          _rowIndex: index + 2 // Excel row number (header is row 1)
+        };
+      });
+    } else {
+      // Server-side processing
+      rows = state.serverValidation?.previewData || [];
+    }
 
     // Apply error filtering - check both hasErrors and _hasError for compatibility
     if (showOnlyErrors) {
-      rows = rows.filter(row => row.hasErrors || row._hasError);
+      // Since we already filtered out error rows, this will return empty array
+      // but keeping for consistency with the UI toggle
+      rows = [];
     }
 
     // Calculate pagination
@@ -274,24 +479,59 @@ const ImportModal = ({
   };
 
   const getTotalPages = () => {
-    if (!state.serverValidation) return 0;
+    const validation = state.clientValidation || state.serverValidation;
+    if (!validation) return 0;
 
-    let totalRows = state.serverValidation.previewData?.length || 0;
+    // Get total row count from appropriate data source
+    let data: any[];
+    if (state.clientValidation && state.clientData) {
+      data = state.clientData;
+    } else {
+      data = state.serverValidation?.previewData || [];
+    }
+
+    let totalRows = data.length;
 
     if (showOnlyErrors) {
-      totalRows = state.serverValidation.previewData?.filter(row => row.hasErrors || row._hasError).length || 0;
+      if (state.clientValidation && state.clientData) {
+        // For client-side, count rows with validation errors
+        totalRows = state.clientData.filter((_: any, index: number) => {
+          const validationResult = state.clientValidation?.data?.find(
+            (validatedRow: any) => validatedRow._originalIndex === index
+          );
+          return validationResult ? !validationResult.validation?.isValid : false;
+        }).length;
+      } else {
+        // For server-side
+        totalRows = data.filter((row: any) => row.hasErrors || row._hasError).length;
+      }
     }
 
     return Math.ceil(totalRows / previewLimit);
   };
 
   const getCurrentRowRange = () => {
-    if (!state.serverValidation) return { start: 0, end: 0, total: 0 };
+    const validation = state.clientValidation || state.serverValidation;
+    if (!validation) return { start: 0, end: 0, total: 0 };
 
-    let totalRows = state.serverValidation.previewData?.length || 0;
-
-    if (showOnlyErrors) {
-      totalRows = state.serverValidation.previewData?.filter(row => row.hasErrors || row._hasError).length || 0;
+    // Get total row count from appropriate data source
+    let totalRows = 0;
+    if (state.clientValidation && state.clientData) {
+      totalRows = state.clientData.length;
+      if (showOnlyErrors) {
+        totalRows = state.clientData.filter((_: any, index: number) => {
+          // Check if this row has validation errors
+          const rowErrors = (state.clientValidation?.errors || []).filter((error: any) => {
+            return typeof error === 'object' && error.row === (index + 2);
+          });
+          return rowErrors.length > 0;
+        }).length;
+      }
+    } else {
+      totalRows = state.serverValidation?.previewData?.length || 0;
+      if (showOnlyErrors) {
+        totalRows = state.serverValidation?.previewData?.filter(row => row.hasErrors || row._hasError).length || 0;
+      }
     }
 
     if (showAllRows) {
@@ -302,6 +542,50 @@ const ImportModal = ({
     const end = Math.min(previewPage * previewLimit, totalRows);
 
     return { start, end, total: totalRows };
+  };
+
+  // Render client-side progress
+  const renderClientProgress = () => {
+    if (!state.batchProgress) return null;
+
+    return (
+      <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {state.batchProgress.currentOperation === 'parsing'
+              ? t('import.progress.parsing')
+              : state.batchProgress.currentOperation === 'validating'
+                ? t('import.progress.validating')
+                : t('import.progress.importing')
+            }
+          </span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {state.batchProgress.percentage}%
+          </span>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+          <div
+            className="h-2 transition-all duration-300 bg-blue-600 rounded-full"
+            style={{ width: `${state.batchProgress.percentage}%` }}
+          />
+        </div>
+
+        {/* Batch Info - only show for validation and importing, not parsing */}
+        {state.batchProgress.totalBatches && state.batchProgress.totalBatches > 0 &&
+          state.batchProgress.currentOperation !== 'validating' && (
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              {t('import.progress.batch', {
+                current: state.batchProgress.currentBatch || 0,
+                total: state.batchProgress.totalBatches,
+                records: state.batchProgress.processedRecords || 0,
+                totalRecords: state.batchProgress.totalRecords || 0
+              })}
+            </div>
+          )}
+      </div>
+    );
   };
 
   // Render steps
@@ -387,17 +671,21 @@ const ImportModal = ({
           {state.loading ? t('import.processing') : t('import.selectFile')}
         </button>
       </div>
+
+      {/* Client-side Processing Progress */}
+      {config.useClientSideProcessing && renderClientProgress()}
     </div>
   );
 
   const renderPreviewStep = () => {
-    // Server-side processing only
-    if (!state.serverValidation) return null;
+    // Support both client-side and server-side processing
+    const validationData = state.clientValidation || state.serverValidation;
+    if (!validationData) return null;
 
     const displayRows = getDisplayRows();
-    const summary = state.serverValidation.summary;
-    const errors = state.serverValidation.errors || [];
-    const warnings = state.serverValidation.warnings || [];
+    const summary = validationData.summary;
+    const errors = validationData.errors || [];
+    const warnings = validationData.warnings || [];
 
     return (
       <div className="space-y-6">
@@ -423,7 +711,18 @@ const ImportModal = ({
 
           <div className="p-4 text-center bg-red-100 rounded-lg dark:bg-red-900/20">
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {errors.length}
+              {state.clientData ?
+                // For client-side, count rows with errors
+                state.clientData.filter((_: any, index: number) => {
+                  const rowErrors = (errors || []).filter((error: any) => {
+                    return typeof error === 'object' && error.row === (index + 2);
+                  });
+                  return rowErrors.length > 0;
+                }).length
+                :
+                // For server-side, use summary
+                summary.invalid
+              }
             </div>
             <div className="text-sm text-red-600 dark:text-red-400">
               {t('import.error')}
@@ -432,7 +731,18 @@ const ImportModal = ({
 
           <div className="p-4 text-center bg-yellow-100 rounded-lg dark:bg-yellow-900/20">
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {warnings.length}
+              {state.clientData ?
+                // For client-side, count rows with warnings
+                state.clientData.filter((_: any, index: number) => {
+                  const rowWarnings = (warnings || []).filter((warning: any) => {
+                    return typeof warning === 'object' && warning.row === (index + 2);
+                  });
+                  return rowWarnings.length > 0;
+                }).length
+                :
+                // For server-side, use warnings length
+                warnings.length
+              }
             </div>
             <div className="text-sm text-yellow-600 dark:text-yellow-400">
               {t('import.warnings')}
@@ -443,7 +753,8 @@ const ImportModal = ({
         {/* Filter Controls */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <button
+            {/* Hide "Show Only Errors" button since we filter out errors from preview table */}
+            {/* <button
               onClick={() => {
                 setShowOnlyErrors(!showOnlyErrors);
                 setPreviewPage(1); // Reset to first page when filter changes
@@ -455,7 +766,7 @@ const ImportModal = ({
             >
               {showOnlyErrors ? <Eye className="w-4 h-4 mr-1" /> : <EyeOff className="w-4 h-4 mr-1" />}
               {t('import.showOnlyErrors')}
-            </button>
+            </button> */}
 
             <button
               onClick={() => {
@@ -530,17 +841,19 @@ const ImportModal = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {displayRows.map((item, index) => {
-                  // Handle server-side data structure
-                  // Check both hasErrors and _hasError for compatibility
+                {displayRows.map((item: any, index: number) => {
+                  // Handle both client-side and server-side data structure
                   const hasErrors = item.hasErrors || item._hasError;
                   const hasWarnings = item.hasWarnings || (item._warnings && item._warnings.length > 0);
 
-                  // Calculate proper row number for pagination
+                  // Calculate proper row number for display
                   let rowNumber;
-                  if (showAllRows) {
+                  if (item._rowIndex) {
+                    // Use the Excel row number if available
+                    rowNumber = item._rowIndex;
+                  } else if (showAllRows) {
                     // For show all rows, use sequential numbering
-                    rowNumber = index + 1;
+                    rowNumber = index + 2; // +2 for Excel row (header is row 1, data starts from row 2)
                   } else {
                     // For paginated view, calculate based on page and position
                     const range = getCurrentRowRange();
@@ -549,10 +862,12 @@ const ImportModal = ({
 
                   return (
                     <tr
-                      key={index}
+                      key={`row-${rowNumber}-${index}`}
                       className={`transition-colors ${hasErrors
                         ? 'bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20'
-                        : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        : hasWarnings
+                          ? 'bg-yellow-50 dark:bg-yellow-900/10 hover:bg-yellow-100 dark:hover:bg-yellow-900/20'
+                          : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
                         }`}
                     >
                       <td className="px-4 py-3 font-mono text-sm text-gray-500 dark:text-gray-400">
@@ -565,19 +880,21 @@ const ImportModal = ({
                       ))}
                       <td className="px-4 py-3 text-center">
                         {hasErrors ? (
-                          <div className="flex items-center justify-center">
-                            <AlertTriangle
-                              className="w-4 h-4 text-red-500"
-                            />
+                          <div className="flex items-center justify-center" title={`${item._errors?.length || 0} lỗi`}>
+                            <AlertTriangle className="w-4 h-4 text-red-500" />
+                            {item._errors?.length > 0 && (
+                              <span className="ml-1 text-xs text-red-500">{item._errors.length}</span>
+                            )}
                           </div>
                         ) : hasWarnings ? (
-                          <div className="flex items-center justify-center">
-                            <AlertCircle
-                              className="w-4 h-4 text-yellow-500"
-                            />
+                          <div className="flex items-center justify-center" title={`${item._warnings?.length || 0} cảnh báo`}>
+                            <AlertCircle className="w-4 h-4 text-yellow-500" />
+                            {item._warnings?.length > 0 && (
+                              <span className="ml-1 text-xs text-yellow-500">{item._warnings.length}</span>
+                            )}
                           </div>
                         ) : (
-                          <div className="flex items-center justify-center">
+                          <div className="flex items-center justify-center" title="Hợp lệ">
                             <CheckCircle className="w-4 h-4 text-green-500" />
                           </div>
                         )}
@@ -593,25 +910,108 @@ const ImportModal = ({
         {/* Error Details */}
         {errors.length > 0 && (
           <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/20 dark:border-red-800">
-            <h5 className="flex items-center mb-3 font-medium text-red-800 dark:text-red-200">
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              {t('import.validationErrors')} ({errors.length})
-            </h5>
+            <div className="flex items-center justify-between mb-3">
+              <h5 className="flex items-center font-medium text-red-800 dark:text-red-200">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                {t('import.validationErrors')} ({errors.length})
+              </h5>
+
+              {/* Error Pagination Controls */}
+              {errors.length > errorLimit && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setErrorPage(Math.max(1, errorPage - 1))}
+                    disabled={errorPage <= 1}
+                    className="px-2 py-1 text-xs text-red-600 bg-red-100 border border-red-200 rounded hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-900/30 dark:border-red-800 dark:text-red-300"
+                  >
+                    {t('common:pagination.previous')}
+                  </button>
+                  <span className="px-2 py-1 text-xs text-red-700 dark:text-red-300">
+                    {errorPage} / {Math.ceil(errors.length / errorLimit)}
+                  </span>
+                  <button
+                    onClick={() => setErrorPage(Math.min(Math.ceil(errors.length / errorLimit), errorPage + 1))}
+                    disabled={errorPage >= Math.ceil(errors.length / errorLimit)}
+                    className="px-2 py-1 text-xs text-red-600 bg-red-100 border border-red-200 rounded hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-900/30 dark:border-red-800 dark:text-red-300"
+                  >
+                    {t('common:pagination.next')}
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="overflow-auto max-h-32">
               <ul className="space-y-1 text-sm text-red-700 dark:text-red-300">
-                {errors.map((error, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="font-mono text-xs bg-red-100 dark:bg-red-900/30 px-1 rounded mr-2 mt-0.5">
-                      {error.row}
-                    </span>
-                    <span>{error.message}</span>
-                  </li>
-                ))}
-                {/* {errors.length > 10 && (
-                  <li className="italic text-red-600 dark:text-red-400">
-                    {t('import.andMoreErrors', { count: errors.length - 10 })}
-                  </li>
-                )} */}
+                {errors
+                  .slice((errorPage - 1) * errorLimit, errorPage * errorLimit)
+                  .map((error, index) => (
+                    <li key={index} className="flex items-start">
+                      {/* Handle both ValidationError object and string error */}
+                      {typeof error === 'object' && error.row && (
+                        <span className="font-mono text-xs bg-red-100 dark:bg-red-900/30 px-1 rounded mr-2 mt-0.5">
+                          {error.row}
+                        </span>
+                      )}
+                      <span>
+                        {typeof error === 'object' ? error.message : error}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Warning Details */}
+        {warnings.length > 0 && (
+          <div className="p-4 border border-yellow-200 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
+            <div className="flex items-center justify-between mb-3">
+              <h5 className="flex items-center font-medium text-yellow-800 dark:text-yellow-200">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                {t('import.validationWarnings')} ({warnings.length})
+              </h5>
+
+              {/* Warning Pagination Controls */}
+              {warnings.length > errorLimit && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setWarningPage(Math.max(1, warningPage - 1))}
+                    disabled={warningPage <= 1}
+                    className="px-2 py-1 text-xs text-yellow-600 bg-yellow-100 border border-yellow-200 rounded hover:bg-yellow-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-yellow-900/30 dark:border-yellow-800 dark:text-yellow-300"
+                  >
+                    {t('common:pagination.previous')}
+                  </button>
+                  <span className="px-2 py-1 text-xs text-yellow-700 dark:text-yellow-300">
+                    {warningPage} / {Math.ceil(warnings.length / errorLimit)}
+                  </span>
+                  <button
+                    onClick={() => setWarningPage(Math.min(Math.ceil(warnings.length / errorLimit), warningPage + 1))}
+                    disabled={warningPage >= Math.ceil(warnings.length / errorLimit)}
+                    className="px-2 py-1 text-xs text-yellow-600 bg-yellow-100 border border-yellow-200 rounded hover:bg-yellow-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-yellow-900/30 dark:border-yellow-800 dark:text-yellow-300"
+                  >
+                    {t('common:pagination.next')}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="overflow-auto max-h-32">
+              <ul className="space-y-1 text-sm text-yellow-700 dark:text-yellow-300">
+                {warnings
+                  .slice((warningPage - 1) * errorLimit, warningPage * errorLimit)
+                  .map((warning, index) => (
+                    <li key={index} className="flex items-start">
+                      {/* Handle both ValidationError object and string warning */}
+                      {typeof warning === 'object' && warning.row && (
+                        <span className="font-mono text-xs bg-yellow-100 dark:bg-yellow-900/30 px-1 rounded mr-2 mt-0.5">
+                          {warning.row}
+                        </span>
+                      )}
+                      <span>
+                        {typeof warning === 'object' ? warning.message : warning}
+                      </span>
+                    </li>
+                  ))}
               </ul>
             </div>
           </div>
@@ -629,26 +1029,52 @@ const ImportModal = ({
       <p className="mb-4 text-gray-500 dark:text-gray-400">
         {t('import.pleaseWait')}
       </p>
-      <div className="h-2 max-w-md mx-auto bg-gray-200 rounded-full dark:bg-gray-700">
-        <div className="h-2 rounded-full bg-doan-500 animate-pulse" style={{ width: '60%' }}></div>
-      </div>
+
+      {/* Show batch progress for client-side processing */}
+      {config.useClientSideProcessing && state.batchProgress ? (
+        <div className="max-w-md mx-auto">
+          {renderClientProgress()}
+        </div>
+      ) : (
+        <div className="h-2 max-w-md mx-auto bg-gray-200 rounded-full dark:bg-gray-700">
+          <div className="h-2 rounded-full bg-doan-500 animate-pulse" style={{ width: '60%' }}></div>
+        </div>
+      )}
     </div>
   );
 
   const renderResultStep = () => {
-    // Server-side results only
-    const result = state.serverResult;
+    // Support both client-side and server-side results
+    const result = state.clientResult || state.serverResult;
     if (!result) return null;
 
-    // Server-side result structure
-    const total = result.importedCount + result.skippedCount + result.failedCount;
-    const success = result.importedCount;
-    const failed = result.failedCount;
-    const skipped = result.skippedCount;
-    const errors = result.errors || [];
-    const warnings: string[] = []; // Server result doesn't have warnings field
+    // Determine result structure based on type
+    let total: number, success: number, failed: number, skipped: number, errors: string[], warnings: string[];
 
-    const isSuccess = failed === 0;
+    if (state.clientResult) {
+      // Client-side result structure
+      const summary = state.clientResult.sessionSummary;
+      total = summary.totalProcessed || 0;
+      success = summary.totalSuccessful || 0;
+      failed = summary.totalFailed || 0;
+      skipped = 0; // Client result doesn't track skipped separately
+      errors = state.clientResult.errors || [];
+      warnings = []; // Client result doesn't have warnings field
+    } else if (state.serverResult) {
+      // Server-side result structure  
+      total = state.serverResult.importedCount + state.serverResult.skippedCount + state.serverResult.failedCount;
+      success = state.serverResult.importedCount;
+      failed = state.serverResult.failedCount;
+      skipped = state.serverResult.skippedCount;
+      errors = state.serverResult.errors || [];
+      warnings = []; // Server result doesn't have warnings field in current structure
+    } else {
+      // Fallback
+      total = success = failed = skipped = 0;
+      errors = warnings = [];
+    }
+
+    const isSuccess = failed === 0 && success > 0;
     const isPartialSuccess = success > 0 && failed > 0;
 
     return (
@@ -762,7 +1188,7 @@ const ImportModal = ({
         {/* Background overlay */}
         <div
           className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-80"
-          onClick={onClose}
+          onClick={handleClose}
         />
 
         {/* Modal panel */}
@@ -773,7 +1199,7 @@ const ImportModal = ({
               {t(`${config.entityName}:import.title`)}
             </h3>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <XCircle className="w-6 h-6" />
@@ -847,17 +1273,17 @@ const ImportModal = ({
                   </button>
                   <button
                     onClick={handleImport}
-                    disabled={!state.serverValidation?.isValid}
+                    disabled={state.loading}
                     className="px-4 py-2 text-white transition-colors rounded-md bg-doan-500 hover:bg-doan-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {state.options.dryRun ? t('import.validate') : t('import.startImport')}
+                    {t('import.startImport')}
                   </button>
                 </>
               )}
 
               {(state.step === 'upload' || state.step === 'result') && (
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-md dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   {state.step === 'result' ? t('common:actions.close') : t('common:actions.cancel')}

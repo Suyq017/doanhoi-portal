@@ -1,0 +1,69 @@
+{
+  "title": "Personal Reports",
+  "subtitle": "Personal Community Service Report",
+  "studentInfo": {
+    "title": "Student Information",
+    "name": "Full Name",
+    "code": "Student Code",
+    "email": "Email",
+    "class": "Class",
+    "department": "Department",
+    "unknown": "Unknown",
+    "unknownDate": "Not determined"
+  },
+  "summary": {
+    "title": "Summary Results",
+    "totalDays": "Total Community Service Days",
+    "totalActivities": "Total Activities",
+    "completedActivities": "Completed Activities",
+    "registeredActivities": "Registered Activities",
+    "cancelledActivities": "Cancelled Activities",
+    "completionRate": "Completion Rate",
+    "accumulatedDays": "Accumulated Days",
+    "status": "Status",
+    "achieved": "Achieved",
+    "notAchieved": "Not Achieved"
+  },
+  "activities": {
+    "title": "Activity List",
+    "name": "Activity Name",
+    "category": "Category",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "actualDays": "Actual Days",
+    "status": "Status",
+    "gradedBy": "Graded By",
+    "gradedAt": "Graded At",
+    "note": "Note",
+    "noData": "No activities yet",
+    "noActivitiesMessage": "You have not participated in any community service activities yet.",
+    "statusOptions": {
+      "REGISTERED": "Registered",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    }
+  },
+  "filters": {
+    "category": "Filter by Category",
+    "status": "Filter by Status",
+    "semester": "Filter by Semester",
+    "all": "All"
+  },
+  "actions": {
+    "exportPdf": "Export PDF",
+    "refresh": "Refresh",
+    "print": "Print Report"
+  },
+  "stats": {
+    "byCategory": "Statistics by Category",
+    "bySemester": "Statistics by Semester",
+    "byStatus": "Statistics by Status"
+  },
+  "messages": {
+    "loading": "Loading data...",
+    "error": "Error occurred while loading data",
+    "noPermission": "You don't have permission to view this report",
+    "notFound": "Student data not found",
+    "retry": "Retry"
+  }
+}

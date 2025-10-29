@@ -183,6 +183,12 @@ export class OrganizationImportService {
 
           // Chỉ kiểm tra membership nếu không có error mới
           if (item._errors.length === 0) {
+            console.log(`[DEBUG] Checking membership for user ${item.studentCode}:`);
+            console.log(`  - Session Organization ID: ${session.organizationId}`);
+            console.log(`  - Target Organization ID: ${targetOrganizationId}`);
+            console.log(`  - ClassOrUnitCode: ${item.classOrUnitCode || 'N/A'}`);
+            console.log(`  - User ID: ${user.id}`);
+
             // Kiểm tra existing membership
             const existingMembership = await this.userOrganizationsRepository.findOne({
               where: {
@@ -190,6 +196,8 @@ export class OrganizationImportService {
                 organizationId: targetOrganizationId
               }
             });
+
+            console.log(`  - Existing Membership: ${existingMembership ? 'YES (ID: ' + existingMembership.id + ')' : 'NO'}`);
 
             if (existingMembership) {
               console.log(`User ${item.studentCode} already exists in target organization`);
@@ -548,5 +556,32 @@ export class OrganizationImportService {
 
     console.log('Import completed:', importResult);
     return importResult;
+  }
+
+  /**
+   * NEW: Fast validation endpoint for client-side processing
+   * Uses bulk queries to validate member data efficiently
+   * @param data - Array of member data to validate
+   * @param organizationId - Target organization ID (optional for Level 2)
+   * @param level - Organization level (2 or 3)
+   * @returns Validation result with errors/warnings
+   */
+  async validateMemberData(
+    data: Array<{ studentCode: string; classOrUnitCode?: string }>,
+    organizationId: string | undefined,
+    level: 2 | 3
+  ): Promise<OrganizationValidationResult> {
+    // Convert input format to OrganizationMemberImportData format
+    const memberData: OrganizationMemberImportData[] = data.map(item => ({
+      studentCode: item.studentCode,
+      classOrUnitCode: item.classOrUnitCode
+    }));
+
+    // Use optimized validation service with bulk queries
+    return this.validationService.validateOrganizationMemberData(
+      memberData,
+      organizationId,
+      level
+    );
   }
 }

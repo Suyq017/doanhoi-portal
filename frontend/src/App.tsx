@@ -19,6 +19,8 @@ import {
   MyCampaignsPage,
   PaymentCampaignDetailPage
 } from './features/fee-collection';
+import { CategoryManagement, ActivityManagement, ActivityDetail, LimitConfigManagement } from './features/ctxh/pages';
+import { StudentReportsPage } from './features/student-reports';
 import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
 
@@ -150,6 +152,67 @@ function App() {
                             </OrganizationStatsProvider>
                           </Layout>
                         </EnhancedProtectedRoute>
+                      }
+                    />
+
+                    {/* CTXH Routes */}
+                    <Route
+                      path="/ctxh/categories"
+                      element={
+                        <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <CategoryManagement />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </EnhancedProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/ctxh/activities"
+                      element={
+                        <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <ActivityManagement />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </EnhancedProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/ctxh/activities/:id"
+                      element={
+                        <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <ActivityDetail />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </EnhancedProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/ctxh/limit-config"
+                      element={
+                        <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <LimitConfigManagement />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </EnhancedProtectedRoute>
+                      }
+                    />
+                    {/* Student Reports */}
+                    <Route
+                      path="/student-reports"
+                      element={
+                        <ProtectedRoute>
+                          <Layout>
+                            <StudentReportsPage />
+                          </Layout>
+                        </ProtectedRoute>
                       }
                     />                    {/* Admin Payment Routes */}
                     <Route

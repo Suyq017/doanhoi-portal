@@ -20,12 +20,12 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "typeorm-ts-node-commonjs",
     "db:create-schema": "ts-node src/database/create-schema.ts",
+    "db:reset": "ts-node src/database/reset-database.ts && npm run seed",
+    "db:drop": "ts-node src/database/reset-database.ts",
     "seed": "ts-node src/database/seeds/index.ts",
     "seed:permissions": "ts-node -e \"import('./src/database/seeds/permissions.seed').then(m => m.seedPermissions(require('./src/database/seeds/dataSource')))\"",
     "seed:roles": "ts-node -e \"import('./src/database/seeds/roles.seed').then(m => m.seedRoles(require('./src/database/seeds/dataSource')))\"",
-    "seed:users": "ts-node -e \"import('./src/database/seeds/default-users.seed').then(m => m.seedDefaultUsers(require('./src/database/seeds/dataSource')))\"",
-    "db:reset": "npm run db:create-schema && npm run seed",
-    "db:setup": "node scripts/seed-database.js"
+    "seed:users": "ts-node -e \"import('./src/database/seeds/default-users.seed').then(m => m.seedDefaultUsers(require('./src/database/seeds/dataSource')))\""
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -38,6 +38,7 @@
     "@nestjs/typeorm": "^10.0.0",
     "@payos/node": "^1.0.10",
     "@types/multer": "^1.4.13",
+    "@willsoto/nestjs-prometheus": "^6.0.2",
     "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
@@ -52,6 +53,7 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pg": "^8.16.3",
+    "prom-client": "^15.1.3",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "typeorm": "^0.3.17",

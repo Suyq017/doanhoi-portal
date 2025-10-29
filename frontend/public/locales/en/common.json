@@ -24,7 +24,17 @@
     "createFeeBatch": "Create Fee Batch", 
     "createFeeBatchPhonetic": "Create Fee Batch",
     "myPayments": "My Payments",
-    "myPaymentsPhonetic": "My Payments"
+    "myPaymentsPhonetic": "My Payments",
+    "ctxh": "Community Service Management",
+    "ctxhPhonetic": "Community Service Management",
+    "ctxhCategories": "Community Service Categories",
+    "ctxhCategoriesPhonetic": "Community Service Categories",
+    "ctxhActivities": "Community Service Activities",
+    "ctxhActivitiesPhonetic": "Community Service Activities",
+    "ctxhLimitConfig": "Limit Configuration",
+    "ctxhLimitConfigPhonetic": "Limit Configuration",
+    "ctxhStudentReport": "Personal Report",
+    "ctxhStudentReportPhonetic": "Personal Report"
   },
   "actions": {
     "create": "Create",
@@ -63,6 +73,8 @@
     "retryPhonetic": "Retry",
     "back": "Back",
     "backPhonetic": "Back",
+    "backToList": "Back to List",
+    "backToListPhonetic": "Back to List",
     "next": "Next",
     "nextPhonetic": "Next",
     "previous": "Previous",
@@ -86,7 +98,10 @@
     "processing": "Processing...",
     "processingPhonetic": "Processing",
     "assigning": "Assigning...",
-    "assigningPhonetic": "Assigning"
+    "assigningPhonetic": "Assigning",
+    "adding": "Adding...",
+    "grading": "Grading...",
+    "filtered": "filtered"
   },
   "messages": {
     "success": {
@@ -107,6 +122,7 @@
       "load": "Error occurred while loading data",
       "network": "Network connection error",
       "unknown": "An error occurred",
+      "noPermission": "No access permission!",
       "seedDefaults": "Error occurred while creating default data"
     },
     "confirm": {
@@ -124,9 +140,12 @@
     "more": "more"
   },
   "pagination": {
+    "show": "Show",
+    "perPage": "items/page",
     "showing": "Showing",
     "to": "to",
     "of": "of",
+    "items": "items",
     "results": "results",
     "previous": "Previous",
     "next": "Next",
@@ -198,11 +217,14 @@
   "labels": {
     "optional": "optional",
     "required": "required",
-    "none": "None"
+    "none": "None",
+    "unknown": "Unknown"
   },
   "import": {
     "downloadTemplate": "Download Template",
     "downloadTemplatePhonetic": "Download Template",
+    "downloadHere": "here",
+    "instructionsTitle": "Data Import Guide",
     "templateDescription": "Download Excel template to fill data in correct format",
     "templateDescriptionPhonetic": "Download Excel template",
     "dropFile": "Drag and drop file here",
@@ -233,7 +255,7 @@
     "showLessPhonetic": "Show less",
     "showingRows": "Showing {{count}} / {{total}} rows",
     "showingRowsPhonetic": "Showing {{count}} / {{total}} rows",
-    "validationErrors": "Error list",
+    "validationWarnings": "Warning list",
     "validationErrorsPhonetic": "Error list",
     "autoFilled": "Auto-filled",
     "autoFilledPhonetic": "Auto-filled",
@@ -268,6 +290,12 @@
     "importingPhonetic": "Importing",
     "validating": "Validating data...",
     "validatingPhonetic": "Validating",
+    "progress": {
+      "parsing": "Parsing file...",
+      "validating": "Validating data...",
+      "importing": "Importing data...",
+      "batch": "Batch {{current}}/{{total}} - Processed: {{records}}/{{totalRecords}} records"
+    },
     "pleaseWait": "Please wait a moment...",
     "pleaseWaitPhonetic": "Please wait",
     "importComplete": "Import process completed",

@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  scrape_timeout: 4s
+
+# Alertmanager configuration (optional)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # - 'alertmanager:9093'
+
+# Load rules once and periodically evaluate them
+rule_files:
+  # - "alerts.yml"
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          environment: 'production'
+
+  # Backend API monitoring
+  # Note: Use host.docker.internal for Windows/Mac when backend runs outside Docker
+  # Use backend:3001 if backend is inside docker-compose
+  - job_name: 'doanhoi-backend'
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:9200']  # Backend port 9200
+        labels:
+          service: 'backend'
+          app: 'doanhoi-portal'
+          environment: 'production'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'doanhoi-backend'

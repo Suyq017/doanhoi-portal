@@ -4,10 +4,12 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { ClassesService } from './classes.service';
 import { ImportService } from './services/import.service';
+import { ClassBatchImportService } from './services/batch-import.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { QueryClassDto } from './dto/query-class.dto';
 import { BulkDeleteClassesDto } from './dto/bulk-delete-classes.dto';
+import { BatchImportClassesDto } from './dto/batch-import-classes.dto';
 
 @ApiTags('classes')
 @Controller('classes')
@@ -15,7 +17,8 @@ export class ClassesController {
   constructor(
     private readonly classesService: ClassesService,
     private readonly importService: ImportService,
-  ) {}
+    private readonly batchImportService: ClassBatchImportService,
+  ) { }
 
   @Post()
   @ApiOperation({ summary: 'Tạo lớp học mới' })
@@ -37,7 +40,7 @@ export class ClassesController {
   @ApiResponse({ status: 200, description: 'File mẫu Excel' })
   async downloadTemplate(@Res() res: Response) {
     const templateBuffer = await this.importService.generateTemplate();
-    
+
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="classes_template.xlsx"');
     res.send(templateBuffer);
@@ -117,5 +120,25 @@ export class ClassesController {
   @ApiResponse({ status: 404, description: 'Session không tồn tại' })
   async getImportStatus(@Param('sessionId') sessionId: string) {
     return this.importService.getSessionStatus(sessionId);
+  }
+
+  // New batch import endpoints for client-side processing
+  @Post('import/batch')
+  @ApiOperation({ summary: 'Import lớp học theo batch với client-side processing' })
+  @ApiResponse({ status: 200, description: 'Kết quả import batch' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ hoặc lỗi import' })
+  async importClassesBatch(@Body() importData: BatchImportClassesDto) {
+    return this.batchImportService.processBatch(
+      importData.classes,
+      importData.batchInfo,
+      importData.options
+    );
+  }
+
+  @Get('import/batch/:sessionId/status')
+  @ApiOperation({ summary: 'Lấy trạng thái import batch theo sessionId' })
+  @ApiResponse({ status: 200, description: 'Trạng thái session import' })
+  async getBatchImportStatus(@Param('sessionId') sessionId: string) {
+    return this.batchImportService.getSessionSummary(sessionId);
   }
 }

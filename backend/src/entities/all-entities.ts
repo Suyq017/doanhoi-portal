@@ -7,3 +7,9 @@ export { Class } from './class.entity';
 export { Permission, PermissionContext } from './permission.entity';
 export { Role } from './role.entity';
 export { UserRole } from './user-role.entity';
+
+// CTXH System entities
+export { CtxhCategory } from './ctxh-category.entity';
+export { CtxhActivity, ActivityStatus } from './ctxh-activity.entity';
+export { CtxhParticipation, ParticipationStatus } from './ctxh-participation.entity';
+export { CtxhLimitConfig, LimitConfigStatus } from './ctxh-limit-config.entity';

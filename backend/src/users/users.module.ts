@@ -15,6 +15,7 @@ import { UserBatchProcessingService } from './services/batch-processing.service'
 import { UserTransactionService } from './services/transaction.service';
 import { UserImportMonitoringService } from './services/monitoring.service';
 import { UserBackgroundJobService } from './services/background-job.service';
+import { BatchImportService } from './services/batch-import.service'; // NEW: Client-side batch processing
 import { RolesModule } from '../roles/roles.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { CleanEmptyStringsMiddleware } from '../common/middleware/clean-empty-strings.middleware';
@@ -35,7 +36,8 @@ import { CleanEmptyStringsMiddleware } from '../common/middleware/clean-empty-st
     UserBatchProcessingService,
     UserTransactionService,
     UserImportMonitoringService,
-    UserBackgroundJobService
+    UserBackgroundJobService,
+    BatchImportService // NEW: Client-side batch processing service
   ],
   exports: [UsersService],
 })

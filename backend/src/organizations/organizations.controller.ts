@@ -1,12 +1,14 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile, Res, BadRequestException, UseGuards, Request } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { Response } from 'express';
 import { OrganizationsService } from './organizations.service';
 import { OrganizationImportService } from './services/import.service';
+import { OrganizationBatchImportService } from './services/batch-import.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { BulkRemoveMembersDto } from './dto/bulk-remove-members.dto';
+import { BatchImportMembersDto } from './dto/batch-import-members.dto';
 import { OrganizationType } from '../entities/organization.entity';
 import { UserOrgRole } from '../entities/user-organization.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -16,7 +18,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class OrganizationsController {
     constructor(
         private readonly organizationsService: OrganizationsService,
-        private readonly importService: OrganizationImportService
+        private readonly importService: OrganizationImportService,
+        private readonly batchImportService: OrganizationBatchImportService
     ) { }
 
     @Post()
@@ -88,6 +91,39 @@ export class OrganizationsController {
             console.error('[OrganizationsController] Error in getAccessibleOrganizations:', error);
             throw error;
         }
+    }
+
+    @Get('ctxh-activity-accessible')
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({
+        summary: 'Get organizations user can use for CTXH activity creation',
+        description: 'Returns organizations based on ctxh.activities.create permission and hierarchy level'
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Organizations retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                organizations: {
+                    type: 'array',
+                    items: { type: 'object' }
+                },
+                canSelectMultiple: {
+                    type: 'boolean',
+                    description: 'Whether user can choose from multiple organizations'
+                },
+                fixedOrganization: {
+                    type: 'object',
+                    nullable: true,
+                    description: 'If user is restricted to single org (level 2), this is set'
+                }
+            }
+        }
+    })
+    async getCtxhActivityAccessibleOrganizations(@Request() req: any) {
+        const userId = req.user.id;
+        return this.organizationsService.getCtxhActivityAccessibleOrganizations(userId);
     }
 
     @Get(':id/children')
@@ -211,7 +247,46 @@ export class OrganizationsController {
         @Param('code_user') userCode: string
     ) {
         return this.organizationsService.addMemberBySimpleCode(orgCode, userCode);
-    }    // Import Members Endpoints
+    }
+
+    @Post('validate-codes')
+    @ApiOperation({ summary: 'Kiểm tra danh sách mã tổ chức có tồn tại không' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                codes: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Danh sách mã tổ chức cần kiểm tra'
+                }
+            }
+        }
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Kết quả kiểm tra',
+        schema: {
+            type: 'object',
+            properties: {
+                validCodes: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Danh sách mã hợp lệ'
+                },
+                invalidCodes: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Danh sách mã không tồn tại'
+                }
+            }
+        }
+    })
+    async validateOrganizationCodes(@Body('codes') codes: string[]) {
+        return this.organizationsService.validateOrganizationCodes(codes);
+    }
+
+    // Import Members Endpoints
     @Post('members/import/upload')
     @ApiOperation({ summary: 'Upload file Excel để import thành viên' })
     @ApiConsumes('multipart/form-data')
@@ -270,5 +345,77 @@ export class OrganizationsController {
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.send(templateBuffer);
+    }
+
+    // NEW: Client-Side Validation Endpoint (Fast Bulk Validation)
+    @Post('members/validate')
+    @ApiOperation({ summary: 'Validate dữ liệu thành viên với bulk queries (nhanh)' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                data: {
+                    type: 'array',
+                    description: 'Danh sách thành viên cần validate',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            studentCode: { type: 'string' },
+                            classOrUnitCode: { type: 'string', nullable: true }
+                        }
+                    }
+                },
+                organizationId: { type: 'string', description: 'ID tổ chức đích (optional cho Level 2)' },
+                level: { type: 'number', enum: [2, 3], description: 'Level tổ chức (2 hoặc 3)' }
+            },
+            required: ['data', 'level'] // organizationId is now optional
+        }
+    })
+    @ApiResponse({ status: 200, description: 'Kết quả validation với errors/warnings' })
+    @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
+    async validateMembers(
+        @Body() body: {
+            data: Array<{ studentCode: string; classOrUnitCode?: string }>;
+            organizationId?: string; // Now optional for Level 2
+            level: 2 | 3;
+        }
+    ) {
+        const { data, organizationId, level } = body;
+
+        if (!data || !Array.isArray(data)) {
+            throw new BadRequestException('data phải là một array');
+        }
+
+        if (![2, 3].includes(level)) {
+            throw new BadRequestException('level phải là 2 hoặc 3');
+        }
+
+        // Use validation service with bulk queries
+        return this.importService.validateMemberData(data, organizationId, level);
+    }
+
+    // NEW: Batch Import Endpoint for Client-Side Processing
+    @Post('members/import/batch')
+    @ApiOperation({ summary: 'Import thành viên theo batch với client-side processing' })
+    @ApiBody({ type: BatchImportMembersDto })
+    @ApiResponse({ status: 200, description: 'Kết quả import batch' })
+    @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ' })
+    async importMembersBatch(
+        @Body() importData: BatchImportMembersDto
+    ) {
+        return this.batchImportService.processBatch(
+            importData.members,
+            importData.batchInfo,
+            importData.options
+        );
+    }
+
+    @Get('import/batch/:sessionId/status')
+    @ApiOperation({ summary: 'Lấy trạng thái của batch import session' })
+    @ApiParam({ name: 'sessionId', description: 'ID của session import' })
+    @ApiResponse({ status: 200, description: 'Thông tin session' })
+    @ApiResponse({ status: 404, description: 'Session không tồn tại' })
+    async getBatchImportStatus(@Param('sessionId') sessionId: string) {
+        return this.batchImportService.getSessionSummary(sessionId);
     }
 }

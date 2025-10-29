@@ -122,3 +122,61 @@ export interface ImportSession {
     errorMessage?: string;
     results?: any;
 }
+
+// Batch Import Types (Phase 4)
+export interface BatchImportRequest {
+    users: UserImportDto[];
+    options: ImportOptionsDto;
+    batchInfo: BatchInfoDto;
+}
+
+export interface UserImportDto {
+    code: string;
+    familyName: string;
+    givenName: string;
+    email?: string;
+    phone?: string;
+    gender?: string;
+    birthDate?: string;
+    identityCard?: string;
+    admissionYear?: string;
+    curriculumYear?: string;
+    facultyCode?: string;
+    trainingSystem?: string;
+    trainingLevel?: string;
+    departmentCode?: string;
+    className?: string;
+}
+
+export interface ImportOptionsDto {
+    skipDuplicates: boolean;
+    updateExisting: boolean;
+}
+
+export interface BatchInfoDto {
+    sessionId: string;
+    batchNumber: number;
+    totalBatches: number;
+}
+
+export interface BatchImportResponse {
+    success: boolean;
+    batchResult: BatchResultDto;
+    sessionSummary: SessionSummaryDto;
+    message: string;
+}
+
+export interface BatchResultDto {
+    processed: number;
+    successful: number;
+    failed: number;
+    errors: string[];
+}
+
+export interface SessionSummaryDto {
+    totalProcessed: number;
+    totalSuccessful: number;
+    totalFailed: number;
+    isComplete: boolean;
+    processingTime: number;
+}

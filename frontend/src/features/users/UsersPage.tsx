@@ -25,7 +25,7 @@ import EditUserModal from "./components/EditUserModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import UserRoleAssignmentModal from "./components/UserRoleAssignmentModal";
 import GrantRolesModal from "./components/GrantRolesModal";
-import { useUserImportConfig } from "./hooks/useUserImportConfig";
+import { useUserBatchImportConfig } from "./hooks/useUserBatchImportConfig";
 import { useUserPagePermissions } from "./hooks/useUserPagePermissions";
 
 const Users: React.FC = () => {
@@ -117,7 +117,12 @@ const Users: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isRoleAssignmentModalOpen, setIsRoleAssignmentModalOpen] = useState(false);
   const [isGrantRolesModalOpen, setIsGrantRolesModalOpen] = useState(false);
-  const { importConfig } = useUserImportConfig({ onRefreshData: refreshUsers });
+  // Feature flag for Phase 4 - Enable batch processing
+  const useBatchProcessing = true; // Set to true to enable batch import
+  const importConfig = useUserBatchImportConfig({ 
+    onRefreshData: refreshUsers, 
+    useBatchProcessing 
+  });
 
   // Page-level access control (after all hooks are called)
   if (!permissions.canAccessUsers()) {
@@ -136,7 +141,8 @@ const Users: React.FC = () => {
             className="px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-md hover:bg-gray-200"
           >
             {t('common:actions.goBack')}
-          </button>        </div>
+          </button>        
+          </div>
       </div>
     );
   }
@@ -258,7 +264,8 @@ const Users: React.FC = () => {
           total,
           limit,
           onPageChange: setCurrentPage,
-        }} tableProps={{
+        }} 
+        tableProps={{
           onUserView: handleViewUser,
           onUserEdit: handleEditUser,
           onUserDelete: handleDeleteUser,
@@ -281,11 +288,13 @@ const Users: React.FC = () => {
         onClose={closeModal}
         onSubmit={handleCreateUser}
         loading={isCreating}
-      />      <ViewUserModal
+      />      
+      <ViewUserModal
         isOpen={isViewModalOpen}
         onClose={closeModal}
         user={selectedUser}
-      />      <EditUserModal
+      />      
+      <EditUserModal
         isOpen={isEditModalOpen}
         onClose={closeModal}
         onSubmit={customHandleUpdateUser}
@@ -294,7 +303,8 @@ const Users: React.FC = () => {
         showSuccess={showSuccess}
         showError={showError}
         onRefreshData={refreshUsers}
-      /><DeleteConfirmModal
+      />
+      <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={closeModal}
         onConfirm={confirmDeleteUser}
@@ -306,21 +316,24 @@ const Users: React.FC = () => {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         config={importConfig}
-      />      <ExportModal
+      />      
+      <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         onExport={handleExport}
         title={t('users:export.title', { defaultValue: 'Xuất danh sách người dùng' })}
         description={t('users:export.description', { defaultValue: 'Chọn các trường dữ liệu bạn muốn xuất ra file Excel' })}
         availableFields={USER_EXPORT_FIELDS}
-      />      <UserRoleAssignmentModal
+      />      
+      <UserRoleAssignmentModal
         isOpen={isRoleAssignmentModalOpen}
         onClose={() => setIsRoleAssignmentModalOpen(false)}
         onSuccess={() => {
           showSuccess(t('users:messages.assignRolesSuccess'));
           refreshUsers();
         }}
-      />      <GrantRolesModal
+      />      
+      <GrantRolesModal
         isOpen={isGrantRolesModalOpen}
         onClose={() => setIsGrantRolesModalOpen(false)}
         onSuccess={() => {
@@ -330,15 +343,17 @@ const Users: React.FC = () => {
       />
 
       {/* Toast Notifications */}
-      {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          type={toast.type}
-          message={toast.message}
-          duration={toast.duration}
-          onClose={() => hideToast(toast.id)}
-        />
-      ))}
+      <div className="fixed top-4 right-4 z-[9999]">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            duration={toast.duration}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 };

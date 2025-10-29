@@ -237,7 +237,7 @@ const Departments: React.FC = () => {
   }, [isAllSelected, departments]);
 
   const handleSelectDepartment = useCallback((departmentId: string) => {
-    setSelectedDepartmentIds(prev => 
+    setSelectedDepartmentIds(prev =>
       prev.includes(departmentId)
         ? prev.filter(id => id !== departmentId)
         : [...prev, departmentId]
@@ -407,16 +407,16 @@ const Departments: React.FC = () => {
         <div className="flex items-center justify-between p-4 mb-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-gray-700 dark:border-gray-600">
           <div className="flex items-center space-x-3">
             <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-               {t('common:actions.select')} ({selectedDepartmentIds.length})
+              {t('common:actions.select')} ({selectedDepartmentIds.length})
             </span>
             <button
               onClick={handleClearSelection}
               className="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
             >
-            <X className="w-4 h-4" />
+              <X className="w-4 h-4" />
             </button>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <button
               onClick={handleBulkDelete}
@@ -464,13 +464,12 @@ const Departments: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {filteredDepartments.map((department) => (
-                <tr 
-                  key={department.id} 
-                  className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                    selectedDepartmentIds.includes(department.id) 
-                      ? 'bg-blue-50 dark:bg-blue-900/20' 
+                <tr
+                  key={department.id}
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedDepartmentIds.includes(department.id)
+                      ? 'bg-blue-50 dark:bg-blue-900/20'
                       : ''
-                  }`}
+                    }`}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input
@@ -495,8 +494,8 @@ const Departments: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${department.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
                         }`}
                     >
                       {department.isActive ? t('common:status.active') : t('common:status.inactive')}
@@ -540,7 +539,7 @@ const Departments: React.FC = () => {
         </div>        {filteredDepartments.length === 0 && !loading && (
           <div className="py-12 text-center">
             <div className="text-gray-500 dark:text-gray-400">
-              {!permissions.canView 
+              {!permissions.canView
                 ? t('common:noPermissionToView', { entity: t('departments:entityName', { defaultValue: 'đơn vị' }), defaultValue: `Bạn không có quyền xem danh sách ${t('departments:entityName', { defaultValue: 'đơn vị' })}` })
                 : !permissions.canCreate
                   ? t('common:noItemsContactAdmin', { entity: t('departments:entityName', { defaultValue: 'đơn vị' }), defaultValue: `Không tìm thấy ${t('departments:entityName', { defaultValue: 'đơn vị' })} nào. Liên hệ quản trị viên để thêm ${t('departments:entityName', { defaultValue: 'đơn vị' })}.` })
@@ -654,15 +653,17 @@ const Departments: React.FC = () => {
       />
 
       {/* Toast Notifications */}
-      {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          type={toast.type}
-          message={toast.message}
-          duration={toast.duration}
-          onClose={() => hideToast(toast.id)}
-        />
-      ))}
+      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            duration={toast.duration}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 };

@@ -77,11 +77,12 @@ const OrganizationMembersPage: React.FC = () => {
         refreshKey
     );
 
-    // Import modal
+    // Import modal with client-side processing enabled for better performance
     const { importConfig, handleImportModalClose } = useImportModal({
         level,
         organizationId: displayOrganization?.id,
-        onRefresh: handleRefreshAll
+        onRefresh: handleRefreshAll,
+        useClientSideProcessing: true // Enable fast backend validation with bulk queries
     });    // Breadcrumb JSX for better navigation  
     const breadcrumbTitle = useBreadcrumbJSX({
         type,
