@@ -195,8 +195,8 @@ export class ExcelParserService {
       className: ['mã lớp','class name', 'MALOP'],
       familyName: ['họ và tên lót', 'họ tên lót','last name', 'họ', 'HOLOT'],
       givenName: ['tên gọi', 'given name', 'first name', 'TEN'], // Removed 'tên' to avoid partial matching with TENLOP
-      managementDepartmentCode: ['mã đơn vị quản lý', 'management dept code', 'đơn vị quản lý', 'DVQLY'],
-      trainingDepartmentCode: ['mã ngành', 'training dept code', 'NGANH'],
+      managementDepartment: ['mã đơn vị quản lý', 'management dept code', 'đơn vị quản lý', 'DVQLY'],
+      trainingDepartment: ['mã khoa', 'training dept code', 'KHOA'],
       admissionYear: ['năm nhập học', 'admission year', 'năm vào học', 'năm vào', 'NAMVAO'],
       curriculumYear: ['năm chương trình', 'năm ct', 'curriculum year', 'NAMCTDT'],
       trainingSystem: [ 'training system', 'hệ đào tạo', 'HEDAOTAO'],
@@ -206,7 +206,7 @@ export class ExcelParserService {
       userType: ['loại người dùng', 'user type', 'loại user'],
       membershipStatus: ['tình trạng thành viên', 'membership status', 'tình trạng'],
       organizationCodes: ['mã tổ chức', 'organization codes', 'tổ chức'],
-      facultyCode: ['mã khoa', 'faculty code', 'mã faculty', 'KHOA'],
+      facultyCode: ['mã ngành', 'faculty code', 'mã faculty', 'NGANH'],
       
       // General patterns after specific ones
       code: ['mã số sinh viên', 'mã sinh viên', 'student code', 'staff code', 'mã cán bộ', 'mã số', 'code', 'MSSV'],
@@ -301,9 +301,9 @@ export class ExcelParserService {
       className: classNameRaw || undefined,
       admissionYear: this.getCellValue(row, headerMapping.admissionYear) || undefined,
       curriculumYear: this.getCellValue(row, headerMapping.curriculumYear) || undefined,
-      facultyCode: this.extractCodeFromCodeNameFormat(this.getCellValue(row, headerMapping.facultyCode)) || undefined,
-      managementDepartmentCode: this.extractCodeFromCodeNameFormat(this.getCellValue(row, headerMapping.managementDepartmentCode)) || undefined,
-      trainingDepartmentCode: this.getCellValue(row, headerMapping.trainingDepartmentCode) || undefined,
+      facultyCode: this.getCellValue(row, headerMapping.facultyCode) || undefined,
+      managementDepartment: this.extractCodeFromCodeNameFormat(this.getCellValue(row, headerMapping.managementDepartment)) || undefined,
+      trainingDepartment: this.extractCodeFromCodeNameFormat(this.getCellValue(row, headerMapping.trainingDepartment)) || undefined,
       trainingSystem: this.getCellValue(row, headerMapping.trainingSystem),
       trainingLevel: this.getCellValue(row, headerMapping.trainingLevel),
       userType: this.normalizeUserType(this.getCellValue(row, headerMapping.userType)),

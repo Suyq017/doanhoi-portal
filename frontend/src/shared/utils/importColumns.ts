@@ -56,8 +56,9 @@ export const userColumns = (t?: (key: string) => string): ImportColumn[] => [
   { key: 'admissionYear', label: t?.('users:fields.admissionYear') || 'Năm nhập học | Admission Year', required: false, type: 'text' },
   { key: 'curriculumYear', label: t?.('users:fields.curriculumYear') || 'Năm chương trình đào tạo | Curriculum Year', required: false, type: 'text' },
   { key: 'className', label: t?.('users:fields.className') || 'Tên lớp | Class Name', required: false, type: 'text' },
-  { key: 'facultyCode', label: t?.('users:fields.facultyCode') || 'Mã khoa | Faculty Code', required: false, type: 'text' },
-  { key: 'managementDepartmentCode', label: t?.('users:fields.departmentCode') || 'Mã đơn vị quản lý | Management Dept Code', required: false, type: 'text' },
+  { key: 'trainingDepartment', label: t?.('users:fields.trainingDepartment') || 'Mã khoa | Training Dept Code', required: false, type: 'text' },
+  { key: 'managementDepartment', label: t?.('users:fields.managementDepartment') || 'Mã đơn vị quản lý | Management Dept Code', required: false, type: 'text' },
+  { key: 'facultyCode', label: t?.('users:fields.facultyCode') || 'Mã ngành | Faculty Code', required: false, type: 'text' },
 
   // Training information
   {
@@ -95,18 +96,19 @@ export const userColumns = (t?: (key: string) => string): ImportColumn[] => [
   },
   {
     key: 'membershipStatus',
-    label: t?.('users:fields.membershipStatus') || 'Tình trạng | Membership Status',
+    label: t?.('users:fields.membershipStatus') || 'Membership Status',
     required: false,
     type: 'select',
     selectOptions: [
-      { value: 'ACTIVE', label: t?.('users:membershipStatus.active') || 'Hoạt động | Active' },
-      { value: 'INACTIVE', label: t?.('users:membershipStatus.inactive') || 'Không hoạt động | Inactive' },
-      { value: 'GRADUATED', label: t?.('users:membershipStatus.graduated') || 'Đã tốt nghiệp | Graduated' }
+      { value: 'doan_vien', label: t?.('users:membershipStatus.doan_vien') || 'Đoàn viên' },
+      { value: 'hoi_vien', label: t?.('users:membershipStatus.hoi_vien') || 'Hội viên' },
+      { value: 'both', label: t?.('users:membershipStatus.both') || 'Cả hai' },
+      { value: 'none', label: t?.('users:membershipStatus.none') || 'Không' }
     ]
   }
 ];
 
-/**
+/**\
  * Legacy users columns configuration (for backward compatibility)
  * Use this if you need to support the old import format
  */
@@ -118,8 +120,8 @@ export const userColumnsLegacy = (t?: (key: string) => string): ImportColumn[] =
   { key: 'password', label: t?.('users:fields.password') || 'Password', required: false, type: 'text' },
   { key: 'phone', label: t?.('users:fields.phone') || 'Phone', required: false, type: 'text' },
   { key: 'className', label: t?.('users:fields.className') || 'Class Name', required: false, type: 'text' },
-  { key: 'managementDepartmentCode', label: t?.('users:fields.managementDepartmentCode') || 'Management Department Code', required: false, type: 'text' },
-  { key: 'trainingDepartmentCode', label: t?.('users:fields.trainingDepartmentCode') || 'Training Department Code', required: false, type: 'text' },
+  { key: 'managementDepartment', label: t?.('users:fields.managementDepartment') || 'Management Department Code', required: false, type: 'text' },
+  { key: 'trainingDepartment', label: t?.('users:fields.trainingDepartment') || 'Training Department Code', required: false, type: 'text' },
   { key: 'organizationCodes', label: t?.('users:fields.organizationCodes') || 'Organization Codes', required: false, type: 'text' },
   {
     key: 'userType',
