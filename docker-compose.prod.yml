@@ -29,7 +29,7 @@ services:
       dockerfile: Dockerfile.prod
     container_name: doanhoi-backend-prod
     env_file:
-      - .env
+      - .env.production
     environment:
       NODE_ENV: production
       DB_HOST: postgres
@@ -86,7 +86,7 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
       - '--web.enable-lifecycle'  # Allow reload via API
       - '--web.external-url=https://doanhoi.hcmut.edu.vn/prometheus/'  # External URL for links
-      - '--web.route-prefix=/'  # Internal routing prefix
+      - '--web.route-prefix=/prometheus/'  # Internal routing prefix
     volumes:
       - ./prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
