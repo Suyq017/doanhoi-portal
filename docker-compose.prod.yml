@@ -86,7 +86,6 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
       - '--web.enable-lifecycle'  # Allow reload via API
       - '--web.external-url=https://doanhoi.hcmut.edu.vn/prometheus/'  # External URL for links
-      - '--web.route-prefix=/prometheus/'  # Internal routing prefix
     volumes:
       - ./prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
