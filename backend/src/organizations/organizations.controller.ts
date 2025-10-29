@@ -126,6 +126,18 @@ export class OrganizationsController {
         return this.organizationsService.getCtxhActivityAccessibleOrganizations(userId);
     }
 
+    @Get('ctxh-activity-viewable')
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({
+        summary: 'Get organizations user can view CTXH activities from',
+        description: 'Returns organizations based on ctxh.activities.view permission'
+    })
+    async getCtxhActivityViewableOrganizations(@Request() req: any) {
+        const userId = req.user.id;
+        const organizations = await this.organizationsService.getCtxhActivityViewableOrganizations(userId);
+        return { organizations };
+    }
+
     @Get(':id/children')
     @ApiOperation({ summary: 'Lấy danh sách tổ chức con trực tiếp' })
     @ApiParam({ name: 'id', description: 'ID của tổ chức cha' })

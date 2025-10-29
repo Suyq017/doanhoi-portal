@@ -77,6 +77,13 @@ export class ActivityResponseDto {
   @Expose()
   total_days?: number;
 
+  @ApiPropertyOptional({
+    description: 'Địa điểm tổ chức hoạt động',
+    example: 'Hội trường A1, Trường ĐH Bách Khoa TPHCM',
+  })
+  @Expose()
+  location?: string;
+
   @ApiProperty({
     description: 'Trạng thái hoạt động',
     enum: ActivityStatus,

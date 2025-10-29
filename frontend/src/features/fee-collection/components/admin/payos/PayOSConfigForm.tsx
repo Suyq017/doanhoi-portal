@@ -448,15 +448,17 @@ const PayOSConfigForm: React.FC<PayOSConfigFormProps> = ({
       </form>
 
       {/* Toast notifications */}
-      {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          type={toast.type}
-          message={toast.message}
-          duration={toast.duration}
-          onClose={() => hideToast(toast.id)}
-        />
-      ))}
+      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            duration={toast.duration}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 };

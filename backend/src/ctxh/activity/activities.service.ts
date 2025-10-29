@@ -116,13 +116,40 @@ export class ActivitiesService {
       .where('activity.deleted_at IS NULL')
       .orderBy('activity.created_at', 'DESC');
 
-    // Filter by accessible organizations (include children)
+    // Check if user has global CTXH activities view permission
     if (user_id) {
-      // Get user's accessible organizations for CTXH activities
-      const accessibleOrgs = await this.organizationsService.getCtxhActivityViewableOrganizations(user_id);
-      const accessibleOrgIds = accessibleOrgs.map(org => org.id);
+      // First check if user is super admin or has global ctxh.activities.view permission
+      const globalPermissionQuery = `
+        SELECT ur.id
+        FROM user_roles ur
+        JOIN roles r ON ur."roleId" = r.id
+        JOIN role_permissions rp ON r.id = rp."roleId"
+        JOIN permissions p ON rp."permissionId" = p.id
+        WHERE ur."userId" = $1 
+        AND ur."organizationId" IS NULL
+        AND ur."isActive" = true
+        AND (p.code = 'ctxh.activities.view' OR p.code = 'system.access_admin' OR r.name = 'super_admin')
+        AND p."isActive" = true
+        LIMIT 1
+      `;
 
-      if (accessibleOrgIds.length > 0) {
+      const globalPermissionResult = await this.organizationRepository.query(globalPermissionQuery, [user_id]);
+
+      if (globalPermissionResult.length > 0) {
+        console.log('[DEBUG] User has global CTXH view permission, no organization filter applied');
+        // User has global permission, no need to filter by organizations
+      } else {
+        // User doesn't have global permission, filter by accessible organizations
+        const accessibleOrgs = await this.organizationsService.getCtxhActivityViewableOrganizations(user_id);
+        const accessibleOrgIds = accessibleOrgs.map(org => org.id);
+
+        console.log('[DEBUG] User accessible organizations:', {
+          userId: user_id,
+          accessibleOrgs: accessibleOrgs.length,
+          orgIds: accessibleOrgIds
+        });
+
+        if (accessibleOrgIds.length > 0) {
         // Get all children organizations using recursive CTE (Common Table Expression)
         // This is more reliable than closure table and works natively in PostgreSQL
         const childrenQuery = `
@@ -150,17 +177,19 @@ export class ActivitiesService {
         // Extract org IDs from query result
         const allAccessibleOrgIds = childrenResult.map((row: any) => row.id);
 
-        console.log('[ActivitiesService] Filtering by accessible organizations:', {
+        console.log('[DEBUG] Organization filter results:', {
           userId: user_id,
           parentOrgs: accessibleOrgIds.length,
-          totalAccessible: allAccessibleOrgIds.length
+          totalAccessible: allAccessibleOrgIds.length,
+          allAccessibleIds: allAccessibleOrgIds
         });
 
         queryBuilder.andWhere('activity.organization_id IN (:...orgIds)', { orgIds: allAccessibleOrgIds });
-      } else {
-        // User has no accessible organizations, return empty result
-        console.log('[ActivitiesService] User has no accessible organizations');
-        queryBuilder.andWhere('1 = 0'); // Always false condition
+        } else {
+          // User has no accessible organizations, return empty result
+          console.log('[ActivitiesService] User has no accessible organizations');
+          queryBuilder.andWhere('1 = 0'); // Always false condition
+        }
       }
     }
 
@@ -323,6 +352,7 @@ export class ActivitiesService {
       id: activity.id,
       name: activity.name,
       description: activity.description,
+      location: activity.location, // Add location field
       category_id: activity.category_id,
       category: activity.category,
       organization_id: activity.organization_id,
@@ -405,6 +435,7 @@ export class ActivitiesService {
       id: activity.id,
       name: activity.name,
       description: activity.description,
+      location: activity.location, // Add location field
       category_id: activity.category_id,
       category: activity.category,
       organization_id: activity.organization_id,
