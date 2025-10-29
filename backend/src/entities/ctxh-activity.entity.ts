@@ -45,6 +45,9 @@ export class CtxhActivity {
   @Column({ type: 'decimal', precision: 5, scale: 1, nullable: true })
   total_days: number;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  location: string;
+
   @Column({
     type: 'enum',
     enum: ActivityStatus,

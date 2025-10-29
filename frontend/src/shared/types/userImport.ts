@@ -14,8 +14,8 @@ export interface UserImportData {
   
   // Class and department information
   className?: string;  // Changed from classCode to className since Class entity uses name
-  managementDepartmentCode?: string;
-  trainingDepartmentCode?: string;
+  managementDepartment?: string;
+  trainingDepartment?: string;
   organizationCodes?: string; // "ORG1;ORG2;ORG3"
   
   // User classification

@@ -21,6 +21,11 @@ interface ActivityListProps {
   onViewClick: (activity: CtxhActivity) => void;
   showToast: (type: 'success' | 'error' | 'info', message: string) => void;
   refreshTrigger: number;
+  permissions?: {
+    create: boolean;
+    update: boolean;
+    delete: boolean;
+  };
 }
 
 const ActivityList: React.FC<ActivityListProps> = ({
@@ -28,7 +33,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
   onDeleteClick,
   onViewClick,
   showToast,
-  refreshTrigger
+  refreshTrigger,
+  permissions
 }) => {
   const { t } = useTranslation('ctxh');
   const [activities, setActivities] = useState<CtxhActivity[]>([]);
@@ -115,11 +121,25 @@ const ActivityList: React.FC<ActivityListProps> = ({
   // Load organizations
   const loadOrganizations = async () => {
     try {
-      const response = await organizationService.getAccessibleOrganizations();
+      console.log('[ActivityList] Loading organizations...');
+      // Try basic organizations endpoint as fallback
+      const response = await organizationService.getOrganizations();
+      console.log('[ActivityList] Organizations response:', response);
       setOrganizations(response);
+      console.log('[ActivityList] Set organizations:', response?.length || 0, 'items');
     } catch (error) {
       console.error('Failed to load organizations:', error);
       showToast('error', 'Không thể tải danh sách tổ chức');
+      
+      // Try accessible organizations as fallback
+      try {
+        console.log('[ActivityList] Trying accessible organizations fallback...');
+        const fallbackResponse = await organizationService.getAccessibleOrganizations();
+        console.log('[ActivityList] Fallback response:', fallbackResponse);
+        setOrganizations(fallbackResponse);
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
     }
   };
 
@@ -489,6 +509,9 @@ const ActivityList: React.FC<ActivityListProps> = ({
                       {t('activity.category')}
                     </th>
                     <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                      {t('activity.location')}
+                    </th>
+                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('activity.time')}
                     </th>
                     <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
@@ -528,6 +551,11 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-gray-500 dark:text-gray-400">
+                          {activity.location || t('activity.noLocation')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                           <Calendar className="w-4 h-4 mr-1" />
                           <div>
@@ -554,20 +582,24 @@ const ActivityList: React.FC<ActivityListProps> = ({
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleEdit(activity)}
-                            className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
-                            title={t('category.edit')}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => onDeleteClick(activity)}
-                            className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400"
-                            title={t('category.delete')}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {permissions?.update && (
+                            <button
+                              onClick={() => handleEdit(activity)}
+                              className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                              title={t('category.edit')}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          )}
+                          {permissions?.delete && (
+                            <button
+                              onClick={() => onDeleteClick(activity)}
+                              className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400"
+                              title={t('category.delete')}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
