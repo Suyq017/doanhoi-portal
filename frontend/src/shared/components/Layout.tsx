@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
 import { LoginButton } from '../../features/auth';
 import { usePermissions } from '../hooks/usePermissions';
+import { useCtxhPermissions } from '../../features/ctxh/hooks';
 
 interface LayoutProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { t } = useTranslation('common');
   const permissions = usePermissions();
+  const ctxhPermissions = useCtxhPermissions();
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -80,24 +82,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         name: t('navigation.ctxh'),
         key: 'ctxh',
         icon: Heart,
+        requiredPermission: 'ctxh.access', // Only need access to show dropdown
         children: [
           {
             name: t('navigation.ctxhCategories'),
             href: '/ctxh/categories',
             icon: Database,
-            requiredPermission: 'ctxh.access'
+            requiredPermission: 'ctxh.categories.view'
           },
           {
             name: t('navigation.ctxhActivities'),
             href: '/ctxh/activities',
             icon: Calendar,
-            requiredPermission: 'ctxh.access'
+            requiredPermission: 'ctxh.activities.view'
           },
           {
             name: t('navigation.ctxhLimitConfig'),
             href: '/ctxh/limit-config',
             icon: Settings,
-            requiredPermission: 'ctxh.access'
+            requiredPermission: 'ctxh.config.manage'
           }
         ]
       },
@@ -105,6 +108,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         name: t('navigation.ctxhStudentReport'),
         href: '/student-reports',
         icon: BarChart,
+        requiredPermission: 'ctxh.reports.view'
       },
       {
         name: t('navigation.paymentAdmin'),
@@ -130,12 +134,56 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }    // Filter items based on permissions
     const filteredNavigation = baseNavigation.filter(item => {
       if ('requiredPermission' in item && item.requiredPermission) {
+        // Special handling for CTXH report permission
+        if (item.requiredPermission === 'ctxh.reports.view') {
+          return ctxhPermissions.reports.view;
+        }
+        
+        // Regular permission check
         const hasAccess = permissions.hasPermission(item.requiredPermission, permissions.currentOrganizationId);
         return hasAccess;
       }
 
       if ('children' in item && item.children) {
-        // Filter children and only show parent if at least one child is accessible
+        // Check parent permission first (for showing dropdown)
+        if ('requiredPermission' in item && item.requiredPermission) {
+          // Special handling for CTXH access permission
+          if (item.requiredPermission === 'ctxh.access') {
+            const hasCtxhAccess = permissions.hasPermission('ctxh.access', permissions.currentOrganizationId);
+            if (!hasCtxhAccess) {
+              return false; // Don't show dropdown if no ctxh.access
+            }
+          } else {
+            // Regular permission check for other parent menus
+            const hasAccess = permissions.hasPermission(item.requiredPermission, permissions.currentOrganizationId);
+            if (!hasAccess) {
+              return false;
+            }
+          }
+        }
+
+        // Now check children permissions
+        if (item.key === 'ctxh') {
+          // Filter children based on CTXH permissions
+          const accessibleChildren = item.children.filter(child => {
+            if (child.requiredPermission) {
+              if (child.requiredPermission === 'ctxh.categories.view') {
+                return ctxhPermissions.categories.view;
+              } else if (child.requiredPermission === 'ctxh.activities.view') {
+                return ctxhPermissions.activities.view;
+              } else if (child.requiredPermission === 'ctxh.config.manage') {
+                return ctxhPermissions.config.manage;
+              }
+            }
+            return false; // Default to false for CTXH items without permission
+          });
+          
+          // Show dropdown only if has ctxh.access AND has accessible children
+          const hasCtxhAccess = permissions.hasPermission('ctxh.access', permissions.currentOrganizationId);
+          return hasCtxhAccess && accessibleChildren.length > 0;
+        }
+        
+        // Regular permission check for other menus
         const accessibleChildren = item.children.filter(child => {
           if (child.requiredPermission) {
             const hasAccess = permissions.hasPermission(child.requiredPermission, permissions.currentOrganizationId);
@@ -149,6 +197,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       return true;
     }).map(item => {
       if ('children' in item && item.children) {
+        // Special handling for CTXH menu
+        if (item.key === 'ctxh') {
+          const filteredChildren = item.children.filter(child => {
+            if (child.requiredPermission) {
+              if (child.requiredPermission === 'ctxh.categories.view') {
+                return ctxhPermissions.categories.view;
+              } else if (child.requiredPermission === 'ctxh.activities.view') {
+                return ctxhPermissions.activities.view;
+              } else if (child.requiredPermission === 'ctxh.config.manage') {
+                return ctxhPermissions.config.manage;
+              }
+            }
+            return false; // Default to false for CTXH items without permission
+          });
+          
+          return {
+            ...item,
+            children: filteredChildren
+          };
+        }
+        
+        // Regular permission check for other menus
         return {
           ...item,
           children: item.children.filter(child =>
@@ -165,7 +235,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigation = getFilteredNavigation();
 
   // Show loading if permissions are still loading
-  if (permissions.permissionsLoading) {
+  if (permissions.permissionsLoading || ctxhPermissions.loading) {
     return <div>Loading...</div>;
   }
 
