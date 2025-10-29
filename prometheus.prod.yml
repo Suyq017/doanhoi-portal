@@ -20,6 +20,7 @@ rule_files:
 scrape_configs:
   # Prometheus self-monitoring
   - job_name: 'prometheus'
+    metrics_path: '/prometheus/metrics'  # Must match --web.route-prefix
     static_configs:
       - targets: ['localhost:9090']
         labels:
