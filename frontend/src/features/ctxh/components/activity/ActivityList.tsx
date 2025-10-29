@@ -121,25 +121,12 @@ const ActivityList: React.FC<ActivityListProps> = ({
   // Load organizations
   const loadOrganizations = async () => {
     try {
-      console.log('[ActivityList] Loading organizations...');
-      // Try basic organizations endpoint as fallback
+      // Use basic organizations endpoint to allow filtering by any organization
       const response = await organizationService.getOrganizations();
-      console.log('[ActivityList] Organizations response:', response);
       setOrganizations(response);
-      console.log('[ActivityList] Set organizations:', response?.length || 0, 'items');
     } catch (error) {
       console.error('Failed to load organizations:', error);
       showToast('error', 'Không thể tải danh sách tổ chức');
-      
-      // Try accessible organizations as fallback
-      try {
-        console.log('[ActivityList] Trying accessible organizations fallback...');
-        const fallbackResponse = await organizationService.getAccessibleOrganizations();
-        console.log('[ActivityList] Fallback response:', fallbackResponse);
-        setOrganizations(fallbackResponse);
-      } catch (fallbackError) {
-        console.error('Fallback also failed:', fallbackError);
-      }
     }
   };
 

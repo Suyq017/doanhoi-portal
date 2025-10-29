@@ -63,17 +63,26 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
     limit: 20
   });
 
+  // Debounce search to avoid too many API calls
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
   // Load configs
   const loadConfigs = async () => {
     try {
       setLoading(true);
+      console.log('Loading configs with filters:', filters);
       const response = await limitConfigService.findAll(filters);
-      // Loading limit configurations
+      console.log('API response:', response);
       
       setConfigs(response.data || []);
       setCurrentPage(response.page || 1);
       setTotalPages(response.totalPages || 1);
       setTotal(response.total || 0);
+      
+      // Sync the limit state with actual response
+      if (response.limit && response.limit !== filters.limit) {
+        setLimit(response.limit);
+      }
     } catch (error) {
       const errorMessage = translateError(error);
       showToast('error', errorMessage);
@@ -93,12 +102,33 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
     loadConfigs();
   }, [filters, refreshTrigger]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
+
   // Handlers
   const handlePageChange = (page: number) => {
+    console.log('Page change requested:', page, 'Current filters:', filters);
     setFilters(prev => ({ ...prev, page }));
   };
 
+  const handleLimitChange = (newLimit: number) => {
+    console.log('Limit change requested:', newLimit);
+    setLimit(newLimit);
+    setFilters(prev => ({ 
+      ...prev, 
+      limit: newLimit,
+      page: 1 // Reset to first page when changing limit
+    }));
+  };
+
   const handleStatusFilterChange = (status: LimitConfigStatus | 'ALL') => {
+    console.log('Status filter change:', status);
     setFilters(prev => ({ 
       ...prev, 
       status: status === 'ALL' ? undefined : status,
@@ -107,18 +137,28 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    // Set new timeout for debounced search
+    const timeout = setTimeout(() => {
+      setFilters(prev => ({ 
+        ...prev, 
+        search: value.trim() || undefined,
+        page: 1 
+      }));
+    }, 500); // Wait 500ms after user stops typing
+
+    setSearchTimeout(timeout);
   };
 
-  // Filter configs based on search term
-  const filteredConfigs = configs.filter(config => {
-    if (!searchTerm) return true;
-    
-    const searchLower = searchTerm.toLowerCase();
-    const organizationName = config.organization?.name?.toLowerCase() || '';
-    
-    return organizationName.includes(searchLower);
-  });
+  // Remove the frontend filtering since we're using API search now
+  // All filtering is now handled by the backend API
 
   // Status display
   const getStatusDisplay = (status: LimitConfigStatus, isDeleted: boolean = false) => {
@@ -190,7 +230,7 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
           </select>
           
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            {filteredConfigs.length}/{configs.length} {t('limitConfig.configCount')}
+            {total} {t('limitConfig.configCount')}
           </div>
         </div>
       </div>
@@ -252,7 +292,7 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredConfigs.length === 0 ? (
+            {configs.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-12 text-center">
                   <Settings className="mx-auto h-8 w-8 text-gray-400 mb-2" />
@@ -262,7 +302,7 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
                 </td>
               </tr>
             ) : (
-              filteredConfigs.map((config) => (
+              configs.map((config: CtxhLimitConfig) => (
               <tr 
                 key={config.id} 
                 className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
@@ -370,7 +410,7 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
             total={total}
             limit={limit}
             onPageChange={handlePageChange}
-            onLimitChange={(newLimit) => setLimit(newLimit)}
+            onLimitChange={handleLimitChange}
             showLimitSelector={true}
           />
         </div>

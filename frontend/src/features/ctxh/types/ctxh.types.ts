@@ -268,6 +268,7 @@ export interface LimitConfigQueryParams {
   limit?: number;
   organization_id?: string;
   status?: LimitConfigStatus;
+  search?: string;
 }
 
 // Pagination response wrapper

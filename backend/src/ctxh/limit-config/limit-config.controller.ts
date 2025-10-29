@@ -68,6 +68,12 @@ export class LimitConfigController {
     description: 'Filter theo trạng thái',
     enum: ['ACTIVE', 'INACTIVE', 'DRAFT']
   })
+  @ApiQuery({ 
+    name: 'search', 
+    required: false, 
+    description: 'Tìm kiếm theo tên tổ chức',
+    example: 'Khoa CNTT'
+  })
   @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
   @RequirePermissions('ctxh.config.manage')
   findAll(
@@ -75,12 +81,22 @@ export class LimitConfigController {
     @Query('limit') limit?: number,
     @Query('organization_id') organizationId?: string,
     @Query('status') status?: string,
+    @Query('search') search?: string,
   ) {
+    console.log('Controller received parameters:', {
+      page: page || 1,
+      limit: limit || 10,
+      organization_id: organizationId,
+      status,
+      search,
+    });
+    
     return this.limitConfigService.findAll({
       page: page || 1,
       limit: limit || 10,
       organization_id: organizationId,
       status,
+      search,
     });
   }
 

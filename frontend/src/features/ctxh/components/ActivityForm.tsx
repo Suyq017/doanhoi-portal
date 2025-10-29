@@ -386,19 +386,13 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     try {
       setOrganizationsLoading(true);
 
-      // Use new endpoint for CTXH activity organizations
-      const response = await organizationService.getCtxhActivityAccessibleOrganizations();
+      // Use basic organizations endpoint to allow selection from any organization
+      const response = await organizationService.getOrganizations();
 
-      setOrganizations(response.organizations);
+      setOrganizations(response);
       setOrganizationConstraints({
-        canSelectMultiple: response.canSelectMultiple,
-        fixedOrganization: response.fixedOrganization
-      });
-
-      console.log('[ActivityForm] Loaded organizations:', {
-        count: response.organizations.length,
-        canSelectMultiple: response.canSelectMultiple,
-        fixed: response.fixedOrganization?.name || 'none'
+        canSelectMultiple: true,
+        fixedOrganization: null
       });
     } catch (error) {
       console.error('Failed to load organizations:', error);

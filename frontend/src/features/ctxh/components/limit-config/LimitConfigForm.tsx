@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Building2, Calendar } from 'lucide-react';
+import { X, Building2, Calendar, ChevronDown } from 'lucide-react';
 import { CtxhLimitConfig, CreateLimitConfigRequest, UpdateLimitConfigRequest, LimitConfigStatus } from '../../types';
 import { organizationService } from '../../../../shared/services';
 
@@ -60,6 +60,10 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Organization search states
+  const [organizationSearch, setOrganizationSearch] = useState('');
+  const [organizationDropdownOpen, setOrganizationDropdownOpen] = useState(false);
+
   // Mock organizations - In real app, fetch from API
   const [organizations, setOrganizations] = useState([
     { id: '1', name: 'Đoàn Trường' },
@@ -68,6 +72,17 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
     { id: '4', name: 'CLB Thể thao' },
     { id: '5', name: 'CLB Văn hóa' }
   ]);
+
+  // Filter organizations based on search
+  const filteredOrganizations = organizations.filter(organization =>
+    organization.name.toLowerCase().includes(organizationSearch.toLowerCase())
+  );
+
+  // Get selected organization name
+  const getSelectedOrganizationName = () => {
+    const organization = organizations.find(o => o.id === formData.organizationId);
+    return organization ? organization.name : '';
+  };
 
   // Load organizations
   const loadOrganizations = async () => {
@@ -228,6 +243,25 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
 
           {/* Form */}
           <form onSubmit={handleSubmit} noValidate>
+            {/* Hierarchical Inheritance Warning */}
+            <div className="mx-6 mt-6 mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-blue-800">
+                    {t('limitConfig.hierarchicalInheritanceTitle')}
+                  </h3>
+                  <div className="mt-2 text-sm text-blue-700">
+                    <p>{t('limitConfig.hierarchicalInheritanceDescription')}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="p-6 space-y-4">
               {/* Organization */}
               <div>
@@ -235,37 +269,79 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                   <Building2 className="inline h-4 w-4 mr-1" />
                   {t('limitConfig.organization')} <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={formData.organizationId}
-                  onChange={(e) => handleInputChange('organizationId', e.target.value)}
-                  disabled={!!config || submitting} // Cannot change organization when editing
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.organizationId
-                      ? 'border-red-300 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-500'
-                    } ${(!!config || submitting) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                >
-                  {/* Show current organization in edit mode */}
-                  {config ? (
-                    <option value={config.organizationId || ''}>
-                      {config.organization?.name || t('limitConfig.unknownOrganization')}
-                    </option>
-                  ) : (
-                    <option value="">{t('limitConfig.selectOrganization')}</option>
-                  )}
-                  {/* Show all organizations in create mode */}
-                  {!config && organizations.map((org) => (
-                    <option key={org.id} value={org.id}>
-                      {org.name}
-                    </option>
-                  ))}
-                </select>
+                
+                {config ? (
+                  // Edit mode - show selected organization as disabled input
+                  <div>
+                    <input
+                      type="text"
+                      value={config.organization?.name || t('limitConfig.unknownOrganization')}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {t('limitConfig.cannotChangeOrganization')}
+                    </p>
+                  </div>
+                ) : (
+                  // Create mode - show searchable combobox
+                  <div className="relative">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={organizationDropdownOpen ? organizationSearch : getSelectedOrganizationName()}
+                        onChange={(e) => {
+                          setOrganizationSearch(e.target.value);
+                          setOrganizationDropdownOpen(true);
+                        }}
+                        onFocus={() => {
+                          setOrganizationSearch('');
+                          setOrganizationDropdownOpen(true);
+                        }}
+                        onBlur={() => {
+                          // Delay to allow click on dropdown item
+                          setTimeout(() => setOrganizationDropdownOpen(false), 200);
+                        }}
+                        placeholder={t('limitConfig.selectOrganization')}
+                        className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          errors.organizationId
+                            ? 'border-red-300 focus:ring-red-500'
+                            : 'border-gray-300 focus:border-blue-500'
+                        }`}
+                      />
+                      <ChevronDown 
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" 
+                      />
+                    </div>
+
+                    {organizationDropdownOpen && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                        {filteredOrganizations.length > 0 ? (
+                          filteredOrganizations.map((org) => (
+                            <div
+                              key={org.id}
+                              onClick={() => {
+                                handleInputChange('organizationId', org.id);
+                                setOrganizationDropdownOpen(false);
+                                setOrganizationSearch('');
+                              }}
+                              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                            >
+                              {org.name}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-sm text-gray-500">
+                            {t('common:noResults')}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 {errors.organizationId && (
                   <p className="mt-1 text-xs text-red-500">{errors.organizationId}</p>
-                )}
-                {config && (
-                  <p className="mt-1 text-xs text-gray-500">
-                    {t('limitConfig.cannotChangeOrganization')}
-                  </p>
                 )}
               </div>
 

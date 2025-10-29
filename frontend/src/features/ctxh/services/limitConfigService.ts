@@ -18,9 +18,12 @@ export class LimitConfigService {
     if (params?.limit) searchParams.append('limit', params.limit.toString());
     if (params?.organization_id) searchParams.append('organization_id', params.organization_id);
     if (params?.status) searchParams.append('status', params.status);
+    if (params?.search) searchParams.append('search', params.search);
     
     const queryString = searchParams.toString();
     const endpoint = queryString ? `${this.basePath}?${queryString}` : this.basePath;
+    
+    console.log('API call to:', endpoint); // Debug log
     
     return apiClient.get<PaginatedResponse<CtxhLimitConfig>>(endpoint);
   }
