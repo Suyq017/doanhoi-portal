@@ -1,9 +1,41 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BarChart3, Users, Building } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/context/AuthContext';
 
 const Dashboard: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'common']);
+  const navigate = useNavigate();
+  const auth = useAuth();
+  const [isCheckingPermission, setIsCheckingPermission] = React.useState(true);
+
+  // Check dashboard.access permission on mount
+  useEffect(() => {
+    const hasDashboardAccess = auth.hasPermission('dashboard.access');
+    
+    if (!hasDashboardAccess) {
+      console.log('User does not have dashboard.access permission, redirecting to student-reports');
+      navigate('/student-reports', { replace: true });
+    } else {
+      setIsCheckingPermission(false);
+    }
+  }, [auth, navigate]);
+
+  // Show loading while checking permission
+  if (isCheckingPermission) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-doan-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            {t('common:loading')}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const stats = [
     {
       name: t('dashboard:stats.totalMembers'),

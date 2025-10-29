@@ -108,7 +108,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         name: t('navigation.ctxhStudentReport'),
         href: '/student-reports',
         icon: BarChart,
-        requiredPermission: 'ctxh.reports.view'
+        // requiredPermission: 'ctxh.reports.view'
       },
       {
         name: t('navigation.paymentAdmin'),
@@ -138,7 +138,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         if (item.requiredPermission === 'ctxh.reports.view') {
           return ctxhPermissions.reports.view;
         }
-        
+
         // Regular permission check
         const hasAccess = permissions.hasPermission(item.requiredPermission, permissions.currentOrganizationId);
         return hasAccess;
@@ -177,12 +177,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             }
             return false; // Default to false for CTXH items without permission
           });
-          
+
           // Show dropdown only if has ctxh.access AND has accessible children
           const hasCtxhAccess = permissions.hasPermission('ctxh.access', permissions.currentOrganizationId);
           return hasCtxhAccess && accessibleChildren.length > 0;
         }
-        
+
         // Regular permission check for other menus
         const accessibleChildren = item.children.filter(child => {
           if (child.requiredPermission) {
@@ -211,13 +211,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             }
             return false; // Default to false for CTXH items without permission
           });
-          
+
           return {
             ...item,
             children: filteredChildren
           };
         }
-        
+
         // Regular permission check for other menus
         return {
           ...item,
@@ -243,7 +243,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isParentActive = (children: any[]) => children.some(child => child.href && isActive(child.href));
 
   return (
-    <div className={`min-h-screen bg-background ${isDarkMode ? 'dark' : ''}`} style={{overflowX: 'hidden', maxWidth: '100vw'}}>
+    <div className={`min-h-screen bg-background ${isDarkMode ? 'dark' : ''}`} style={{ overflowX: 'hidden', maxWidth: '100vw' }}>
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 shadow-lg transform transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
@@ -343,10 +343,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className={`transition-all ${isSidebarOpen ? 'lg:ml-64' : ''}`} style={{overflowX: 'hidden', maxWidth: '100%'}}>
+      <div className={`transition-all ${isSidebarOpen ? 'lg:ml-64' : ''}`} style={{ overflowX: 'hidden', maxWidth: '100%' }}>
         {/* Top bar */}
-        <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-700" style={{width: '100%', maxWidth: '100%'}}>
-          <div className="flex items-center justify-between px-4 py-3" style={{maxWidth: '100%'}}>
+        <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-700" style={{ width: '100%', maxWidth: '100%' }}>
+          <div className="flex items-center justify-between px-4 py-3" style={{ maxWidth: '100%' }}>
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -372,7 +372,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
 
         {/* Page content */}
-        <main className="p-6" style={{width: '100%', overflowX: 'hidden', maxWidth: '100%'}}>
+        <main className="p-6" style={{ width: '100%', overflowX: 'hidden', maxWidth: '100%' }}>
           {children}
         </main>
       </div>
