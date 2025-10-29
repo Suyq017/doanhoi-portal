@@ -8,11 +8,13 @@ import { useToast } from '../../../shared/hooks';
 import { Toast } from '../../../shared/components';
 import ParticipantManagement from '../components/ParticipantManagement';
 import ActivityForm from '../components/ActivityForm';
+import { useCtxhPermissions } from '../hooks';
 
 const ActivityDetail: React.FC = () => {
   const { t } = useTranslation(['ctxh', 'common']);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const ctxhPermissions = useCtxhPermissions();
 
   const [activity, setActivity] = useState<CtxhActivity | null>(null);
   const [categories, setCategories] = useState<CtxhCategory[]>([]);
@@ -193,13 +195,15 @@ const ActivityDetail: React.FC = () => {
 
           <div className="flex items-center space-x-4">
             {getStatusBadge(activity.status)}
-            <button
-              onClick={() => setShowEditForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-doan-500 hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500"
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              {t('common:actions.edit')}
-            </button>
+            {ctxhPermissions.activities.update && (
+              <button
+                onClick={() => setShowEditForm(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-doan-500 hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                {t('common:actions.edit')}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -207,11 +211,11 @@ const ActivityDetail: React.FC = () => {
       {/* Activity Summary */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
         <div className="px-6 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <div>
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.category')}</dt>
               <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                {getCategoryName((activity as any).category_id)}
+                {getCategoryName(activity.categoryId || (activity as any).category_id)}
               </dd>
             </div>
             <div>
@@ -221,15 +225,24 @@ const ActivityDetail: React.FC = () => {
               </dd>
             </div>
             <div>
+              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.location')}</dt>
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                {activity.location || t('activity.noLocation')}
+              </dd>
+            </div>
+            <div>
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.timePeriod')}</dt>
               <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                {formatDate((activity as any).start_date)} - {formatDate((activity as any).end_date)}
+                {(activity.startDate || (activity as any).start_date || activity.endDate || (activity as any).end_date)
+                  ? `${formatDate(activity.startDate || (activity as any).start_date || null)} - ${formatDate(activity.endDate || (activity as any).end_date || null)}`
+                  : t('activity.noTimePeriod')
+                }
               </dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.totalDays')}</dt>
               <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                {(activity as any).total_days ? formatNumber((activity as any).total_days) : t('common:labels.unknown')} {t('activity.days')}
+                {(activity.totalDays || (activity as any).total_days) ? formatNumber(activity.totalDays || (activity as any).total_days) : t('common:labels.unknown')} {t('activity.days')}
               </dd>
             </div>
           </div>
@@ -250,24 +263,26 @@ const ActivityDetail: React.FC = () => {
             <button
               onClick={() => setActiveTab('overview')}
               className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
             >
               <BarChart3 className="inline-block mr-2 h-4 w-4" />
               {t('activity.tabs.overview')}
             </button>
 
-            <button
-              onClick={() => setActiveTab('participants')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'participants'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-                }`}
-            >
-              <Users className="inline-block mr-2 h-4 w-4" />
-              {t('activity.tabs.participants')}
-            </button>
+            {ctxhPermissions.activities.view && (
+              <button
+                onClick={() => setActiveTab('participants')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'participants'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+              >
+                <Users className="inline-block mr-2 h-4 w-4" />
+                {t('activity.tabs.participants')}
+              </button>
+            )}
           </nav>
         </div>
 
@@ -337,7 +352,7 @@ const ActivityDetail: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'participants' && activity && (
+          {activeTab === 'participants' && activity && ctxhPermissions.activities.view && (
             <ParticipantManagement
               activity={activity}
               onRefresh={() => {

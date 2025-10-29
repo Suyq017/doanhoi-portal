@@ -204,6 +204,15 @@ class OrganizationService {
     return response;
   }
 
+  async getCtxhActivityViewableOrganizations(): Promise<{
+    organizations: Organization[];
+  }> {
+    const response = await apiClient.get<{
+      organizations: Organization[];
+    }>('/organizations/ctxh-activity-viewable');
+    return response;
+  }
+
 }
 
 export const organizationService = new OrganizationService();

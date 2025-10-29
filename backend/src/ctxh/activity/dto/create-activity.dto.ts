@@ -64,6 +64,14 @@ export class CreateActivityDto {
   total_days?: number;
 
   @ApiPropertyOptional({
+    description: 'Địa điểm tổ chức hoạt động',
+    example: 'Hội trường A1, Trường ĐH Bách Khoa TPHCM',
+  })
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @ApiPropertyOptional({
     description: 'Trạng thái hoạt động',
     enum: ActivityStatus,
     example: ActivityStatus.DRAFT,

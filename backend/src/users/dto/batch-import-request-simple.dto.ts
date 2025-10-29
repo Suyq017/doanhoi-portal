@@ -51,77 +51,82 @@ export class ImportOptionsDto {
 }
 
 export class UserImportDto {
-  @ApiProperty({ description: 'User code (student ID or staff code)', example: 'SV2023001' })
+  @ApiProperty({ description: 'Mã số sinh viên | mã số cán bộ', example: '2210000' })
   @IsString()
   @IsNotEmpty()
   code: string;
 
-  @ApiProperty({ description: 'Family name', example: 'Nguyễn Văn' })
+  @ApiProperty({ description: 'Họ', example: 'Nguyễn Văn' })
   @IsString()
   @IsNotEmpty()
   familyName: string;
 
-  @ApiProperty({ description: 'Given name', example: 'An' })
+  @ApiProperty({ description: 'Tên', example: 'An' })
   @IsString()
   @IsNotEmpty()
   givenName: string;
 
-  @ApiProperty({ description: 'Email address', example: 'nguyen.an@example.com', required: false })
+  @ApiProperty({ description: 'Email', example: 'an.nguyen@hcmut.edu.vn', required: false })
   @IsOptional()
   @IsString()
   email?: string;
 
-  @ApiProperty({ description: 'Phone number', example: '0901234567', required: false })
+  @ApiProperty({ description: 'Số điện thoại', example: '0901234567', required: false })
   @IsOptional()
   @IsString()
   phone?: string;
 
-  @ApiProperty({ description: 'Gender', example: 'NAM', required: false })
+  @ApiProperty({ description: 'Giới tính', example: 'NAM', required: false })
   @IsOptional()
   @IsString()
   gender?: string;
 
-  @ApiProperty({ description: 'Birth date', example: '2000-01-01', required: false })
+  @ApiProperty({ description: 'Ngày sinh', example: '2004-01-01', required: false })
   @IsOptional()
   @IsString()
   birthDate?: string;
 
-  @ApiProperty({ description: 'Identity card number', example: '123456789', required: false })
+  @ApiProperty({ description: 'Số cccd', example: '123456789', required: false })
   @IsOptional()
   @IsString()
   identityCard?: string;
 
-  @ApiProperty({ description: 'Admission year', example: '2023', required: false })
+  @ApiProperty({ description: 'Năm vào', example: '2023', required: false })
   @IsOptional()
   @IsString()
   admissionYear?: string;
 
-  @ApiProperty({ description: 'Curriculum year', example: '2023', required: false })
+  @ApiProperty({ description: 'Năm nhập học', example: '2023', required: false })
   @IsOptional()
   @IsString()
   curriculumYear?: string;
 
-  @ApiProperty({ description: 'Faculty code', example: 'CNTT', required: false })
+  @ApiProperty({ description: 'Mã ngành', example: 'MT', required: false })
   @IsOptional()
   @IsString()
   facultyCode?: string;
 
-  @ApiProperty({ description: 'Training system', example: 'CQ', required: false })
+  @ApiProperty({ description: 'Hệ đào tạo', example: 'CQ', required: false })
   @IsOptional()
   @IsString()
   trainingSystem?: string;
 
-  @ApiProperty({ description: 'Training level', example: 'DH', required: false })
+  @ApiProperty({ description: 'Bậc đào tạo', example: 'DH', required: false })
   @IsOptional()
   @IsString()
   trainingLevel?: string;
 
-  @ApiProperty({ description: 'Department code', example: 'DEPT001', required: false })
+  @ApiProperty({ description: 'Mã đơn vị quản lý', example: 'MT', required: false })
   @IsOptional()
   @IsString()
-  departmentCode?: string;
+  managementDepartment?: string;
 
-  @ApiProperty({ description: 'Class name', example: 'CNTT2023', required: false })
+  @ApiProperty({ description: 'Mã khoa', example: 'MT', required: false })
+  @IsOptional()
+  @IsString()
+  trainingDepartment?: string;
+
+  @ApiProperty({ description: 'Tên lớp', example: 'MT22KH01', required: false })
   @IsOptional()
   @IsString()
   className?: string;

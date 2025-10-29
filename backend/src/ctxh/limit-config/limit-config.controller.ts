@@ -18,6 +18,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '../../auth/guards/permission.guard';
 import { RequirePermissions } from '../../auth/decorators/permissions.decorator';
 import { LimitConfigService } from './limit-config.service';
 import { CreateLimitConfigDto } from './dto/create-limit-config.dto';
@@ -26,14 +27,14 @@ import { UpdateLimitConfigDto } from './dto/update-limit-config.dto';
 @ApiTags('CTXH Limit Config')
 @ApiBearerAuth()
 @Controller('ctxh/limit-config')
-@UseGuards(JwtAuthGuard) // Tạm thời bỏ PermissionGuard
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class LimitConfigController {
   constructor(private readonly limitConfigService: LimitConfigService) {}
 
   @Post()
   @ApiOperation({ summary: 'Tạo cấu hình giới hạn CTXH mới' })
   @ApiResponse({ status: 201, description: 'Tạo cấu hình thành công' })
-  @RequirePermissions('ctxh_limit_config:create')
+  @RequirePermissions('ctxh.config.manage')
   create(@Body() createLimitConfigDto: CreateLimitConfigDto, @Request() req) {
     return this.limitConfigService.create(createLimitConfigDto, req.user.id);
   }
@@ -68,7 +69,7 @@ export class LimitConfigController {
     enum: ['ACTIVE', 'INACTIVE', 'DRAFT']
   })
   @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
-  @RequirePermissions('ctxh_limit_config:read')
+  @RequirePermissions('ctxh.config.manage')
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -86,13 +87,13 @@ export class LimitConfigController {
   @Get(':id')
   @ApiOperation({ summary: 'Lấy cấu hình CTXH theo ID' })
   @ApiResponse({ status: 200, description: 'Lấy cấu hình thành công' })
-  @RequirePermissions('ctxh_limit_config:read')
+  @RequirePermissions('ctxh.config.manage')
   findOne(@Param('id') id: string) {
     return this.limitConfigService.findOne(id);
   }
 
   @Patch(':id')
-  @RequirePermissions('ctxh_limit_config:update')
+  @RequirePermissions('ctxh.config.manage')
   update(
     @Param('id') id: string,
     @Body() updateLimitConfigDto: UpdateLimitConfigDto,
@@ -102,7 +103,7 @@ export class LimitConfigController {
   }
 
   @Delete(':id')
-  @RequirePermissions('ctxh_limit_config:delete')
+  @RequirePermissions('ctxh.config.manage')
   remove(@Param('id') id: string, @Request() req) {
     return this.limitConfigService.remove(id, req.user.id);
   }
@@ -110,7 +111,7 @@ export class LimitConfigController {
   @Post(':id/restore')
   @ApiOperation({ summary: 'Khôi phục cấu hình đã xóa' })
   @ApiResponse({ status: 200, description: 'Khôi phục thành công' })
-  @RequirePermissions('ctxh_limit_config:create')
+  @RequirePermissions('ctxh.config.manage')
   restore(@Param('id') id: string, @Request() req) {
     return this.limitConfigService.restore(id, req.user.id);
   }

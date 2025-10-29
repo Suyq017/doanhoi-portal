@@ -9,10 +9,12 @@ import CategoryDetailModal from '../components/category/CategoryDetailModal';
 import ConfirmDialog from '../../../shared/components/ConfirmDialog';
 import { Toast } from '../../../shared/components';
 import { useToast } from '../../../shared/hooks';
+import { useCtxhPermissions } from '../hooks';
 import { Plus } from 'lucide-react';
 
 const CategoryManagement: React.FC = () => {
   const { t } = useTranslation('ctxh');
+  const ctxhPermissions = useCtxhPermissions();
 
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError } = useToast();
@@ -156,14 +158,16 @@ const CategoryManagement: React.FC = () => {
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          {/* Updated to match department button color */}
-          <button
-            onClick={handleCreateClick}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-doan-500 hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {t('category.create')}
-          </button>
+          {/* Only show create button if user has create permission */}
+          {ctxhPermissions.categories.create && (
+            <button
+              onClick={handleCreateClick}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-doan-500 hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {t('category.create')}
+            </button>
+          )}
         </div>
       </div>
 
@@ -175,6 +179,11 @@ const CategoryManagement: React.FC = () => {
         onViewDetailClick={handleViewDetailClick}
         showToast={handleShowToast}
         refreshTrigger={refreshTrigger}
+        permissions={{
+          create: ctxhPermissions.categories.create,
+          update: ctxhPermissions.categories.update,
+          delete: ctxhPermissions.categories.delete
+        }}
       />
 
       {/* Category Form Modal */}

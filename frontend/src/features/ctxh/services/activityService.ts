@@ -23,6 +23,7 @@ export class ActivityService {
       categoryId: activity.category_id,
       organizationId: activity.organization_id,
       totalDays: activity.total_days,
+      location: activity.location, // Add location field mapping
       createdAt: activity.created_at,
       updatedAt: activity.updated_at,
       createdBy: activity.created_by,

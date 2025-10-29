@@ -4,6 +4,7 @@ import { CtxhLimitConfig } from '../../entities/ctxh-limit-config.entity';
 import { Organization } from '../../entities/organization.entity';
 import { LimitConfigController } from './limit-config.controller';
 import { LimitConfigService } from './limit-config.service';
+import { RolesModule } from '../../roles/roles.module';
 
 @Module({
   imports: [
@@ -11,7 +12,7 @@ import { LimitConfigService } from './limit-config.service';
       CtxhLimitConfig,
       Organization,
     ]),
-    // RolesModule, // Không cần thiết khi không dùng PermissionGuard
+    RolesModule, // Cần thiết cho PermissionGuard
   ],
   controllers: [LimitConfigController],
   providers: [LimitConfigService],

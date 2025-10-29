@@ -14,9 +14,6 @@ export enum MembershipStatus {
   HOI_VIEN = 'hoi_vien',
   BOTH = 'both',
   NONE = 'none',
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  GRADUATED = 'GRADUATED',
 }
 
 // New enums for import system
@@ -98,7 +95,7 @@ export class User {
   @ManyToOne(() => Class, { nullable: true })
   @JoinColumn({ name: 'classId' })
   class: Class;
-  
+
   @OneToMany('UserOrganization', 'user')
   organizations: UserOrganization[];
 
@@ -106,29 +103,34 @@ export class User {
   userRoles: UserRole[];
 
   // New fields for enhanced import system
-  @Column({ name: 'identity_card', nullable: true })
+  @Column({ name: 'cccd', nullable: true })
   identityCard: string;
-  
+
   @Column({ name: 'birth_date', type: 'date', nullable: true })
   birthDate: Date;
-  
+
   @Column({ name: 'gender', type: 'enum', enum: Gender, nullable: true })
   gender: Gender;
-  
-  @Column({ name: 'admission_year', nullable: true })
+
+  @Column({ name: 'nam_vao', nullable: true })
   admissionYear: string;
-  
-  @Column({ name: 'curriculum_year', nullable: true })
+  //năm vào
+
+  @Column({ name: 'nam_ctdt', nullable: true })
   curriculumYear: string;
-  
+  //năm chương trình đào tạo
+
   @Column({ name: 'faculty_code', nullable: true })
   facultyCode: string;
-  
-  @Column({ name: 'training_system', nullable: true })
+  //mã khoa
+
+  @Column({ name: 'he_dao_tao', nullable: true })
   trainingSystem: string;
-  
-  @Column({ name: 'training_level', nullable: true })
+  //hệ đào tạo
+
+  @Column({ name: 'bac_dao_tao', nullable: true })
   trainingLevel: string;
+  //bậc đào tạo
 
   // Getter cho fullName để tương thích với code cũ
   get fullName(): string {
