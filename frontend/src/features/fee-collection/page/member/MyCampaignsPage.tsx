@@ -48,7 +48,7 @@ export const MyCampaignsPage: React.FC = () => {
     const assignment = assignments.find(a => a.campaign.organization.id === organizationId);
     return assignment?.campaign.organization.name || `Tổ chức ${organizationId}`;
   };
-  
+
   // Select options
   const statusOptions: SelectOption[] = [
     { value: '', label: t('filters.allStatus') },
@@ -261,7 +261,7 @@ export const MyCampaignsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">      
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -542,7 +542,7 @@ export const MyCampaignsPage: React.FC = () => {
               ))}
             </tbody>
           </table>
-        </div>        
+        </div>
         {totalFiltered === 0 && (
           <div className="py-12 text-center">
             <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
@@ -570,13 +570,13 @@ export const MyCampaignsPage: React.FC = () => {
         )}
       </div>
       {/* Pagination */}
-        <UserTablePagination
-          currentPage={filters.page}
-          totalPages={totalPages}
-          total={totalFiltered}
-          limit={filters.limit}
-          onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
-        />
+      <UserTablePagination
+        currentPage={filters.page}
+        totalPages={totalPages}
+        total={totalFiltered}
+        limit={filters.limit}
+        onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
+      />
 
       {/* Toast notifications */}
       <div className="fixed top-4 right-4 z-[9999] space-y-2">

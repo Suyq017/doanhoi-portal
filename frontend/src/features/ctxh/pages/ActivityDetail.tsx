@@ -15,7 +15,7 @@ const ActivityDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const ctxhPermissions = useCtxhPermissions();
-  
+
   const [activity, setActivity] = useState<CtxhActivity | null>(null);
   const [categories, setCategories] = useState<CtxhCategory[]>([]);
   const [participants, setParticipants] = useState<ParticipationResponse[]>([]);
@@ -23,7 +23,7 @@ const ActivityDetail: React.FC = () => {
   const [participantsLoading, setParticipantsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'participants'>('overview');
   const [showEditForm, setShowEditForm] = useState(false);
-  
+
   // Toast notifications
   const { toasts, hideToast, showError, showSuccess } = useToast();
 
@@ -37,21 +37,21 @@ const ActivityDetail: React.FC = () => {
 
       try {
         setLoading(true);
-        
+
         // Load activity and categories in parallel
         const [activityResponse, categoriesResponse] = await Promise.all([
           activityService.findOne(id),
           categoryService.findAll({ limit: 100 })
         ]);
-        
+
         setActivity(activityResponse);
-        
+
         // Handle categories response format
-        const categoriesData = Array.isArray(categoriesResponse) 
-          ? categoriesResponse 
+        const categoriesData = Array.isArray(categoriesResponse)
+          ? categoriesResponse
           : categoriesResponse.data || [];
         setCategories(categoriesData);
-        
+
       } catch (error) {
         console.error('Failed to load activity:', error);
         showError('Không thể tải thông tin hoạt động!');
@@ -67,7 +67,7 @@ const ActivityDetail: React.FC = () => {
   // Load participants for statistics
   const loadParticipants = async () => {
     if (!activity) return;
-    
+
     try {
       setParticipantsLoading(true);
       const response = await activityService.getParticipants(activity.id);
@@ -93,7 +93,7 @@ const ActivityDetail: React.FC = () => {
     const completed = participants.filter(p => p.status === 'COMPLETED').length;
     const registered = participants.filter(p => p.status === 'REGISTERED').length;
     const cancelled = participants.filter(p => p.status === 'CANCELLED').length;
-    
+
     return { total, completed, registered, cancelled };
   };
 
@@ -129,7 +129,7 @@ const ActivityDetail: React.FC = () => {
       'CANCELLED': { label: t('activity.statusOptions.CANCELLED'), color: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' },
       'DRAFT': { label: t('activity.statusOptions.DRAFT'), color: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' }
     };
-    
+
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.DRAFT;
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
@@ -157,7 +157,7 @@ const ActivityDetail: React.FC = () => {
           <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{t('activity.detail.notFound')}</h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('activity.detail.notFoundMessage')}</p>
           <div className="mt-6">
-            <button 
+            <button
               onClick={() => navigate('/ctxh/activities')}
               className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
             >
@@ -176,14 +176,14 @@ const ActivityDetail: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <button 
+            <button
               onClick={() => navigate('/ctxh/activities')}
               className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t('common:actions.back')}
             </button>
-            
+
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
                 <Calendar className="mr-3 h-8 w-8 text-blue-600 dark:text-blue-400" />
@@ -192,7 +192,7 @@ const ActivityDetail: React.FC = () => {
               <p className="mt-2 text-gray-600 dark:text-gray-300">{t('activity.detail.subtitle')}</p>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             {getStatusBadge(activity.status)}
             {ctxhPermissions.activities.update && (
@@ -233,7 +233,7 @@ const ActivityDetail: React.FC = () => {
             <div>
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.timePeriod')}</dt>
               <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                {(activity.startDate || (activity as any).start_date || activity.endDate || (activity as any).end_date) 
+                {(activity.startDate || (activity as any).start_date || activity.endDate || (activity as any).end_date)
                   ? `${formatDate(activity.startDate || (activity as any).start_date || null)} - ${formatDate(activity.endDate || (activity as any).end_date || null)}`
                   : t('activity.noTimePeriod')
                 }
@@ -246,7 +246,7 @@ const ActivityDetail: React.FC = () => {
               </dd>
             </div>
           </div>
-          
+
           {activity.description && (
             <div className="mt-6">
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.description')}</dt>
@@ -262,24 +262,22 @@ const ActivityDetail: React.FC = () => {
           <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'overview'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
             >
               <BarChart3 className="inline-block mr-2 h-4 w-4" />
               {t('activity.tabs.overview')}
             </button>
-            
+
             {ctxhPermissions.activities.view && (
               <button
                 onClick={() => setActiveTab('participants')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                  activeTab === 'participants'
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'participants'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-                }`}
+                  }`}
               >
                 <Users className="inline-block mr-2 h-4 w-4" />
                 {t('activity.tabs.participants')}
@@ -318,7 +316,7 @@ const ActivityDetail: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Additional Overview Information */}
               {!participantsLoading && participants.length > 0 && (
                 <div className="mt-8">
@@ -328,7 +326,7 @@ const ActivityDetail: React.FC = () => {
                       <div>
                         <span className="font-medium text-gray-700 dark:text-gray-300">{t('activity.statistics.completionRate')}:</span>
                         <span className="ml-2 text-gray-600 dark:text-gray-400">
-                          {getStatistics().total > 0 
+                          {getStatistics().total > 0
                             ? `${Math.round((getStatistics().completed / getStatistics().total) * 100)}%`
                             : '0%'}
                         </span>
@@ -343,7 +341,7 @@ const ActivityDetail: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {!participantsLoading && participants.length === 0 && (
                 <div className="mt-8 text-center py-8">
                   <Users className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
@@ -355,7 +353,7 @@ const ActivityDetail: React.FC = () => {
           )}
 
           {activeTab === 'participants' && activity && ctxhPermissions.activities.view && (
-            <ParticipantManagement 
+            <ParticipantManagement
               activity={activity}
               onRefresh={() => {
                 // Refresh participants data for statistics

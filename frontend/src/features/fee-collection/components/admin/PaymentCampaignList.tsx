@@ -34,7 +34,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
     page: 1,
     limit: 10
   });
-  
+
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -64,10 +64,10 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
   const debouncedSearch = useCallback(
     (searchValue: string) => {
       const timeoutId = setTimeout(() => {
-        setFilters(prev => ({ 
-          ...prev, 
-          search: searchValue || undefined, 
-          page: 1 
+        setFilters(prev => ({
+          ...prev,
+          search: searchValue || undefined,
+          page: 1
         }));
       }, 500); // 500ms delay
 
@@ -132,7 +132,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
       setLoading(false);
     }
   };
-  
+
   const handleStatusChange = async (id: string, action: 'activate' | 'complete' | 'cancel') => {
     // Show confirmation dialog for activate action
     if (action === 'activate') {
@@ -145,7 +145,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
           variant: 'warning'
         }
       );
-      
+
       if (!shouldActivate) return;
     }
 
@@ -160,7 +160,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
           variant: 'info'
         }
       );
-      
+
       if (!shouldComplete) return;
     }
 
@@ -175,10 +175,10 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
           variant: 'danger'
         }
       );
-      
+
       if (!shouldCancel) return;
     }
-    
+
     try {
       setActionLoading(`${id}-${action}`);
       let response;
@@ -216,9 +216,9 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
     } catch (err) {
       console.error('Error in handleStatusChange:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update campaign status';
-      const actionText = action === 'activate' ? t('actions.activate').toLowerCase() : 
-                        action === 'complete' ? t('actions.complete').toLowerCase() : 
-                        t('actions.cancel').toLowerCase();
+      const actionText = action === 'activate' ? t('actions.activate').toLowerCase() :
+        action === 'complete' ? t('actions.complete').toLowerCase() :
+          t('actions.cancel').toLowerCase();
       showError(t('messages.errorActivate', { error: errorMessage }).replace('kích hoạt', actionText));
 
       // Reload campaigns to ensure UI is in sync
@@ -523,14 +523,14 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
           </table>
         </div>
       </div>
-      
+
       {/* Pagination */}
-        <UserTablePagination
-          currentPage={pagination.page}
-          totalPages={pagination.totalPages}
-          total={pagination.total}
-          limit={pagination.limit}
-          onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
+      <UserTablePagination
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        total={pagination.total}
+        limit={pagination.limit}
+        onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
       />
 
       {/* Empty State */}

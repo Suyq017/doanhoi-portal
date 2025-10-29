@@ -5,13 +5,14 @@ import { Organization } from '../../shared/types/organization';
 import OrganizationTreeItem from './components/OrganizationTreeItem';
 import OrganizationPageLayout from './components/OrganizationPageLayout';
 import { useOrganizationPage } from './hooks/useOrganizationPage';
-import { shouldShowUserList, getDisplayOrganization } from './utils/organizationUtils';
+import { shouldShowUserList, getDisplayOrganization, sortOrganizationsByMembership } from './utils/organizationUtils';
 import { OrganizationUserList } from './components/OrganizationUserList';
 import { useMemberStatsCalculation } from './hooks/useMemberStatsCalculation';
 import { useRefreshHandlers } from './hooks/useRefreshHandlers';
 import { useImportModal } from './hooks/useImportModal';
 import { usePageConfig } from './hooks/usePageConfig';
 import { useBreadcrumbJSX } from './hooks/useBreadcrumbJSX';
+import { useAuth } from '../auth/context/AuthContext';
 
 const OrganizationsSubDetailPage: React.FC = () => {
     const { t } = useTranslation(['organizations', 'common']);
@@ -21,6 +22,7 @@ const OrganizationsSubDetailPage: React.FC = () => {
         type: string;
         code: string;
     }>();
+    const auth = useAuth();
 
     // Get page configuration
     const { level } = usePageConfig({
@@ -64,15 +66,30 @@ const OrganizationsSubDetailPage: React.FC = () => {
         return filtered;
     }, [organizations, type, code]);
 
+    // Helper function to check if user is in organization
+    const isUserInOrganization = useCallback((organizationId: string): boolean => {
+        if (!auth.auth.user?.organizations) return false;
+        return auth.auth.user.organizations.some((userOrg: any) =>
+            userOrg.organizationId === organizationId && userOrg.isActive
+        );
+    }, [auth.auth.user?.organizations]);
+
+    // Sort filtered organizations to prioritize user's membership
+    const sortedFilteredOrg = useMemo(() => {
+        return sortOrganizationsByMembership(filteredOrg, isUserInOrganization);
+    }, [filteredOrg, isUserInOrganization]);
+
     const showUserList = useMemo(() =>
-        shouldShowUserList(filteredOrg, level),
-        [filteredOrg, level]
+        shouldShowUserList(sortedFilteredOrg, level),
+        [sortedFilteredOrg, level]
     );
 
     const displayOrganization = useMemo(() =>
-        getDisplayOrganization(filteredOrg),
-        [filteredOrg]
-    );    // Setup refresh handlers
+        getDisplayOrganization(sortedFilteredOrg),
+        [sortedFilteredOrg]
+    );
+
+    // Setup refresh handlers
     const {
         handleRefreshAll,
         handleShowSuccess,

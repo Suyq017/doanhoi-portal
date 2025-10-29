@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Organization } from '../../shared/types/organization';
@@ -14,10 +14,14 @@ import { useImportModal } from './hooks/useImportModal';
 import { usePageConfig } from './hooks/usePageConfig';
 import { useOrganizationSpecificStats } from './hooks/useOrganizationSpecificStats';
 import { useBreadcrumbJSX } from './hooks/useBreadcrumbJSX';
+import { sortOrganizationsByMembership } from './utils/organizationUtils';
+import { useAuth } from '../auth/context/AuthContext';
 
 const OrganizationsDetailPage: React.FC = () => {
   const { t } = useTranslation(['organizations', 'common']);
   const { type, code } = useParams<{ type: string; code: string }>();
+  const auth = useAuth();
+
   // Get page configuration
   const { level, shouldShowMemberStats } = usePageConfig({
     type,
@@ -91,6 +95,19 @@ const OrganizationsDetailPage: React.FC = () => {
   // Calculate stats specific to this organization
   const organizationSpecificStats = useOrganizationSpecificStats(organizations, stats);
 
+  // Helper function to check if user is in organization
+  const isUserInOrganization = useCallback((organizationId: string): boolean => {
+    if (!auth.auth.user?.organizations) return false;
+    return auth.auth.user.organizations.some((userOrg: any) =>
+      userOrg.organizationId === organizationId && userOrg.isActive
+    );
+  }, [auth.auth.user?.organizations]);
+
+  // Sort organizations to prioritize user's membership
+  const sortedOrganizations = useMemo(() => {
+    return sortOrganizationsByMembership(organizations, isUserInOrganization);
+  }, [organizations, isUserInOrganization]);
+
   const renderOrganization = useCallback((org: Organization, level: number = 0) => {
     return (
       <OrganizationTreeItem
@@ -163,9 +180,9 @@ const OrganizationsDetailPage: React.FC = () => {
       ) : (
         // Show organization tree for other types
         <OrganizationTreeContainer
-          isEmpty={organizations.length === 0}
+          isEmpty={sortedOrganizations.length === 0}
         >
-          {organizations.map(org => renderOrganization(org))}
+          {sortedOrganizations.map(org => renderOrganization(org))}
         </OrganizationTreeContainer>
       )}
     </OrganizationPageLayout>

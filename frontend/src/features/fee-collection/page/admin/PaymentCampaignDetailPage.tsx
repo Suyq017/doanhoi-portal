@@ -29,10 +29,10 @@ const PaymentCampaignDetailPage: React.FC = () => {
   const [_assignmentCount, setAssignmentCount] = useState(0); // Keep for future use
   const [canActivate, setCanActivate] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  
+
   // Tab state
   const currentTab = searchParams.get('tab') || 'statistics';
-  
+
   const handleTabChange = (tabId: string) => {
     setSearchParams({ tab: tabId });
   };
@@ -68,23 +68,23 @@ const PaymentCampaignDetailPage: React.FC = () => {
 
   const loadCampaignData = async () => {
     if (!id) return;
-    
+
     try {
       setLoading(true);
       setError(null);
       setActivationError(null);
-      
-      const [campaignResponse, feeLevelsResponse] : any = await Promise.all([
+
+      const [campaignResponse, feeLevelsResponse]: any = await Promise.all([
         paymentCampaignService.getPaymentCampaignById(id),
         paymentFeeLevelService.getFeeLevelsByCampaign(id)
       ]);
-      
+
       setCampaign(campaignResponse);
       setFeeLevels(feeLevelsResponse);
-      
+
       // Check assignments for activation requirements
       await checkActivationRequirements(id, feeLevelsResponse);
-      
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load campaign data');
     } finally {
@@ -97,11 +97,11 @@ const PaymentCampaignDetailPage: React.FC = () => {
       // Check if there are fee levels
       const hasFeeLevels = currentFeeLevels && currentFeeLevels.length > 0;
       console.log('Checking activation requirements:', { hasFeeLevels, feeLevelsCount: currentFeeLevels?.length || 0 });
-      
+
       // Check if there are member assignments
       let hasAssignments = false;
       try {
-        const assignmentsResponse : any = await paymentAssignmentService.getAssignmentsByCampaign(campaignId);
+        const assignmentsResponse: any = await paymentAssignmentService.getAssignmentsByCampaign(campaignId);
         const assignments = assignmentsResponse.data?.assignments || [];
         setAssignmentCount(assignments.length);
         hasAssignments = assignments.length > 0;
@@ -112,12 +112,12 @@ const PaymentCampaignDetailPage: React.FC = () => {
         hasAssignments = false;
         console.log('Failed to load assignments:', err);
       }
-      
+
       // All requirements must be met for activation
       const canActivateResult = hasFeeLevels && hasAssignments;
       console.log('Final activation result:', { hasFeeLevels, hasAssignments, canActivate: canActivateResult });
       setCanActivate(canActivateResult);
-      
+
     } catch (err) {
       console.error('Error checking activation requirements:', err);
       setCanActivate(false);
@@ -126,7 +126,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
 
   const handleStatusChange = async (action: 'activate' | 'complete' | 'cancel') => {
     if (!campaign) return;
-    
+
     // Check activation requirements for activate action
     if (action === 'activate' && !canActivate) {
       const missingRequirements = [];
@@ -137,7 +137,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
         missingRequirements.push(t('activation.noMembers'));
       }
       // Note: PayOS config check would go here if needed
-      
+
       setActivationError(t('activation.error', { requirements: missingRequirements.join(', ') }));
       return;
     }
@@ -153,7 +153,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
           variant: 'warning'
         }
       );
-      
+
       if (!shouldActivate) return;
     }
 
@@ -168,7 +168,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
           variant: 'info'
         }
       );
-      
+
       if (!shouldComplete) return;
     }
 
@@ -183,15 +183,15 @@ const PaymentCampaignDetailPage: React.FC = () => {
           variant: 'danger'
         }
       );
-      
+
       if (!shouldCancel) return;
     }
-    
+
     try {
       setActionLoading(true);
       setActivationError(null);
       let response;
-      
+
       switch (action) {
         case 'activate':
           response = await paymentCampaignService.activatePaymentCampaign(campaign.id);
@@ -203,13 +203,13 @@ const PaymentCampaignDetailPage: React.FC = () => {
           response = await paymentCampaignService.cancelPaymentCampaign(campaign.id);
           break;
       }
-      
+
       // Handle response properly - it might be response.data or just response
       const updatedCampaign = response?.data || response;
-      
+
       if (updatedCampaign) {
         setCampaign(updatedCampaign);
-        
+
         // Show success message with toast
         const actionMessages = {
           activate: t('messages.activateSuccess'),
@@ -221,18 +221,18 @@ const PaymentCampaignDetailPage: React.FC = () => {
         console.warn('No campaign data received from API response');
         showError(t('messages.errorStatusUpdate'));
       }
-      
+
     } catch (err) {
       console.error('Error in handleStatusChange:', err);
       const errorMessage = err instanceof Error ? err.message : `Failed to ${action} campaign`;
-      
+
       if (action === 'activate') {
         setActivationError(t('messages.errorActivate', { error: errorMessage }));
       } else {
         const errorKey = action === 'complete' ? 'messages.errorComplete' : 'messages.errorCancel';
         showError(t(errorKey, { error: errorMessage }));
       }
-      
+
       // Reload campaign data to ensure UI is in sync
       if (id) {
         await loadCampaignData();
@@ -255,14 +255,14 @@ const PaymentCampaignDetailPage: React.FC = () => {
         variant: 'danger'
       }
     );
-    
+
     if (!shouldDelete) return;
-    
+
     try {
       setActionLoading(true);
       await paymentCampaignService.deletePaymentCampaign(id);
       showSuccess(t('messages.deleteSuccess'));
-      
+
       // Navigate back to campaigns list after successful deletion
       navigate('/admin/payment-campaigns');
     } catch (err) {
@@ -387,11 +387,10 @@ const PaymentCampaignDetailPage: React.FC = () => {
                 <button
                   onClick={() => handleStatusChange('activate')}
                   disabled={actionLoading || !canActivate}
-                  className={`inline-flex items-center px-3 py-2 text-white transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed ${
-                    canActivate 
-                      ? 'bg-green-600 hover:bg-green-700' 
+                  className={`inline-flex items-center px-3 py-2 text-white transition-colors rounded-md disabled:opacity-50 disabled:cursor-not-allowed ${canActivate
+                      ? 'bg-green-600 hover:bg-green-700'
                       : 'bg-gray-400'
-                  }`}
+                    }`}
                   title={!canActivate ? t('activation.requirements') : ''}
                 >
                   <Play className="w-4 h-4 mr-1" />
@@ -414,7 +413,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
               </div>
             </>
           )}
-          
+
           {campaign.status === 'ACTIVE' && (
             <>
               <button
@@ -471,7 +470,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
       {/* Campaign Info */}
       <div className="p-6 mt-6 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
         <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">{t('detail.campaignInfo')}</h2>
-        
+
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="flex items-center space-x-3">
             <Building className="w-5 h-5 text-gray-400 dark:text-gray-500" />
@@ -490,7 +489,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
                   <span className="text-gray-500 text-s dark:text-gray-400">{t('detail.from')}: </span>
                   {new Date(campaign.startDate).toLocaleDateString('vi-VN', {
                     day: '2-digit',
-                    month: '2-digit', 
+                    month: '2-digit',
                     year: 'numeric'
                   })} - {new Date(campaign.startDate).toLocaleTimeString('vi-VN', {
                     hour: '2-digit',
@@ -546,28 +545,28 @@ const PaymentCampaignDetailPage: React.FC = () => {
 
       {/* Tab Navigation and Content */}
       <div className="mt-6 bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
-        <TabNavigation 
-          activeTab={currentTab} 
-          onTabChange={handleTabChange} 
+        <TabNavigation
+          activeTab={currentTab}
+          onTabChange={handleTabChange}
         />
-        
+
         <div className="p-6">
           {currentTab === 'statistics' && (
             <StatisticsTab campaign={campaign} />
           )}
-          
+
           {currentTab === 'fee-levels' && (
-            <FeeLevelTab 
+            <FeeLevelTab
               campaign={campaign}
               feeLevels={feeLevels}
               onFeeLevelsChange={setFeeLevels}
               onError={setError}
             />
           )}
-          
+
           {currentTab === 'member-assignments' && (
-            <MemberAssignmentTab 
-              campaign={campaign} 
+            <MemberAssignmentTab
+              campaign={campaign}
               onAssignmentsChange={async () => {
                 // Refresh activation requirements when assignments change
                 console.log('Assignments changed, refreshing activation requirements...');
@@ -580,14 +579,14 @@ const PaymentCampaignDetailPage: React.FC = () => {
               }}
             />
           )}
-          
+
           {currentTab === 'payment-history' && (
             <PaymentHistoryTab campaign={campaign} />
           )}
-          
+
           {currentTab === 'payos-config' && (
-            <PayOSConfigTab 
-              campaign={campaign} 
+            <PayOSConfigTab
+              campaign={campaign}
               onConfirmDelete={async () => {
                 return await showConfirm(
                   t('confirmations.deletePayOSConfig.title'),
@@ -622,11 +621,11 @@ const PaymentCampaignDetailPage: React.FC = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true" onClick={handleCloseEditModal}></div>
-            
+
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            
+
             <div className="inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white border border-gray-300 rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-600">
-              <PaymentCampaignForm 
+              <PaymentCampaignForm
                 campaign={campaign}
                 mode="edit"
                 onSave={handleCampaignUpdated}
@@ -645,8 +644,8 @@ const PaymentCampaignDetailPage: React.FC = () => {
         confirmText={confirmDialog.confirmText}
         cancelText={confirmDialog.cancelText}
         variant={confirmDialog.variant}
-        onConfirm={confirmDialog.onConfirm || (() => {})}
-        onCancel={confirmDialog.onCancel || (() => {})}
+        onConfirm={confirmDialog.onConfirm || (() => { })}
+        onCancel={confirmDialog.onCancel || (() => { })}
       />
     </div>
   );

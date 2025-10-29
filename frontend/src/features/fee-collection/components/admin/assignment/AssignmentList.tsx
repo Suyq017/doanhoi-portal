@@ -59,7 +59,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
   const handleMarkAsPaid = async (assignment: PaymentAssignment) => {
     const confirmed = await showConfirm(
       t('confirmDialog.markAsPaid.title'),
-      t('confirmDialog.markAsPaid.message', { 
+      t('confirmDialog.markAsPaid.message', {
         userName: `${assignment.user?.familyName || ''} ${assignment.user?.givenName || ''}`.trim(),
         amount: formatAmount(assignment.feeLevel?.amount || 0)
       }),
@@ -89,7 +89,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
   const handleDeleteAssignment = async (assignment: PaymentAssignment) => {
     const confirmed = await showConfirm(
       t('confirmDialog.deleteAssignment.title'),
-      t('confirmDialog.deleteAssignment.message', { 
+      t('confirmDialog.deleteAssignment.message', {
         userName: `${assignment.user?.familyName || ''} ${assignment.user?.givenName || ''}`.trim(),
         amount: formatAmount(assignment.feeLevel?.amount || 0)
       }),
@@ -111,14 +111,14 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
   // Calculate status including overdue based on campaign end date
   const getAssignmentStatus = (assignment: PaymentAssignment) => {
     if (assignment.status === 'PAID') return 'PAID';
-    
+
     const now = new Date();
     const endDate = new Date(campaignEndDate);
-    
+
     if (now > endDate && assignment.status === 'PENDING') {
       return 'OVERDUE';
     }
-    
+
     return assignment.status;
   };
 
@@ -136,13 +136,13 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
         const fullName = `${assignment.user?.familyName || ''} ${assignment.user?.givenName || ''}`.toLowerCase();
         const userCode = assignment.user?.code?.toLowerCase() || '';
         const levelName = assignment.feeLevel?.levelName?.toLowerCase() || '';
-        
+
         return fullName.includes(searchTerm) ||
-           userCode.includes(searchTerm) ||
-           levelName.includes(searchTerm);
+          userCode.includes(searchTerm) ||
+          levelName.includes(searchTerm);
       });
     }
-      
+
     // Apply status filter
     if (filters.status !== 'all') {
       result = result.filter(assignment => assignment.computedStatus === filters.status);
@@ -151,7 +151,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
     // Apply sorting
     result.sort((a, b) => {
       let aValue: any, bValue: any;
-      
+
       switch (filters.sortBy) {
         case 'user':
           aValue = a.user?.givenName || '';
@@ -273,18 +273,17 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
             {t('subtitle')}
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`px-3 py-2 rounded-lg border text-sm font-medium flex items-center space-x-2 ${
-              showFilters ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800' : 'bg-white text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600'
-            }`}
+            className={`px-3 py-2 rounded-lg border text-sm font-medium flex items-center space-x-2 ${showFilters ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-800' : 'bg-white text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600'
+              }`}
           >
             <Filter className="w-4 h-4" />
             <span>{t('filters.label')}</span>
           </button>
-          
+
           {!readOnly && onBulkCreate && (
             <button
               onClick={onBulkCreate}
@@ -296,7 +295,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
               {t('buttons.assignMembers')}
             </button>
           )}
-          
+
           <button
             onClick={onExportList}
             className="flex items-center px-3 py-2 space-x-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"
@@ -521,7 +520,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
                           <CheckCircle className="w-4 h-4" />
                         </button>
                       )}
-                      
+
                       {/* Delete Button */}
                       {!readOnly && onDeleteAssignment && (
                         <button
@@ -577,11 +576,11 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
         confirmText={confirmDialog.confirmText}
         cancelText={confirmDialog.cancelText}
         variant={confirmDialog.variant}
-        onConfirm={confirmDialog.onConfirm || (() => {})}
-        onCancel={confirmDialog.onCancel || (() => {})}
+        onConfirm={confirmDialog.onConfirm || (() => { })}
+        onCancel={confirmDialog.onCancel || (() => { })}
       />
     </div>
-    
+
   );
 };
 

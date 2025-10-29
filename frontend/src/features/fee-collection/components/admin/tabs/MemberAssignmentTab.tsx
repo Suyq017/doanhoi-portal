@@ -49,7 +49,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
   const fetchAssignments = async () => {
     setLoading(true);
     try {
-      const response : any = await paymentAssignmentService.getAssignmentsByCampaign(campaign.id);
+      const response: any = await paymentAssignmentService.getAssignmentsByCampaign(campaign.id);
       // Backend returns { success: true, data: [...] } or { data: [...] }
       const assignments = response.data?.assignments || [];
       setAssignments(Array.isArray(assignments) ? assignments : []);
@@ -63,7 +63,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
 
   const fetchFeeLevels = async () => {
     try {
-      const response : any = await paymentFeeLevelService.getFeeLevelsByCampaign(campaign.id);
+      const response: any = await paymentFeeLevelService.getFeeLevelsByCampaign(campaign.id);
       setFeeLevels(response || []);
     } catch (error) {
       console.error('Error fetching fee levels:', error);
@@ -110,19 +110,19 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
 
       console.log('Creating assignments with user ID:', user.id);
       console.log('Assignments data:', assignments);
-      
+
       // Call the bulk create API with assignments array and userId
       const response = await paymentAssignmentService.createMultipleAssignments(assignments, user.id);
-      
+
       // Handle response
       const newAssignments = (response as any).data || response || [];
       setAssignments(prev => [...prev, ...newAssignments]);
       setShowBulkCreate(false);
       setSelectedMemberIds([]);
-      
+
       // Show success toast
       showSuccess(t('bulkAssignment.success', { count: selectedMemberIds.length }));
-      
+
       // Refresh data and notify parent
       await fetchAssignments();
       if (onAssignmentsChange) {
@@ -139,7 +139,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
       await paymentAssignmentService.deleteAssignment(assignmentId);
       setAssignments(prev => prev.filter(assignment => assignment.id !== assignmentId));
       showSuccess(t('deleteAssignment.success'));
-      
+
       // Notify parent about changes
       if (onAssignmentsChange) {
         onAssignmentsChange();
@@ -153,12 +153,12 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
   const handleMarkAsPaid = async (assignmentId: string) => {
     try {
       // Update assignment status in local state
-      setAssignments(prev => prev.map(assignment => 
-        assignment.id === assignmentId 
+      setAssignments(prev => prev.map(assignment =>
+        assignment.id === assignmentId
           ? { ...assignment, status: 'PAID', paidAt: new Date().toISOString() }
           : assignment
       ));
-      
+
       // Notify parent about changes
       if (onAssignmentsChange) {
         onAssignmentsChange();
@@ -217,7 +217,7 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Member Selection */}
                 <div>
-                <h4 className="mb-3 font-medium text-gray-900 text-md dark:text-white">
+                  <h4 className="mb-3 font-medium text-gray-900 text-md dark:text-white">
                     {t('memberAssignmentTab:selectMembers')}
                   </h4>
                   <MemberSelector
