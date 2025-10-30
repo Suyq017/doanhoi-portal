@@ -13,3 +13,6 @@ export { CtxhCategory } from './ctxh-category.entity';
 export { CtxhActivity, ActivityStatus } from './ctxh-activity.entity';
 export { CtxhParticipation, ParticipationStatus } from './ctxh-participation.entity';
 export { CtxhLimitConfig, LimitConfigStatus } from './ctxh-limit-config.entity';
+
+// AWS S3 Config
+export { AwsS3Config } from './aws-s3-config.entity';

@@ -25,7 +25,10 @@
     "seed": "ts-node src/database/seeds/index.ts",
     "seed:permissions": "ts-node -e \"import('./src/database/seeds/permissions.seed').then(m => m.seedPermissions(require('./src/database/seeds/dataSource')))\"",
     "seed:roles": "ts-node -e \"import('./src/database/seeds/roles.seed').then(m => m.seedRoles(require('./src/database/seeds/dataSource')))\"",
-    "seed:users": "ts-node -e \"import('./src/database/seeds/default-users.seed').then(m => m.seedDefaultUsers(require('./src/database/seeds/dataSource')))\""
+    "seed:users": "ts-node -e \"import('./src/database/seeds/default-users.seed').then(m => m.seedDefaultUsers(require('./src/database/seeds/dataSource')))\"",
+    "update:permissions": "ts-node src/database/scripts/update-permissions.ts",
+    "update:super-admin": "ts-node src/database/scripts/update-super-admin-role.ts",
+    "migrate:aws-s3": "ts-node src/database/migrations/create-aws-s3-configs-table.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

@@ -167,7 +167,53 @@ export class OrganizationsController {
     @ApiResponse({ status: 200, description: 'Tổ chức đã được xóa' })
     remove(@Param('id') id: string) {
         return this.organizationsService.remove(id);
-    } @Post(':id/members/:userId')
+    }
+
+    @Post(':id/members/bulk-add')
+    @ApiOperation({ summary: 'Thêm nhiều thành viên vào tổ chức theo danh sách mã sinh viên' })
+    @ApiParam({ name: 'id', description: 'ID của tổ chức' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                userCodes: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Danh sách mã số sinh viên'
+                }
+            }
+        }
+    })
+    @ApiResponse({
+        status: 201,
+        description: 'Kết quả import thành viên',
+        schema: {
+            type: 'object',
+            properties: {
+                success: { type: 'number', description: 'Số lượng thành công' },
+                failed: { type: 'number', description: 'Số lượng thất bại' },
+                errors: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            row: { type: 'number' },
+                            code: { type: 'string' },
+                            message: { type: 'string' }
+                        }
+                    }
+                }
+            }
+        }
+    })
+    async bulkAddMembersByCode(
+        @Param('id') organizationId: string,
+        @Body('userCodes') userCodes: string[]
+    ) {
+        return this.organizationsService.bulkAddMembersByCode(organizationId, userCodes);
+    }
+
+    @Post(':id/members/:userId')
     @ApiOperation({ summary: 'Thêm thành viên vào tổ chức' })
     @ApiResponse({ status: 201, description: 'Thành viên đã được thêm' })
     addMember(

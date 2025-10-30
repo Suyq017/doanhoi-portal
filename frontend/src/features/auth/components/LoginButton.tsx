@@ -40,17 +40,17 @@ const LoginButton: React.FC = () => {
 
         {/* Dropdown menu */}
         {isDropdownOpen && (
-          <div className="absolute right-0 z-50 w-48 mt-2 bg-white border border-gray-200 rounded-md shadow-lg dark:bg-gray-800 dark:border-gray-700">
+          <div className="absolute right-0 z-50 w-64 mt-2 bg-white border border-gray-200 rounded-md shadow-lg dark:bg-gray-800 dark:border-gray-700">
             <div className="py-1">
               <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200 dark:text-gray-300 dark:border-gray-700">
-                <div className="font-medium">{auth.user.givenName} {auth.user.familyName}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{auth.user.email}</div>
+                <div className="font-medium truncate">{auth.user.givenName} {auth.user.familyName}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 break-all">{auth.user.email}</div>
               </div>
               <button
                 onClick={handleLogout}
                 className="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                <LogOut className="w-4 h-4 mr-2" />
+                <LogOut className="w-4 h-4 mr-2 flex-shrink-0" />
                 {t('auth:buttons.logout')}
               </button>
             </div>

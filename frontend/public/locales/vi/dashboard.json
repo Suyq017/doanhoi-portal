@@ -82,5 +82,39 @@
     "createOrgPhonetic": "Tạo tổ chức mới",
     "viewReports": "Xem báo cáo",
     "viewReportsPhonetic": "Xem báo cáo"
+  },
+  "awsConfig": {
+    "title": "Cấu hình AWS S3",
+    "subtitle": "Quản lý thông tin kết nối AWS S3 để lưu trữ tài liệu",
+    "fields": {
+      "accessKeyId": "AWS Access Key ID",
+      "secretAccessKey": "AWS Secret Access Key",
+      "region": "AWS Region",
+      "s3Bucket": "S3 Bucket Name",
+      "s3Endpoint": "S3 Endpoint",
+      "placeholders": {
+        "accessKeyId": "Nhập AWS Access Key ID",
+        "secretAccessKey": "Nhập AWS Secret Access Key",
+        "region": "Ví dụ: ap-southeast-1",
+        "s3Bucket": "Nhập tên bucket S3",
+        "s3Endpoint": "Ví dụ: https://s3.amazonaws.com"
+      }
+    },
+    "status": {
+      "configured": "Đã cấu hình",
+      "notConfigured": "Chưa cấu hình"
+    },
+    "setup": {
+      "title": "Chưa cấu hình AWS S3",
+      "description": "Vui lòng nhập thông tin AWS S3 để có thể lưu trữ và quản lý tài liệu trên hệ thống"
+    },
+    "messages": {
+      "createSuccess": "Tạo cấu hình AWS S3 thành công",
+      "updateSuccess": "Cập nhật cấu hình AWS S3 thành công",
+      "deleteSuccess": "Xóa cấu hình AWS S3 thành công",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa cấu hình AWS S3 này?",
+      "saveError": "Có lỗi xảy ra khi lưu cấu hình",
+      "deleteError": "Có lỗi xảy ra khi xóa cấu hình"
+    }
   }
 }

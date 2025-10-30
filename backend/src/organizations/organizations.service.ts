@@ -794,6 +794,124 @@ export class OrganizationsService {
   }
 
   /**
+   * Bulk add members to organization by user codes
+   * Used for importing members from Excel with just student codes
+   */
+  async bulkAddMembersByCode(
+    organizationId: string,
+    userCodes: string[]
+  ): Promise<{
+    success: number;
+    failed: number;
+    errors: Array<{ row: number; code: string; message: string }>;
+  }> {
+    // Validate organization exists
+    const organization = await this.organizationsRepository.findOne({
+      where: { id: organizationId },
+      relations: ['parent']
+    });
+
+    if (!organization) {
+      throw new NotFoundException(`Organization with ID ${organizationId} not found`);
+    }
+
+    const userRepository = this.organizationsRepository.manager.getRepository('User');
+
+    let successCount = 0;
+    let failedCount = 0;
+    const errors: Array<{ row: number; code: string; message: string }> = [];
+
+    // Process each user code
+    for (let i = 0; i < userCodes.length; i++) {
+      const userCode = userCodes[i].trim();
+      const row = i + 2; // Excel row number (1 is header, data starts at 2)
+
+      try {
+        // Find user by code
+        const user = await userRepository.findOne({
+          where: { code: userCode }
+        });
+
+        if (!user) {
+          errors.push({
+            row,
+            code: userCode,
+            message: `Không tìm thấy người dùng với mã ${userCode}`
+          });
+          failedCount++;
+          continue;
+        }
+
+        // Check if user is already a member
+        const existingMembership = await this.userOrganizationsRepository.findOne({
+          where: {
+            organizationId: organization.id,
+            userId: user.id
+          }
+        });
+
+        if (existingMembership) {
+          errors.push({
+            row,
+            code: userCode,
+            message: `Người dùng đã là thành viên của tổ chức`
+          });
+          failedCount++;
+          continue;
+        }
+
+        // Add user to organization and all parent organizations
+        const allOrgs: Organization[] = [organization];
+        let parentOrg = organization.parent;
+
+        while (parentOrg) {
+          allOrgs.push(parentOrg);
+          parentOrg = await this.organizationsRepository.findOne({
+            where: { id: parentOrg.id },
+            relations: ['parent']
+          });
+          parentOrg = parentOrg?.parent;
+        }
+
+        // Create memberships for all organizations
+        for (const org of allOrgs) {
+          const membershipExists = await this.userOrganizationsRepository.findOne({
+            where: {
+              organizationId: org.id,
+              userId: user.id
+            }
+          });
+
+          if (!membershipExists) {
+            const membership = this.userOrganizationsRepository.create({
+              organizationId: org.id,
+              userId: user.id,
+              role: UserOrgRole.MEMBER
+            });
+            await this.userOrganizationsRepository.save(membership);
+          }
+        }
+
+        successCount++;
+      } catch (error) {
+        console.error(`Error adding user ${userCode}:`, error);
+        errors.push({
+          row,
+          code: userCode,
+          message: error.message || 'Lỗi không xác định'
+        });
+        failedCount++;
+      }
+    }
+
+    return {
+      success: successCount,
+      failed: failedCount,
+      errors
+    };
+  }
+
+  /**
    * Validate a list of organization codes
    * Returns which codes exist and which don't
    */

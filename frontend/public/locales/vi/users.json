@@ -152,7 +152,8 @@
     "organizationMembershipUpdatedWithKept": "Đã cập nhật thành viên tổ chức: +{{added}}, -{{removed}} (giữ lại {{kept}} tổ chức cha cần thiết)",
     "loadingUserDetails": "Đang tải thông tin người dùng...",
     "roleInOrganization": "Vai trò trong tổ chức",
-    "globalRole": "Vai trò toàn hệ thống"
+    "globalRole": "Vai trò toàn hệ thống",
+    "organizationNotFound": "Không tìm thấy tổ chức phù hợp với \"{{searchTerm}}\""
   },
   "validation": {
     "invalidOrganization": "Tổ chức được chọn không hợp lệ",

@@ -22,7 +22,6 @@ export const useBreadcrumbJSX = (config: BreadcrumbConfig) => {
 
     return useMemo(() => {
         const baseTitle = t('organizations:title');
-        const membersText = t('organizations:members.title', { defaultValue: 'Danh sách thành viên' });
 
         const {
             type,
@@ -46,6 +45,10 @@ export const useBreadcrumbJSX = (config: BreadcrumbConfig) => {
         if (isSubDetailPage && isMembersPage) {
             const parentOrg = organizations[0];
             const childOrgName = displayOrganization?.name || '';
+            const membersText = t('organizations:members.breadcrumbTitle', { 
+                organizationName: childOrgName,
+                defaultValue: `Danh sách thành viên ${childOrgName}` 
+            });
 
             return (
                 <div className="flex items-center space-x-2">
@@ -63,13 +66,6 @@ export const useBreadcrumbJSX = (config: BreadcrumbConfig) => {
                         {parentOrg?.name || ''}
                     </Link>
                     <ChevronRight className="w-4 h-4 text-gray-400" />
-                    <Link
-                        to={`/organizations/${parentType}/${parentCode}/${type}/${code}`}
-                        className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
-                    >
-                        {childOrgName}
-                    </Link>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
                     <span className="text-gray-900 dark:text-white">{membersText}</span>
                 </div>
             );
@@ -77,6 +73,11 @@ export const useBreadcrumbJSX = (config: BreadcrumbConfig) => {
 
         // Detail members page
         if (isDetailPage && isMembersPage && displayOrganization) {
+            const membersText = t('organizations:members.breadcrumbTitle', { 
+                organizationName: displayOrganization.name,
+                defaultValue: `Danh sách thành viên ${displayOrganization.name}` 
+            });
+            
             return (
                 <div className="flex items-center space-x-2">
                     <Link

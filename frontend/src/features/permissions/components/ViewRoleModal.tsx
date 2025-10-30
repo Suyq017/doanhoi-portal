@@ -43,6 +43,10 @@ const ViewRoleModal: React.FC<ViewRoleModalProps> = ({
             departments: t('permissions.categories.departments'),
             classes: t('permissions.categories.classes'),
             permissions: t('permissions.categories.permissions'),
+            ctxh: t('permissions.categories.ctxh'),
+            payments: t('permissions.categories.payments'),
+            'my-payments': t('permissions.categories.myPayments'),
+            reports: t('permissions.categories.reports'),
         };
         return names[category as keyof typeof names] || category;
     };
@@ -55,6 +59,10 @@ const ViewRoleModal: React.FC<ViewRoleModalProps> = ({
             departments: 'text-orange-600 bg-orange-50 dark:bg-orange-900/20',
             classes: 'text-red-600 bg-red-50 dark:bg-red-900/20',
             permissions: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20',
+            ctxh: 'text-teal-600 bg-teal-50 dark:bg-teal-900/20',
+            payments: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20',
+            'my-payments': 'text-cyan-600 bg-cyan-50 dark:bg-cyan-900/20',
+            reports: 'text-pink-600 bg-pink-50 dark:bg-pink-900/20',
         };
         return colors[category as keyof typeof colors] || 'text-gray-600 bg-gray-50 dark:bg-gray-700';
     };

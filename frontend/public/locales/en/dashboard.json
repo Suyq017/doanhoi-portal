@@ -51,7 +51,7 @@
     "title": "Recent Activity",
     "noActivity": "No recent activity",
     "addedMembers": "Added {{count}} new members to {{organization}}",
-    "updatedOrganization": "Updated {{organization}} information", 
+    "updatedOrganization": "Updated {{organization}} information",
     "createdOrganization": "Created new {{organization}}",
     "addedMembersToUnit": "Added {{count}} new members to {{unit}}",
     "updatedClubInfo": "Updated {{club}} information",
@@ -82,5 +82,39 @@
     "createOrgPhonetic": "Create New Organization",
     "viewReports": "View Reports",
     "viewReportsPhonetic": "View Reports"
+  },
+  "awsConfig": {
+    "title": "AWS S3 Configuration",
+    "subtitle": "Manage AWS S3 connection settings for document storage",
+    "fields": {
+      "accessKeyId": "AWS Access Key ID",
+      "secretAccessKey": "AWS Secret Access Key",
+      "region": "AWS Region",
+      "s3Bucket": "S3 Bucket Name",
+      "s3Endpoint": "S3 Endpoint",
+      "placeholders": {
+        "accessKeyId": "Enter AWS Access Key ID",
+        "secretAccessKey": "Enter AWS Secret Access Key",
+        "region": "e.g., ap-southeast-1",
+        "s3Bucket": "Enter S3 bucket name",
+        "s3Endpoint": "e.g., https://s3.amazonaws.com"
+      }
+    },
+    "status": {
+      "configured": "Configured",
+      "notConfigured": "Not Configured"
+    },
+    "setup": {
+      "title": "AWS S3 Not Configured",
+      "description": "Please enter AWS S3 information to enable document storage and management on the system"
+    },
+    "messages": {
+      "createSuccess": "AWS S3 configuration created successfully",
+      "updateSuccess": "AWS S3 configuration updated successfully",
+      "deleteSuccess": "AWS S3 configuration deleted successfully",
+      "deleteConfirm": "Are you sure you want to delete this AWS S3 configuration?",
+      "saveError": "An error occurred while saving configuration",
+      "deleteError": "An error occurred while deleting configuration"
+    }
   }
 }

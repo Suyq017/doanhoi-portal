@@ -92,7 +92,26 @@
       "titlePhonetic": "Import Branch Members",
       "description": "Import members with student code only",
       "descriptionPhonetic": "Import members with student code only"
-    }
+    },
+    "templateTitle": "Download Excel Template",
+    "templateDescription": "Template file contains 1 column: Student Code. Download and fill in according to the template.",
+    "downloadTemplate": "Download Template",
+    "selectFile": "Select Excel File",
+    "chooseFile": "Choose File",
+    "import": "Import",
+    "instruction1": "File only needs 1 column: Student Code",
+    "instruction2": "System will automatically add members to this organization",
+    "instruction3": "Excel file only accepts .xlsx or .xls format, maximum 5MB",
+    "invalidFileType": "Invalid file format. Please select an Excel file (.xlsx, .xls)",
+    "fileTooLarge": "File is too large. Maximum size is 5MB",
+    "noFileSelected": "Please select a file to import",
+    "noDataFound": "No data found in file",
+    "parseError": "Error reading Excel file",
+    "readError": "Cannot read file",
+    "error": "An error occurred while importing members",
+    "allFailed": "Import failed. No members were added",
+    "successCount": "Successfully added {{count}} members",
+    "failedCount": "Failed {{count}} members"
   },
   "tree": {
     "treeOrganization": "Organization Tree",
@@ -105,7 +124,8 @@
     "createSuccess": "Organization created successfully",
     "success": {
       "removeMember": "Member removed from organization successfully",
-      "bulkRemoveMembers": "{{count}} members removed from organization successfully"
+      "bulkRemoveMembers": "{{count}} members removed from organization successfully",
+      "importMembers": "Members imported successfully"
     },
     "error": {
       "removeMember": "Error occurred while removing member from organization",
@@ -166,8 +186,11 @@
   },
   "members": {
     "title": "Member List",
+    "breadcrumbTitle": "Member List of {{organizationName}}",
     "subtitle": "Manage members in the organization",
     "members": "Members",
-    "noMembers": "No members found"
+    "noMembers": "No members found",
+    "addManual": "Add Manually",
+    "importExcel": "Import from Excel"
   }
 }

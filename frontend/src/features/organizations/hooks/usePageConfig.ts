@@ -32,9 +32,9 @@ export const usePageConfig = ({
         // Determine level based on organization type
         const level: 2 | 3 = type === 'clb_truong' ? 3 : 2;
 
-        // CLB organizations show member stats and user list
-        const shouldShowMemberStats = type === 'clb_truong';
-        const shouldShowUserList = type === 'clb_truong';
+        // All organizations show member stats and user list
+        const shouldShowMemberStats = true;
+        const shouldShowUserList = true;
 
         return {
             level,

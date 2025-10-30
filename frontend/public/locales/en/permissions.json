@@ -149,6 +149,7 @@
             "payments": "Fee Collection Management",
             "myPayments": "My Payments",
             "ctxh": "Community Service Management",
+            "reports": "Personal Reports",
             "dashboardShort": "Dashboard",
             "usersShort": "Users",
             "organizationsShort": "Organizations",
@@ -157,7 +158,8 @@
             "permissionsShort": "Permissions",
             "paymentsShort": "Payments",
             "myPaymentsShort": "My Payments",
-            "ctxhShort": "CTXH"
+            "ctxhShort": "CTXH",
+            "reportsShort": "Reports"
         },
         "definitions": {
             "dashboard.access": "Access dashboard",

@@ -11,15 +11,12 @@ interface SearchFiltersProps {
 
 const SearchFilters: React.FC<SearchFiltersProps> = ({
     searchFilters,
-    setCurrentPage
 }) => {
     const { t } = useTranslation('permissions');
     const {
         searchTerm,
         debouncedSearchTerm,
         searchInputRef,
-        statusFilter,
-        setStatusFilter,
         handleSearchChange,
         handleSearchFocus,
         handleClearSearch
@@ -27,54 +24,34 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
 
     return (
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Search */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                        ref={searchInputRef}
-                        type="text"
-                        placeholder={t('placeholders.searchPlaceholder')}
-                        value={searchTerm}
-                        onChange={handleSearchChange}
-                        onFocus={handleSearchFocus}
-                        className="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    />
-                    {/* Clear button */}
-                    {searchTerm && (
-                        <button
-                            onClick={handleClearSearch}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            type="button"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    )}
-                    {/* Search indicator */}
-                    {searchTerm !== debouncedSearchTerm && !searchTerm && (
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Status Filter */}
-                <select
-                    value={statusFilter === '' ? '' : statusFilter.toString()}
-                    onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '') {
-                            setStatusFilter('');
-                        } else {
-                            setStatusFilter(value === 'true');
-                        }
-                        setCurrentPage(1); // Reset to first page when filtering
-                    }}
-                    className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                >                    <option value="">{t('allStatuses')}</option>
-                    <option value="true">{t('activeStatus')}</option>
-                    <option value="false">{t('inactiveStatus')}</option>
-                </select>
+            {/* Search */}
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder={t('placeholders.searchPlaceholder')}
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    onFocus={handleSearchFocus}
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+                {/* Clear button */}
+                {searchTerm && (
+                    <button
+                        onClick={handleClearSearch}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        type="button"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                )}
+                {/* Search indicator */}
+                {searchTerm !== debouncedSearchTerm && !searchTerm && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    </div>
+                )}
             </div>
         </div>
     );

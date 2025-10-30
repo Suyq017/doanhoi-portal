@@ -8,37 +8,51 @@ import ActivityForm from '../components/ActivityForm';
 import ActivityList from '../components/activity/ActivityList';
 import { useToast } from '../../../shared/hooks';
 import { Toast, ConfirmDialog } from '../../../shared/components';
-import { useCtxhPermissions } from '../hooks';
+import { organizationService } from '../../../shared/services';
 
 const ActivityManagement: React.FC = () => {
   const { t } = useTranslation('ctxh');
-  const ctxhPermissions = useCtxhPermissions();
 
   // ActivityManagement component
   const navigate = useNavigate();
   const [showActivityForm, setShowActivityForm] = useState(false);
   const [editingActivity, setEditingActivity] = useState<CtxhActivity | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [checkingPermissions, setCheckingPermissions] = useState(false);
+  const [canCreateActivity, setCanCreateActivity] = useState(true);
+  const [checkingPermissions, setCheckingPermissions] = useState(true);
 
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError, confirmDialog, showConfirm } = useToast();
 
-  // Initialize permissions check
+  // Check if user can create activities (not Level 3 organization)
   useEffect(() => {
-    const initializePermissions = async () => {
-      setCheckingPermissions(true);
+    const checkCreatePermission = async () => {
       try {
-        // Small delay to ensure permissions are loaded
-        await new Promise(resolve => setTimeout(resolve, 100));
+        setCheckingPermissions(true);
+        const response = await organizationService.getCtxhActivityAccessibleOrganizations();
+
+        // User can create if they have at least one accessible organization
+        // - Super Admin / Level 1: organizations.length > 0, fixedOrganization = null
+        // - Level 2: organizations.length = 1, fixedOrganization = Organization
+        // - Level 3 / No permission: organizations.length = 0
+        const canCreate = response.organizations.length > 0;
+        setCanCreateActivity(canCreate);
+
+        console.log('[ActivityManagement] Create permission check:', {
+          organizationsCount: response.organizations.length,
+          fixedOrganization: response.fixedOrganization?.name || 'null',
+          canCreate: canCreate
+        });
       } catch (error) {
-        console.error('Error initializing permissions:', error);
+        console.error('Failed to check create permission:', error);
+        // Default to false for safety
+        setCanCreateActivity(false);
       } finally {
         setCheckingPermissions(false);
       }
     };
 
-    initializePermissions();
+    checkCreatePermission();
   }, []);
 
   const handleCreateActivity = () => {
@@ -159,7 +173,7 @@ const ActivityManagement: React.FC = () => {
             {t('activity.subtitle')}
           </p>
         </div>
-        {!checkingPermissions && ctxhPermissions.activities.create && (
+        {!checkingPermissions && canCreateActivity && (
           <div className="mt-4 sm:mt-0">
             <button
               onClick={handleCreateActivity}
@@ -180,11 +194,6 @@ const ActivityManagement: React.FC = () => {
         onViewClick={handleViewActivity}
         showToast={handleShowToast}
         refreshTrigger={refreshTrigger}
-        permissions={{
-          create: ctxhPermissions.activities.create,
-          update: ctxhPermissions.activities.update,
-          delete: ctxhPermissions.activities.delete
-        }}
       />
 
       {/* Activity Form Modal */}

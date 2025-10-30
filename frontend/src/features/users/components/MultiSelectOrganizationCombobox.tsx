@@ -41,14 +41,78 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLUListElement>(null);
 
-    const selectedOrganizations = organizations.filter(org => selectedOrganizationIds.includes(org.id));    // Filter organizations based on search term
-    const filteredOrganizations = organizations.filter(org => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-            org.name.toLowerCase().includes(searchLower) ||
-            org.code.toLowerCase().includes(searchLower)
-        );
-    });
+    const selectedOrganizations = organizations.filter(org => selectedOrganizationIds.includes(org.id));    // Advanced filtering: Score-based filtering to show most relevant results
+    const filteredOrganizations = (() => {
+        if (!searchTerm.trim()) {
+            return organizations; // Show all if no search term
+        }
+
+        const searchLower = searchTerm.toLowerCase().trim();
+        const searchWords = searchLower.split(/\s+/); // Split search into words
+
+        // Calculate relevance score for each organization
+        const scoredOrgs = organizations.map(org => {
+            const nameLower = org.name.toLowerCase();
+            const codeLower = org.code.toLowerCase();
+            let score = 0;
+
+            // Exact match gets highest score
+            if (nameLower === searchLower || codeLower === searchLower) {
+                score += 1000;
+            }
+
+            // Starts with search term gets high score
+            if (nameLower.startsWith(searchLower) || codeLower.startsWith(searchLower)) {
+                score += 500;
+            }
+
+            // Count how many search words match
+            const matchedWords = searchWords.filter(word =>
+                nameLower.includes(word) || codeLower.includes(word)
+            );
+            const wordMatchRatio = matchedWords.length / searchWords.length;
+
+            // Only show organizations that match at least 60% of search words
+            if (wordMatchRatio < 0.6) {
+                return { org, score: -1 }; // Mark as irrelevant
+            }
+
+            // Add score based on word match ratio
+            score += wordMatchRatio * 100;
+
+            // Bonus points for matching all words in sequence
+            if (searchWords.every(word => nameLower.includes(word) || codeLower.includes(word))) {
+                score += 50;
+            }
+
+            // Bonus for word order match
+            let lastIndex = -1;
+            let sequenceMatch = true;
+            for (const word of searchWords) {
+                const index = nameLower.indexOf(word, lastIndex + 1);
+                if (index === -1 || index <= lastIndex) {
+                    sequenceMatch = false;
+                    break;
+                }
+                lastIndex = index;
+            }
+            if (sequenceMatch) {
+                score += 200;
+            }
+
+            // Penalty for length difference (prefer shorter, more specific matches)
+            const lengthDiff = Math.abs(nameLower.length - searchLower.length);
+            score -= lengthDiff * 0.5;
+
+            return { org, score };
+        });
+
+        // Filter out irrelevant results and sort by score
+        return scoredOrgs
+            .filter(item => item.score > 0) // Only show relevant results
+            .sort((a, b) => b.score - a.score) // Sort by relevance
+            .map(item => item.org);
+    })();
 
     // Handle scroll events to update dropdown position
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, maxHeight: 200 });
@@ -293,9 +357,9 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex-1 flex flex-col">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
-                                {t('users:labels.selectedOrganizations', { 
-                                    count: selectedOrganizations.length, 
-                                    defaultValue: `Tổ chức đã chọn (${selectedOrganizations.length})` 
+                                {t('users:labels.selectedOrganizations', {
+                                    count: selectedOrganizations.length,
+                                    defaultValue: `Tổ chức đã chọn (${selectedOrganizations.length})`
                                 })}
                             </span>
                             {!disabled && (
@@ -450,7 +514,7 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
                                                 {t('users:labels.selectUserOrganizations', { defaultValue: 'Chọn tổ chức của người dùng' })}
                                             </span>
                                             <div className="text-xs text-green-600 mt-0.5">
-                                                {t('users:labels.userOrganizationsList', { 
+                                                {t('users:labels.userOrganizationsList', {
                                                     count: userOrganizations.length,
                                                     organizations: userOrganizations.map(org => org.name).join(', '),
                                                     defaultValue: `${userOrganizations.length} tổ chức: ${userOrganizations.map(org => org.name).join(', ')}`
@@ -528,9 +592,9 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
                     <Search className="w-5 h-5 mx-auto mb-2 text-gray-400" />
                     <p className="text-sm">
                         {searchTerm
-                            ? t('users:labels.organizationNotFound', { 
-                                searchTerm, 
-                                defaultValue: `Không tìm thấy tổ chức "${searchTerm}"` 
+                            ? t('users:labels.organizationNotFound', {
+                                searchTerm,
+                                defaultValue: `Không tìm thấy tổ chức "${searchTerm}"`
                             })
                             : t('users:labels.noOrganizations', { defaultValue: 'Không có tổ chức nào' })
                         }

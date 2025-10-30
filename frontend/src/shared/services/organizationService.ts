@@ -92,9 +92,25 @@ class OrganizationService {
   async getOrganizationStats(): Promise<OrganizationStats> {
     const response = await apiClient.get<OrganizationStats>('/organizations/stats');
     return response;
-  } async addMemberBySimpleCode(organizationCode: string, userCode: string): Promise<UserOrganization> {
+  }
+
+  async addMemberBySimpleCode(organizationCode: string, userCode: string): Promise<UserOrganization> {
     return apiClient.post<UserOrganization>(`/organizations/${organizationCode}/member/${userCode}`, { userCode });
-  } async uploadImportFile(file: File, level: number = 3, organizationId?: string): Promise<{
+  }
+
+  /**
+   * Bulk add members to an organization by user codes (student IDs)
+   * Used for importing members from Excel with just student codes
+   */
+  async bulkAddMembersByCode(organizationId: string, userCodes: string[]): Promise<{
+    success: number;
+    failed: number;
+    errors: Array<{ row: number; code: string; message: string }>;
+  }> {
+    return apiClient.post(`/organizations/${organizationId}/members/bulk-add`, { userCodes });
+  }
+
+  async uploadImportFile(file: File, level: number = 3, organizationId?: string): Promise<{
     sessionId: string;
     previewData: OrganizationImportData[];
   }> {

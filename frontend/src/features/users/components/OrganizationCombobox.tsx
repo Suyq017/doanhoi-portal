@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Search, X } from 'lucide-react';
+import { ChevronDown, Search, X, Building } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Organization } from '../../../shared/types/organization';
 
@@ -33,11 +33,78 @@ const OrganizationCombobox: React.FC<OrganizationComboboxProps> = ({
     // Find selected organization
     const selectedOrganization = organizations.find(org => org.id === selectedId);
 
-    // Filter organizations based on search term
-    const filteredOrganizations = organizations.filter(org =>
-        org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (org.parent?.name && org.parent.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    // Advanced filtering: Score-based filtering to show most relevant results
+    const filteredOrganizations = (() => {
+        if (!searchTerm.trim()) {
+            return organizations; // Show all if no search term
+        }
+
+        const searchLower = searchTerm.toLowerCase().trim();
+        const searchWords = searchLower.split(/\s+/); // Split search into words
+
+        // Calculate relevance score for each organization
+        const scoredOrgs = organizations.map(org => {
+            const nameLower = org.name.toLowerCase();
+            const parentName = org.parent?.name?.toLowerCase() || '';
+            let score = 0;
+
+            // Exact match gets highest score
+            if (nameLower === searchLower) {
+                score += 1000;
+            }
+
+            // Starts with search term gets high score
+            if (nameLower.startsWith(searchLower)) {
+                score += 500;
+            }
+
+            // Count how many search words match in name or parent
+            const matchedWords = searchWords.filter(word =>
+                nameLower.includes(word) || parentName.includes(word)
+            );
+            const wordMatchRatio = matchedWords.length / searchWords.length;
+
+            // Only show organizations that match at least 60% of search words
+            if (wordMatchRatio < 0.6) {
+                return { org, score: -1 }; // Mark as irrelevant
+            }
+
+            // Add score based on word match ratio
+            score += wordMatchRatio * 100;
+
+            // Bonus points for matching all words in sequence
+            if (searchWords.every(word => nameLower.includes(word) || parentName.includes(word))) {
+                score += 50;
+            }
+
+            // Bonus for word order match in organization name
+            let lastIndex = -1;
+            let sequenceMatch = true;
+            for (const word of searchWords) {
+                const index = nameLower.indexOf(word, lastIndex + 1);
+                if (index === -1 || index <= lastIndex) {
+                    sequenceMatch = false;
+                    break;
+                }
+                lastIndex = index;
+            }
+            if (sequenceMatch) {
+                score += 200;
+            }
+
+            // Penalty for length difference (prefer shorter, more specific matches)
+            const lengthDiff = Math.abs(nameLower.length - searchLower.length);
+            score -= lengthDiff * 0.5;
+
+            return { org, score };
+        });
+
+        // Filter out irrelevant results and sort by score
+        return scoredOrgs
+            .filter(item => item.score > 0) // Only show relevant results
+            .sort((a, b) => b.score - a.score) // Sort by relevance
+            .map(item => item.org);
+    })();
     // Calculate dropdown position
     const calculateDropdownPosition = () => {
         if (comboboxRef.current) {
@@ -180,7 +247,14 @@ const OrganizationCombobox: React.FC<OrganizationComboboxProps> = ({
 
     const getDisplayText = () => {
         if (selectedOrganization) {
-            return selectedOrganization.name + (selectedOrganization.parent ? ` (${selectedOrganization.parent.name})` : '');
+            const parts = [selectedOrganization.name];
+            if (selectedOrganization.code) {
+                parts.push(`[${selectedOrganization.code}]`);
+            }
+            if (selectedOrganization.parent) {
+                parts.push(`(${selectedOrganization.parent.name})`);
+            }
+            return parts.join(' ');
         }
         return '';
     };
@@ -190,8 +264,8 @@ const OrganizationCombobox: React.FC<OrganizationComboboxProps> = ({
             {/* Input Field */}
             <div
                 className={`relative w-full px-3 py-2 border rounded-md cursor-pointer transition-colors ${disabled || loading
-                        ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed'
-                        : 'bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500'
+                    ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed'
+                    : 'bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500'
                     } ${error
                         ? 'border-red-500 dark:border-red-500'
                         : isOpen
@@ -215,8 +289,8 @@ const OrganizationCombobox: React.FC<OrganizationComboboxProps> = ({
                         />
                     ) : (
                         <span className={`flex-1 truncate ${selectedOrganization
-                                ? 'text-gray-900 dark:text-white'
-                                : 'text-gray-400 dark:text-gray-500'
+                            ? 'text-gray-900 dark:text-white'
+                            : 'text-gray-400 dark:text-gray-500'
                             }`}>
                             {selectedOrganization ? getDisplayText() : (placeholder || t('users:placeholders.selectOrganization'))}
                         </span>
@@ -262,8 +336,8 @@ const OrganizationCombobox: React.FC<OrganizationComboboxProps> = ({
                     )}          {/* Empty option */}
                     <div
                         className={`px-3 py-2 cursor-pointer transition-colors ${highlightedIndex === -1
-                                ? 'bg-doan-50 dark:bg-doan-900/20 text-doan-700 dark:text-doan-300'
-                                : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                            ? 'bg-doan-50 dark:bg-doan-900/20 text-doan-700 dark:text-doan-300'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                             }`}
                         onMouseDown={(e) => {
                             e.preventDefault();
@@ -278,39 +352,74 @@ const OrganizationCombobox: React.FC<OrganizationComboboxProps> = ({
                     </div>
 
                     {/* Organization options */}
-                    {filteredOrganizations.length > 0 ? (filteredOrganizations.map((org, index) => (
-                        <div
-                            key={org.id}
-                            className={`px-3 py-2 cursor-pointer transition-colors ${highlightedIndex === index
-                                    ? 'bg-doan-50 dark:bg-doan-900/20 text-doan-700 dark:text-doan-300'
-                                    : selectedId === org.id
-                                        ? 'bg-doan-100 dark:bg-doan-900/30 text-doan-800 dark:text-doan-200'
-                                        : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                                }`}
-                            onMouseDown={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleSelect(org.id);
-                            }}
-                            onMouseEnter={() => setHighlightedIndex(index)}
-                        >
-                            <div className="flex items-center justify-between">
-                                <span className="font-medium text-gray-900 dark:text-white">
-                                    {org.name}
-                                </span>
-                                {selectedId === org.id && (
-                                    <div className="w-2 h-2 bg-doan-500 rounded-full"></div>
-                                )}
+                    {filteredOrganizations.length > 0 ? (filteredOrganizations.map((org, index) => {
+                        const isSelected = selectedId === org.id;
+                        const isHighlighted = highlightedIndex === index;
+
+                        return (
+                            <div
+                                key={org.id}
+                                className={`px-3 py-3 cursor-pointer transition-colors border-l-4 ${isHighlighted
+                                        ? 'bg-doan-50 dark:bg-doan-900/20 text-doan-700 dark:text-doan-300 border-doan-400'
+                                        : isSelected
+                                            ? 'bg-doan-100 dark:bg-doan-900/30 text-doan-800 dark:text-doan-200 border-doan-500'
+                                            : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-transparent'
+                                    }`}
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleSelect(org.id);
+                                }}
+                                onMouseEnter={() => setHighlightedIndex(index)}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center flex-1 min-w-0">
+                                        <Building className={`w-4 h-4 mr-3 flex-shrink-0 ${isSelected ? 'text-doan-600' : 'text-gray-400'
+                                            }`} />
+                                        <div className="flex-1 min-w-0">
+                                            <div className={`font-medium truncate ${isSelected ? 'text-doan-900 dark:text-doan-100' : 'text-gray-900 dark:text-white'
+                                                }`}>
+                                                {org.name}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs truncate">
+                                                <span className={`${isSelected ? 'text-doan-600 dark:text-doan-400' : 'text-gray-500 dark:text-gray-400'
+                                                    }`}>
+                                                    {org.code || org.id}
+                                                </span>
+                                                {org.parent && (
+                                                    <>
+                                                        <span className="text-gray-400">•</span>
+                                                        <span className={`truncate ${isSelected ? 'text-doan-600 dark:text-doan-400' : 'text-gray-500 dark:text-gray-400'
+                                                            }`}>
+                                                            {org.parent.name}
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {isSelected && (
+                                        <div className="w-5 h-5 bg-doan-600 rounded-full flex items-center justify-center ml-2 flex-shrink-0">
+                                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            {org.parent && (
-                                <span className="text-sm text-gray-500 dark:text-gray-400">
-                                    {org.parent.name}
-                                </span>
-                            )}
-                        </div>
-                    ))) : searchTerm ? (
-                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                            {t('common:messages.noResults')}
+                        );
+                    })) : searchTerm ? (
+                        <div className="px-4 py-6 text-center text-gray-500">
+                            <Search className="w-5 h-5 mx-auto mb-2 text-gray-400" />
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {t('common:messages.noResults')}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {t('users:messages.organizationNotFound', {
+                                    searchTerm,
+                                    defaultValue: `Không tìm thấy tổ chức phù hợp với "${searchTerm}"`
+                                })}
+                            </p>
                         </div>
                     ) : null}
                 </div>,

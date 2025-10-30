@@ -413,9 +413,9 @@ export const seedPermissions = async (dataSource: DataSource) => {
         },
         {
             code: 'ctxh.reports.view',
-            name: 'Xem báo cáo CTXH',
-            description: 'Cho phép xem báo cáo hoạt động CTXH',
-            category: 'ctxh',
+            name: 'Xem báo cáo cá nhân',
+            description: 'Cho phép xem báo cáo hoạt động CTXH cá nhân',
+            category: 'reports',
             context: PermissionContext.ORGANIZATION,
             sortOrder: 90,
         },

@@ -149,6 +149,7 @@
             "payments": "Quản lý đóng phí",
             "myPayments": "Đóng phí của tôi",
             "ctxh": "Quản lý Công tác xã hội",
+            "reports": "Báo cáo cá nhân",
             "dashboardShort": "Dashboard",
             "usersShort": "Người dùng",
             "organizationsShort": "Tổ chức",
@@ -157,7 +158,8 @@
             "permissionsShort": "Phân quyền",
             "paymentsShort": "Đóng phí",
             "myPaymentsShort": "Đóng phí của tôi",
-            "ctxhShort": "CTXH"
+            "ctxhShort": "CTXH",
+            "reportsShort": "Báo cáo"
         },
         "definitions": {
             "dashboard.access": "Truy cập bảng điều khiển",

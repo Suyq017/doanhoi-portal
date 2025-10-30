@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Organization } from '../../shared/types/organization';
 import OrganizationTreeItem from './components/OrganizationTreeItem';
@@ -20,7 +20,20 @@ import { useAuth } from '../auth/context/AuthContext';
 const OrganizationsDetailPage: React.FC = () => {
   const { t } = useTranslation(['organizations', 'common']);
   const { type, code } = useParams<{ type: string; code: string }>();
+  const location = useLocation();
   const auth = useAuth();
+
+  // Check if URL hash is #members
+  const forceShowMembers = location.hash === '#members';
+
+  // Debug logs
+  React.useEffect(() => {
+    console.log('🔍 Detail Page Debug:', {
+      forceShowMembers,
+      hash: location.hash,
+      pathname: location.pathname
+    });
+  }, [forceShowMembers, location.hash, location.pathname]);
 
   // Get page configuration
   const { level, shouldShowMemberStats } = usePageConfig({
@@ -81,19 +94,6 @@ const OrganizationsDetailPage: React.FC = () => {
     onRefresh: shouldShowMemberStats ? handleRefreshAll : fetchData,
     useClientSideProcessing: true // Enable fast backend validation with bulk queries
   });
-  // Use breadcrumb JSX for better navigation
-  const breadcrumbTitle = useBreadcrumbJSX({
-    type,
-    code,
-    organizations,
-    displayOrganization,
-    isDetailPage: true,
-    isSubDetailPage: false,
-    isMembersPage: false
-  });
-
-  // Calculate stats specific to this organization
-  const organizationSpecificStats = useOrganizationSpecificStats(organizations, stats);
 
   // Helper function to check if user is in organization
   const isUserInOrganization = useCallback((organizationId: string): boolean => {
@@ -107,6 +107,23 @@ const OrganizationsDetailPage: React.FC = () => {
   const sortedOrganizations = useMemo(() => {
     return sortOrganizationsByMembership(organizations, isUserInOrganization);
   }, [organizations, isUserInOrganization]);
+
+  // Calculate shouldShowMembers early for conditional rendering and breadcrumb
+  const shouldShowMembers = (forceShowMembers || sortedOrganizations.length === 0) && displayOrganization;
+
+  // Use breadcrumb JSX for better navigation
+  const breadcrumbTitle = useBreadcrumbJSX({
+    type,
+    code,
+    organizations,
+    displayOrganization,
+    isDetailPage: true,
+    isSubDetailPage: false,
+    isMembersPage: !!shouldShowMembers
+  });
+
+  // Calculate stats specific to this organization
+  const organizationSpecificStats = useOrganizationSpecificStats(organizations, stats);
 
   const renderOrganization = useCallback((org: Organization, level: number = 0) => {
     return (
@@ -134,7 +151,9 @@ const OrganizationsDetailPage: React.FC = () => {
     handleDeleteError,
     type,
     code
-  ]); return (
+  ]); 
+
+  return (
     <OrganizationPageLayout
       organizations={organizations}
       title={breadcrumbTitle}
@@ -148,7 +167,7 @@ const OrganizationsDetailPage: React.FC = () => {
       loading={loading}
       error={error}
       onRetry={shouldShowMemberStats ? handleRefreshAll : fetchData}
-      showDropdownButton={true}
+      showDropdownButton={!shouldShowMembers}
       importConfig={importConfig}
       dropdownLabel={t('organizations:addButton.dropdown')}
       toasts={toasts
@@ -165,26 +184,37 @@ const OrganizationsDetailPage: React.FC = () => {
       onShowError={showError}
       onImportModalClose={handleImportModalClose}
     >
-      {shouldShowMemberStats && displayOrganization ? (
-        // Show user list for organizations that should display it
-        <OrganizationUserList
-          organization={displayOrganization}
-          onRefresh={handleRefreshAll}
-          onShowSuccess={() => {
-            handleMemberDelete();
-          }}
-          onShowError={(message) => {
-            handleMemberAddError(message);
-          }}
-        />
-      ) : (
-        // Show organization tree for other types
-        <OrganizationTreeContainer
-          isEmpty={sortedOrganizations.length === 0}
-        >
-          {sortedOrganizations.map(org => renderOrganization(org))}
-        </OrganizationTreeContainer>
-      )}
+      {(() => {
+        console.log('📊 Render Decision:', {
+          forceShowMembers,
+          sortedOrganizationsLength: sortedOrganizations.length,
+          hasDisplayOrganization: !!displayOrganization,
+          shouldShowMembers,
+          displayOrgId: displayOrganization?.id,
+          displayOrgName: displayOrganization?.name
+        });
+
+        return shouldShowMembers ? (
+          // Show user list when: 1) forced by query param OR 2) organization has no children
+          <OrganizationUserList
+            organization={displayOrganization!}
+            onRefresh={handleRefreshAll}
+            onShowSuccess={() => {
+              handleMemberDelete();
+            }}
+            onShowError={(message) => {
+              handleMemberAddError(message);
+            }}
+          />
+        ) : (
+          // Show organization tree when organization has children (and not forced to show members)
+          <OrganizationTreeContainer
+            isEmpty={sortedOrganizations.length === 0}
+          >
+            {sortedOrganizations.map(org => renderOrganization(org))}
+          </OrganizationTreeContainer>
+        );
+      })()}
     </OrganizationPageLayout>
   );
 };

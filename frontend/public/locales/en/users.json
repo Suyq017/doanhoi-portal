@@ -133,7 +133,8 @@
     "organizationMembershipUpdatedWithKept": "Organization membership updated: +{{added}}, -{{removed}} (kept {{kept}} necessary parent organizations)",
     "loadingUserDetails": "Loading user information...",
     "roleInOrganization": "Role in organization",
-    "globalRole": "Global role"
+    "globalRole": "Global role",
+    "organizationNotFound": "No organization matches \"{{searchTerm}}\""
   },
   "validation": {
     "invalidOrganization": "Selected organization is not valid",

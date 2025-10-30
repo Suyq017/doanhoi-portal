@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Organization } from '../../shared/types/organization';
 import OrganizationTreeItem from './components/OrganizationTreeItem';
@@ -23,6 +23,10 @@ const OrganizationsSubDetailPage: React.FC = () => {
         code: string;
     }>();
     const auth = useAuth();
+    const location = useLocation();
+
+    // Check if URL hash is #members
+    const forceShowMembers = location.hash === '#members';
 
     // Get page configuration
     const { level } = usePageConfig({
@@ -33,7 +37,16 @@ const OrganizationsSubDetailPage: React.FC = () => {
     });
 
     // State to trigger memberStats refresh
-    const [memberStatsRefreshKey, setMemberStatsRefreshKey] = useState(0); const { organizations,
+    const [memberStatsRefreshKey, setMemberStatsRefreshKey] = useState(0);
+
+    // When forceShowMembers is true, fetch the organization directly
+    const directOrgData = useOrganizationPage({
+        type: forceShowMembers ? type : undefined,
+        code: forceShowMembers ? code : undefined,
+        isDetailPage: forceShowMembers
+    });
+
+    const { organizations,
         stats,
         loading,
         error,
@@ -79,15 +92,31 @@ const OrganizationsSubDetailPage: React.FC = () => {
         return sortOrganizationsByMembership(filteredOrg, isUserInOrganization);
     }, [filteredOrg, isUserInOrganization]);
 
-    const showUserList = useMemo(() =>
-        shouldShowUserList(sortedFilteredOrg, level),
-        [sortedFilteredOrg, level]
-    );
+    const displayOrganization = useMemo(() => {
+        // If forceShowMembers, use directly fetched organization
+        if (forceShowMembers && directOrgData.organizations.length > 0) {
+            return directOrgData.organizations[0];
+        }
+        // Otherwise use filtered organization from parent
+        return getDisplayOrganization(sortedFilteredOrg);
+    }, [forceShowMembers, directOrgData.organizations, sortedFilteredOrg]);
 
-    const displayOrganization = useMemo(() =>
-        getDisplayOrganization(sortedFilteredOrg),
-        [sortedFilteredOrg]
-    );
+    // Show user list if: 1) forced by hash OR 2) no children
+    const showUserList = useMemo(() => {
+        const result = forceShowMembers && displayOrganization
+            ? true
+            : shouldShowUserList(sortedFilteredOrg, level);
+
+        console.log('🔍 SubDetail Page - Show User List:', {
+            forceShowMembers,
+            hash: location.hash,
+            hasDisplayOrg: !!displayOrganization,
+            showUserList: result,
+            sortedFilteredOrgLength: sortedFilteredOrg.length
+        });
+
+        return result;
+    }, [forceShowMembers, displayOrganization, sortedFilteredOrg, level, location.hash]);
 
     // Setup refresh handlers
     const {
@@ -129,7 +158,7 @@ const OrganizationsSubDetailPage: React.FC = () => {
         displayOrganization,
         isDetailPage: false,
         isSubDetailPage: true,
-        isMembersPage: false
+        isMembersPage: showUserList
     }); const renderOrganization = useCallback((org: Organization, level: number = 0) => {
         const parentParams = {
             type: window.location.pathname.split('/')[2],
@@ -161,7 +190,21 @@ const OrganizationsSubDetailPage: React.FC = () => {
         handleMemberAddError,
         handleOrganizationDeleted,
         handleDeleteError
-    ]); const renderContent = () => {
+    ]);
+
+    const renderContent = () => {
+        // If forceShowMembers is true but we don't have org data, show loading or error
+        if (forceShowMembers && !displayOrganization) {
+            if (loading) {
+                return <div className="text-center py-4">{t('common:loading')}</div>;
+            }
+            return (
+                <div className="text-center py-4 text-gray-500">
+                    {t('organizations:no_organization_found')}
+                </div>
+            );
+        }
+
         if (showUserList && displayOrganization) {
             return (
                 <OrganizationUserList
@@ -188,7 +231,7 @@ const OrganizationsSubDetailPage: React.FC = () => {
         loading={loading}
         error={error}
         onRetry={handleRefreshAll} // Use combined refresh for retry
-        showDropdownButton={true}
+        showDropdownButton={!showUserList}
         importConfig={importConfig}
         dropdownLabel={t('organizations:addButton.dropdown')}
         toasts={toasts

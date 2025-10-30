@@ -3,6 +3,7 @@ import { BarChart3, Users, Building } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/context/AuthContext';
+import AwsS3ConfigSection from './components/AwsS3ConfigSection';
 
 const Dashboard: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'common']);
@@ -13,7 +14,7 @@ const Dashboard: React.FC = () => {
   // Check dashboard.access permission on mount
   useEffect(() => {
     const hasDashboardAccess = auth.hasPermission('dashboard.access');
-    
+
     if (!hasDashboardAccess) {
       console.log('User does not have dashboard.access permission, redirecting to student-reports');
       navigate('/student-reports', { replace: true });
@@ -104,11 +105,10 @@ const Dashboard: React.FC = () => {
                     <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                       {stat.value}
                     </p>
-                    <p className={`ml-2 text-sm font-medium ${
-                      stat.changeType === 'increase' 
-                        ? 'text-green-600' 
-                        : 'text-red-600'
-                    }`}>
+                    <p className={`ml-2 text-sm font-medium ${stat.changeType === 'increase'
+                      ? 'text-green-600'
+                      : 'text-red-600'
+                      }`}>
                       {stat.change}
                     </p>
                   </div>
@@ -175,6 +175,9 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* AWS S3 Configuration Section */}
+      <AwsS3ConfigSection />
     </div>
   );
 };

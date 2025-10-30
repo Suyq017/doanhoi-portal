@@ -204,6 +204,17 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         // Mặc định
         return `/organizations/${type}/${code}`;
     }; const shouldShowDetailLink = () => {
+        // Không hiển thị eye icon nếu là tổ chức cấp 1 (level = 0)
+        if (level === 0) {
+            return false;
+        }
+
+        // Không hiển thị eye icon nếu đang ở trang subdetail và org này là level >= 2
+        // (tức là cấp 3 trở đi - không còn trang detail tiếp theo, chỉ có trang members)
+        if (isInSubDetailPage && level >= 2) {
+            return false;
+        }
+
         // Không hiển thị eye icon nếu organization này là parent organization trong trang hiện tại
         if (isCurrentParentOrganization()) {
             return false;
@@ -229,11 +240,14 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         return false;
     };
 
-    // Create path to organization members page
-    const createMembersPath = (type: string, code?: string) => {
+    // Create path to view members (using hash)
+    const createMembersViewPath = (type: string, code?: string) => {
         if (!code) return '#';
-        return `/organizations/${type}/${code}/members`;
-    };    // Determine if Users icon should be clickable 
+        const basePath = createDetailPath(type, code);
+        return `${basePath}#members`;
+    };
+
+    // Determine if Users icon should be clickable 
     const shouldMakeUsersClickable = () => {
         return !!org.code && canViewMembers(); // Check both org code existence and permission
     };    // Helper function để tạo tooltip cho eye icon dựa trên lý do có quyền
@@ -316,12 +330,13 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
                     </Link>
                 )}
 
-                    {/* Users count - clickable if no detail link, otherwise static */}
+                    {/* Users count - always show members list when clicked */}
                     {shouldMakeUsersClickable() ? (
                         <Link
-                            to={createMembersPath(org.type, org.code)}
+                            to={createMembersViewPath(org.type, org.code)}
                             className="flex items-center text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded transition-colors"
                             aria-label={t('organizations:actions.view_members', { defaultValue: 'Xem danh sách thành viên' })}
+                            title={t('organizations:actions.view_members', { defaultValue: 'Xem danh sách thành viên' })}
                         >
                             <Users className="w-4 h-4 mr-1" />
                             {getStatCount()}

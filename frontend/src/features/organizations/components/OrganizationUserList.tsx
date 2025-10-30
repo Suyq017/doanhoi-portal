@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { UserPlus, Upload } from 'lucide-react';
 import { UserTableWithFilter, useToast, Toast, useUserManagement } from '../../../shared';
 import { useOrganizationUserList } from '../hooks/useOrganizationUserList';
 import { Organization } from '../../../shared/types/organization';
@@ -10,6 +11,10 @@ import { userService } from '../../../shared/services/userService';
 import ViewUserModal from '../../users/components/ViewUserModal';
 import EditUserModal from '../../users/components/EditUserModal';
 import DeleteConfirmModal from '../../users/components/DeleteConfirmModal';
+// Import organization modals
+import AddMemberModal from './AddMemberModal';
+// @ts-ignore - TypeScript cache issue, file exists
+import ImportMembersModal from './ImportMembersModal';
 
 interface OrganizationUserListProps {
     organization: Organization;
@@ -24,7 +29,13 @@ export const OrganizationUserList: React.FC<OrganizationUserListProps> = ({
     onShowSuccess,
     onShowError,
 }) => {
-    const { t } = useTranslation(['organizations', 'users', 'common']);    // Use parent toast handlers if provided, otherwise fallback to local toast
+    const { t } = useTranslation(['organizations', 'users', 'common']);
+
+    // Modal states
+    const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+    const [isImportMembersModalOpen, setIsImportMembersModalOpen] = useState(false);
+
+    // Use parent toast handlers if provided, otherwise fallback to local toast
     const { toasts, hideToast, showSuccess: localShowSuccess, showError: localShowError } = useToast();
     const showSuccess = onShowSuccess || localShowSuccess;
     const showError = onShowError || localShowError;    // Organization user list data
@@ -92,6 +103,20 @@ export const OrganizationUserList: React.FC<OrganizationUserListProps> = ({
         }
     };
 
+    // Handle add member success
+    const handleAddMemberSuccess = useCallback((message: string) => {
+        showSuccess(message);
+        setIsAddMemberModalOpen(false);
+        handleDataRefresh();
+    }, [showSuccess]);
+
+    // Handle import members success
+    const handleImportSuccess = useCallback(() => {
+        showSuccess(t('organizations:messages.success.importMembers'));
+        setIsImportMembersModalOpen(false);
+        handleDataRefresh();
+    }, [showSuccess, t]);
+
     // User management with custom organization context - ✅ Using shared hook
     const userManagement = useUserManagement({
         showSuccess,
@@ -122,38 +147,58 @@ export const OrganizationUserList: React.FC<OrganizationUserListProps> = ({
     return (
         <div className="space-y-6">
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 dark:bg-gray-800 dark:border-gray-700">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 sm:gap-10">
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 sm:gap-10">
 
-                    {/* Left: Tên tổ chức và subtitle */}
-                    <div className="flex-1">
-                        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white leading-snug">
-                            {t('organizations:members.title', { organizationName: organization.name })}
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                            {t('organizations:members.subtitle')} • {total} {t('organizations:members.members')}
-                        </p>
+                        {/* Left: Tên tổ chức và subtitle */}
+                        <div className="flex-1">
+                            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white leading-snug">
+                                {t('organizations:members.title', { organizationName: organization.name })}
+                            </h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                {t('organizations:members.subtitle')} • {total} {t('organizations:members.members')}
+                            </p>
+                        </div>
+
+                        {/* Right: Mã & Loại tổ chức */}
+                        <div className="flex flex-col items-start sm:items-end gap-2 text-sm">
+                            <div className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                                <span className="text-gray-500 dark:text-gray-400 font-medium mr-1">
+                                    {t('organizations:fields.code')}:
+                                </span>
+                                <span className="text-gray-700 dark:text-gray-200 font-semibold">
+                                    {organization.code}
+                                </span>
+                            </div>
+                            <div className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                                <span className="text-gray-500 dark:text-gray-400 font-medium mr-1">
+                                    {t('organizations:fields.type')}:
+                                </span>
+                                <span className="text-gray-700 dark:text-gray-200 font-semibold">
+                                    {t(`organizations:types.${organization.type}`)}
+                                </span>
+                            </div>
+                        </div>
+
                     </div>
 
-                    {/* Right: Mã & Loại tổ chức */}
-                    <div className="flex flex-col items-start sm:items-end gap-2 text-sm">
-                        <div className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                            <span className="text-gray-500 dark:text-gray-400 font-medium mr-1">
-                                {t('organizations:fields.code')}:
-                            </span>
-                            <span className="text-gray-700 dark:text-gray-200 font-semibold">
-                                {organization.code}
-                            </span>
-                        </div>
-                        <div className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                            <span className="text-gray-500 dark:text-gray-400 font-medium mr-1">
-                                {t('organizations:fields.type')}:
-                            </span>
-                            <span className="text-gray-700 dark:text-gray-200 font-semibold">
-                                {t(`organizations:types.${organization.type}`)}
-                            </span>
-                        </div>
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <button
+                            onClick={() => setIsAddMemberModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-doan-600 text-white rounded-md hover:bg-doan-700 transition-colors"
+                        >
+                            <UserPlus className="w-4 h-4" />
+                            <span>{t('organizations:members.addManual')}</span>
+                        </button>
+                        <button
+                            onClick={() => setIsImportMembersModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                        >
+                            <Upload className="w-4 h-4" />
+                            <span>{t('organizations:members.importExcel')}</span>
+                        </button>
                     </div>
-
                 </div>
             </div>
 
@@ -216,7 +261,31 @@ export const OrganizationUserList: React.FC<OrganizationUserListProps> = ({
                 onConfirm={confirmDeleteUser}
                 user={selectedUser}
                 loading={isDeleting}
-            />            {/* Toast Notifications - Only show if using local toast (no parent handlers) */}
+            />
+
+            {/* Add Member Modal */}
+            <AddMemberModal
+                isOpen={isAddMemberModalOpen}
+                onClose={() => setIsAddMemberModalOpen(false)}
+                organizationCode={organization.code || ''}
+                organizationType={organization.type}
+                organizationName={organization.name || ''}
+                onSuccess={handleAddMemberSuccess}
+                onError={showError}
+            />
+
+            {/* Import Members Modal */}
+            <ImportMembersModal
+                isOpen={isImportMembersModalOpen}
+                onClose={() => setIsImportMembersModalOpen(false)}
+                organizationId={organization.id}
+                organizationCode={organization.code || ''}
+                organizationName={organization.name || ''}
+                onSuccess={handleImportSuccess}
+                onError={showError}
+            />
+
+            {/* Toast Notifications - Only show if using local toast (no parent handlers) */}
             <div className="fixed top-4 right-4 z-[9999]">
                 {!onShowSuccess && !onShowError && toasts.map((toast) => {
                     console.log('Rendering toast:', toast);

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Shield, Edit, Trash2, Eye } from 'lucide-react';
 import { Role } from '../services/roleService';
 import { UseBulkSelectionReturn } from '../hooks';
-import { getRoleStatusColor, canDeleteRole, canEditRole } from '../utils';
+import { canDeleteRole, canEditRole } from '../utils';
 
 interface RolesTableProps {
     roles: Role[];
@@ -60,8 +60,6 @@ const RolesTable: React.FC<RolesTableProps> = ({
                                 {t('fields.permissionCount')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                {t('labels.status')}
-                            </th>                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 {t('actions.title', 'Thao tác')}
                             </th>
                         </tr>
@@ -102,11 +100,6 @@ const RolesTable: React.FC<RolesTableProps> = ({
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                         {t('labels.permissionCountLabel', '{{count}} quyền', { count: role.permissions?.length || 0 })}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleStatusColor(role.isActive)}`}>
-                                        {role.isActive ? t('labels.active') : t('labels.inactive')}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

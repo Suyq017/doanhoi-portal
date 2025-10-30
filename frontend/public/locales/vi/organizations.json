@@ -86,7 +86,26 @@
       "titlePhonetic": "Import thành viên chi đoàn",
       "description": "Import thành viên với mã số sinh viên",
       "descriptionPhonetic": "Import thành viên với mã số sinh viên"
-    }
+    },
+    "templateTitle": "Tải file mẫu Excel",
+    "templateDescription": "File mẫu chứa 1 cột: Mã số sinh viên. Tải về và điền thông tin theo mẫu.",
+    "downloadTemplate": "Tải file mẫu",
+    "selectFile": "Chọn file Excel",
+    "chooseFile": "Chọn file",
+    "import": "Import",
+    "instruction1": "File chỉ cần có 1 cột: Mã số sinh viên",
+    "instruction2": "Hệ thống sẽ tự động thêm thành viên vào tổ chức này",
+    "instruction3": "File Excel chỉ chấp nhận định dạng .xlsx hoặc .xls, tối đa 5MB",
+    "invalidFileType": "File không đúng định dạng. Vui lòng chọn file Excel (.xlsx, .xls)",
+    "fileTooLarge": "File quá lớn. Kích thước tối đa là 5MB",
+    "noFileSelected": "Vui lòng chọn file để import",
+    "noDataFound": "Không tìm thấy dữ liệu trong file",
+    "parseError": "Có lỗi khi đọc file Excel",
+    "readError": "Không thể đọc file",
+    "error": "Có lỗi xảy ra khi import thành viên",
+    "allFailed": "Import thất bại. Không có thành viên nào được thêm vào",
+    "successCount": "Đã thêm thành công {{count}} thành viên",
+    "failedCount": "Thất bại {{count}} thành viên"
   },
   "tree": {
     "treeOrganization": "Cây tổ chức",
@@ -99,7 +118,8 @@
     "createSuccess": "Tạo tổ chức mới thành công",
     "success": {
       "removeMember": "Đã loại bỏ thành viên khỏi tổ chức",
-      "bulkRemoveMembers": "Đã loại bỏ {{count}} thành viên khỏi tổ chức"
+      "bulkRemoveMembers": "Đã loại bỏ {{count}} thành viên khỏi tổ chức",
+      "importMembers": "Import thành viên thành công"
     },
     "error": {
       "removeMember": "Có lỗi xảy ra khi loại bỏ thành viên khỏi tổ chức",
@@ -160,8 +180,11 @@
   },
   "members": {
     "title": "Danh sách thành viên",
+    "breadcrumbTitle": "Danh sách thành viên {{organizationName}}",
     "subtitle": "Quản lý thành viên trong tổ chức",
     "members": "Thành viên",
-    "noMembers": "Không có thành viên"
+    "noMembers": "Không có thành viên",
+    "addManual": "Thêm thủ công",
+    "importExcel": "Import từ Excel"
   }
 }
