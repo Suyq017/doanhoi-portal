@@ -69,7 +69,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     organizationId: { isValid: true, message: '' },
     totalDays: { isValid: true, message: '' },
     startDate: { isValid: true, message: '' },
-    endDate: { isValid: true, message: '' }
+    endDate: { isValid: true, message: '' },
+    location: { isValid: true, message: '' }
   });
 
   // Combobox search states
@@ -106,12 +107,46 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     return org?.name || '';
   };
 
+  // Validate totalDays to only allow .0 or .5 increments
+  const validateTotalDays = (value: string): { isValid: boolean; message: string } => {
+    if (!value) {
+      return { isValid: true, message: '' };
+    }
+
+    const numValue = parseFloat(value);
+    
+    // Check if it's a valid number
+    if (isNaN(numValue)) {
+      return { isValid: false, message: t('activity.validation.totalDaysInvalid') };
+    }
+
+    // Check minimum value
+    if (numValue < 0.5) {
+      return { isValid: false, message: t('activity.validation.totalDaysMin') };
+    }
+
+    // Check if decimal part is .0 or .5
+    const decimalPart = numValue % 1;
+    if (decimalPart !== 0 && decimalPart !== 0.5) {
+      return { isValid: false, message: t('activity.validation.totalDaysIncrement') };
+    }
+
+    return { isValid: true, message: '' };
+  };
+
   // Validate required fields
   const validateFields = async () => {
     let isValid = true;
     const errors = [];
 
-    // Set field validation states
+    // Set field validation states - validate all fields fresh
+    let totalDaysValidation = { isValid: true, message: '' };
+    
+    // Always validate totalDays if it has a value
+    if (formData.totalDays) {
+      totalDaysValidation = validateTotalDays(formData.totalDays);
+    }
+
     const newFieldValidation = {
       name: {
         isValid: formData.name.trim() !== '',
@@ -125,9 +160,10 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         isValid: formData.organizationId !== '',
         message: formData.organizationId === '' ? t('activity.validation.organizationRequired') : ''
       },
-      totalDays: fieldValidation.totalDays,
-      startDate: fieldValidation.startDate,
-      endDate: fieldValidation.endDate
+      totalDays: totalDaysValidation,
+      startDate: { isValid: true, message: '' },
+      endDate: { isValid: true, message: '' },
+      location: { isValid: true, message: '' }
     };
 
     // Check basic required fields
@@ -140,16 +176,23 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     if (!newFieldValidation.organizationId.isValid) {
       isValid = false;
     }
+    
+    // Check totalDays format validation
+    if (!newFieldValidation.totalDays.isValid) {
+      isValid = false;
+    }
 
     // Check if total days is required for ACTIVE status
     if (formData.status === ActivityStatus.ACTIVE) {
-      if (!formData.totalDays || parseFloat(formData.totalDays) < 0.1) {
+      // Check if totalDays is required (only if format validation passed)
+      if (!formData.totalDays && newFieldValidation.totalDays.isValid) {
         newFieldValidation.totalDays = {
           isValid: false,
           message: t('activity.validation.totalDaysRequired')
         };
         isValid = false;
       }
+      // Format validation already handled above, don't override it
 
       // Require start and end date when total days is specified
       if (!formData.startDate) {
@@ -167,10 +210,23 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         };
         isValid = false;
       }
+
+      if (!formData.location || formData.location.trim() === '') {
+        newFieldValidation.location = {
+          isValid: false,
+          message: t('activity.validation.locationRequiredForActive')
+        };
+        isValid = false;
+      }
     }
 
-    // Set all field validations
+    // Set all field validations FIRST
     setFieldValidation(newFieldValidation);
+
+    // Return early if basic validation failed
+    if (!isValid) {
+      return { isValid: false, errors: [] };
+    }
 
     // Check for duplicate name + category combination (only if name and category are valid)
     if (formData.name.trim() && formData.categoryId) {
@@ -198,13 +254,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
 
     // Check organization day limit (when totalDays is specified - validate for both new and existing activities)
     if (formData.totalDays && formData.organizationId) {
-      console.log('Starting day limit validation:', {
-        status: formData.status,
-        totalDays: formData.totalDays,
-        organizationId: formData.organizationId,
-        isNewActivity: !activity
-      });
-
       try {
         const totalDays = parseFloat(formData.totalDays);
         const limitConfigs = await limitConfigService.findAll({
@@ -213,24 +262,11 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
           limit: 10
         });
 
-        console.log('Limit configs response:', limitConfigs);
-
         if (limitConfigs.data && limitConfigs.data.length > 0) {
           const activeConfig = limitConfigs.data[0];
-          console.log('Full activeConfig object:', activeConfig);
-          console.log('Available properties:', Object.keys(activeConfig));
-
           const maxDays = activeConfig.maxDays;
-          console.log('Day limit validation check:', {
-            totalDays,
-            maxDays,
-            maxDaysProperty: activeConfig.maxDays,
-            exceedsLimit: totalDays > maxDays,
-            activeConfig
-          });
 
           if (totalDays > maxDays) {
-            console.log('Day limit exceeded - adding validation error');
             errors.push(t('limitConfig.validation.totalDaysExceedLimit', {
               totalDays: totalDays,
               maxDays: formatNumber(maxDays)
@@ -246,7 +282,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
             setFieldValidation(newFieldValidation);
             isValid = false;
           } else {
-            console.log('Day limit within allowed range');
             // Clear any previous validation error for totalDays
             newFieldValidation.totalDays = {
               isValid: true,
@@ -255,7 +290,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
             setFieldValidation(newFieldValidation);
           }
         } else {
-          console.log('No active limit config found for organization');
           // Clear any previous validation error for totalDays when no limit config
           newFieldValidation.totalDays = {
             isValid: true,
@@ -268,12 +302,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         showError(t('activity.checkDayLimitError'));
       }
     } else {
-      console.log('Skipping day limit validation:', {
-        hasTotalDays: !!formData.totalDays,
-        hasOrganization: !!formData.organizationId,
-        totalDays: formData.totalDays,
-        organizationId: formData.organizationId
-      });
+      // Skip day limit validation if totalDays or organizationId not provided
     }
 
     // Return validation result with errors for external handling (only duplicate errors)
@@ -412,14 +441,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     // Check field validation state (including totalDays validation)
     const fieldValidationValid = Object.values(fieldValidation).every(field => field.isValid);
 
-    console.log('Form submission validation:', {
-      validationResult: validationResult.isValid,
-      datesValid,
-      fieldValidationValid,
-      fieldValidation,
-      errors: validationResult.errors
-    });
-
     if (!validationResult.isValid || !datesValid || !fieldValidationValid) {
       // Show all validation errors in a single toast
       const allErrors = [...validationResult.errors];
@@ -436,8 +457,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
           allErrors.push(field.message);
         }
       });
-
-      console.log('Form submission blocked due to validation errors:', allErrors);
 
       if (allErrors.length > 0) {
         showError(allErrors.join(' • '));
@@ -459,12 +478,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         location: formData.location?.trim() || undefined, // Backend expects location
         ...(activity && { status: formData.status }) // Only include status for updates
       };
-
-      console.log('Form submission data:', {
-        original_totalDays: formData.totalDays,
-        parsed_totalDays: formData.totalDays ? parseFloat(formData.totalDays) : undefined,
-        submitData
-      });
 
       await onSubmit(submitData as any);
       // Success toast will be shown by parent component
@@ -504,10 +517,19 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
       }));
     }
 
-    if (field === 'totalDays' && fieldValidation.totalDays && !fieldValidation.totalDays.isValid) {
+    if (field === 'totalDays') {
+      // Validate totalDays immediately when user types
+      const validation = validateTotalDays(value);
       setFieldValidation(prev => ({
         ...prev,
-        totalDays: { isValid: true, message: '' }
+        totalDays: validation
+      }));
+    }
+
+    if (field === 'location' && fieldValidation.location && !fieldValidation.location.isValid) {
+      setFieldValidation(prev => ({
+        ...prev,
+        location: { isValid: true, message: '' }
       }));
     }
 
@@ -527,11 +549,14 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
 
     // Show field validation when changing to ACTIVE status
     if (field === 'status' && value === ActivityStatus.ACTIVE) {
+      const totalDaysValidation = validateTotalDays(newFormData.totalDays);
+      const isValidTotalDays = newFormData.totalDays && totalDaysValidation.isValid;
+      
       setFieldValidation(prev => ({
         ...prev,
         totalDays: {
-          isValid: !!(newFormData.totalDays && parseInt(newFormData.totalDays) >= 1),
-          message: (!newFormData.totalDays || parseInt(newFormData.totalDays) < 1) ? t('activity.validation.totalDaysRequired') : ''
+          isValid: !!isValidTotalDays,
+          message: !isValidTotalDays ? (totalDaysValidation.message || t('activity.validation.totalDaysRequired')) : ''
         },
         startDate: {
           isValid: !!newFormData.startDate,
@@ -540,6 +565,10 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         endDate: {
           isValid: !!newFormData.endDate,
           message: !newFormData.endDate ? t('activity.validation.endDateRequiredForActive') : ''
+        },
+        location: {
+          isValid: !!(newFormData.location && newFormData.location.trim()),
+          message: !(newFormData.location && newFormData.location.trim()) ? t('activity.validation.locationRequiredForActive') : ''
         }
       }));
     }
@@ -668,9 +697,17 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 id="location"
                 value={formData.location}
                 onChange={(e) => handleInputChange('location', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ${!fieldValidation.location.isValid
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                  : 'border-gray-300'
+                  }`}
                 placeholder={t('activity.form.locationPlaceholder')}
               />
+              {!fieldValidation.location.isValid && (
+                <p className="mt-1 text-sm text-red-600">
+                  {fieldValidation.location.message}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -936,8 +973,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
               <input
                 type="number"
                 id="totalDays"
-                min="0.1"
-                step="0.1"
+                min="0.5"
+                step="0.5"
                 value={formData.totalDays}
                 onChange={(e) => handleInputChange('totalDays', e.target.value)}
                 className={`w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ${!fieldValidation.totalDays.isValid
@@ -951,6 +988,9 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                   {fieldValidation.totalDays.message}
                 </p>
               )}
+              <p className="mt-1 text-xs text-gray-500">
+                {t('activity.form.totalDaysHelp')}
+              </p>
             </div>
 
             {/* Actions */}

@@ -141,6 +141,7 @@
       "noResults": "Không tìm thấy kết quả",
       "loading": "Đang tải...",
       "totalDaysPlaceholder": "Nhập tổng số ngày...",
+      "totalDaysHelp": "Chỉ cho phép số nguyên hoặc có phần thập phân .5 (ví dụ: 1, 1.5, 2, 2.5)",
       "saving": "Đang lưu...",
       "update": "Cập nhật",
       "create": "Tạo mới"
@@ -151,9 +152,13 @@
       "nameRequired": "Vui lòng nhập tên hoạt động",
       "categoryRequired": "Vui lòng chọn danh mục",
       "organizationRequired": "Vui lòng chọn tổ chức",
-      "totalDaysRequired": "Vui lòng nhập tổng số ngày (>=1) khi hoạt động ở trạng thái hoạt động",
+      "totalDaysRequired": "Vui lòng nhập tổng số ngày (>=0.5) khi hoạt động ở trạng thái hoạt động",
+      "totalDaysInvalid": "Số ngày không hợp lệ",
+      "totalDaysMin": "Số ngày tối thiểu là 0.5",
+      "totalDaysIncrement": "Số ngày chỉ được phép là số nguyên hoặc có phần thập phân .5 (ví dụ: 1, 1.5, 2, 2.5)",
       "startDateRequiredForActive": "Vui lòng chọn ngày bắt đầu khi hoạt động ở trạng thái hoạt động",
       "endDateRequiredForActive": "Vui lòng chọn ngày kết thúc khi hoạt động ở trạng thái hoạt động",
+      "locationRequiredForActive": "Vui lòng nhập địa điểm khi hoạt động ở trạng thái hoạt động",
       "duplicateNameCategory": "Hoạt động với tên này đã tồn tại trong danh mục đã chọn",
       "activeStatusWarning": "Khi chọn trạng thái hoạt động, cần điền:"
     }

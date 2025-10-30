@@ -143,6 +143,7 @@
       "noResults": "No results found",
       "loading": "Loading...",
       "totalDaysPlaceholder": "Enter total days...",
+      "totalDaysHelp": "Only whole numbers or decimals ending in .5 allowed (e.g., 1, 1.5, 2, 2.5)",
       "saving": "Saving...",
       "update": "Update",
       "create": "Create"
@@ -153,9 +154,13 @@
       "nameRequired": "Please enter activity name",
       "categoryRequired": "Please select a category",
       "organizationRequired": "Please select an organization",
-      "totalDaysRequired": "Please enter total days (>=1) when activity is in active status",
+      "totalDaysRequired": "Please enter total days (>=0.5) when activity is in active status",
+      "totalDaysInvalid": "Invalid number of days",
+      "totalDaysMin": "Minimum days is 0.5",
+      "totalDaysIncrement": "Days must be whole numbers or end with .5 (e.g., 1, 1.5, 2, 2.5)",
       "startDateRequiredForActive": "Please select start date when activity is in active status",
       "endDateRequiredForActive": "Please select end date when activity is in active status",
+      "locationRequiredForActive": "Please enter location when activity is in active status",
       "duplicateNameCategory": "An activity with this name already exists in the selected category",
       "activeStatusWarning": "When selecting active status, you need to fill:"
     }
