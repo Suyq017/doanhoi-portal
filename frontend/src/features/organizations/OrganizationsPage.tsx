@@ -73,7 +73,7 @@ const Organizations: React.FC = () => {
     isMembersPage: false
   });
 
-  const renderOrganization = useCallback((org: Organization, level: number = 0) => {
+  const renderOrganization = useCallback((org: Organization, level: number = 0, parentId?: string) => {
     return (
       <OrganizationTreeItem
         key={org.id}
@@ -81,12 +81,13 @@ const Organizations: React.FC = () => {
         level={level}
         stats={stats}
         onToggleExpand={toggleOrgExpanded}
-        renderChildren={renderOrganization}
+        renderChildren={(child, childLevel) => renderOrganization(child, childLevel, org.id)}
         onMemberAdded={handleMemberAdded}
         onOrganizationUpdated={handleOrganizationUpdated}
         onMemberAddError={handleMemberAddError}
         onOrganizationDeleted={handleOrganizationDeleted}
         onDeleteError={handleDeleteError}
+        parentOrgId={parentId}
       />
     );
   }, [

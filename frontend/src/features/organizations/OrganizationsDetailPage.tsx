@@ -125,20 +125,21 @@ const OrganizationsDetailPage: React.FC = () => {
   // Calculate stats specific to this organization
   const organizationSpecificStats = useOrganizationSpecificStats(organizations, stats);
 
-  const renderOrganization = useCallback((org: Organization, level: number = 0) => {
+  const renderOrganization = useCallback((org: Organization, level: number = 0, parentId?: string) => {
     return (
       <OrganizationTreeItem
         key={org.id}
         org={org}
         level={level} stats={organizationSpecificStats}
         onToggleExpand={toggleOrgExpanded}
-        renderChildren={renderOrganization}
+        renderChildren={(child, childLevel) => renderOrganization(child, childLevel, org.id)}
         onMemberAdded={handleMemberAdded}
         onOrganizationUpdated={handleOrganizationUpdated}
         onMemberAddError={handleMemberAddError}
         onOrganizationDeleted={handleOrganizationDeleted}
         onDeleteError={handleDeleteError}
         parent={{ type, code }}
+        parentOrgId={parentId}
       />
     );
   }, [
@@ -151,7 +152,7 @@ const OrganizationsDetailPage: React.FC = () => {
     handleDeleteError,
     type,
     code
-  ]); 
+  ]);
 
   return (
     <OrganizationPageLayout

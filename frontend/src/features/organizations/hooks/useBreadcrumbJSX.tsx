@@ -45,9 +45,9 @@ export const useBreadcrumbJSX = (config: BreadcrumbConfig) => {
         if (isSubDetailPage && isMembersPage) {
             const parentOrg = organizations[0];
             const childOrgName = displayOrganization?.name || '';
-            const membersText = t('organizations:members.breadcrumbTitle', { 
+            const membersText = t('organizations:members.breadcrumbTitle', {
                 organizationName: childOrgName,
-                defaultValue: `Danh sách thành viên ${childOrgName}` 
+                defaultValue: `Danh sách thành viên ${childOrgName}`
             });
 
             return (
@@ -73,11 +73,11 @@ export const useBreadcrumbJSX = (config: BreadcrumbConfig) => {
 
         // Detail members page
         if (isDetailPage && isMembersPage && displayOrganization) {
-            const membersText = t('organizations:members.breadcrumbTitle', { 
+            const membersText = t('organizations:members.breadcrumbTitle', {
                 organizationName: displayOrganization.name,
-                defaultValue: `Danh sách thành viên ${displayOrganization.name}` 
+                defaultValue: `Danh sách thành viên ${displayOrganization.name}`
             });
-            
+
             return (
                 <div className="flex items-center space-x-2">
                     <Link

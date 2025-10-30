@@ -64,7 +64,7 @@ export const useMemberImport = ({
                             1,
                             1000
                         );
-                        
+
                         const isMember = members.members.some(m => m.user?.code === code);
                         if (isMember) {
                             warnings.push('Người dùng đã là thành viên của tổ chức');
@@ -95,7 +95,7 @@ export const useMemberImport = ({
     const parseAndValidate = useCallback(async (userCodes: string[]) => {
         setValidating(true);
         setPreviewData([]);
-        
+
         try {
             const results = await validateUserCodes(userCodes);
             setPreviewData(results);

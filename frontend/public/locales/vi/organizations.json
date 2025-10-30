@@ -116,6 +116,10 @@
     "hasChildren": "Tổ chức này có cấp con",
     "removeChildrenFirst": "Vui lòng xóa các cấp con trước khi xóa tổ chức này",
     "createSuccess": "Tạo tổ chức mới thành công",
+    "no_permission_add_member": "Bạn không có quyền thêm thành viên",
+    "no_permission_edit": "Bạn không có quyền chỉnh sửa tổ chức",
+    "no_permission_delete": "Bạn không có quyền xóa tổ chức",
+    "no_permission_view_members": "Bạn không có quyền xem danh sách thành viên",
     "success": {
       "removeMember": "Đã loại bỏ thành viên khỏi tổ chức",
       "bulkRemoveMembers": "Đã loại bỏ {{count}} thành viên khỏi tổ chức",

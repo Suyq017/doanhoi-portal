@@ -21,6 +21,7 @@ interface OrganizationTreeItemProps {
         type?: string;
         code?: string;
     };
+    parentOrgId?: string; // ID của tổ chức cha (để kiểm tra permission)
     onMemberAdded?: () => void;
     onOrganizationUpdated?: (updatedOrg: Organization) => void;
     onMemberAddError?: (error: string) => void;
@@ -35,6 +36,7 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
     onToggleExpand,
     renderChildren,
     parent,
+    parentOrgId,
     onMemberAdded,
     onMemberAddError,
     onOrganizationUpdated,
@@ -92,12 +94,8 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         // Super admin có thể xem members ở bất kỳ tổ chức nào
         if (permissions.isSuperAdmin) return true;
 
-        // User có quyền access_children của tổ chức CHA có thể xem members của tổ chức con
-        if (org.parentId && hasPermission(ORGANIZATION_PERMISSIONS.ACCESS_CHILDREN, org.parentId)) {
-            return true;
-        }
-
-        // User có thể xem members nếu có quyền view_member_count cho tổ chức này
+        // User có thể xem members CHỈ KHI có quyền view_member_count cho tổ chức này
+        // KHÔNG tự động cho phép xem chỉ vì là thành viên
         return hasPermission(ORGANIZATION_PERMISSIONS.VIEW_MEMBER_COUNT, org.id);
     };
 
@@ -209,14 +207,16 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         // Mặc định
         return `/organizations/${type}/${code}`;
     }; const shouldShowDetailLink = () => {
-        // Không hiển thị eye icon nếu là tổ chức cấp 1 (level = 0)
-        if (level === 0) {
+        // Không hiển thị eye icon cho tổ chức cấp 3 (Chi Đoàn/Chi Hội)
+        // Vì cấp 3 không có trang detail riêng, chỉ có trang members
+        // Check theo TYPE của tổ chức, không phụ thuộc vào level index
+        const isLevel3Organization = org.type === 'chi_doan' || org.type === 'chi_hoi';
+        if (isLevel3Organization) {
             return false;
         }
 
-        // Không hiển thị eye icon nếu đang ở trang subdetail và org này là level >= 2
-        // (tức là cấp 3 trở đi - không còn trang detail tiếp theo, chỉ có trang members)
-        if (isInSubDetailPage && level >= 2) {
+        // Không hiển thị eye icon nếu là tổ chức cấp 1 (level = 0)
+        if (level === 0) {
             return false;
         }
 
@@ -231,8 +231,9 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         }
 
         // 2. User có quyền access_children của tổ chức CHA (parent)
-        // Nếu có parentId, kiểm tra quyền access_children trên parent
-        if (org.parentId && hasPermission(ORGANIZATION_PERMISSIONS.ACCESS_CHILDREN, org.parentId)) {
+        // Kiểm tra cả parentId, parent.id, và parentOrgId prop
+        const parentId = org.parentId || org.parent?.id || parentOrgId;
+        if (parentId && hasPermission(ORGANIZATION_PERMISSIONS.ACCESS_CHILDREN, parentId)) {
             return true;
         }
 
@@ -353,7 +354,12 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
                             {getStatCount()}
                         </Link>
                     ) : (
-                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                        <div
+                            className="flex items-center text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed px-2 py-1"
+                            title={t('organizations:messages.no_permission_view_members', {
+                                defaultValue: 'Bạn không có quyền xem danh sách thành viên'
+                            })}
+                        >
                             <Users className="w-4 h-4 mr-1" />
                             {getStatCount()}
                         </div>

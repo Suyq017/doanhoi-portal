@@ -148,7 +148,9 @@ const OrganizationsSubDetailPage: React.FC = () => {
             setMemberStatsRefreshKey(prev => prev + 1);
             return fetchData();
         }
-    });    // Use breadcrumb JSX for better navigation
+    });
+
+    // Use breadcrumb JSX for better navigation
     const breadcrumbTitle = useBreadcrumbJSX({
         type,
         code,
@@ -159,7 +161,9 @@ const OrganizationsSubDetailPage: React.FC = () => {
         isDetailPage: false,
         isSubDetailPage: true,
         isMembersPage: showUserList
-    }); const renderOrganization = useCallback((org: Organization, level: number = 0) => {
+    });
+
+    const renderOrganization = useCallback((org: Organization, level: number = 0, parentId?: string) => {
         const parentParams = {
             type: window.location.pathname.split('/')[2],
             code: window.location.pathname.split('/')[3]
@@ -172,14 +176,14 @@ const OrganizationsSubDetailPage: React.FC = () => {
                 level={level}
                 stats={stats}
                 onToggleExpand={toggleOrgExpanded}
-                renderChildren={renderOrganization}
+                renderChildren={(child, childLevel) => renderOrganization(child, childLevel, org.id)}
                 onMemberAdded={handleMemberAdded}
                 onOrganizationUpdated={handleOrganizationUpdated}
                 onMemberAddError={handleMemberAddError}
                 onOrganizationDeleted={handleOrganizationDeleted}
                 onDeleteError={handleDeleteError}
                 parent={parentParams}
-
+                parentOrgId={parentId}
             />
         );
     }, [

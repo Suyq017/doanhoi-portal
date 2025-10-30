@@ -60,7 +60,7 @@ const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Danh sách thành viên');
-        
+
         XLSX.writeFile(wb, `template_import_thanh_vien_${organizationCode}.xlsx`);
     }, [organizationCode]);
 
@@ -73,7 +73,7 @@ const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 'application/vnd.ms-excel'
             ];
-            
+
             if (!validTypes.includes(selectedFile.type)) {
                 onError(t('organizations:import.invalidFileType'));
                 return;
@@ -94,7 +94,7 @@ const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
     const parseExcelFile = (file: File): Promise<string[]> => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            
+
             reader.onload = (e) => {
                 try {
                     const data = e.target?.result;
@@ -312,10 +312,9 @@ const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
                                 {previewData.map((data, index) => (
                                     <div
                                         key={index}
-                                        className={`p-3 border-b border-gray-200 dark:border-gray-600 last:border-b-0 ${
-                                            !data.isValid ? 'bg-red-50 dark:bg-red-900/10' : 
-                                            data.warnings.length > 0 ? 'bg-yellow-50 dark:bg-yellow-900/10' : ''
-                                        }`}
+                                        className={`p-3 border-b border-gray-200 dark:border-gray-600 last:border-b-0 ${!data.isValid ? 'bg-red-50 dark:bg-red-900/10' :
+                                                data.warnings.length > 0 ? 'bg-yellow-50 dark:bg-yellow-900/10' : ''
+                                            }`}
                                     >
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1">
@@ -426,7 +425,7 @@ const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
                     >
                         {currentStep === 'result' ? t('common:actions.close') : t('common:actions.cancel')}
                     </button>
-                    
+
                     {/* Validate Button */}
                     {currentStep === 'upload' && file && (
                         <button
@@ -453,8 +452,8 @@ const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
                             )}
                             <Upload className="w-4 h-4" />
                             <span>
-                                {loading ? t('common:states.processing') : 
-                                `Import ${previewData.filter(d => d.isValid).length} thành viên`}
+                                {loading ? t('common:states.processing') :
+                                    `Import ${previewData.filter(d => d.isValid).length} thành viên`}
                             </span>
                         </button>
                     )}

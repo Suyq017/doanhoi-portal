@@ -122,6 +122,10 @@
     "hasChildren": "This organization has child levels",
     "removeChildrenFirst": "Please remove child levels before deleting this organization",
     "createSuccess": "Organization created successfully",
+    "no_permission_add_member": "You don't have permission to add members",
+    "no_permission_edit": "You don't have permission to edit organization",
+    "no_permission_delete": "You don't have permission to delete organization",
+    "no_permission_view_members": "You don't have permission to view member list",
     "success": {
       "removeMember": "Member removed from organization successfully",
       "bulkRemoveMembers": "{{count}} members removed from organization successfully",
