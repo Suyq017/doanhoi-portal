@@ -63,7 +63,8 @@ export class PaymentCampaignService {
 
   /**
    * Get all campaigns with optional filters
-   */  async findAll(options?: {
+   */  
+  async findAll(options?: {
     organizationId?: string;
     status?: PaymentCampaignStatus;
     search?: string;

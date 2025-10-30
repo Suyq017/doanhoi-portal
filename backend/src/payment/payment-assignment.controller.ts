@@ -150,7 +150,7 @@ export class PaymentAssignmentController {
   async markAsPaid(@Param('id') id: string) {
     this.logger.log(`Marking assignment ${id} as paid`);
     
-    const assignment = await this.assignmentService.markAsPaid(id);
+    const assignment = await this.assignmentService.markAsPaid(id, false);
     
     return {
       success: true,

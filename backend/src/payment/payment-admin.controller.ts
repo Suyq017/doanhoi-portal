@@ -75,7 +75,7 @@ export class PaymentAdminController {
 
       // Nếu payment history đã PAID nhưng assignment chưa được mark
       if (paymentHistory.status === 'PAID' && paymentHistory.paid_at) {
-        await this.paymentAssignmentService.markAsPaid(paymentHistory.assignment_id);
+        await this.paymentAssignmentService.markAsPaid(paymentHistory.assignment_id, true);
         
         return {
           success: true,

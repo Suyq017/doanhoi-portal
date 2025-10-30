@@ -199,7 +199,7 @@ export const PaymentResultPage: React.FC = () => {
       }} />
       
       <div className="max-w-md px-4 mx-auto">
-        <div className="overflow-hidden bg-white border-gray-500 rounded-lg shadow-lg printable-area">
+        <div className="overflow-hidden bg-white border-2 border-gray-500 rounded-lg shadow-lg printable-area">
           {/* Header */}
           <div className="px-6 py-4 text-center border-b bg-gray-50">
             <h1 className="text-lg font-semibold text-gray-900">
@@ -300,10 +300,10 @@ export const PaymentResultPage: React.FC = () => {
             <div className="space-y-3 no-print">
               {paymentStatus.status === 'PAID' && (
                 <button
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/payment/my-campaigns')}
                   className="w-full px-4 py-3 font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
                 >
-                  {t('actions.backToDashboard')}
+                  {t('actions.backToMyCampaigns')}
                 </button>
               )}
 
@@ -312,16 +312,16 @@ export const PaymentResultPage: React.FC = () => {
                   onClick={() => navigate('/payment/my-campaigns')}
                   className="w-full px-4 py-3 font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                 >
-                  {t('actions.retryPayment')}
+                  {t('actions.backToMyCampaigns')}
                 </button>
               )}
 
-              <button
+              {/* <button
                 onClick={() => navigate('/payment/my-campaigns')}
                 className="w-full px-4 py-3 font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
               >
                 {t('actions.backToMyCampaigns')}
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

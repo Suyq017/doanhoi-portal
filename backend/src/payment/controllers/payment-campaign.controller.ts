@@ -15,6 +15,7 @@ export class PaymentCampaignController {
     private readonly campaignService: PaymentCampaignService,
     private readonly rolesService: RolesService
   ) { }
+  
   @Post()
   @RequirePermissions('payment-campaigns.create')
   async create(@Body() createDto: CreatePaymentCampaignDto, @Request() req: any) {
@@ -31,7 +32,9 @@ export class PaymentCampaignController {
     console.log(`Creating payment campaign for user: ${req.user.familyName} ${req.user.givenName} (${req.user.code}) - ID: ${createdById}`);
 
     return this.campaignService.create(createDto, createdById);
-  } @Get()
+  } 
+
+  @Get()
   @RequirePermissions('payment-campaigns.access')
   async findAll(
     @Request() req: any,
@@ -58,7 +61,9 @@ export class PaymentCampaignController {
       limit: limit ? parseInt(limit) : undefined,
       accessibleOrgIds: accessibleOrgIds.length === 0 ? null : accessibleOrgIds // Pass null for super admin
     });
-  } @Get('accessible-organizations')
+  } 
+  
+  @Get('accessible-organizations')
   @RequirePermissions('payment-campaigns.access')
   async getAccessibleOrganizations(@Request() req: any) {
     const userId = req.user.id;
