@@ -130,7 +130,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
     }
   };
 
-  const loadActivities = async (page: number = currentPage, search?: string, categoryId?: string, status?: string, organizationId?: string) => {
+  const loadActivities = async (page: number = currentPage, search?: string, categoryId?: string, status?: string, organizationId?: string, newLimit?: number) => {
     try {
       setLoading(true);
       
@@ -142,7 +142,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
       
       const params: ActivityQueryParams = {
         page,
-        limit,
+        limit: newLimit !== undefined ? newLimit : limit,
         ...(searchValue && { search: searchValue }),
         ...(categoryIdValue && { category_id: categoryIdValue }),
         ...(statusValue && { status: statusValue as ActivityStatus }),
@@ -485,26 +485,26 @@ const ActivityList: React.FC<ActivityListProps> = ({
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full table-auto">
+            <div className="overflow-x-auto max-w-full">
+              <table className="w-full table-fixed min-w-[1000px]">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                    <th className="w-1/4 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('activity.name')}
                     </th>
-                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                    <th className="w-48 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('activity.category')}
                     </th>
-                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                    <th className="w-32 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('activity.location')}
                     </th>
-                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                    <th className="w-40 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('activity.time')}
                     </th>
-                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                    <th className="w-24 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('activity.status')}
                     </th>
-                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                    <th className="w-28 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('limitConfig.actions')}
                     </th>
                   </tr>
@@ -512,18 +512,30 @@ const ActivityList: React.FC<ActivityListProps> = ({
                 <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                   {activities.map((activity) => (
                     <tr key={activity.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900 dark:text-white">{activity.name}</div>
+                      <td className="w-1/4 px-6 py-4">
+                        <div className="font-medium text-gray-900 dark:text-white break-words overflow-hidden">
+                          <div 
+                            className="leading-5 overflow-hidden"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden'
+                            }}
+                            title={activity.name}
+                          >
+                            {activity.name}
+                          </div>
+                        </div>
                         {activity.description && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400 max-w-lg">
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             <div 
-                              className="overflow-hidden break-words"
+                              className="overflow-hidden break-words leading-4"
                               style={{
                                 display: '-webkit-box',
-                                WebkitLineClamp: 3,
+                                WebkitLineClamp: 2,
                                 WebkitBoxOrient: 'vertical',
-                                lineHeight: '1.4',
-                                maxHeight: '4.2em'
+                                overflow: 'hidden'
                               }}
                               title={activity.description}
                             >
@@ -532,39 +544,57 @@ const ActivityList: React.FC<ActivityListProps> = ({
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-gray-500 dark:text-gray-400">
+                      <td className="w-48 px-6 py-4">
+                        <div 
+                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5" 
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}
+                          title={activity.category?.name || '-'}
+                        >
                           {activity.category?.name || '-'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-gray-500 dark:text-gray-400">
+                      <td className="w-32 px-6 py-4">
+                        <div 
+                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5" 
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}
+                          title={activity.location || t('activity.noLocation')}
+                        >
                           {activity.location || t('activity.noLocation')}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="w-40 px-6 py-4">
                         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                          <Calendar className="w-4 h-4 mr-1" />
-                          <div>
-                            <div>{activity.startDate ? formatDate(activity.startDate) : '-'}</div>
+                          <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
+                          <div className="overflow-hidden">
+                            <div className="truncate">{activity.startDate ? formatDate(activity.startDate) : '-'}</div>
                             {activity.endDate && (
-                              <div className="text-xs">{t('activity.to')} {formatDate(activity.endDate)}</div>
+                              <div className="text-xs truncate">{t('activity.to')} {formatDate(activity.endDate)}</div>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="w-24 px-6 py-4">
                         <span
                           className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(activity.status)}`}
                         >
                           {getStatusText(activity.status)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+                      <td className="w-28 px-6 py-4 text-sm font-medium">
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => onViewClick(activity)}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1"
                             title={t('category.viewDetails')}
                           >
                             <Eye className="w-4 h-4" />
@@ -572,7 +602,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                           {permissions?.update && (
                             <button
                               onClick={() => handleEdit(activity)}
-                              className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                              className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 p-1"
                               title={t('category.edit')}
                             >
                               <Edit className="w-4 h-4" />
@@ -581,7 +611,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                           {permissions?.delete && (
                             <button
                               onClick={() => onDeleteClick(activity)}
-                              className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400"
+                              className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400 p-1"
                               title={t('category.delete')}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -609,19 +639,21 @@ const ActivityList: React.FC<ActivityListProps> = ({
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg dark:bg-gray-900 dark:border-gray-700">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            total={total}
-            limit={limit}
-            onPageChange={handlePageChange}
-            onLimitChange={(newLimit) => setLimit(newLimit)}
-            showLimitSelector={true}
-          />
-        </div>
-      )}
+      <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg dark:bg-gray-900 dark:border-gray-700">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={handlePageChange}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setCurrentPage(1);
+            loadActivities(1, undefined, undefined, undefined, undefined, newLimit);
+          }}
+          showLimitSelector
+        />
+      </div>
     </div>
   );
 };

@@ -13,6 +13,8 @@ export interface GradingImportData {
   name?: string;
   actualDays: number;
   note?: string;
+  _hasParseError?: boolean;
+  _parseErrorMessage?: string;
 }
 
 export interface ParseResult<T> {
@@ -127,9 +129,6 @@ export class ExcelParserService {
       row && Array.isArray(row) && row.some(cell => cell !== null && cell !== undefined && cell !== '')
     );
 
-    console.log('Participant headers:', headers);
-    console.log('Participant data rows:', dataRows.length);
-
     // Find column indices
     const studentCodeIndex = this.findColumnIndex(headers, [
       'mssv', 
@@ -177,7 +176,6 @@ export class ExcelParserService {
       const parsedStudentCode = studentCode.toString().trim();
       
       // Log student code for debugging
-      console.log(`Row ${rowNumber}: Student code = "${parsedStudentCode}"`);
 
       // Validate email format if provided
       if (email && !this.isValidEmail(email)) {
@@ -214,8 +212,6 @@ export class ExcelParserService {
       row && Array.isArray(row) && row.some(cell => cell !== null && cell !== undefined && cell !== '')
     );
 
-    console.log('Grading headers:', headers);
-    console.log('Grading data rows:', dataRows.length);
 
     // Find column indices for grading template
     const studentCodeIndex = this.findColumnIndex(headers, [
@@ -270,7 +266,6 @@ export class ExcelParserService {
       const parsedStudentCode = studentCode.toString().trim();
       
       // Log student code for debugging
-      console.log(`Grading Row ${rowNumber}: Student code = "${parsedStudentCode}"`);
 
       if (!daysValue && daysValue !== 0) {
         errors.push({
@@ -284,23 +279,72 @@ export class ExcelParserService {
       }
 
       // Validate and parse days
-      const actualDays = parseFloat(daysValue.toString());
-      if (isNaN(actualDays) || actualDays < 0) {
+      const daysString = daysValue.toString().trim();
+      let actualDays = 0; // Default value for invalid cases
+      let hasParseError = false;
+      let parseErrorMessage = '';
+      
+      // Check for common text values that shouldn't be numbers
+      const invalidTextValues = ['abc', 'xyz', 'text', 'không', 'null', 'undefined', 'n/a', 'na'];
+      if (invalidTextValues.some(invalid => daysString.toLowerCase().includes(invalid))) {
         errors.push({
           row: rowNumber,
           field: 'actualDays',
           value: daysValue,
-          message: 'Số ngày CTXH phải là số không âm',
+          message: `Số ngày CTXH không hợp lệ: "${daysValue}". Vui lòng nhập một số hợp lệ`,
           type: 'validation'
         });
-        return;
+        hasParseError = true;
+        parseErrorMessage = `Số ngày CTXH không hợp lệ: "${daysValue}"`;
+      } else {
+        const parsedDays = parseFloat(daysString);
+        
+        // Check if value is not a valid number
+        if (isNaN(parsedDays)) {
+          errors.push({
+            row: rowNumber,
+            field: 'actualDays',
+            value: daysValue,
+            message: `Số ngày CTXH không hợp lệ: "${daysValue}". Vui lòng nhập một số hợp lệ`,
+            type: 'validation'
+          });
+          hasParseError = true;
+          parseErrorMessage = `Số ngày CTXH không hợp lệ: "${daysValue}"`;
+        } else if (parsedDays < 0) {
+          // Check if value is negative
+          errors.push({
+            row: rowNumber,
+            field: 'actualDays',
+            value: daysValue,
+            message: `Số ngày CTXH không được âm: ${parsedDays}`,
+            type: 'validation'
+          });
+          hasParseError = true;
+          parseErrorMessage = `Số ngày CTXH không được âm: ${parsedDays}`;
+        } else if (parsedDays > 365) {
+          // Check if value is unreasonably large (more than 365 days)
+          errors.push({
+            row: rowNumber,
+            field: 'actualDays',
+            value: daysValue,
+            message: `Số ngày CTXH quá lớn: ${parsedDays}. Vui lòng kiểm tra lại`,
+            type: 'validation'
+          });
+          hasParseError = true;
+          parseErrorMessage = `Số ngày CTXH quá lớn: ${parsedDays}`;
+        } else {
+          actualDays = parsedDays;
+        }
       }
 
+      // Always add the record, even if it has errors (but use default actualDays = 0 for invalid cases)
       data.push({
         studentCode: parsedStudentCode,
         name: name ? name.toString().trim() : undefined,
         actualDays,
-        note: note ? note.toString().trim() : undefined
+        note: note ? note.toString().trim() : undefined,
+        _hasParseError: hasParseError,
+        _parseErrorMessage: hasParseError ? parseErrorMessage : undefined
       });
     });
 
@@ -316,8 +360,6 @@ export class ExcelParserService {
    * Find column index by possible names
    */
   private findColumnIndex(headers: string[], possibleNames: string[]): number {
-    console.log('Finding column with headers:', headers);
-    console.log('Looking for:', possibleNames);
     
     const index = headers.findIndex(header => {
       if (!header) return false;
@@ -335,7 +377,6 @@ export class ExcelParserService {
         .replace(/[đ]/g, 'd')
         .replace(/[^a-z0-9]/g, ''); // Remove all non-alphanumeric
       
-      console.log(`Header "${header}" normalized to "${normalizedHeader}"`);
       
       return possibleNames.some(name => {
         const normalizedName = name.toLowerCase()
@@ -350,13 +391,11 @@ export class ExcelParserService {
         
         const match = normalizedHeader.includes(normalizedName) || normalizedName.includes(normalizedHeader);
         if (match) {
-          console.log(`✓ Found match: "${header}" matches "${name}"`);
         }
         return match;
       });
     });
     
-    console.log('Found index:', index);
     return index;
   }
 
@@ -378,7 +417,6 @@ export class ExcelParserService {
     if (stringValue === '') return null;
     
     // Log for debugging
-    console.log(`getCellValue at index ${index}:`, value, '=>', stringValue);
     
     return stringValue;
   }

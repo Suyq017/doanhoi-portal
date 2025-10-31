@@ -9,6 +9,7 @@ interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   variant?: 'danger' | 'warning' | 'info';
+  loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -20,6 +21,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   confirmText = 'Xác nhận',
   cancelText = 'Hủy',
   variant = 'danger',
+  loading = false,
   onConfirm,
   onCancel
 }) => {
@@ -73,14 +75,14 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         />
 
         {/* Modal panel */}
-        <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md dark:bg-gray-800">
+        <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md dark:bg-gray-800 w-full mx-4 max-w-sm sm:mx-0 sm:max-w-md">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3">
               <div className={`flex-shrink-0 p-2 rounded-full ${styles.iconBg}`}>
                 {styles.icon}
               </div>
-              <h3 className={`text-lg font-medium ${styles.titleColor}`}>
+              <h3 className={`text-lg font-medium ${styles.titleColor} break-words overflow-wrap-anywhere`}>
                 {title}
               </h3>
             </div>
@@ -94,7 +96,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
           {/* Content */}
           <div className="p-6">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600 dark:text-gray-400 break-words overflow-wrap-anywhere">
               {message}
             </p>
 
@@ -103,15 +105,20 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {cancelText}
               </button>
               <button
                 type="button"
                 onClick={onConfirm}
-                className={`px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${styles.confirmBtn}`}
+                disabled={loading}
+                className={`px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${styles.confirmBtn} disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
               >
+                {loading && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                )}
                 {confirmText}
               </button>
             </div>

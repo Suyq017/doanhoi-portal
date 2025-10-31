@@ -70,9 +70,7 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
   const loadConfigs = async () => {
     try {
       setLoading(true);
-      console.log('Loading configs with filters:', filters);
       const response = await limitConfigService.findAll(filters);
-      console.log('API response:', response);
       
       setConfigs(response.data || []);
       setCurrentPage(response.page || 1);
@@ -113,12 +111,10 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
 
   // Handlers
   const handlePageChange = (page: number) => {
-    console.log('Page change requested:', page, 'Current filters:', filters);
     setFilters(prev => ({ ...prev, page }));
   };
 
   const handleLimitChange = (newLimit: number) => {
-    console.log('Limit change requested:', newLimit);
     setLimit(newLimit);
     setFilters(prev => ({ 
       ...prev, 
@@ -128,7 +124,6 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
   };
 
   const handleStatusFilterChange = (status: LimitConfigStatus | 'ALL') => {
-    console.log('Status filter change:', status);
     setFilters(prev => ({ 
       ...prev, 
       status: status === 'ALL' ? undefined : status,
@@ -268,7 +263,8 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
       ) : (
         // Table when there are configs
         <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -398,6 +394,7 @@ const LimitConfigList: React.FC<LimitConfigListProps> = ({
             )}
           </tbody>
         </table>
+          </div>
         </div>
       )}
 

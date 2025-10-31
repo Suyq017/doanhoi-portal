@@ -47,12 +47,12 @@ const CategoryList: React.FC<CategoryListProps> = ({
     loadCategories(1, term);
   }, 300);
 
-  const loadCategories = async (page: number = currentPage, search?: string) => {
+  const loadCategories = async (page: number = currentPage, search?: string, newLimit?: number) => {
     try {
       setLoading(true);
       const params: CategoryQueryParams = {
         page,
-        limit,
+        limit: newLimit !== undefined ? newLimit : limit,
         search: search !== undefined ? search : searchTerm
       };
 
@@ -124,20 +124,21 @@ const CategoryList: React.FC<CategoryListProps> = ({
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Desktop Table */}
+            <div className="hidden xl:block overflow-x-auto max-w-full">
               <table className="w-full table-fixed">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 w-1/4">
+                    <th className="w-1/4 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('category.name')}
                     </th>
-                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 w-1/2">
+                    <th className="w-1/2 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('category.description')}
                     </th>
-                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-400 w-1/6">
+                    <th className="w-32 px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase dark:text-gray-400">
                       {t('category.activities')}
                     </th>
-                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400 w-1/12">
+                    <th className="w-28 px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400">
                       {t('category.actions')}
                     </th>
                   </tr>
@@ -145,19 +146,31 @@ const CategoryList: React.FC<CategoryListProps> = ({
                 <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                   {categories.map((category) => (
                     <tr key={category.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900 dark:text-white">{category.name}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="max-w-lg text-gray-500 dark:text-gray-400">
+                      <td className="w-1/4 px-6 py-4">
+                        <div className="font-medium text-gray-900 dark:text-white break-words overflow-hidden">
                           <div 
-                            className="overflow-hidden break-words"
+                            className="leading-5"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden'
+                            }}
+                            title={category.name}
+                          >
+                            {category.name}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="w-1/2 px-6 py-4">
+                        <div className="text-gray-500 dark:text-gray-400 overflow-hidden">
+                          <div 
+                            className="break-words leading-5"
                             style={{
                               display: '-webkit-box',
                               WebkitLineClamp: 3,
                               WebkitBoxOrient: 'vertical',
-                              lineHeight: '1.4',
-                              maxHeight: '4.2em'
+                              overflow: 'hidden'
                             }}
                             title={category.description || '-'}
                           >
@@ -165,16 +178,16 @@ const CategoryList: React.FC<CategoryListProps> = ({
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-center whitespace-nowrap">
+                      <td className="w-32 px-6 py-4 text-center">
                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
                           {category._count?.activities || category.activities_count || 0} {t('category.activities')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+                      <td className="w-28 px-6 py-4 text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
                           <button
                             onClick={() => onViewDetailClick(category)}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />
@@ -182,7 +195,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                           {permissions?.update && (
                             <button
                               onClick={() => handleEdit(category)}
-                              className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                              className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 p-1"
                               title="Chỉnh sửa"
                             >
                               <Edit className="w-4 h-4" />
@@ -191,7 +204,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                           {permissions?.delete && (
                             <button
                               onClick={() => onDeleteClick(category)}
-                              className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400"
+                              className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400 p-1"
                               title="Xóa"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -203,6 +216,88 @@ const CategoryList: React.FC<CategoryListProps> = ({
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="xl:hidden">
+              {/* Mobile Table with horizontal scroll */}
+              <div className="overflow-x-auto">
+                <div className="min-w-full space-y-3 p-4">
+                  {categories.map((category) => (
+                    <div key={category.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 min-w-0">
+                      <div className="space-y-3">
+                        {/* Header with name and actions */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-900 dark:text-white text-base break-words">
+                              {category.name}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2 flex-shrink-0">
+                            <button
+                              onClick={() => onViewDetailClick(category)}
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1"
+                              title="Xem chi tiết"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            {permissions?.update && (
+                              <button
+                                onClick={() => handleEdit(category)}
+                                className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 p-1"
+                                title="Chỉnh sửa"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                            )}
+                            {permissions?.delete && (
+                              <button
+                                onClick={() => onDeleteClick(category)}
+                                className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400 p-1"
+                                title="Xóa"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        {category.description && (
+                          <div className="min-w-0">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mb-1">
+                              {t('category.description')}
+                            </div>
+                            <div 
+                              className="text-sm text-gray-500 dark:text-gray-400 break-words overflow-hidden"
+                              style={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 3,
+                                WebkitBoxOrient: 'vertical',
+                                lineHeight: '1.4',
+                                maxHeight: '4.2em'
+                              }}
+                              title={category.description}
+                            >
+                              {category.description}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Activities count */}
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
+                            {t('category.activities')}
+                          </div>
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                            {category._count?.activities || category.activities_count || 0} {t('category.activities')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {categories.length === 0 && (
@@ -217,20 +312,19 @@ const CategoryList: React.FC<CategoryListProps> = ({
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          total={total}
-          limit={limit}
-          onPageChange={handlePageChange}
-          showLimitSelector={true}
-          onLimitChange={(newLimit) => {
-            setLimit(newLimit);
-            setCurrentPage(1);
-          }}
-        />
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        total={total}
+        limit={limit}
+        onPageChange={handlePageChange}
+        showLimitSelector={true}
+        onLimitChange={(newLimit) => {
+          setLimit(newLimit);
+          setCurrentPage(1);
+          loadCategories(1, undefined, newLimit);
+        }}
+      />
     </div>
   );
 };

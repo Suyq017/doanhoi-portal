@@ -6,8 +6,9 @@ import { activityService } from '../services';
 import { userService } from '../../../shared/services/userService';
 import { authService } from '../../auth/services/authService';
 import { useToast } from '../../../shared/hooks';
-import { Toast, ConfirmDialog, Pagination, SimpleImportModal } from '../../../shared/components';
+import { Toast, ConfirmDialog, Pagination } from '../../../shared/components';
 import { ImportModalConfig } from '../../../shared/types/import';
+import SimpleImportModal from './SimpleImportModal';
 import { excelParserService, importValidationService, batchImportService } from '../services';
 import { useCtxhPermissions } from '../hooks';
 
@@ -244,9 +245,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       try {
         const parseResult = await excelParserService.parseGradingFile(file, onProgress);
 
-        if (parseResult.errors.length > 0) {
-          console.warn('Parse errors:', parseResult.errors);
-        }
+        // Store parse errors to pass to validation later
+        (parseResult.data as any)._parseErrors = parseResult.errors;
 
         return parseResult.data;
       } catch (error) {
@@ -264,7 +264,9 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           activity.totalDays // Pass activity total days for validation
         );
 
-        return batchImportService.createValidationResult(validationResult.data, validationResult);
+        // Pass the original data (all records) and validation result
+        // Note: validation result already includes parse errors, so no need to pass them separately
+        return batchImportService.createValidationResult(data, validationResult);
       } catch (error) {
         console.error('Validation error:', error);
         throw new Error('Lỗi khi kiểm tra dữ liệu');
@@ -350,10 +352,6 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     try {
       setLoading(true);
       const response = await activityService.getParticipants(activity.id);
-      // Debug: Log first participant to see status format
-      if (response.length > 0 && process.env.NODE_ENV === 'development') {
-        console.log('First participant status:', response[0].status);
-      }
       setParticipants(Array.isArray(response) ? response : []);
 
       // Tra cứu thông tin sinh viên cho những participant chưa có tên
@@ -371,8 +369,6 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       // Chỉ hiển thị lỗi khi thực sự có lỗi nghiêm trọng
       if (error.response?.status === 404) {
         // Activity not found or no participants yet - This is normal for new activities
-        // Don't show error toast for this case
-        console.log('No participants found for activity - this is normal for new activities');
       } else if (error.response?.status === 403) {
         showError(t('common:messages.error.noPermission'));
       } else if (error.response?.status >= 500) {
@@ -424,7 +420,13 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       return participantsStudentInfo[participant.student_code].name!;
     }
 
-    return 'N/A';
+    return t('participant.studentNotFound');
+  };
+
+  // Helper function để kiểm tra sinh viên có tồn tại
+  const isStudentValid = (participant: ParticipationResponse): boolean => {
+    return !!(participant.student?.full_name || 
+             (participant.student_code && participantsStudentInfo[participant.student_code]?.name));
   };
 
   // Helper function để lấy email sinh viên
@@ -715,8 +717,6 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       setBulkGradingLoading(true);
       const results = await activityService.gradeParticipantsFromExcel(activity.id, bulkGradingFile);
 
-      console.log('Bulk grading results:', results);
-
       if (results.successful && results.successful.length > 0) {
         showSuccess(t('participant.gradingSuccessMultiple', { count: results.successful.length }));
       }
@@ -858,7 +858,12 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                 </button>
 
                 {showAddStudentDropdown && activity.status === 'ACTIVE' && (
-                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 overflow-hidden">
+                <div className="absolute mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden"
+                     style={{
+                       width: '15rem',
+                       maxWidth: 'calc(100vw - 3rem)',
+                       right: '-3rem'
+                     }}>
                   <div className="py-1">
                     <button
                       onClick={() => {
@@ -974,8 +979,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           </div>
         ) : (
           <>
-            <div className="overflow-hidden max-w-full">
-              <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="overflow-x-auto max-w-full">
+              <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 min-w-[800px]">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1000,28 +1005,33 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {paginatedParticipants.map((participant) => (
-                    <tr key={participant.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    <tr key={participant.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${!isStudentValid(participant) ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
+                      <td className="px-6 py-4">
+                        <div className="max-w-xs">
+                          <div className={`text-sm font-medium break-words ${isStudentValid(participant) ? 'text-gray-900 dark:text-white' : 'text-red-600 dark:text-red-400'}`}>
                             {getStudentName(participant)}
+                            {!isStudentValid(participant) && (
+                              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                {t('participant.invalidStudent')}
+                              </span>
+                            )}
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                          <div className="text-sm text-gray-500 dark:text-gray-400 break-words">
                             {t('participant.studentCodeLabel')}: {participant.student_code || participant.student?.student_code || 'N/A'}
                           </div>
                           {getStudentEmail(participant) && (
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                            <div className="text-sm text-gray-500 dark:text-gray-400 break-words">
                               {getStudentEmail(participant)}
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">
                         <span className="text-sm text-gray-900 dark:text-white">
                           {participant.actual_days ? `${formatNumber(participant.actual_days)} ${t('activity.days')}` : t('participant.notGraded')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${participant.status === 'COMPLETED' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
                             participant.status === 'CANCELLED' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
                               'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
@@ -1031,26 +1041,18 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                               t('participant.statusOptions.registered')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs">
-                        {participant.note ? (
-                          <div
-                            className="line-clamp-3 cursor-help"
-                            title={participant.note}
-                            style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                              wordBreak: 'break-word'
-                            }}
-                          >
-                            {participant.note}
-                          </div>
-                        ) : (
-                          '-'
-                        )}
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                        <div className="max-w-xs">
+                          {participant.note ? (
+                            <div className="break-words" title={participant.note}>
+                              {participant.note}
+                            </div>
+                          ) : (
+                            '-'
+                          )}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                         {formatDate(participant.created_at)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">

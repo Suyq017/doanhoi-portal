@@ -3,7 +3,6 @@ export { default as Toast } from './Toast';
 export { default as Select } from './Select';
 export { default as LanguageSwitcher } from './LanguageSwitcher';
 export { default as ImportModal } from './ImportModal';
-export { default as SimpleImportModal } from './SimpleImportModal';
 export { default as AddDropdownButton } from './AddDropdownButton';
 export { default as Combobox } from './Combobox';
 export { default as SearchableCombobox } from './SearchableCombobox';

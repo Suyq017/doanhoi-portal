@@ -173,6 +173,7 @@ export interface CreateLimitConfigRequest {
   organization_id: string;
   max_days: number; // Updated field name
   description?: string;
+  status?: LimitConfigStatus;
 }
 
 export interface UpdateLimitConfigRequest {

@@ -171,29 +171,31 @@ const ActivityDetail: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 max-w-full overflow-hidden">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+      <div className="mb-6 max-w-full overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+          <div className="flex items-start space-x-4 min-w-0 flex-1">
             <button
               onClick={() => navigate('/ctxh/activities')}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 flex-shrink-0"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t('common:actions.back')}
             </button>
 
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-                <Calendar className="mr-3 h-8 w-8 text-blue-600 dark:text-blue-400" />
-                {activity.name}
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white break-words word-wrap overflow-wrap-anywhere">
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-6 w-6 lg:h-8 lg:w-8 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
+                  <span className="break-all overflow-wrap-anywhere leading-tight">{activity.name}</span>
+                </div>
               </h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-300">{t('activity.detail.subtitle')}</p>
+              <p className="mt-2 text-gray-600 dark:text-gray-300 text-sm lg:text-base">{t('activity.detail.subtitle')}</p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             {getStatusBadge(activity.status)}
             {ctxhPermissions.activities.update && (
               <button
@@ -209,37 +211,37 @@ const ActivityDetail: React.FC = () => {
       </div>
 
       {/* Activity Summary */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 max-w-full overflow-hidden">
         <div className="px-6 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 min-w-0">
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.category')}</dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white break-all overflow-wrap-anywhere">
                 {getCategoryName(activity.categoryId || (activity as any).category_id)}
               </dd>
             </div>
-            <div>
+            <div className="lg:col-span-1 min-w-0">
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.organization')}</dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white break-all overflow-wrap-anywhere">
                 {activity.organization?.name || t('activity.noOrganizationInfo')}
               </dd>
             </div>
-            <div>
+            <div className="lg:col-span-1 min-w-0">
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.location')}</dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white break-all overflow-wrap-anywhere">
                 {activity.location || t('activity.noLocation')}
               </dd>
             </div>
-            <div>
+            <div className="lg:col-span-1 min-w-0">
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.timePeriod')}</dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white break-words">
                 {(activity.startDate || (activity as any).start_date || activity.endDate || (activity as any).end_date)
                   ? `${formatDate(activity.startDate || (activity as any).start_date || null)} - ${formatDate(activity.endDate || (activity as any).end_date || null)}`
                   : t('activity.noTimePeriod')
                 }
               </dd>
             </div>
-            <div>
+            <div className="lg:col-span-1 min-w-0">
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.totalDays')}</dt>
               <dd className="mt-1 text-sm text-gray-900 dark:text-white">
                 {(activity.totalDays || (activity as any).total_days) ? formatNumber(activity.totalDays || (activity as any).total_days) : t('common:labels.unknown')} {t('activity.days')}
@@ -250,19 +252,21 @@ const ActivityDetail: React.FC = () => {
           {activity.description && (
             <div className="mt-6">
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('activity.description')}</dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white">{activity.description}</dd>
+              <dd className="mt-1 text-sm text-gray-900 dark:text-white break-all overflow-wrap-anywhere whitespace-pre-wrap">
+                {activity.description}
+              </dd>
             </div>
           )}
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg max-w-full overflow-hidden">
         <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+          <nav className="-mb-px flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'overview'
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex-shrink-0 ${activeTab === 'overview'
                 ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
@@ -274,7 +278,7 @@ const ActivityDetail: React.FC = () => {
             {ctxhPermissions.activities.view && (
               <button
                 onClick={() => setActiveTab('participants')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab === 'participants'
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex-shrink-0 ${activeTab === 'participants'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
@@ -287,9 +291,9 @@ const ActivityDetail: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="p-6">
+        <div className="p-6 max-w-full overflow-hidden">
           {activeTab === 'overview' && (
-            <div>
+            <div className="max-w-full overflow-hidden">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('activity.statistics.title')}</h3>
               {participantsLoading ? (
                 <div className="text-center py-8">
@@ -297,7 +301,7 @@ const ActivityDetail: React.FC = () => {
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('activity.statistics.loading')}</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-full overflow-hidden">
                   <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                     <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{getStatistics().total}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">{t('activity.statistics.totalStudents')}</div>

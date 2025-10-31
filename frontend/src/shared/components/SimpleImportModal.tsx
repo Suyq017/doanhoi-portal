@@ -355,8 +355,17 @@ const SimpleImportModal = ({
         const validation = state.clientValidation || state.serverValidation;
         if (!validation) return [];
 
-        // Get all data - only show valid records (no error rows)
-        let rows: any[] = state.clientData || (state.serverValidation?.previewData) || [];
+        // Get only valid records
+        let rows: any[] = [];
+        
+        if (state.clientValidation) {
+            // For client-side validation, use validation.data which contains only valid records
+            // (createValidationResult returns data: validData, previewData: allData)
+            rows = state.clientValidation.data || [];
+        } else if (state.serverValidation) {
+            // For server-side validation, use previewData (assume it's filtered)
+            rows = state.serverValidation.previewData || [];
+        }
 
         // Calculate pagination
         const startIndex = (previewPage - 1) * previewLimit;
@@ -374,8 +383,14 @@ const SimpleImportModal = ({
         const validation = state.clientValidation || state.serverValidation;
         if (!validation) return 0;
 
-        const data: any[] = state.clientData || (state.serverValidation?.previewData) || [];
-        const totalRows = data.length;
+        // Count only valid records
+        let totalRows = 0;
+        if (state.clientValidation) {
+            // validation.data contains only valid records
+            totalRows = (state.clientValidation.data || []).length;
+        } else if (state.serverValidation) {
+            totalRows = (state.serverValidation.previewData || []).length;
+        }
 
         return Math.ceil(totalRows / previewLimit);
     };
@@ -384,8 +399,14 @@ const SimpleImportModal = ({
         const validation = state.clientValidation || state.serverValidation;
         if (!validation) return { start: 0, end: 0, total: 0 };
 
-        const data: any[] = state.clientData || (state.serverValidation?.previewData) || [];
-        const totalRows = data.length;
+        // Count only valid records
+        let totalRows = 0;
+        if (state.clientValidation) {
+            // validation.data contains only valid records
+            totalRows = (state.clientValidation.data || []).length;
+        } else if (state.serverValidation) {
+            totalRows = (state.serverValidation.previewData || []).length;
+        }
 
         if (showAllRows) {
             return { start: 1, end: totalRows, total: totalRows };

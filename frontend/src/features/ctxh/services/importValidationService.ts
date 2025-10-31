@@ -47,6 +47,8 @@ export interface GradingValidationData extends GradingImportData {
   _participantId?: number;
   _exceedsMaxDays?: boolean;
   _participantData?: any;
+  _hasParseError?: boolean;
+  _parseErrorMessage?: string;
 }
 
 export class ImportValidationService {
@@ -364,6 +366,19 @@ export class ImportValidationService {
       errorMessage = `Mã số sinh viên bị trùng lặp trong file`;
     }
 
+    // Check for parse errors first
+    if (grading._hasParseError) {
+      errors.push({
+        row: rowNumber,
+        field: 'actualDays',
+        value: grading.actualDays,
+        message: grading._parseErrorMessage || 'Lỗi khi phân tích dữ liệu',
+        type: 'validation'
+      });
+      hasError = true;
+      errorMessage = grading._parseErrorMessage || 'Lỗi khi phân tích dữ liệu';
+    }
+
     // Find participant in existing participants
     const participant = existingParticipants.find(p => 
       p.student_code === grading.studentCode || 
@@ -383,12 +398,32 @@ export class ImportValidationService {
     }
 
     // Validate actual days
-    if (grading.actualDays < 0) {
+    if (typeof grading.actualDays !== 'number' || isNaN(grading.actualDays)) {
+      errors.push({
+        row: rowNumber,
+        field: 'actualDays',
+        value: grading.actualDays,
+        message: `Số ngày CTXH không hợp lệ: "${grading.actualDays}". Vui lòng nhập một số hợp lệ`,
+        type: 'validation'
+      });
+      hasError = true;
+      errorMessage = `Số ngày CTXH không hợp lệ`;
+    } else if (grading.actualDays < 0) {
       errors.push({
         row: rowNumber,
         field: 'actualDays',
         value: grading.actualDays,
         message: `Số ngày CTXH không được âm: ${grading.actualDays}`,
+        type: 'validation'
+      });
+      hasError = true;
+      errorMessage = `Số ngày CTXH không hợp lệ`;
+    } else if (grading.actualDays > 365) {
+      errors.push({
+        row: rowNumber,
+        field: 'actualDays',
+        value: grading.actualDays,
+        message: `Số ngày CTXH quá lớn: ${grading.actualDays}. Vui lòng kiểm tra lại`,
         type: 'validation'
       });
       hasError = true;
@@ -400,7 +435,6 @@ export class ImportValidationService {
     if (activityTotalDays && grading.actualDays > activityTotalDays) {
       exceedsMaxDays = true;
       hasError = true; // Mark as ERROR, not warning
-      errorMessage = errorMessage || `Số ngày CTXH vượt quá giới hạn`;
       
       // Format display: Remove .0 from numbers like 5.0 -> 5
       const displayTotalDays = activityTotalDays % 1 === 0 ? 
@@ -414,6 +448,11 @@ export class ImportValidationService {
         message: `Số ngày CTXH (${grading.actualDays}) vượt quá tổng số ngày hoạt động (${displayTotalDays})`,
         type: 'validation'
       });
+      
+      // Update error message if it's not already set from parse errors
+      if (!errorMessage || !errorMessage.includes('không hợp lệ')) {
+        errorMessage = `Số ngày CTXH vượt quá giới hạn`;
+      }
     }
 
     const validatedGrading: GradingValidationData = {

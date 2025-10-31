@@ -290,24 +290,19 @@ export class BatchImportService {
    */
   createValidationResult<T extends ParticipantValidationData | GradingValidationData>(
     allData: T[],
-    validationResult?: any,
-    parseErrors: any[] = []
+    validationResult?: any
   ): any {
     // Use validData for submission, but show all data in preview
     const validData = validationResult?.validData || allData.filter((item: T) => !item._hasError);
     const invalidData = allData.filter((item: T) => item._hasError);
     
-    // Create errors array with proper row numbering matching UI display
-    const errors = invalidData.map((item) => {
-      // Find the original index in the full data array
-      const originalIndex = allData.findIndex(d => d === item);
-      return {
-        row: originalIndex + 1, // +1 for UI row numbering (starts from 1)
-        column: 'studentCode',
-        message: item._errorMessage || 'Unknown error',
-        severity: 'error' as const
-      };
-    });
+    // Use validation errors directly from validation result for better error details
+    const validationErrors = validationResult?.errors?.map((error: any) => ({
+      row: error.row,
+      column: error.field || 'studentCode',
+      message: error.message,
+      severity: 'error' as const
+    })) || [];
 
     // Extract warnings from validation result if available
     const warnings = validationResult?.warnings?.map((warning: any) => ({
@@ -336,7 +331,7 @@ export class BatchImportService {
         valid: validData.length,
         invalid: invalidData.length
       },
-      errors: [...parseErrors, ...errors],
+      errors: validationErrors, // Only use validation errors (they already include parse errors)
       warnings: warnings
     };
   }

@@ -37,12 +37,6 @@ const ActivityManagement: React.FC = () => {
         // - Level 3 / No permission: organizations.length = 0
         const canCreate = response.organizations.length > 0;
         setCanCreateActivity(canCreate);
-
-        console.log('[ActivityManagement] Create permission check:', {
-          organizationsCount: response.organizations.length,
-          fixedOrganization: response.fixedOrganization?.name || 'null',
-          canCreate: canCreate
-        });
       } catch (error) {
         console.error('Failed to check create permission:', error);
         // Default to false for safety
@@ -194,6 +188,11 @@ const ActivityManagement: React.FC = () => {
         onViewClick={handleViewActivity}
         showToast={handleShowToast}
         refreshTrigger={refreshTrigger}
+        permissions={{
+          create: true,
+          update: true,
+          delete: true
+        }}
       />
 
       {/* Activity Form Modal */}

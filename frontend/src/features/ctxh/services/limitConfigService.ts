@@ -23,8 +23,6 @@ export class LimitConfigService {
     const queryString = searchParams.toString();
     const endpoint = queryString ? `${this.basePath}?${queryString}` : this.basePath;
     
-    console.log('API call to:', endpoint); // Debug log
-    
     return apiClient.get<PaginatedResponse<CtxhLimitConfig>>(endpoint);
   }
 

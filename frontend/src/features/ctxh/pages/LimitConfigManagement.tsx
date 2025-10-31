@@ -107,7 +107,7 @@ const LimitConfigManagement: React.FC = () => {
   };
 
   const handleConfirmAction = async () => {
-    if (!selectedConfig || !confirmAction) return;
+    if (!selectedConfig || !confirmAction || loading) return;
 
     setLoading(true);
     try {
@@ -119,16 +119,18 @@ const LimitConfigManagement: React.FC = () => {
         showSuccess(t('limitConfig.restored'));
       }
 
-      // Trigger refresh
+      // Close dialog first
+      setIsConfirmDialogOpen(false);
+      setSelectedConfig(undefined);
+      setConfirmAction(null);
+      
+      // Then trigger refresh
       setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       const errorMessage = translateError(error);
       showError(errorMessage);
     } finally {
       setLoading(false);
-      setIsConfirmDialogOpen(false);
-      setSelectedConfig(undefined);
-      setConfirmAction(null);
     }
   };
 
@@ -215,6 +217,7 @@ ${t('limitConfig.organization')}: ${selectedConfig.organization?.name || 'N/A'}`
         cancelText={t('common.cancel')}
         onConfirm={handleConfirmAction}
         onCancel={handleCancelAction}
+        loading={loading}
       />
 
       {/* Toasts */}
