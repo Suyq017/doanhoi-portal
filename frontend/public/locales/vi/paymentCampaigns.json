@@ -1,19 +1,19 @@
 {
-  "pageTitle": "Quản Lý Thu Phí",
-  "pageDescription": "Quản lý các đợt thu phí của hội",
+  "pageTitle": "Quản Lý Đóng Phí",
+  "pageDescription": "Quản lý các đợt đóng phí",
   "createNew": "Tạo Đợt Mới",
   "loading": "Đang tải...",
   "loadingDescription": "Đang tải thông tin...",
   "accessDeniedTitle": "Không có quyền truy cập",
   "accessDeniedMessage": "Bạn không có quyền truy cập trang quản lý đóng phí",
-  "listTitle": "Danh sách đợt thu phí",
-  "searchPlaceholder": "Tìm kiếm đợt thu phí...",
-  "noCampaigns": "Chưa có đợt thu phí nào",
+  "listTitle": "Danh sách đợt đóng phí",
+  "searchPlaceholder": "Tìm kiếm đợt đóng phí...",
+  "noCampaigns": "Chưa có đợt đóng phí nào",
   "detail": {
     "title": "Chi Tiết Đợt Thu Phí",
-    "description": "Thông tin chi tiết và quản lý đợt thu phí",
-    "loadingMessage": "Đang tải thông tin đợt thu phí...",
-    "notFound": "Không tìm thấy đợt thu phí",
+    "description": "Thông tin chi tiết và quản lý đợt đóng phí",
+    "loadingMessage": "Đang tải thông tin đợt đóng phí...",
+    "notFound": "Không tìm thấy đợt đóng phí",
     "backToList": "Quay lại danh sách",
     "campaignInfo": "Thông Tin Đợt Đóng Phí",
     "organization": "Tổ chức",
@@ -30,7 +30,7 @@
     "activate": "Kích hoạt",
     "complete": "Hoàn thành",
     "cancel": "Hủy",
-    "delete": "Xóa đợt thu phí"
+    "delete": "Xóa đợt đóng phí"
   },
   "status": {
     "draft": "Nháp",
@@ -48,30 +48,30 @@
     "needsMembers": "Phân công thành viên",
     "noFeeLevels": "Chưa có mức phí nào được tạo",
     "noMembers": "Chưa có thành viên nào được phân công",
-    "error": "Không thể kích hoạt đợt thu phí: {{requirements}}"
+    "error": "Không thể kích hoạt đợt đóng phí: {{requirements}}"
   },
   "confirmations": {
     "activate": {
-      "title": "Kích hoạt đợt thu phí",
-      "message": "Bạn có chắc chắn muốn kích hoạt đợt thu phí này? Sau khi kích hoạt, thành viên sẽ có thể thực hiện thanh toán.",
+      "title": "Kích hoạt đợt đóng phí",
+      "message": "Bạn có chắc chắn muốn kích hoạt đợt đóng phí này? Sau khi kích hoạt, thành viên sẽ có thể thực hiện thanh toán.",
       "confirm": "Kích hoạt",
       "cancel": "Hủy"
     },
     "complete": {
-      "title": "Hoàn thành đợt thu phí",
-      "message": "Bạn có chắc chắn muốn hoàn thành đợt thu phí này?",
+      "title": "Hoàn thành đợt đóng phí",
+      "message": "Bạn có chắc chắn muốn hoàn thành đợt đóng phí này?",
       "confirm": "Hoàn thành",
       "cancel": "Hủy"
     },
     "cancelCampaign": {
-      "title": "Hủy đợt thu phí",
-      "message": "Bạn có chắc chắn muốn hủy đợt thu phí này? Sau khi hủy, thành viên sẽ không thể thực hiện thanh toán và đợt thu phí sẽ kết thúc.",
-      "confirm": "Hủy đợt thu phí",
+      "title": "Hủy đợt đóng phí",
+      "message": "Bạn có chắc chắn muốn hủy đợt đóng phí này? Sau khi hủy, thành viên sẽ không thể thực hiện thanh toán và đợt đóng phí sẽ kết thúc.",
+      "confirm": "Hủy đợt đóng phí",
       "cancel": "Không hủy"
     },
     "delete": {
-      "title": "Xóa đợt thu phí - Hành động này không thể hoàn tác!",
-      "message": "Bạn có chắc muốn xóa đợt thu phí này vì sẽ xóa luôn cả lịch sử thu phí ở trang của thành viên và quản trị viên?",
+      "title": "Xóa đợt đóng phí - Hành động này không thể hoàn tác!",
+      "message": "Bạn có chắc muốn xóa đợt đóng phí này vì sẽ xóa luôn cả lịch sử đóng phí ở trang của thành viên và quản trị viên?",
       "confirm": "Xóa",
       "cancel": "Hủy"
     },
@@ -83,9 +83,9 @@
     }
   },
   "form": {
-    "createTitle": "Tạo đợt thu phí mới",
-    "editTitle": "Chỉnh sửa đợt thu phí",
-    "campaignName": "Tên đợt thu phí",
+    "createTitle": "Tạo đợt đóng phí mới",
+    "editTitle": "Chỉnh sửa đợt đóng phí",
+    "campaignName": "Tên đợt đóng phí",
     "description": "Mô tả",
     "startDate": "Ngày bắt đầu",
     "endDate": "Ngày kết thúc",
@@ -97,19 +97,19 @@
     "update": "Cập nhật"
   },
   "messages": {
-    "createSuccess": "Tạo đợt thu phí thành công",
-    "updateSuccess": "Cập nhật đợt thu phí thành công",
-    "deleteSuccess": "Đợt thu phí đã được xóa thành công!",
-    "activateSuccess": "Đợt thu phí đã được kích hoạt thành công!",
-    "completeSuccess": "Đợt thu phí đã được hoàn thành thành công!",
-    "cancelSuccess": "Đợt thu phí đã được hủy thành công!",
-    "errorLoading": "Lỗi khi tải danh sách đợt thu phí",
-    "errorSaving": "Lỗi khi lưu đợt thu phí",
-    "errorStatusUpdate": "Không thể cập nhật trạng thái đợt thu phí. Vui lòng thử lại.",
+    "createSuccess": "Tạo đợt đóng phí thành công",
+    "updateSuccess": "Cập nhật đợt đóng phí thành công",
+    "deleteSuccess": "Đợt đóng phí đã được xóa thành công!",
+    "activateSuccess": "Đợt đóng phí đã được kích hoạt thành công!",
+    "completeSuccess": "Đợt đóng phí đã được hoàn thành thành công!",
+    "cancelSuccess": "Đợt đóng phí đã được hủy thành công!",
+    "errorLoading": "Lỗi khi tải danh sách đợt đóng phí",
+    "errorSaving": "Lỗi khi lưu đợt đóng phí",
+    "errorStatusUpdate": "Không thể cập nhật trạng thái đợt đóng phí. Vui lòng thử lại.",
     "errorActivate": "Không thể kích hoạt: {{error}}",
     "errorComplete": "Không thể hoàn thành: {{error}}",
     "errorCancel": "Không thể hủy: {{error}}",
-    "errorDelete": "Không thể xóa đợt thu phí: {{error}}"
+    "errorDelete": "Không thể xóa đợt đóng phí: {{error}}"
   },
   "listComponent": {
     "allOrganizations": "Tất cả tổ chức",
@@ -122,7 +122,7 @@
     "cancelled": "Đã hủy",
     "fromDate": "Từ ngày",
     "toDate": "Đến ngày",
-    "loadingList": "Đang tải danh sách đợt thu phí...",
+    "loadingList": "Đang tải danh sách đợt đóng phí...",
     "campaignColumn": "Đợt đóng phí",
     "organizationColumn": "Tổ chức",
     "timeframeColumn": "Thời gian",
@@ -134,7 +134,7 @@
     "delete": "Xóa",
     "complete": "Hoàn thành",
     "cancel": "Hủy",
-    "deleteTooltip": "Xóa đợt thu phí",
+    "deleteTooltip": "Xóa đợt đóng phí",
     "showing": "Hiển thị",
     "to": "đến",
     "of": "trong tổng số",
