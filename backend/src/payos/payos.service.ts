@@ -90,7 +90,6 @@ export class SimplePayosService {
         let mappedStatus: PaymentHistoryStatus;
         switch (paymentLinkInfo.status) {
           case 'PAID':
-            mappedStatus = PaymentHistoryStatus.PAID;
             break;
           case 'CANCELLED':
             mappedStatus = PaymentHistoryStatus.CANCELLED;
@@ -106,7 +105,7 @@ export class SimplePayosService {
         await this.paymentHistoryService.updatePaymentStatus(
           orderCode, 
           mappedStatus,
-          paidAt
+          paidAt,
         );
       }
 
@@ -132,7 +131,7 @@ export class SimplePayosService {
    */
   private async updateAssignmentOnPaymentSuccess(assignmentId: string, paidAt: Date): Promise<void> {
     try {
-      await this.paymentAssignmentService.markAsPaid(assignmentId);
+      await this.paymentAssignmentService.markAsPaid(assignmentId, true);
     } catch (error) {
       console.error(`❌ Failed to mark assignment ${assignmentId} as paid:`, error.message);
       // Log error nhưng không throw để không block việc cập nhật payment history

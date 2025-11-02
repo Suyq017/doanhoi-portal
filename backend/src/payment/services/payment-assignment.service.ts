@@ -210,7 +210,7 @@ export class PaymentAssignmentService {
   /**
    * Mark assignment as paid
    */
-  async markAsPaid(id: string): Promise<PaymentAssignment> {
+  async markAsPaid(id: string, isOnlinePayment: boolean): Promise<PaymentAssignment> {
     const assignment = await this.findOne(id);
 
     if (assignment.status === PaymentAssignmentStatus.PAID) {
@@ -228,7 +228,7 @@ export class PaymentAssignmentService {
       assignment_id: assignment.id,
       amount: assignment.feeLevel.amount,
       status: PaymentHistoryStatus.PAID,
-      payment_method: PaymentMethod.MANUAL,
+      payment_method: isOnlinePayment? PaymentMethod.ONLINE : PaymentMethod.MANUAL,
       order_code: Math.floor(Math.random() * 900000) + 100000, // Generate a simple order code based on timestamp
       paid_at: new Date(),
       // PayOS fields can be null for manual payments
