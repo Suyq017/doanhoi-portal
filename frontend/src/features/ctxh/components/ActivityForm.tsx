@@ -5,6 +5,7 @@ import { CtxhCategory, CtxhActivity, CreateActivityRequest, UpdateActivityReques
 import { categoryService, activityService, limitConfigService } from '../services';
 import { organizationService } from '../../../shared/services/organizationService';
 import { useToast } from '../../../shared/hooks';
+import { useAuth } from '../../auth/context/AuthContext';
 
 interface ActivityFormProps {
   isOpen: boolean;
@@ -22,6 +23,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   title
 }) => {
   const { t } = useTranslation('ctxh');
+  const { auth, hasPermission } = useAuth();
+
   // Prevent body scroll when modal is open  
   useEffect(() => {
     if (isOpen) {
@@ -114,7 +117,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     }
 
     const numValue = parseFloat(value);
-    
+
     // Check if it's a valid number
     if (isNaN(numValue)) {
       return { isValid: false, message: t('activity.validation.totalDaysInvalid') };
@@ -141,7 +144,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
 
     // Set field validation states - validate all fields fresh
     let totalDaysValidation = { isValid: true, message: '' };
-    
+
     // Always validate totalDays if it has a value
     if (formData.totalDays) {
       totalDaysValidation = validateTotalDays(formData.totalDays);
@@ -176,7 +179,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     if (!newFieldValidation.organizationId.isValid) {
       isValid = false;
     }
-    
+
     // Check totalDays format validation
     if (!newFieldValidation.totalDays.isValid) {
       isValid = false;
@@ -415,10 +418,13 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     try {
       setOrganizationsLoading(true);
 
-      // Use basic organizations endpoint to allow selection from any organization
+      // Get all organizations
       const response = await organizationService.getOrganizations();
 
-      setOrganizations(response);
+      // Filter organizations based on user's permissions and organization level
+      const filteredOrgs = filterOrganizationsByPermission(response);
+
+      setOrganizations(filteredOrgs);
       setOrganizationConstraints({
         canSelectMultiple: true,
         fixedOrganization: null
@@ -429,6 +435,128 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     } finally {
       setOrganizationsLoading(false);
     }
+  };
+
+  // Helper function to filter organizations based on user's permission and organization level
+  const filterOrganizationsByPermission = (allOrganizations: any[]): any[] => {
+    console.log('🔍 [CTXH Filter] Starting filter with:', {
+      totalOrgs: allOrganizations.length,
+      userOrgs: auth.user?.organizations,
+      userRoles: auth.userRoles
+    });
+
+    // Super admin can see all organizations - check if user has super_admin role
+    const isSuperAdmin = auth.userRoles?.some(role => role.name === 'super_admin');
+    if (isSuperAdmin) {
+      console.log('✅ [CTXH Filter] User is super admin - returning all organizations');
+      return allOrganizations;
+    }
+
+    // Get user's organizations with ctxh.create permission
+    const userOrgsWithPermission = auth.user?.organizations?.filter(userOrg => {
+      const hasPerm = hasPermission('ctxh.activities.create', userOrg.organizationId);
+      console.log('🔑 [CTXH Filter] Checking permission for org:', {
+        orgId: userOrg.organizationId,
+        hasPermission: hasPerm
+      });
+      return hasPerm;
+    }) || [];
+
+    console.log('📋 [CTXH Filter] User orgs with permission:', userOrgsWithPermission);
+
+    if (userOrgsWithPermission.length === 0) {
+      console.log('❌ [CTXH Filter] No permissions found - returning empty');
+      return []; // No permission, return empty array
+    }
+
+    // Build a map of organizationId -> organization object
+    const orgMap = new Map<string, any>();
+    allOrganizations.forEach(org => orgMap.set(org.id, org));
+
+    // Helper function to get organization level (cấp)
+    const getOrganizationLevel = (org: any): number => {
+      const level1Types = ['doan_truong', 'hoi_sinh_vien_truong', 'clb_truong'];
+      const level2Types = ['doan_co_so', 'lien_chi_hoi', 'clb_khoa'];
+      const level3Types = ['chi_doan', 'chi_hoi'];
+
+      if (level1Types.includes(org.type)) return 1;
+      if (level2Types.includes(org.type)) return 2;
+      if (level3Types.includes(org.type)) return 3;
+      return 0; // Unknown
+    };
+
+    // Helper function to get all descendant IDs of an organization
+    const getDescendantIds = (orgId: string): Set<string> => {
+      const descendants = new Set<string>();
+      const queue = [orgId];
+
+      while (queue.length > 0) {
+        const currentId = queue.shift()!;
+        allOrganizations
+          .filter(org => org.parent?.id === currentId)
+          .forEach(childOrg => {
+            descendants.add(childOrg.id);
+            queue.push(childOrg.id);
+          });
+      }
+
+      return descendants;
+    };
+
+    const allowedOrgIds = new Set<string>();
+
+    userOrgsWithPermission.forEach(userOrg => {
+      const org = orgMap.get(userOrg.organizationId);
+      if (!org) {
+        console.log('⚠️ [CTXH Filter] Org not found in map:', userOrg.organizationId);
+        return;
+      }
+
+      const level = getOrganizationLevel(org);
+      console.log('🎯 [CTXH Filter] Processing org:', {
+        id: org.id,
+        name: org.name,
+        type: org.type,
+        level: level
+      });
+
+      if (level === 3) {
+        // Cấp 3: Không cho chọn tổ chức nào
+        console.log('🚫 [CTXH Filter] Level 3 org - no selection allowed');
+        // Do nothing - don't add any organizations
+      } else if (level === 2) {
+        // Cấp 2: Chỉ chọn chính nó và các tổ chức con (không chọn cha)
+        allowedOrgIds.add(org.id); // Add itself
+        const descendants = getDescendantIds(org.id);
+        console.log('✅ [CTXH Filter] Level 2 org - adding self + descendants:', {
+          self: org.id,
+          descendantsCount: descendants.size,
+          descendants: Array.from(descendants)
+        });
+        descendants.forEach(id => allowedOrgIds.add(id)); // Add all descendants
+      } else if (level === 1) {
+        // Cấp 1: Chọn nó và tất cả tổ chức con
+        allowedOrgIds.add(org.id); // Add itself
+        const descendants = getDescendantIds(org.id);
+        console.log('✅ [CTXH Filter] Level 1 org - adding self + descendants:', {
+          self: org.id,
+          descendantsCount: descendants.size,
+          descendants: Array.from(descendants)
+        });
+        descendants.forEach(id => allowedOrgIds.add(id)); // Add all descendants
+      }
+    });
+
+    // Filter organizations by allowed IDs
+    const filteredOrgs = allOrganizations.filter(org => allowedOrgIds.has(org.id));
+    console.log('✨ [CTXH Filter] Final result:', {
+      allowedOrgIdsCount: allowedOrgIds.size,
+      allowedOrgIds: Array.from(allowedOrgIds),
+      filteredOrgsCount: filteredOrgs.length,
+      filteredOrgNames: filteredOrgs.map(o => o.name)
+    });
+
+    return filteredOrgs;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -551,7 +679,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     if (field === 'status' && value === ActivityStatus.ACTIVE) {
       const totalDaysValidation = validateTotalDays(newFormData.totalDays);
       const isValidTotalDays = newFormData.totalDays && totalDaysValidation.isValid;
-      
+
       setFieldValidation(prev => ({
         ...prev,
         totalDays: {
