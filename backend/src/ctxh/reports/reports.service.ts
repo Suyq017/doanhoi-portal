@@ -57,9 +57,9 @@ export class ReportsService {
       .orderBy('activity.start_date', 'DESC')
       .getRawMany();
 
-    // Calculate totals
-    const ctxhDaysNew = student.ctxhDays || 0; // Ngày từ hệ thống mới
-    const ctxhDaysOld = student.ctxhDaysOldSystem || 0; // Ngày từ hệ thống cũ
+    // Calculate totals - ép kiểu decimal sang float
+    const ctxhDaysNew = parseFloat(String(student.ctxhDays || 0)); // Ngày từ hệ thống mới
+    const ctxhDaysOld = parseFloat(String(student.ctxhDaysOldSystem || 0)); // Ngày từ hệ thống cũ
     const totalDaysCompleted = ctxhDaysNew + ctxhDaysOld; // Tổng = mới + cũ
     const totalActivities = participations.length;
     
@@ -71,6 +71,7 @@ export class ReportsService {
       status: p.status,
       completed_date: p.status === 'COMPLETED' ? p.updated_at : undefined,
       created_at: p.created_at, // Add created_at for participation date
+      note: p.note || '', // Add note field
     }));
 
     // Assuming required days is a fixed requirement (can be configured)
@@ -114,9 +115,9 @@ export class ReportsService {
       .andWhere('activity.deleted_at IS NULL')
       .getMany();
 
-    // Calculate totals
-    const ctxhDaysNew = student.ctxhDays || 0; // Ngày từ hệ thống mới
-    const ctxhDaysOld = student.ctxhDaysOldSystem || 0; // Ngày từ hệ thống cũ
+    // Calculate totals - ép kiểu decimal sang float
+    const ctxhDaysNew = parseFloat(String(student.ctxhDays || 0)); // Ngày từ hệ thống mới
+    const ctxhDaysOld = parseFloat(String(student.ctxhDaysOldSystem || 0)); // Ngày từ hệ thống cũ
     const totalDaysCompleted = ctxhDaysNew + ctxhDaysOld; // Tổng = mới + cũ
 
     const totalActivitiesParticipated = participations.length;
@@ -133,6 +134,7 @@ export class ReportsService {
       days_completed: p.actual_days || 0,
       status: p.status,
       completed_date: p.status === ParticipationStatus.COMPLETED ? p.updated_at : undefined,
+      note: p.note || '', // Add note field
     }));
 
     const fullName = `${student.familyName} ${student.givenName}`.trim();

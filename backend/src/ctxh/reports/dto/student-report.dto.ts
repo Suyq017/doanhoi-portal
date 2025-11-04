@@ -25,6 +25,10 @@ export class ActivityReportItemDto {
   @ApiProperty()
   @Expose()
   created_at: Date;
+
+  @ApiProperty({ required: false })
+  @Expose()
+  note?: string;
 }
 
 export class StudentReportDto {

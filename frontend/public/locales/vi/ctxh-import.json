@@ -3,7 +3,7 @@
   "description": "Nhập số ngày CTXH từ hệ thống cũ cho sinh viên",
   "uploadSection": {
     "title": "Tải lên file Excel",
-    "description": "File Excel cần có 2 cột: MSSV và Số ngày",
+    "description": "Nhập số ngày CTXH từ hệ thống cũ cho sinh viên",
     "dropzone": "Kéo thả file Excel vào đây hoặc nhấn để chọn file",
     "fileSelected": "Đã chọn file",
     "remove": "Xóa"
@@ -13,15 +13,25 @@
     "description": "Tải xuống file mẫu để xem cấu trúc dữ liệu",
     "downloadButton": "Tải file mẫu"
   },
+  "import": {
+    "title": "Import CTXH từ hệ thống cũ",
+    "instructions": "Hướng dẫn",
+    "step1": "Tải xuống file mẫu tại đây",
+    "step2": "Điền MSSV và Số ngày CTXH của sinh viên",
+    "step3": "Tải file lên và nhấn để tiếp tục",
+    "templateLinkText": "tại đây"
+  },
   "instructions": {
     "title": "Hướng dẫn",
-    "step1": "Tải xuống file mẫu",
+    "step1": "Tải xuống file mẫu tại đây",
     "step2": "Điền MSSV và Số ngày CTXH của sinh viên",
-    "step3": "Tải file lên và nhấn nút Import",
+    "step3": "Tải file lên và nhấn để tiếp tục",
+    "templateLinkText": "tại đây",
     "notes": "Lưu ý",
-    "note1": "File Excel phải có 2 cột: MSSV và Số ngày",
-    "note2": "Số ngày phải là số dương",
-    "note3": "MSSV phải tồn tại trong hệ thống"
+    "note1": "File Excel phải có đúng 2 cột: MSSV và Số ngày",
+    "note2": "MSSV phải có 7-10 chữ số",
+    "note3": "Số ngày phải là số dương (ví dụ: 0.5, 1, 1.5, 2, ...)",
+    "note4": "Hệ thống sẽ kiểm tra tất cả dữ liệu trước khi import"
   },
   "importButton": "Import dữ liệu",
   "results": {

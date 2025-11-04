@@ -538,7 +538,8 @@ const ClassesPage: React.FC = () => {
                 </th>
                 <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('classes:fields.studentCount')}
-                </th>                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                </th>
+                <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                   {t('common:fields.status')}
                 </th>
                 <ConditionalRender condition={permissions.showActionColumn}>
@@ -593,7 +594,8 @@ const ClassesPage: React.FC = () => {
                       }`}>
                       {classItem.isActive ? t('common:status.active') : t('common:status.inactive')}
                     </span>
-                  </td>                  <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                     <ConditionalRender condition={permissions.showActionColumn}>
                       <div className="flex items-center space-x-2">
                         <ConditionalRender condition={permissions.canView}>

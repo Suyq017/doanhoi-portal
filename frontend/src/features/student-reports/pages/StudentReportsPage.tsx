@@ -41,15 +41,12 @@ const StudentReportsPage: React.FC = () => {
             
       setLoading(true);
       try {
-        console.log('Loading student report for code:', studentCode);
         const reportData = await studentReportsService.getMyReport(studentCode, {});
-        console.log('Report data received:', reportData);
         setReport(reportData);
                 
         // Nếu không có tên hoặc email, thử tra cứu từ user service
         if (!reportData.student_name || !reportData.student_email) {
           try {
-            console.log('Searching for student info by code:', studentCode);
             const usersResponse = await userService.getUsers({ search: studentCode, limit: 1 });
             if (usersResponse.users && usersResponse.users.length > 0) {
               const user = usersResponse.users[0];
@@ -57,10 +54,9 @@ const StudentReportsPage: React.FC = () => {
                 name: user.familyName + ' ' + user.givenName,
                 email: user.email
               });
-              console.log('Found student info:', { name: user.familyName + ' ' + user.givenName, email: user.email });
             }
           } catch (userError) {
-            console.log('Could not fetch user info:', userError);
+            // Silent fail
           }
         }
       } catch (error) {
@@ -194,23 +190,23 @@ const StudentReportsPage: React.FC = () => {
                   {t('summary.title')}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      {formatDays(report?.total_days_completed)}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Tổng số ngày hoạt động</div>
-                  </div>
                   <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {formatDays(report?.ctxh_days_new_system)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Các hoạt động đã hoàn thành</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Ngày hoạt động đã hoàn thành</div>
                   </div>
                   <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
                     <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                       {formatDays(report?.ctxh_days_old_system)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Các hoạt động trên hệ thống cũ</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Ngày hoạt động trên hệ thống cũ</div>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {formatDays(report?.total_days_completed)}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Tổng số ngày hoạt động CTXH</div>
                   </div>
                   <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
                     <div className={`text-2xl font-bold ${(report?.total_days_completed || 0) >= 15 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
@@ -257,6 +253,9 @@ const StudentReportsPage: React.FC = () => {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             {t('activities.startDate')}
                           </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Ghi chú
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -285,6 +284,9 @@ const StudentReportsPage: React.FC = () => {
                                 ? new Date(activity.completed_date).toLocaleDateString('vi-VN')
                                 : (activity.status === 'COMPLETED' ? t('studentInfo.unknown') : '-')
                               }
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                              {activity.note || '-'}
                             </td>
                           </tr>
                         ))}
