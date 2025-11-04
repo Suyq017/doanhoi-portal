@@ -9,7 +9,7 @@ import { OrganizationsPage } from './features/organizations';
 import { DepartmentsPage } from './features/departments';
 import { OrganizationsDetailPage } from './features/organizations';
 import { OrganizationsSubDetailPage } from './features/organizations';
-import { OrganizationMembersPage } from './features/organizations';
+// import { OrganizationMembersPage } from './features/organizations';
 import { ClassesPage } from './features/classes';
 import { PermissionsPage } from './features/permissions';
 import { AuthProvider, AuthCallback, LoginPage, ProtectedRoute, EnhancedProtectedRoute, AuthGuard } from './features/auth';
@@ -86,18 +86,11 @@ function App() {
                           </Layout>
                         </EnhancedProtectedRoute>
                       }
-                    />                <Route
-                      path="/organizations/:type/:code/members"
-                      element={
-                        <EnhancedProtectedRoute requiredPermissions={['organizations.access']}>
-                          <Layout>
-                            <OrganizationStatsProvider>
-                              <OrganizationMembersPage />
-                            </OrganizationStatsProvider>
-                          </Layout>
-                        </EnhancedProtectedRoute>
-                      }
-                    />                <Route
+                    />
+                    <Route
+
+                    />
+                    <Route
                       path="/organizations/:parentType/:parentCode/:type/:code"
                       element={
                         <EnhancedProtectedRoute requiredPermissions={['organizations.access']}>
@@ -109,17 +102,9 @@ function App() {
                         </EnhancedProtectedRoute>
                       }
                     />                <Route
-                      path="/organizations/:parentType/:parentCode/:type/:code/members"
-                      element={
-                        <EnhancedProtectedRoute requiredPermissions={['organizations.access']}>
-                          <Layout>
-                            <OrganizationStatsProvider>
-                              <OrganizationMembersPage />
-                            </OrganizationStatsProvider>
-                          </Layout>
-                        </EnhancedProtectedRoute>
-                      }
-                    />                <Route
+
+                    />
+                    <Route
                       path="/departments"
                       element={
                         <EnhancedProtectedRoute requiredPermissions={['departments.access']}>

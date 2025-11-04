@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +9,7 @@ import {
   Organization
 } from '../../types';
 import { paymentCampaignService } from '@/shared/services/fee-collection-service';
-import { organizationService } from '@/shared/services/organizationService';
+import { useOrganizationList } from '@/shared/hooks/queries';
 import SearchableCombobox from '@/shared/components/SearchableCombobox';
 
 interface PaymentCampaignBasicFormData {
@@ -42,8 +42,17 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [organizations, setOrganizations] = useState<any[]>([]);
-  const [loadingOrganizations, setLoadingOrganizations] = useState(false);
+
+  // TanStack Query - auto-cache, shared with CreateUserModal
+  const {
+    data: allOrganizations = [],
+    isLoading: loadingOrganizations
+  } = useOrganizationList();
+
+  // Use accessible organizations if provided, otherwise use all from cache
+  const organizations = accessibleOrganizations && accessibleOrganizations.length > 0
+    ? accessibleOrganizations.map(org => ({ ...org, displayName: org.name }))
+    : allOrganizations.map(org => ({ ...org, displayName: org.name }));
 
   const [formData, setFormData] = useState<PaymentCampaignBasicFormData>({
     organizationId: campaign?.organizationId || '',
@@ -54,42 +63,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
     startTime: campaign?.startDate ? campaign.startDate.split('T')[1]?.substring(0, 5) || '00:00' : '00:00',
     endDate: campaign?.endDate ? campaign.endDate.split('T')[0] : '',
     endTime: campaign?.endDate ? campaign.endDate.split('T')[1]?.substring(0, 5) || '23:59' : '23:59',
-  }); useEffect(() => {
-    // Use accessible organizations if provided, otherwise load all organizations
-    if (accessibleOrganizations && accessibleOrganizations.length > 0) {
-      const formattedOrgs = accessibleOrganizations
-        .filter(org => org && org.id && org.name) // Filter out invalid organizations
-        .map(org => ({
-          ...org,
-          displayName: org.name
-        }));
-      setOrganizations(formattedOrgs);
-    } else {
-      loadOrganizations();
-    }
-  }, [accessibleOrganizations]);
-  const loadOrganizations = async () => {
-    try {
-      setLoadingOrganizations(true);
-      const orgs = await organizationService.getOrganizations();
-
-      // Format organizations for searchable combobox with safety checks
-      const formattedOrgs = orgs
-        .filter(org => org && org.id && org.name) // Filter out invalid organizations
-        .map(org => ({
-          ...org,
-          displayName: org.name
-        }));
-
-      setOrganizations(formattedOrgs);
-    } catch (err) {
-      console.error('Error loading organizations:', err);
-      setError(t('formComponent.errorLoadOrganizations'));
-      setOrganizations([]); // Set empty array on error
-    } finally {
-      setLoadingOrganizations(false);
-    }
-  };
+  });
 
   const validateForm = (): boolean => {
     if (!formData.organizationId) {

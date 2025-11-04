@@ -10,6 +10,7 @@ import { useRefreshHandlers } from './hooks/useRefreshHandlers';
 import { useImportModal } from './hooks/useImportModal';
 import { useBreadcrumbJSX } from './hooks/useBreadcrumbJSX';
 import { sortOrganizationsByMembership } from './utils/organizationUtils';
+import { EMPTY_ORGANIZATION_STATS } from '../../shared/hooks/queries';
 
 const Organizations: React.FC = () => {
   const { t } = useTranslation(['organizations', 'common']);
@@ -73,13 +74,13 @@ const Organizations: React.FC = () => {
     isMembersPage: false
   });
 
-  const renderOrganization = useCallback((org: Organization, level: number = 0, parentId?: string) => {
+  const renderOrganization = useCallback((org: Organization, _level: number = 0, parentId?: string) => {
     return (
       <OrganizationTreeItem
         key={org.id}
         org={org}
-        level={level}
-        stats={stats}
+        level={_level}
+        stats={stats || EMPTY_ORGANIZATION_STATS}
         onToggleExpand={toggleOrgExpanded}
         renderChildren={(child, childLevel) => renderOrganization(child, childLevel, org.id)}
         onMemberAdded={handleMemberAdded}
@@ -103,9 +104,9 @@ const Organizations: React.FC = () => {
     organizations={sortedOrganizations} // Use sorted organizations
     title={breadcrumbTitle}
     subtitle={t('organizations:subtitle')}
-    stats={stats}
+    stats={stats || EMPTY_ORGANIZATION_STATS}
     loading={loading}
-    error={error}
+    error={error || null}
     onRetry={fetchData}
     showDropdownButton={true}
     importConfig={importConfig}

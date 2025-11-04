@@ -25,6 +25,59 @@ class OrganizationService {
   async getOrganizationTree(): Promise<Organization[]> {
     return apiClient.get<Organization[]>('/organizations/tree');
   }
+
+  /**
+   * ✅ NEW: Get organization tree with depth limit
+   * @param maxDepth - Maximum depth to load (default: 2)
+   * @returns Organization tree limited to maxDepth levels
+   */
+  async getOrganizationTreeWithDepth(maxDepth: number = 2): Promise<Organization[]> {
+    return apiClient.get<Organization[]>(`/organizations/tree?maxDepth=${maxDepth}`);
+  }
+
+  /**
+   * ✅ NEW: Get organization tree starting from specific org
+   * @param type - Organization type
+   * @param code - Organization code
+   * @param maxDepth - Maximum depth to load (default: 2)
+   * @returns Organization tree starting from the specified org
+   */
+  async getOrganizationTreeByTypeCode(
+    type: string,
+    code: string,
+    maxDepth: number = 2
+  ): Promise<Organization> {
+    return apiClient.get<Organization>(
+      `/organizations/tree?type=${type}&code=${code}&maxDepth=${maxDepth}`
+    );
+  }
+
+  /**
+   * ✅ NEW: Get organization by type/code with optional children
+   * @param type - Organization type
+   * @param code - Organization code
+   * @param options - Include children and maxDepth options
+   * @returns Organization with optional children
+   */
+  async getOrganizationByTypeCode(
+    type: string,
+    code: string,
+    options: { includeChildren?: boolean; maxDepth?: number } = {}
+  ): Promise<Organization> {
+    const params = new URLSearchParams();
+    if (options.includeChildren !== undefined) {
+      params.append('includeChildren', String(options.includeChildren));
+    }
+    if (options.maxDepth !== undefined) {
+      params.append('maxDepth', String(options.maxDepth));
+    }
+
+    const queryString = params.toString();
+    const url = `/organizations/by-type-code/${type}/${code}${queryString ? `?${queryString}` : ''}`;
+
+    return apiClient.get<Organization>(url);
+  }
+
   async getOrganizationsByType(type: string): Promise<Organization[]> {
     return apiClient.get<Organization[]>(`/organizations/type/${type}`);
   }
@@ -68,9 +121,10 @@ class OrganizationService {
       `/organizations/${organizationId}/members?page=${page}&limit=${limit}`
     );
   }
-  // Bổ sung các API mới theo kế hoạch
+  // ❌ DEPRECATED: Use getOrganizationByTypeCode with options instead
+  // Keeping for backward compatibility
   async getOrganizationByTypeAndCode(type: string, code: string): Promise<Organization> {
-    return apiClient.get<Organization>(`/organizations/by-type-code/${type}/${code}`);
+    return this.getOrganizationByTypeCode(type, code, { includeChildren: true, maxDepth: 10 });
   }
   async getOrganizationChildren(id: string): Promise<Organization[]> {
     return apiClient.get<Organization[]>(`/organizations/${id}/children`);

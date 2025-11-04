@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CreateUserRequest } from '../../../shared';
-import { Organization } from '../../../shared/types/organization';
-import { organizationService } from '../../../shared/services/organizationService';
+import { useOrganizationList } from '../../../shared/hooks/queries';
 import OrganizationCombobox from './OrganizationCombobox';
 
 interface CreateUserModalProps {
@@ -32,28 +31,19 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
     userType: 'student',
     membershipStatus: 'none',
     organizationId: '', // Add organization selection
-  }); const [errors, setErrors] = useState<Record<string, string>>({});
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loadingOrganizations, setLoadingOrganizations] = useState(false);  // Load organizations when modal opens
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const { data: organizations = [], isLoading: loadingOrganizations } = useOrganizationList();
+
+  // Load organizations when modal opens
   useEffect(() => {
     if (isOpen) {
-      loadOrganizations();
+      // Organizations loaded automatically by React Query
     } else {
       // Reset form when modal closes
       resetForm();
     }
-  }, [isOpen]); const loadOrganizations = async () => {
-    setLoadingOrganizations(true);
-    try {
-      const organizationsData = await organizationService.getOrganizations();
-      setOrganizations(organizationsData);
-    } catch (error) {
-      console.error('Error loading organizations:', error);
-      setOrganizations([]);
-    } finally {
-      setLoadingOrganizations(false);
-    }
-  };
+  }, [isOpen]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>

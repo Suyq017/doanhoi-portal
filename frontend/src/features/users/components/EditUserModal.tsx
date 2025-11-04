@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import { Organization as SharedOrganization } from '../../../shared/types/organi
 import { roleService, type Role } from '../../permissions/services/roleService';
 import { organizationService } from '../../../shared/services/organizationService';
 import { userService } from '../../../shared/services/userService';
+import { useOrganizationList } from '../../../shared/hooks/queries';
 import RolesOrganizationManager from './RolesOrganizationManager';
 import OrganizationManager from './OrganizationManager';
 import { RoleAssignment } from '../hooks/useGrantRoles';
@@ -38,7 +39,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   showError,
   onRefreshData,
 }) => {
-  const { t } = useTranslation(['users', 'common']); const [formData, setFormData] = useState<CreateUserRequest>({
+  const { t } = useTranslation(['users', 'common']);
+
+  const [formData, setFormData] = useState<CreateUserRequest>({
     code: '',
     familyName: '',
     givenName: '',
@@ -48,18 +51,34 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     userType: 'student',
     membershipStatus: 'none',
     organizationId: '',
-  }); const [errors, setErrors] = useState<Record<string, string>>({});
-  const [roles, setRoles] = useState<Role[]>([]); const [organizations, setOrganizations] = useState<Organization[]>([]);
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [roles, setRoles] = useState<Role[]>([]);
+  const { data: allOrganizations = [] } = useOrganizationList();
+
+  // Transform organizations with useMemo to prevent infinite loop
+  const organizations = useMemo(() =>
+    allOrganizations.map(org => ({
+      ...org,
+      code: org.code || '',
+      level: 0
+    })),
+    [allOrganizations]
+  );
+
   const [userDetail, setUserDetail] = useState<ApiUser | null>(null);
   const [loadingUserDetail, setLoadingUserDetail] = useState(false);
   // Role assignment states
   const [roleAssignments, setRoleAssignments] = useState<RoleAssignment[]>([]);
-  const [userOrganizations, setUserOrganizations] = useState<Organization[]>([]); const [isSubmitting, setIsSubmitting] = useState(false);// Load full user details when modal opens
+  const [userOrganizations, setUserOrganizations] = useState<Organization[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load full user details when modal opens
   useEffect(() => {
     if (isOpen && user) {
       loadUserDetail();
       loadRoles();
-      loadOrganizations();
     }
   }, [isOpen, user]);
 
@@ -110,13 +129,15 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       setUserOrganizations(userOrgs);
     }
   }, [userDetail, user, organizations]);
-  // Load roles and organizations when modal opens
+
+  // Load roles when modal opens (organizations loaded automatically by React Query)
   useEffect(() => {
     if (isOpen) {
       loadRoles();
-      loadOrganizations();
     }
-  }, [isOpen]);  // Handle organization membership update
+  }, [isOpen]);
+
+  // Handle organization membership update
   const handleOrganizationMembershipUpdate = async () => {
     if (!user) return;
 
@@ -354,7 +375,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     });
 
     return userOrgs;
-  }; const loadRoles = async () => {
+  };
+
+  const loadRoles = async () => {
     try {
       const rolesData = await roleService.getAvailableRoles();
       console.log('Loaded roles for edit modal:', rolesData); // Debug log
@@ -373,23 +396,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         console.error('Fallback error loading roles:', fallbackError);
       }
     }
-  }; const loadOrganizations = async () => {
-    try {
-      const organizationsData = await organizationService.getOrganizations();
-      console.log('Loaded organizations:', organizationsData); // Debug log
-
-      // Add level property and ensure code is a string for compatibility with role assignment components
-      const organizationsWithLevel = organizationsData.map(org => ({
-        ...org,
-        code: org.code || org.id, // Fallback to id if code is not available
-        level: calculateOrganizationLevel(org, organizationsData)
-      })); setOrganizations(organizationsWithLevel);
-    } catch (error) {
-      console.error('Error loading organizations:', error);
-    }
   };
 
-  // Helper function to calculate organization level
   const calculateOrganizationLevel = (org: SharedOrganization, allOrgs: SharedOrganization[]): number => {
     if (!org.parentId) return 0;
 
@@ -398,6 +406,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
     return 1 + calculateOrganizationLevel(parent, allOrgs);
   };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {

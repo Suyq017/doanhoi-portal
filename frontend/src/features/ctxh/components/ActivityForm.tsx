@@ -5,6 +5,7 @@ import { CtxhCategory, CtxhActivity, CreateActivityRequest, UpdateActivityReques
 import { categoryService, activityService, limitConfigService } from '../services';
 import { organizationService } from '../../../shared/services/organizationService';
 import { useToast } from '../../../shared/hooks';
+import { useOrganizationList } from '../../../shared/hooks/queries';
 
 interface ActivityFormProps {
   isOpen: boolean;
@@ -22,6 +23,9 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   title
 }) => {
   const { t } = useTranslation('ctxh');
+  
+  // Prefetch organizations using React Query (for caching)
+  useOrganizationList();
 
   // Prevent body scroll when modal is open  
   useEffect(() => {

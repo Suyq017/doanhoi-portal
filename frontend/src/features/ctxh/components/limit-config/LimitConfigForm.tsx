@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Building2, Calendar, ChevronDown } from 'lucide-react';
 import { CtxhLimitConfig, CreateLimitConfigRequest, UpdateLimitConfigRequest, LimitConfigStatus } from '../../types';
-import { organizationService } from '../../../../shared/services';
+import { useOrganizationList } from '../../../../shared/hooks/queries'; // Import React Query hook
+import { organizationService } from '../../../../shared/services/organizationService';
 
 interface LimitConfigFormProps {
   isOpen: boolean;
@@ -31,6 +32,9 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
   loading = false
 }) => {
   const { t } = useTranslation('ctxh');
+  
+  // Prefetch organizations using React Query (for caching)
+  useOrganizationList();
 
   // Translate error messages from server
   // const translateError = (error: any): string => {

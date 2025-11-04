@@ -13,6 +13,7 @@ import { organizationService } from '../../../../shared/services';
 import { Organization } from '../../../../shared/types/organization';
 import { debounce } from '../../utils';
 import { Pagination } from '../../../../shared/components';
+import { useOrganizationList } from '../../../../shared/hooks/queries';
 
 interface ActivityListProps {
   onCreateClick: () => void;
@@ -37,6 +38,10 @@ const ActivityList: React.FC<ActivityListProps> = ({
   permissions
 }) => {
   const { t } = useTranslation('ctxh');
+  
+  // Prefetch organizations using React Query (for caching)
+  useOrganizationList();
+  
   const [activities, setActivities] = useState<CtxhActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

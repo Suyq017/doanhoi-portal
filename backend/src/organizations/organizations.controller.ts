@@ -39,8 +39,51 @@ export class OrganizationsController {
     @Get('tree')
     @ApiOperation({ summary: 'Lấy cây tổ chức' })
     @ApiResponse({ status: 200, description: 'Cây tổ chức' })
-    findTree() {
+    findTree(
+        @Query('maxDepth') maxDepth?: number,
+        @Query('type') type?: string,
+        @Query('code') code?: string,
+    ) {
+        // ✅ NEW: Support depth limit and specific org query
+        if (type && code) {
+            // Get tree starting from specific org
+            return this.organizationsService.findTreeByTypeCode(
+                type,
+                code,
+                maxDepth ? parseInt(String(maxDepth)) : 2
+            );
+        }
+
+        if (maxDepth) {
+            // Get tree with depth limit
+            return this.organizationsService.findTreeWithDepth(parseInt(String(maxDepth)));
+        }
+
+        // Default: Original behavior (load full tree)
         return this.organizationsService.findTree();
+    }
+
+    /**
+     * ✅ NEW: Get organization by type/code with optional children
+     */
+    @Get('by-type-code/:type/:code')
+    @ApiOperation({ summary: 'Lấy tổ chức theo loại và mã với tùy chọn load children' })
+    @ApiParam({ name: 'type', description: 'Loại tổ chức' })
+    @ApiParam({ name: 'code', description: 'Mã tổ chức' })
+    @ApiResponse({ status: 200, description: 'Thông tin tổ chức' })
+    @ApiResponse({ status: 404, description: 'Không tìm thấy tổ chức' })
+    getOrganizationByTypeCode(
+        @Param('type') type: string,
+        @Param('code') code: string,
+        @Query('includeChildren') includeChildren?: string,
+        @Query('maxDepth') maxDepth?: string,
+    ) {
+        return this.organizationsService.findByTypeCodeWithChildren(
+            type,
+            code,
+            includeChildren === 'true',
+            maxDepth ? parseInt(maxDepth) : 1
+        );
     }
 
     @Get('stats')
@@ -292,19 +335,7 @@ export class OrganizationsController {
         return this.organizationsService.getMembers(id, pageNum, limitNum);
     }
 
-    @Get('by-type-code/:type/:code')
-    @ApiOperation({ summary: 'Lấy tổ chức theo loại và mã' })
-    @ApiParam({ name: 'type', description: 'Loại tổ chức' })
-    @ApiParam({ name: 'code', description: 'Mã tổ chức' })
-    @ApiResponse({ status: 200, description: 'Thông tin tổ chức' })
-    @ApiResponse({ status: 404, description: 'Không tìm thấy tổ chức' })
-    getOrganizationByTypeAndCode(
-        @Param('type') type: string,
-        @Param('code') code: string
-    ) {
-        return this.organizationsService.getOrganizationByTypeAndCode(type, code);
-    }
-
+    // ❌ REMOVED: Old getOrganizationByTypeAndCode - Now handled by new endpoint with query params above
 
     @Post(':code_org/member/:code_user')
     @ApiOperation({ summary: 'Thêm thành viên vào tổ chức theo code' })

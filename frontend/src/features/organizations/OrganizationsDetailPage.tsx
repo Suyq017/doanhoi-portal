@@ -166,7 +166,7 @@ const OrganizationsDetailPage: React.FC = () => {
       } : undefined}
       showMemberStats={shouldShowMemberStats}
       loading={loading}
-      error={error}
+      error={error || null}
       onRetry={shouldShowMemberStats ? handleRefreshAll : fetchData}
       showDropdownButton={!shouldShowMembers}
       importConfig={importConfig}

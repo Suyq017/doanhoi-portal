@@ -1,7 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Organization } from '../../../shared/types/organization';
 import { useOrganizationTree } from './useOrganizationTree';
-import { useOrganizationStatsContext } from '../context/OrganizationStatsContext';
+import {
+    useOrganizationStats,
+    useUpdateOrganization,
+    useInvalidateOrganizations,
+} from '../../../shared/hooks/queries/useOrganizationQueries';
 import { useToast } from '../../../shared';
 
 interface UseOrganizationPageOptions {
@@ -15,114 +20,155 @@ export const useOrganizationPage = (options: UseOrganizationPageOptions = {}) =>
     const { type, code, isDetailPage = false, isSubDetailPage = false } = options;
     const { t } = useTranslation(['organizations', 'common']);
     const { toasts, hideToast, showSuccess, showError } = useToast();
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
 
+    // Determine tree type
+    let treeType: 'main' | 'detail' | 'subdetail' = 'main';
+    if (isSubDetailPage) treeType = 'subdetail';
+    else if (isDetailPage) treeType = 'detail';
+
+    // React Query hooks
     const {
         organizations,
         loading: loadingTree,
         error: treeError,
-        fetchOrganizationTree,
-        fetchAllLevel1Children,
-        fetchOrganizationDetail,
-        fetchOrganizationSubDetail,
-        toggleOrgExpanded
-    } = useOrganizationTree();
+        toggleOrgExpanded,
+        refetch: refetchTree,
+    } = useOrganizationTree({
+        type: treeType,
+        organizationType: type,
+        organizationCode: code,
+        maxDepth: isSubDetailPage ? 1 : 2,
+    });
 
-    const { stats, loading: loadingStats, error: statsError, fetchStats } = useOrganizationStatsContext();
+    const {
+        data: stats,
+        isLoading: loadingStats,
+        error: statsError,
+        refetch: refetchStats,
+    } = useOrganizationStats();
 
-    // Determine which fetch method to use
+    // Mutations
+    const updateOrgMutation = useUpdateOrganization();
+    const { invalidateStats, invalidateTrees } = useInvalidateOrganizations();
+
+    // Combined loading & error states
+    const loading = loadingTree || loadingStats;
+    const error = treeError || statsError?.message || null;
+
+    // Refetch all data
     const fetchData = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            if (isSubDetailPage && type && code) {
-                // Case: SubDetailPage
-                const parentParts = window.location.pathname.split('/');
-                const parentType = parentParts[2];
-                const parentCode = parentParts[3];
-                const childType = parentParts[4];
-                const childCode = parentParts[5];
+        await Promise.all([refetchTree(), refetchStats()]);
+    }, [refetchTree, refetchStats]);
 
-                if (parentType && parentCode && childType && childCode) {
-                    await fetchOrganizationSubDetail(parentType, parentCode);
-                }
-            } else if (isDetailPage && type && code) {
-                // Case: DetailPage
-                await fetchOrganizationDetail(type, code);
-            } else {
-                // Case: Main page
-                const orgs = await fetchOrganizationTree();
-                await fetchAllLevel1Children(orgs);
-            }
+    // ========================
+    // EVENT HANDLERS
+    // ========================
 
-            // Always fetch stats
-            await fetchStats();
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi tải dữ liệu');
-        } finally {
-            setLoading(false);
-        }
-    }, [isDetailPage, isSubDetailPage, type, code]);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);    // Handlers
+    /**
+     * Handle member added
+     */
     const handleMemberAdded = useCallback(async () => {
         showSuccess(t('common:messages.success.add'));
-        // Small delay to allow toast to render before refresh
-        setTimeout(async () => {
-            await fetchStats();
-            await fetchData();
-        }, 150);
-    }, [fetchStats, fetchData, showSuccess, t]);
 
+        // Only invalidate stats (tree doesn't change)
+        setTimeout(() => {
+            invalidateStats();
+        }, 150);
+    }, [invalidateStats, showSuccess, t]);
+
+    /**
+     * Handle member delete
+     */
     const handleMemberDelete = useCallback(async () => {
         showSuccess(t('common:messages.success.delete'));
-        // Small delay to allow toast to render before refresh
-        setTimeout(async () => {
-            await fetchStats();
-            await fetchData();
+
+        // Only invalidate stats (tree doesn't change)
+        setTimeout(() => {
+            invalidateStats();
         }, 150);
-    }, [fetchStats, fetchData, showSuccess, t]);
+    }, [invalidateStats, showSuccess, t]);
 
     const handleMemberAddError = useCallback((error: string) => {
         showError(error);
     }, [showError]);
 
-    const handleOrganizationUpdated = useCallback(async () => {
+    /**
+     * ✅ OPTIMIZED: Update organization with optimistic update
+     * React Query handles cache update automatically
+     */
+    const handleOrganizationUpdated = useCallback(async (updatedOrg?: Organization) => {
         try {
-            await fetchData();
-            showSuccess(t('common:messages.success.update'));
+            if (updatedOrg) {
+                // Extract only the fields that are allowed in UpdateOrganizationDto
+                const updateData = {
+                    name: updatedOrg.name,
+                    code: updatedOrg.code,
+                    type: updatedOrg.type,
+                    description: updatedOrg.description,
+                    parentId: updatedOrg.parentId,
+                };
+
+                // Backend update with React Query's optimistic update
+                await updateOrgMutation.mutateAsync({
+                    id: updatedOrg.id,
+                    data: updateData,
+                });
+
+                showSuccess(t('common:messages.success.update'));
+            } else {
+                // Fallback: refetch
+                await fetchData();
+                showSuccess(t('common:messages.success.update'));
+            }
         } catch (error) {
             showError(t('common:messages.error.update'));
         }
-    }, [fetchData, showSuccess, showError, t]);
+    }, [updateOrgMutation, fetchData, showSuccess, showError, t]);
 
+    /**
+     * Handle organization deleted
+     */
     const handleOrganizationDeleted = useCallback(async () => {
         try {
-            await fetchData();
             showSuccess(t('common:messages.success.delete'));
+
+            // Invalidate all (org structure changed)
+            setTimeout(() => {
+                invalidateTrees();
+                invalidateStats();
+            }, 150);
         } catch (error) {
             showError(t('common:messages.error.delete'));
         }
-    }, [fetchData, showSuccess, showError, t]); const handleDeleteError = useCallback((error: string) => {
-        showError(error);
-    }, [showError]); const handleBulkDeleteSuccess = useCallback((message: string) => {
-        fetchStats();
-        showSuccess(message);
-    }, [fetchStats, showSuccess]); const handleBulkDeleteError = useCallback((error: string) => {
+    }, [invalidateTrees, invalidateStats, showSuccess, showError, t]);
+
+    const handleDeleteError = useCallback((error: string) => {
         showError(error);
     }, [showError]);
 
+    const handleBulkDeleteSuccess = useCallback((message: string) => {
+        showSuccess(message);
+        setTimeout(() => {
+            invalidateStats();
+        }, 150);
+    }, [invalidateStats, showSuccess]);
+
+    const handleBulkDeleteError = useCallback((error: string) => {
+        showError(error);
+    }, [showError]);
+
+    /**
+     * Handle organization created
+     */
     const handleOrganizationCreated = useCallback(async (message?: string) => {
         showSuccess(message || t('organizations:messages.createSuccess'));
-        // Small delay to allow toast to render before refresh
-        setTimeout(async () => {
-            await fetchStats();
-            await fetchData();
+
+        // Invalidate all (new org added)
+        setTimeout(() => {
+            invalidateTrees();
+            invalidateStats();
         }, 150);
-    }, [fetchStats, fetchData, showSuccess, t]);
+    }, [invalidateTrees, invalidateStats, showSuccess, t]);
 
     const handleOrganizationCreateError = useCallback((error: string) => {
         showError(error);
@@ -142,11 +188,13 @@ export const useOrganizationPage = (options: UseOrganizationPageOptions = {}) =>
     // Render organization tree
     const renderOrganization = useCallback(() => {
         return null;
-    }, []); return {
+    }, []);
+
+    return {
         organizations,
         stats,
-        loading: loading || loadingTree || loadingStats,
-        error: error || treeError || statsError,
+        loading,
+        error,
         toggleOrgExpanded,
         fetchData,
         handleMemberAdded,

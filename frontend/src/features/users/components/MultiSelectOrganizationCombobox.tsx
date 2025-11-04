@@ -1,7 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Search, Building, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
+// Performance optimization constants
+const DEBOUNCE_DELAY = 300; // ms
+const MAX_RESULTS = 20; // Reduced from 50 to 20 for faster initial render
 
 interface Organization {
     id: string;
@@ -34,6 +38,7 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
 }) => {
     const { t } = useTranslation(['users']); const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [isSelecting, setIsSelecting] = useState(false);
 
@@ -41,14 +46,35 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLUListElement>(null);
 
-    const selectedOrganizations = organizations.filter(org => selectedOrganizationIds.includes(org.id));    // Advanced filtering: Score-based filtering to show most relevant results
-    const filteredOrganizations = (() => {
-        if (!searchTerm.trim()) {
-            return organizations; // Show all if no search term
+    // Debounce search term to prevent lag during typing
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, DEBOUNCE_DELAY);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    const selectedOrganizations = organizations.filter(org => selectedOrganizationIds.includes(org.id));
+
+    // Optimized filtering with useMemo, debounce, and result limiting
+    // OPTIMIZATION: Only filter when dropdown is open to improve modal open performance
+    const { filteredOrganizations, hiddenResultsCount } = useMemo(() => {
+        // Skip filtering if dropdown is not open - improves performance
+        if (!isOpen) {
+            return { filteredOrganizations: [], hiddenResultsCount: 0 };
         }
 
-        const searchLower = searchTerm.toLowerCase().trim();
-        const searchWords = searchLower.split(/\s+/); // Split search into words
+        if (!debouncedSearchTerm.trim()) {
+            const limited = organizations.slice(0, MAX_RESULTS);
+            return {
+                filteredOrganizations: limited,
+                hiddenResultsCount: organizations.length - limited.length
+            };
+        }
+
+        const searchLower = debouncedSearchTerm.toLowerCase().trim();
+        const searchWords = searchLower.split(/\s+/);
 
         // Calculate relevance score for each organization
         const scoredOrgs = organizations.map(org => {
@@ -108,11 +134,17 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
         });
 
         // Filter out irrelevant results and sort by score
-        return scoredOrgs
-            .filter(item => item.score > 0) // Only show relevant results
-            .sort((a, b) => b.score - a.score) // Sort by relevance
+        const sorted = scoredOrgs
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score)
             .map(item => item.org);
-    })();
+
+        const limited = sorted.slice(0, MAX_RESULTS);
+        return {
+            filteredOrganizations: limited,
+            hiddenResultsCount: sorted.length - limited.length
+        };
+    }, [organizations, debouncedSearchTerm, isOpen]); // Add isOpen dependency
 
     // Handle scroll events to update dropdown position
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, maxHeight: 200 });
@@ -586,15 +618,23 @@ const MultiSelectOrganizationCombobox: React.FC<MultiSelectOrganizationComboboxP
                             </li>
                         );
                     })}
+                    {hiddenResultsCount > 0 && (
+                        <li className="px-4 py-2 text-xs text-center text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+                            {t('users:labels.moreResultsHint', {
+                                count: hiddenResultsCount,
+                                defaultValue: `Còn ${hiddenResultsCount} kết quả khác. Hãy tìm kiếm cụ thể hơn.`
+                            })}
+                        </li>
+                    )}
                 </ul>
             ) : (
                 <div className="px-4 py-6 text-center text-gray-500">
                     <Search className="w-5 h-5 mx-auto mb-2 text-gray-400" />
                     <p className="text-sm">
-                        {searchTerm
+                        {debouncedSearchTerm
                             ? t('users:labels.organizationNotFound', {
-                                searchTerm,
-                                defaultValue: `Không tìm thấy tổ chức "${searchTerm}"`
+                                searchTerm: debouncedSearchTerm,
+                                defaultValue: `Không tìm thấy tổ chức "${debouncedSearchTerm}"`
                             })
                             : t('users:labels.noOrganizations', { defaultValue: 'Không có tổ chức nào' })
                         }
