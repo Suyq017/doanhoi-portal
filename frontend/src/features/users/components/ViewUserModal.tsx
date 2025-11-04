@@ -364,7 +364,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                             className="inline-flex items-center px-3 py-1 text-sm font-medium text-green-800 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-200"
                           >
                             <Shield className="w-3 h-3 mr-1" />
-                            {userRole.role.displayName}
+                            {userRole.role.name}
                           </span>
                         ))
                       }
@@ -377,7 +377,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                             className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-600 bg-gray-100 rounded-full dark:bg-gray-600 dark:text-gray-300"
                           >
                             <Shield className="w-3 h-3 mr-1" />
-                            {userRole.role.displayName} ({t('users:labels.inactive')})
+                            {userRole.role.name} ({t('users:labels.inactive')})
                           </span>
                         ))
                       }

@@ -71,8 +71,8 @@ const RoleAssignmentItemComponent: React.FC<RoleAssignmentItemProps> = ({
                     <Combobox
                         options={roles.map(role => ({
                             id: role.id,
-                            label: role.displayName || role.name,
-                            description: role.description || t('users:labels.permissionsCount', { 
+                            label: role.name,
+                            description: role.description || t('users:labels.permissionsCount', {
                                 count: role.permissions?.length || 0,
                                 defaultValue: `${role.permissions?.length || 0} quyền`
                             })

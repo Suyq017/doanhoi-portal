@@ -17,7 +17,6 @@ export interface User {
 export interface Role {
     id: string;
     name: string;
-    displayName: string;
     description?: string;
 }
 
@@ -112,7 +111,6 @@ export const useGrantRoles = ({ onSuccess, onError }: UseGrantRolesProps = {}) =
             const mappedRoles = roles.map(role => ({
                 id: role.id,
                 name: role.name,
-                displayName: role.displayName,
                 description: role.description || ''
             }));
 

@@ -1,8 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
-import { userService } from '../services';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { UserQueryParams, CreateUserRequest, UpdateUserRequest } from '../types/user'
 import { User } from '../types/user';
-import { useTranslation } from 'react-i18next';
+import {
+    useUserListQuery,
+    useCreateUserMutation,
+    useUpdateUserMutation,
+    useDeleteUserMutation,
+    useInvalidateUsers,
+} from './queries/useUserQueries';
 
 export interface UseUserListOptions {
     initialLimit?: number;
@@ -47,99 +52,85 @@ export interface UseUserListReturn {
 }
 
 export const useUserList = (options: UseUserListOptions = {}): UseUserListReturn => {
-    const { initialLimit = 10, organizationId, autoLoad = true } = options;
-    const { t } = useTranslation(['users', 'common']);
+    const { initialLimit = 10, organizationId } = options;
 
-    const [users, setUsers] = useState<User[]>([]);
-    const [total, setTotal] = useState(0);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
+    // Local state for filters (không cache, chỉ là UI state)
     const [currentPage, setCurrentPage] = useState(1);
     const [limit] = useState(initialLimit);
-
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
 
-    const [isCreating, setIsCreating] = useState(false);
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
+    // Build query params from filters
+    const queryParams = useMemo<UserQueryParams>(() => ({
+        page: currentPage,
+        limit: limit,
+        ...(searchTerm && { search: searchTerm }),
+        ...(filterType !== 'all' && { userType: filterType as 'student' | 'staff' }),
+        ...(filterStatus !== 'all' && { membershipStatus: filterStatus as any }),
+        ...(organizationId && { organizationId }),
+    }), [currentPage, limit, searchTerm, filterType, filterStatus, organizationId]);
 
+    // ===================================
+    // REACT QUERY: Replace manual state management
+    // ===================================
+    const {
+        data: queryData,
+        isLoading,
+        error: queryError,
+        refetch,
+    } = useUserListQuery(queryParams);
+
+    const createMutation = useCreateUserMutation();
+    const updateMutation = useUpdateUserMutation();
+    const deleteMutation = useDeleteUserMutation();
+    const { invalidateLists } = useInvalidateUsers();
+
+    // Extract data from React Query response
+    const users = queryData?.users ?? [];
+    const total = queryData?.total ?? 0;
     const totalPages = Math.ceil(total / limit);
 
-    const loadUsers = useCallback(async () => {
-        try {
-            setLoading(true);
-            setError(null);
+    // Convert React Query states to old interface
+    const loading = isLoading;
+    const error = queryError ? (queryError as Error).message : null;
 
-            const params: UserQueryParams = {
-                page: currentPage,
-                limit: limit,
-                ...(searchTerm && { search: searchTerm }),
-                ...(filterType !== 'all' && { userType: filterType as 'student' | 'staff' }),
-                ...(filterStatus !== 'all' && { membershipStatus: filterStatus as any }),
-                ...(organizationId && { organizationId }), // Filter by organization if provided
-            };
+    // CRUD operations - Wrap mutations to match old interface
+    const createUser = useCallback(async (userData: CreateUserRequest) => {
+        return new Promise<void>((resolve, reject) => {
+            createMutation.mutate(userData, {
+                onSuccess: () => resolve(),
+                onError: (error) => reject(error),
+            });
+        });
+    }, [createMutation]);
 
-            const response = await userService.getUsers(params);
-            setUsers(response.users);
-            setTotal(response.total);
-
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : t('common:messages.error.load');
-            setError(errorMessage);
-            console.error('Error loading users:', err);
-        } finally {
-            setLoading(false);
-        }
-    }, [currentPage, limit, searchTerm, filterType, filterStatus, organizationId, t])
-
-    const refreshUsers = useCallback(() => {
-        return loadUsers();
-    }, [loadUsers]); const createUser = useCallback(async (userData: CreateUserRequest) => {
-        try {
-            setIsCreating(true);
-            await userService.createUser(userData);
-            await refreshUsers();
-        } catch (error) {
-            console.error('Error creating user:', error);
-            throw error; // Re-throw to let UI handle the error
-        } finally {
-            setIsCreating(false);
-        }
-    }, [refreshUsers, t]); const updateUser = useCallback(async (userId: string, userData: UpdateUserRequest) => {
-        try {
-            setIsUpdating(true);
-            await userService.updateUser(userId, userData);
-            await refreshUsers();
-        } catch (error) {
-            console.error('Error updating user:', error);
-            throw error;
-        } finally {
-            setIsUpdating(false);
-        }
-    }, [refreshUsers, t]);
+    const updateUser = useCallback(async (userId: string, userData: UpdateUserRequest) => {
+        return new Promise<void>((resolve, reject) => {
+            updateMutation.mutate({ id: userId, data: userData }, {
+                onSuccess: () => resolve(),
+                onError: (error) => reject(error),
+            });
+        });
+    }, [updateMutation]);
 
     const deleteUser = useCallback(async (userId: string) => {
-        try {
-            setIsDeleting(true);
-            await userService.deleteUser(userId);
-            await refreshUsers();
-        } catch (error) {
-            console.error('Error deleting user:', error);
-            throw error;
-        } finally {
-            setIsDeleting(false);
-        }
-    }, [refreshUsers, t]);
+        return new Promise<void>((resolve, reject) => {
+            deleteMutation.mutate(userId, {
+                onSuccess: () => resolve(),
+                onError: (error) => reject(error),
+            });
+        });
+    }, [deleteMutation]);
 
-    // Load users when page changes  
-    useEffect(() => {
-        if (autoLoad) {
-            loadUsers();
-        }
-    }, [currentPage, autoLoad, loadUsers]);
+    // Manual refresh - Trigger refetch
+    const loadUsers = useCallback(async () => {
+        await refetch();
+    }, [refetch]);
+
+    const refreshUsers = useCallback(async () => {
+        invalidateLists();
+    }, [invalidateLists]);
 
     // Reset to first page when search term changes (debounced)
     useEffect(() => {
@@ -185,8 +176,8 @@ export const useUserList = (options: UseUserListOptions = {}): UseUserListReturn
         deleteUser,
 
         // UI States
-        isCreating,
-        isUpdating,
-        isDeleting,
+        isCreating: createMutation.isPending,
+        isUpdating: updateMutation.isPending,
+        isDeleting: deleteMutation.isPending,
     };
 }

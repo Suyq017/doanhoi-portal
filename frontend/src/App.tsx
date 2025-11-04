@@ -12,6 +12,7 @@ import { OrganizationsSubDetailPage } from './features/organizations';
 // import { OrganizationMembersPage } from './features/organizations';
 import { ClassesPage } from './features/classes';
 import { PermissionsPage } from './features/permissions';
+import SystemConfigPage from './features/system-config/SystemConfigPage';
 import { AuthProvider, AuthCallback, LoginPage, ProtectedRoute, EnhancedProtectedRoute, AuthGuard } from './features/auth';
 import {
   PaymentCampaignsPage,
@@ -134,6 +135,20 @@ function App() {
                           <Layout>
                             <OrganizationStatsProvider>
                               <PermissionsPage />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </EnhancedProtectedRoute>
+                      }
+                    />
+
+                    {/* System Config Route */}
+                    <Route
+                      path="/system-config"
+                      element={
+                        <EnhancedProtectedRoute requiredPermissions={['system-config.access']}>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <SystemConfigPage />
                             </OrganizationStatsProvider>
                           </Layout>
                         </EnhancedProtectedRoute>

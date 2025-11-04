@@ -19,7 +19,7 @@ const RoleBadge: React.FC<RoleBadgeProps> = ({
   onRemove
 }) => {
   const { t } = useTranslation(['users', 'common']);
-  
+
   const sizeClasses = {
     sm: 'px-2 py-1 text-xs',
     md: 'px-2.5 py-0.5 text-xs',
@@ -36,25 +36,24 @@ const RoleBadge: React.FC<RoleBadgeProps> = ({
     <div className="flex items-center space-x-1">
       <span className={`inline-flex items-center rounded-full font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 ${sizeClasses[size]}`}>
         <Shield className={`mr-1 ${iconSizes[size]}`} />
-        {role.displayName}
+        {role.name}
         {showPermissionCount && (
           <span className="ml-1 text-xs opacity-75">
             ({role.permissions?.length || 0})
           </span>
         )}
       </span>
-      
+
       {role.isSystemRole && (
         <span className={`inline-flex items-center rounded-full font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 ${sizeClasses.sm}`}>
           {t('users:labels.systemRole', { defaultValue: 'Hệ thống' })}
         </span>
       )}
-      
-      <span className={`inline-flex rounded-full font-medium ${
-        role.isActive 
+
+      <span className={`inline-flex rounded-full font-medium ${role.isActive
           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
           : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-      } ${sizeClasses.sm}`}>
+        } ${sizeClasses.sm}`}>
         {role.isActive ? t('users:labels.activeStatus', { defaultValue: 'Hoạt động' }) : t('users:labels.inactiveStatus', { defaultValue: 'Không hoạt động' })}
       </span>
 

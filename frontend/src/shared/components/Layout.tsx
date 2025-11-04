@@ -7,6 +7,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { LoginButton } from '../../features/auth';
 import { usePermissions } from '../hooks/usePermissions';
 import { useCtxhPermissions } from '../../features/ctxh/hooks';
+import { AppLoadingScreen } from './AppLoadingScreen';
 
 interface LayoutProps {
   children: ReactNode;
@@ -77,6 +78,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         href: '/permissions',
         icon: Shield,
         requiredPermission: 'permissions.access'
+      },
+      {
+        name: t('navigation.systemConfig'),
+        href: '/system-config',
+        icon: Settings,
+        requiredPermission: 'system-config.access'
       },
       {
         name: t('navigation.ctxh'),
@@ -231,12 +238,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     return filteredNavigation;
   };
-
   const navigation = getFilteredNavigation();
 
   // Show loading if permissions are still loading
   if (permissions.permissionsLoading || ctxhPermissions.loading) {
-    return <div>Loading...</div>;
+    return <AppLoadingScreen />;
   }
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');

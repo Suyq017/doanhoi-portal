@@ -17,6 +17,8 @@
     "classesPhonetic": "Lớp học",
     "permissions": "Phân quyền",
     "permissionsPhonetic": "Phân quyền",
+    "systemConfig": "Cấu hình hệ thống",
+    "systemConfigPhonetic": "Cấu hình hệ thống",
     "paymentAdmin": "Quản lý đóng phí",
     "paymentAdminPhonetic": "Quản lý đóng phí",
     "ctxh": "Quản lý CTXH",
@@ -108,7 +110,7 @@
   "messages": {
     "success": {
       "create": "Tạo thành công",
-      "update": "Cập nhật thành công", 
+      "update": "Cập nhật thành công",
       "delete": "Xóa thành công",
       "bulkDelete": "Đã xóa {{count}} mục thành công",
       "deleteMultiple": "Đã xóa {{count}} mục thành công",

@@ -15,7 +15,6 @@ import RolesOrganizationRow, { Organization } from './RolesOrganizationRow';
 interface Role {
     id: string;
     name: string;
-    displayName: string;
     description?: string;
 }
 

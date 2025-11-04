@@ -11,16 +11,8 @@ export const validateRole = (role: Partial<Role>): string[] => {
         errors.push('Tên vai trò là bắt buộc');
     }
 
-    if (!role.displayName || role.displayName.trim().length === 0) {
-        errors.push('Tên hiển thị là bắt buộc');
-    }
-
-    if (role.name && role.name.length > 100) {
-        errors.push('Tên vai trò không được vượt quá 100 ký tự');
-    }
-
-    if (role.displayName && role.displayName.length > 255) {
-        errors.push('Tên hiển thị không được vượt quá 255 ký tự');
+    if (role.name && role.name.length > 255) {
+        errors.push('Tên vai trò không được vượt quá 255 ký tự');
     }
 
     if (role.description && role.description.length > 1000) {

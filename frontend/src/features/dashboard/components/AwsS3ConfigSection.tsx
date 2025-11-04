@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Cloud, Save, Trash2, Eye, EyeOff, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { awsS3ConfigService, AwsS3Config, CreateAwsS3ConfigRequest } from '@/shared/services/awsS3ConfigService';
+import { CreateAwsS3ConfigRequest } from '@/shared/services/awsS3ConfigService';
 import { Toast } from '@/shared/components';
 import { useToast } from '@/shared/hooks/useToast';
+import {
+    useAwsS3ConfigActive,
+    useCreateAwsS3Config,
+    useUpdateAwsS3Config,
+    useDeleteAwsS3Config
+} from '@/shared/hooks/queries/useSystemConfigQueries';
 
 const AwsS3ConfigSection: React.FC = () => {
     const { t } = useTranslation(['dashboard', 'common']);
     const { showSuccess, showError, toasts, hideToast } = useToast();
 
-    const [config, setConfig] = useState<AwsS3Config | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [showSecrets, setShowSecrets] = useState(false);
+    // React Query hooks
+    const { data: config, isLoading: loading } = useAwsS3ConfigActive();
+    const createMutation = useCreateAwsS3Config();
+    const updateMutation = useUpdateAwsS3Config();
+    const deleteMutation = useDeleteAwsS3Config();
 
+    const [showSecrets, setShowSecrets] = useState(false);
     const [formData, setFormData] = useState<CreateAwsS3ConfigRequest>({
         accessKeyId: '',
         secretAccessKey: '',
@@ -22,30 +30,18 @@ const AwsS3ConfigSection: React.FC = () => {
         s3Endpoint: '',
     });
 
+    // Update form when config is loaded from cache or server
     useEffect(() => {
-        loadConfig();
-    }, []);
-
-    const loadConfig = async () => {
-        try {
-            setLoading(true);
-            const activeConfig = await awsS3ConfigService.getActiveConfig();
-            if (activeConfig) {
-                setConfig(activeConfig);
-                setFormData({
-                    accessKeyId: activeConfig.accessKeyId,
-                    secretAccessKey: activeConfig.secretAccessKey,
-                    region: activeConfig.region,
-                    s3Bucket: activeConfig.s3Bucket,
-                    s3Endpoint: activeConfig.s3Endpoint,
-                });
-            }
-        } catch (error) {
-            console.error('Error loading AWS S3 config:', error);
-        } finally {
-            setLoading(false);
+        if (config) {
+            setFormData({
+                accessKeyId: config.accessKeyId,
+                secretAccessKey: config.secretAccessKey,
+                region: config.region,
+                s3Bucket: config.s3Bucket,
+                s3Endpoint: config.s3Endpoint,
+            });
         }
-    };
+    }, [config]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -54,23 +50,20 @@ const AwsS3ConfigSection: React.FC = () => {
 
     const handleSave = async () => {
         try {
-            setSaving(true);
-
             if (config) {
                 // Update existing config
-                const updated = await awsS3ConfigService.updateConfig(config.id, formData);
-                setConfig(updated);
+                await updateMutation.mutateAsync({
+                    id: config.id,
+                    data: formData,
+                });
                 showSuccess(t('dashboard:awsConfig.messages.updateSuccess'));
             } else {
                 // Create new config
-                const created = await awsS3ConfigService.createConfig(formData);
-                setConfig(created);
+                await createMutation.mutateAsync(formData);
                 showSuccess(t('dashboard:awsConfig.messages.createSuccess'));
             }
         } catch (error: any) {
             showError(error.response?.data?.message || t('dashboard:awsConfig.messages.saveError'));
-        } finally {
-            setSaving(false);
         }
     };
 
@@ -81,9 +74,7 @@ const AwsS3ConfigSection: React.FC = () => {
         if (!confirmed) return;
 
         try {
-            setSaving(true);
-            await awsS3ConfigService.deleteConfig(config.id);
-            setConfig(null);
+            await deleteMutation.mutateAsync(config.id);
             setFormData({
                 accessKeyId: '',
                 secretAccessKey: '',
@@ -94,10 +85,10 @@ const AwsS3ConfigSection: React.FC = () => {
             showSuccess(t('dashboard:awsConfig.messages.deleteSuccess'));
         } catch (error: any) {
             showError(error.response?.data?.message || t('dashboard:awsConfig.messages.deleteError'));
-        } finally {
-            setSaving(false);
         }
     };
+
+    const saving = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
     if (loading) {
         return (

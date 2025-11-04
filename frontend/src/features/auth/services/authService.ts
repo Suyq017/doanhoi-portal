@@ -46,7 +46,6 @@ export interface UserPermission {
 export interface UserRole {
   id: string;
   name: string;
-  displayName: string;
   organizationId?: string;
   permissions: UserPermission[];
 }

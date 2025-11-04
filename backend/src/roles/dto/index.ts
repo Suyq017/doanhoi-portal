@@ -2,13 +2,9 @@ import { IsString, IsOptional, IsArray, IsUUID, IsBoolean } from 'class-validato
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRoleDto {
-  @ApiProperty({ description: 'Role name', example: 'admin' })
+  @ApiProperty({ description: 'Role name', example: 'Quản trị viên' })
   @IsString()
   name: string;
-
-  @ApiProperty({ description: 'Display name', example: 'Quản trị viên' })
-  @IsString()
-  displayName: string;
 
   @ApiPropertyOptional({ description: 'Role description' })
   @IsOptional()
@@ -22,11 +18,6 @@ export class CreateRoleDto {
 }
 
 export class UpdateRoleDto {
-  @ApiPropertyOptional({ description: 'Display name' })
-  @IsOptional()
-  @IsString()
-  displayName?: string;
-
   @ApiPropertyOptional({ description: 'Role description' })
   @IsOptional()
   @IsString()

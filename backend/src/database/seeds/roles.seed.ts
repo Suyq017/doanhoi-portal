@@ -8,8 +8,7 @@ export const seedRoles = async (dataSource: DataSource) => {
 
     // Define roles with their permissions
     const rolesData = [{
-        name: 'super_admin',
-        displayName: 'Super Admin',
+        name: 'Super Admin',
         description: 'Quyền cao nhất trong hệ thống',
         isSystemRole: true,
         permissionCodes: [
@@ -17,7 +16,9 @@ export const seedRoles = async (dataSource: DataSource) => {
             'users.access', 'users.create', 'users.view_details', 'users.update', 'users.delete', 'users.export',
             'organizations.access', 'organizations.create', 'organizations.view_member_count', 'organizations.access_children', 'organizations.update', 'organizations.delete', 'organizations.add_member', 'organizations.remove_member',
             'departments.access', 'departments.create', 'departments.view_details', 'departments.update', 'departments.delete',
-            'classes.access', 'classes.create', 'classes.view_details', 'classes.update', 'classes.delete', 'permissions.access', 'permissions.create', 'permissions.update', 'permissions.delete', 'permissions.view_details',
+            'classes.access', 'classes.create', 'classes.view_details', 'classes.update', 'classes.delete',
+            'permissions.access', 'permissions.create', 'permissions.update', 'permissions.delete', 'permissions.view_details',
+            'system-config.access',
             // CTXH permissions
             'ctxh.access',
             'ctxh.categories.view', 'ctxh.categories.create', 'ctxh.categories.update', 'ctxh.categories.delete',
@@ -44,8 +45,8 @@ export const seedRoles = async (dataSource: DataSource) => {
 
             const role = roleRepository.create({
                 name: roleData.name,
-                displayName: roleData.displayName,
-                description: roleData.description, isSystemRole: roleData.isSystemRole,
+                description: roleData.description,
+                isSystemRole: roleData.isSystemRole,
                 permissions: permissions,
             });
 

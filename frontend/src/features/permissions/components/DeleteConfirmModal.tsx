@@ -85,11 +85,11 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
                                     </div>
 
                                     <div className="space-y-2">                                        <label className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                                        {t('fields.displayName')}
+                                        {t('fields.name')}
                                     </label>
                                         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 shadow-sm">
                                             <span className="text-gray-900 dark:text-white font-medium">
-                                                {role.displayName}
+                                                {role.name}
                                             </span>
                                         </div>
                                     </div>
@@ -138,7 +138,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
                                     <Trans
                                         i18nKey="messages.confirmDeleteQuestion"
                                         ns="permissions"
-                                        values={{ roleName: role.displayName }}
+                                        values={{ roleName: role.name }}
                                         components={{
                                             strong: <span className="font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded" />
                                         }}
@@ -170,8 +170,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
                                         </div>
                                     </div>                                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600">
                                         <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('labels.role')}</div>
-                                        <div className="font-semibold text-gray-900 dark:text-white">{role.displayName}</div>
-                                        <div className="text-sm text-gray-500 dark:text-gray-400 font-mono">{role.name}</div>
+                                        <div className="font-semibold text-gray-900 dark:text-white">{role.name}</div>
                                     </div>
 
                                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600">

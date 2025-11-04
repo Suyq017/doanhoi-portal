@@ -54,9 +54,6 @@ const RolesTable: React.FC<RolesTableProps> = ({
                                 {t('fields.name')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                {t('fields.displayName')}
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 {t('fields.permissionCount')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -92,7 +89,7 @@ const RolesTable: React.FC<RolesTableProps> = ({
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-gray-900 dark:text-white">{role.displayName}</div>
+                                    <div className="text-gray-900 dark:text-white">{role.name}</div>
                                     {role.description && (
                                         <div className="text-sm text-gray-500 dark:text-gray-400">{role.description}</div>
                                     )}

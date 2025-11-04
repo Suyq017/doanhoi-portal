@@ -7,10 +7,7 @@ export class Role {
   id: string;
 
   @Column({ unique: true })
-  name: string; // 'admin', 'manager', 'editor', 'viewer', etc.
-
-  @Column()
-  displayName: string; // 'Quản trị viên', 'Quản lý', 'Biên tập viên'
+  name: string; // 'Quản trị viên', 'Quản lý', 'Biên tập viên', etc.
 
   @Column({ nullable: true })
   description: string;

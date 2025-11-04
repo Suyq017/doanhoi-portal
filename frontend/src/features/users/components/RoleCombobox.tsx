@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 interface Role {
     id: string;
     name: string;
-    displayName: string;
     description?: string;
 }
 
@@ -40,7 +39,6 @@ const RoleCombobox: React.FC<RoleComboboxProps> = ({
     const filteredRoles = roles.filter(role => {
         const searchLower = searchTerm.toLowerCase();
         return (
-            role.displayName.toLowerCase().includes(searchLower) ||
             role.name.toLowerCase().includes(searchLower)
         );
     });
@@ -89,8 +87,7 @@ const RoleCombobox: React.FC<RoleComboboxProps> = ({
     };
 
     const position = getDropdownPosition();
-    const displayValue = selectedRole ? selectedRole.displayName : '';
-
+    const displayValue = selectedRole ? selectedRole.name : '';
     return (
         <div className={`relative ${className}`} ref={comboboxRef}>
             <div className="relative">
@@ -146,11 +143,11 @@ const RoleCombobox: React.FC<RoleComboboxProps> = ({
                                         type="button"
                                         onClick={() => handleRoleSelect(role.id)}
                                         className={`w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors ${role.id === selectedRoleId
-                                                ? 'bg-doan-50 text-doan-700'
-                                                : 'text-gray-900'
+                                            ? 'bg-doan-50 text-doan-700'
+                                            : 'text-gray-900'
                                             }`}
                                     >
-                                        <div className="font-medium">{role.displayName}</div>
+                                        <div className="font-medium">{role.name}</div>
                                         {role.description && (
                                             <div className="text-xs text-gray-500">{role.description}</div>
                                         )}

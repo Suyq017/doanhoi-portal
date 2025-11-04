@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 interface Role {
     id: string;
     name: string;
-    displayName: string;
     description?: string;
 }
 
@@ -40,8 +39,7 @@ const MultiSelectRoleCombobox: React.FC<MultiSelectRoleComboboxProps> = ({
     const filteredRoles = roles.filter(role => {
         const searchLower = searchTerm.toLowerCase();
         return (
-            role.name.toLowerCase().includes(searchLower) ||
-            role.displayName.toLowerCase().includes(searchLower)
+            role.name.toLowerCase().includes(searchLower)
         );
     });
 
@@ -239,7 +237,7 @@ const MultiSelectRoleCombobox: React.FC<MultiSelectRoleComboboxProps> = ({
                                     className="group inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-doan-500 to-doan-600 text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 border border-doan-300 h-fit"
                                 >
                                     <Shield className="w-3.5 h-3.5 text-doan-100" />
-                                    <span className="text-sm font-medium">{role.displayName}</span>
+                                    <span className="text-sm font-medium">{role.name}</span>
                                     {!disabled && (
                                         <button
                                             type="button"
@@ -325,9 +323,6 @@ const MultiSelectRoleCombobox: React.FC<MultiSelectRoleComboboxProps> = ({
                                                 <Shield className={`w-4 h-4 mr-3 ${isSelected ? 'text-doan-600' : 'text-gray-400'}`} />
                                                 <div className="flex-1 min-w-0">
                                                     <div className={`font-medium truncate ${isSelected ? 'text-doan-900' : 'text-gray-900'}`}>
-                                                        {role.displayName}
-                                                    </div>
-                                                    <div className={`text-xs truncate ${isSelected ? 'text-doan-600' : 'text-gray-500'}`}>
                                                         {role.name}
                                                     </div>
                                                 </div>
@@ -350,9 +345,9 @@ const MultiSelectRoleCombobox: React.FC<MultiSelectRoleComboboxProps> = ({
                         <Search className="w-5 h-5 mx-auto mb-2 text-gray-400" />
                         <p className="text-sm">
                             {searchTerm
-                                ? t('users:labels.roleNotFound', { 
+                                ? t('users:labels.roleNotFound', {
                                     defaultValue: `Không tìm thấy vai trò "${searchTerm}"`,
-                                    searchTerm 
+                                    searchTerm
                                 })
                                 : t('users:labels.noRoles', { defaultValue: 'Không có vai trò nào' })
                             }

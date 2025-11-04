@@ -24,7 +24,6 @@ export interface Organization {
 interface Role {
     id: string;
     name: string;
-    displayName: string;
     description?: string;
 }
 
@@ -57,7 +56,7 @@ const RolesOrganizationRow: React.FC<RolesOrganizationRowProps> = ({
     disabled = false,
 }) => {
     const { t } = useTranslation(['users', 'common']);
-    
+
     const handleRoleChange = (roleIds: string[]) => {
         // With the new format, each assignment should only have one role
         // If multiple roles are selected, only take the first one
@@ -115,8 +114,8 @@ const RolesOrganizationRow: React.FC<RolesOrganizationRowProps> = ({
                         userOrganizations={userOrganizations}
                         disabled={disabled}
                         allowEmpty={true}
-                        placeholder={t('users:roleAssignmentRow.selectOrganizationPlaceholder', { 
-                            defaultValue: 'Chọn tổ chức hoặc để trống cho toàn hệ thống...' 
+                        placeholder={t('users:roleAssignmentRow.selectOrganizationPlaceholder', {
+                            defaultValue: 'Chọn tổ chức hoặc để trống cho toàn hệ thống...'
                         })}
                     />
                 </div>

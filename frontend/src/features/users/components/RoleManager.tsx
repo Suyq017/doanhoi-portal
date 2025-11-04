@@ -54,8 +54,7 @@ const RoleManager: React.FC<RoleManagerProps> = ({
   // Filter roles based on search term
   const filteredAvailableRoles = availableRoles.filter(role =>
     !selectedRoles.includes(role.id) &&
-    (role.displayName.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
-      role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
+    (role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
       (role.description && role.description.toLowerCase().includes(roleSearchTerm.toLowerCase())))
   );
 

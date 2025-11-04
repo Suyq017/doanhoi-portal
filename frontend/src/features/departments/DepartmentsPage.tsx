@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { Search, Filter, Edit, Trash2, Eye, UserPlus, Upload, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   departmentService,
   Department as ApiDepartment,
-  DepartmentQueryParams,
   CreateDepartmentRequest,
   Toast,
   useToast,
@@ -19,6 +18,7 @@ import {
 } from "../../shared";
 import { departmentColumns } from "../../shared/utils/importColumns";
 import { useDepartmentPagePermissions } from "./hooks/useDepartmentPagePermissions";
+import { useDepartmentList } from "../../shared/hooks/useDepartmentList";
 import CreateDepartmentModal from "./components/CreateDepartmentModal";
 import ViewDepartmentModal from "./components/ViewDepartmentModal";
 import EditDepartmentModal from "./components/EditDepartmentModal";
@@ -30,14 +30,44 @@ const Departments: React.FC = () => {
   // Permission hooks
   const permissions = useDepartmentPagePermissions();
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [departments, setDepartments] = useState<ApiDepartment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(10);
+  // ===================================
+  // REACT QUERY: Replace manual state management
+  // ===================================
+  const {
+    // Data
+    departments,
+    total,
+    loading,
+    error: queryError,
+
+    // Pagination
+    currentPage,
+    limit,
+    totalPages,
+
+    // Filters
+    searchTerm,
+    filterStatus,
+
+    // Actions
+    setSearchTerm,
+    setFilterStatus,
+    setCurrentPage,
+    loadDepartments,
+
+    // CRUD Operations
+    createDepartment: createDepartmentMutation,
+    updateDepartment: updateDepartmentMutation,
+    deleteDepartment: deleteDepartmentMutation,
+    bulkDeleteDepartments: bulkDeleteDepartmentsMutation,
+
+    // UI States
+    isCreating: isCreatingDepartment,
+    isUpdating: isUpdatingDepartment,
+    isDeleting: isDeletingDepartment,
+  } = useDepartmentList({ initialLimit: 10 });
+
+  const error = queryError || null;
 
   // State for multiple selection (for bulk actions)
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
@@ -48,7 +78,6 @@ const Departments: React.FC = () => {
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isCreatingDepartment, setIsCreatingDepartment] = useState(false);
 
   // Toast
   const { toasts, hideToast, showSuccess, showError } = useToast();
@@ -85,8 +114,6 @@ const Departments: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
-  const [isUpdatingDepartment, setIsUpdatingDepartment] = useState(false);
-  const [isDeletingDepartment, setIsDeletingDepartment] = useState(false);
 
   // Select options
   const statusOptions: SelectOption[] = [
@@ -121,61 +148,15 @@ const Departments: React.FC = () => {
     }
   });
 
-  const loadDepartments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const params: DepartmentQueryParams = {
-        page: currentPage,
-        limit: limit,
-        ...(searchTerm && { search: searchTerm }),
-        ...(filterStatus !== "all" && {
-          isActive: filterStatus === "true",
-        }),
-      };
-
-      const response = await departmentService.getDepartments(params);
-      setDepartments(response.departments);
-      setTotal(response.total);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : t('common:messages.error.load'));
-      console.error("Error loading departments:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadDepartments();
-  }, [currentPage, filterStatus]);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (currentPage === 1) {
-        loadDepartments();
-      } else {
-        setCurrentPage(1);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
-
   const handleCreateDepartment = async (departmentData: CreateDepartmentRequest) => {
     try {
-      setIsCreatingDepartment(true);
-      await departmentService.createDepartment(departmentData);
-      // Reload departments list after successful creation
-      await loadDepartments();
+      await createDepartmentMutation(departmentData);
       showSuccess(t('common:messages.success.create'));
       setIsCreateModalOpen(false);
     } catch (error) {
       console.error("Error creating department:", error);
       showError(t('common:messages.error.create'));
       throw error; // Re-throw to let modal handle the error
-    } finally {
-      setIsCreatingDepartment(false);
     }
   };
 
@@ -205,20 +186,14 @@ const Departments: React.FC = () => {
     if (!selectedDepartment) return;
 
     try {
-      setIsUpdatingDepartment(true);
-      await departmentService.updateDepartment(selectedDepartment.id, departmentData);
-      await loadDepartments();
-      showSuccess(
-        t('common:messages.success.update')
-      );
+      await updateDepartmentMutation(selectedDepartment.id, departmentData);
+      showSuccess(t('common:messages.success.update'));
       setIsEditModalOpen(false);
       setSelectedDepartment(null);
     } catch (error) {
       console.error("Error updating department:", error);
       showError(t('common:messages.error.update'));
       throw error;
-    } finally {
-      setIsUpdatingDepartment(false);
     }
   };
 
@@ -256,33 +231,28 @@ const Departments: React.FC = () => {
 
   const confirmBulkDelete = useCallback(async () => {
     try {
-      await departmentService.bulkDeleteDepartments(selectedDepartmentIds);
+      await bulkDeleteDepartmentsMutation(selectedDepartmentIds);
       showSuccess(t('common:messages.success.bulkDelete', { count: selectedDepartmentIds.length }));
       setSelectedDepartmentIds([]);
-      await loadDepartments();
       setShowBulkDeleteModal(false);
     } catch (error) {
       console.error("Error deleting departments:", error);
       showError(t('common:messages.error.bulkDelete'));
       setShowBulkDeleteModal(false);
     }
-  }, [selectedDepartmentIds, t, showSuccess, showError, loadDepartments]);
+  }, [selectedDepartmentIds, t, showSuccess, showError, bulkDeleteDepartmentsMutation]);
 
   const confirmDeleteDepartment = async () => {
     if (!selectedDepartment) return;
 
     try {
-      setIsDeletingDepartment(true);
-      await departmentService.deleteDepartment(selectedDepartment.id);
-      await loadDepartments();
+      await deleteDepartmentMutation(selectedDepartment.id);
       showSuccess(t('common:messages.success.delete'));
       setIsDeleteModalOpen(false);
       setSelectedDepartment(null);
     } catch (error) {
       console.error("Error deleting department:", error);
       showError(t('common:messages.error.delete'));
-    } finally {
-      setIsDeletingDepartment(false);
     }
   };
 
@@ -563,8 +533,8 @@ const Departments: React.FC = () => {
           </div>
           <div className="flex space-x-2">
             <button
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage <= 1}
               className="px-3 py-1 text-sm border border-gray-300 rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('common:pagination.previous')}
@@ -572,16 +542,12 @@ const Departments: React.FC = () => {
             <span className="px-3 py-1 text-sm">
               {t('common:pagination.page', {
                 current: currentPage,
-                total: Math.ceil(total / limit)
+                total: totalPages
               })}
             </span>
             <button
-              onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(Math.ceil(total / limit), prev + 1)
-                )
-              }
-              disabled={currentPage >= Math.ceil(total / limit)}
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage >= totalPages}
               className="px-3 py-1 text-sm border border-gray-300 rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('common:pagination.next')}

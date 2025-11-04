@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, Filter, Eye, Edit, Trash2, Users, Upload, X } from 'lucide-react';
-import type { Class, ClassQueryParams } from '../../shared/types';
+import type { Class } from '../../shared/types';
 import {
   classService,
   departmentService,
@@ -25,6 +25,7 @@ import { classColumns } from '../../shared/utils/importColumns';
 //   frontendSubmitClassImport 
 // } from '../../shared/services/classImportService';
 import { useClassPagePermissions } from './hooks/useClassPagePermissions';
+import { useClassList } from '../../shared/hooks/useClassList';
 import CreateClassModal from './components/CreateClassModal';
 import EditClassModal from './components/EditClassModal';
 import ViewClassModal from './components/ViewClassModal';
@@ -41,12 +42,40 @@ const ClassesPage: React.FC = () => {
   // Permission hooks
   const permissions = useClassPagePermissions();
 
-  // State management
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [total, setTotal] = useState(0);
+  // ===================================
+  // REACT QUERY: Replace manual state management
+  // ===================================
+  const {
+    // Data
+    classes,
+    total,
+    loading,
+    error: queryError,
+
+    // Pagination
+    currentPage,
+    limit,
+    totalPages,
+
+    // Filters
+    searchTerm,
+    yearFilter,
+    departmentFilter,
+    statusFilter,
+
+    // Actions
+    setSearchTerm,
+    setYearFilter,
+    setDepartmentFilter,
+    setStatusFilter,
+    setCurrentPage,
+    loadClasses,
+
+    // CRUD Operations
+    bulkDeleteClasses: bulkDeleteClassesMutation,
+  } = useClassList({ initialLimit: 10 });
+
+  const error = queryError || null;
 
   // State for multiple selection (for bulk actions)
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
@@ -55,15 +84,8 @@ const ClassesPage: React.FC = () => {
   const isAllSelected = classes.length > 0 && selectedClassIds.length === classes.length;
   const isSomeSelected = selectedClassIds.length > 0;
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(10);
-
-  // Filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [yearFilter, setYearFilter] = useState<number | ''>('');
-  const [departmentFilter, setDepartmentFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<boolean | ''>('');
+  // Local state for modals
+  const [departments, setDepartments] = useState<any[]>([]);
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -187,53 +209,15 @@ const ClassesPage: React.FC = () => {
         return false;
     }
   });
-  // Load data
+  // Load data - Only load departments (classes loaded by React Query)
   useEffect(() => {
-    loadClasses();
     loadDepartments();
-  }, [currentPage, yearFilter, departmentFilter, statusFilter]);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (currentPage === 1) {
-        loadClasses();
-      } else {
-        setCurrentPage(1);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+  }, []);
 
   // Reset selection when classes change
   useEffect(() => {
     setSelectedClassIds([]);
   }, [classes]);
-
-  const loadClasses = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const params: ClassQueryParams = {
-        page: currentPage,
-        limit,
-        ...(searchTerm && { search: searchTerm }),
-        ...(yearFilter && { year: Number(yearFilter) }),
-        ...(departmentFilter && { departmentId: departmentFilter }),
-        ...(statusFilter !== '' && { isActive: Boolean(statusFilter) }),
-      };
-
-      const response = await classService.getClasses(params);
-      setClasses(response.classes);
-      setTotal(response.total);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('common:messages.error.load'));
-      console.error('Error loading classes:', err);
-      showError(t('common:messages.error.load'));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadDepartments = async () => {
     try {
@@ -338,9 +322,8 @@ const ClassesPage: React.FC = () => {
 
   const confirmBulkDelete = useCallback(async () => {
     try {
-      await classService.bulkDeleteClasses(selectedClassIds);
+      await bulkDeleteClassesMutation(selectedClassIds);
       setSelectedClassIds([]);
-      await loadClasses();
       showSuccess(t('common:messages.success.bulkDelete', {
         count: selectedClassIds.length
       }));
@@ -350,7 +333,7 @@ const ClassesPage: React.FC = () => {
       showError(t('common:messages.error.bulkDelete'));
       setShowBulkDeleteModal(false);
     }
-  }, [selectedClassIds, showSuccess, showError, t, loadClasses]);
+  }, [selectedClassIds, showSuccess, showError, t, bulkDeleteClassesMutation]);
 
   if (loading) {
     return (
@@ -658,7 +641,7 @@ const ClassesPage: React.FC = () => {
           </div>
           <div className="flex space-x-2">
             <button
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
               className="px-3 py-1 text-sm border border-gray-300 rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -667,16 +650,12 @@ const ClassesPage: React.FC = () => {
             <span className="px-3 py-1 text-sm">
               {t('common:pagination.page', {
                 current: currentPage,
-                total: Math.ceil(total / limit)
+                total: totalPages
               })}
             </span>
             <button
-              onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(Math.ceil(total / limit), prev + 1)
-                )
-              }
-              disabled={currentPage >= Math.ceil(total / limit)}
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage >= totalPages}
               className="px-3 py-1 text-sm border border-gray-300 rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('common:pagination.next')}

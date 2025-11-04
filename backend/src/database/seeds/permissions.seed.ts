@@ -255,6 +255,16 @@ export const seedPermissions = async (dataSource: DataSource) => {
             sortOrder: 54,
         },
 
+        // System Config permissions
+        {
+            code: 'system-config.access',
+            name: 'Truy cập cấu hình hệ thống',
+            description: 'Cho phép truy cập trang cấu hình hệ thống',
+            category: 'system-config',
+            context: PermissionContext.SYSTEM,
+            sortOrder: 55,
+        },
+
         // Payment Campaign permissions
         {
             code: 'payment-campaigns.access',

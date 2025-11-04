@@ -14,7 +14,6 @@ export interface Permission {
 export interface Role {
   id: string;
   name: string;
-  displayName: string;
   description?: string;
   isSystemRole: boolean;
   isActive: boolean;
@@ -48,13 +47,11 @@ export interface PermissionGroup {
 // API request/response types
 export interface CreateRoleRequest {
   name: string;
-  displayName: string;
   description?: string;
   permissionIds: string[];
 }
 
 export interface UpdateRoleRequest {
-  displayName?: string;
   description?: string;
   permissionIds?: string[];
   isActive?: boolean;

@@ -130,7 +130,6 @@ export class AuthService {
       roles: userRoles.map(userRole => ({
         id: userRole.role.id,
         name: userRole.role.name,
-        displayName: userRole.role.displayName,
         organizationId: userRole.organizationId,
         permissions: userRole.role.permissions.filter(p => p.isActive),
       })),

@@ -126,11 +126,11 @@ const ViewRoleModal: React.FC<ViewRoleModalProps> = ({
                                 {/* Display Name */}
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                                        {t('fields.displayName')}
+                                        {t('fields.name')}
                                     </label>
                                     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 shadow-sm">
                                         <span className="text-gray-900 dark:text-white font-medium">
-                                            {role.displayName}
+                                            {role.name}
                                         </span>
                                     </div>                                </div>
                             </div>
@@ -224,8 +224,7 @@ const ViewRoleModal: React.FC<ViewRoleModalProps> = ({
                                             </span>
                                         )}
                                     </div>
-                                        <div className="font-semibold text-gray-900 dark:text-white">{role.displayName}</div>
-                                        <div className="text-sm text-gray-500 dark:text-gray-400 font-mono">{role.name}</div>
+                                        <div className="font-semibold text-gray-900 dark:text-white">{role.name}</div>
                                     </div>                                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600">
                                         <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('labels.status')}</div>
                                         <div className="flex items-center">

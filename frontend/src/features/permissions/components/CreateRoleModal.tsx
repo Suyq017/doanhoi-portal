@@ -82,6 +82,13 @@ const usePermissionGroups = () => {
       icon: Shield,
       color: 'indigo',
       description: t('permissions.categories.permissions')
+    },
+    {
+      id: 'system-config',
+      name: t('permissions.categories.systemConfig'),
+      icon: Shield,
+      color: 'slate',
+      description: t('permissions.categories.systemConfig')
     }
   ];
 };
@@ -96,7 +103,6 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
 
   const [formData, setFormData] = useState<CreateRoleRequest>({
     name: '',
-    displayName: '',
     description: '',
     permissionIds: [],
   }); const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
@@ -110,7 +116,6 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
       // Reset form data
       setFormData({
         name: '',
-        displayName: '',
         description: '',
         permissionIds: [],
       });
@@ -192,7 +197,10 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
         { id: '35', code: 'permissions.access', name: 'Truy cập trang phân quyền', category: 'permissions', context: 'organization', isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
         { id: '36', code: 'permissions.create', name: 'Tạo vai trò mới', category: 'permissions', context: 'organization', isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
         { id: '37', code: 'permissions.read', name: 'Xem thông tin vai trò', category: 'permissions', context: 'organization', isActive: true, sortOrder: 3, createdAt: '', updatedAt: '' }, { id: '38', code: 'permissions.update', name: 'Cập nhật vai trò', category: 'permissions', context: 'organization', isActive: true, sortOrder: 4, createdAt: '', updatedAt: '' },
-        { id: '39', code: 'permissions.delete', name: 'Xóa vai tr��', category: 'permissions', context: 'organization', isActive: true, sortOrder: 5, createdAt: '', updatedAt: '' },
+        { id: '39', code: 'permissions.delete', name: 'Xóa vai trò', category: 'permissions', context: 'organization', isActive: true, sortOrder: 5, createdAt: '', updatedAt: '' },
+
+        // System Config permissions
+        { id: '64', code: 'system-config.access', name: 'Truy cập cấu hình hệ thống', category: 'system-config', context: 'system', isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
 
         // System permissions
         { id: '48', code: 'system.access_admin', name: 'Quyền quản trị hệ thống', category: 'system', context: 'system', isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
@@ -370,6 +378,13 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
           text: 'text-pink-700 dark:text-pink-300',
           icon: 'text-pink-500 dark:text-pink-400'
         };
+      case 'slate':
+        return {
+          bg: 'bg-slate-50 dark:bg-slate-900/20',
+          border: 'border-slate-200 dark:border-slate-800',
+          text: 'text-slate-700 dark:text-slate-300',
+          icon: 'text-slate-500 dark:text-slate-400'
+        };
       default:
         return {
           bg: 'bg-gray-50 dark:bg-gray-700',
@@ -382,7 +397,7 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.displayName) {
+    if (!formData.name) {
       return;
     }
 
@@ -442,21 +457,6 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
                         value={formData.name}
                         onChange={handleInputChange}
                         placeholder={t('placeholders.name')}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-colors"
-                        required
-                        disabled={submitting}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        {t('fields.displayName')} <span className="text-red-500">*</span>
-                      </label>                        <input
-                        type="text"
-                        name="displayName"
-                        value={formData.displayName}
-                        onChange={handleInputChange}
-                        placeholder={t('placeholders.displayName')}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-colors"
                         required
                         disabled={submitting}
@@ -702,12 +702,6 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({
                                                       {t('labels.basicPermission')}
                                                     </span>
                                                   )}
-                                                </div>
-                                                <div className={`text-xs font-mono mt-1.5 ${isAccessPermission
-                                                  ? 'text-gray-600 dark:text-gray-400'
-                                                  : 'text-gray-500 dark:text-gray-500'
-                                                  }`}>
-                                                  {permission.code}
                                                 </div>
                                               </div>
 

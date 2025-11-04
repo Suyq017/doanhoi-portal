@@ -1,6 +1,11 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User, CreateUserRequest } from '../types/user';
+import {
+    useCreateUserMutation,
+    useUpdateUserMutation,
+    useDeleteUserMutation,
+} from './queries/useUserQueries';
 
 export interface UseUserManagementOptions {
     showSuccess: (message: string) => void;
@@ -55,13 +60,18 @@ export const useUserManagement = (options: UseUserManagementOptions): UseUserMan
         onUserUpdated,
         onUserDeleted,
         onRefreshData,
-        createUser,
-        updateUser,
-        deleteUser,
+        createUser: customCreateUser,
+        updateUser: customUpdateUser,
+        deleteUser: customDeleteUser,
         customDeleteHandler,
         customDeleteSuccessMessage,
         customDeleteErrorMessage,
     } = options;
+
+    // Use React Query mutations for optimistic updates
+    const createMutation = useCreateUserMutation();
+    const updateMutation = useUpdateUserMutation();
+    const deleteMutation = useDeleteUserMutation();
 
     // Modal states
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -105,14 +115,21 @@ export const useUserManagement = (options: UseUserManagementOptions): UseUserMan
     }, []);
 
     const handleCreateUser = useCallback(async (userData: CreateUserRequest) => {
-        if (!createUser) {
-            console.error('createUser function not provided');
-            return;
-        }
-
         try {
             setIsCreating(true);
-            const newUser = await createUser(userData);
+
+            // Use custom create function if provided, otherwise use React Query mutation
+            let newUser: User;
+            if (customCreateUser) {
+                newUser = await customCreateUser(userData);
+            } else {
+                newUser = await new Promise<User>((resolve, reject) => {
+                    createMutation.mutate(userData, {
+                        onSuccess: (data) => resolve(data),
+                        onError: (error) => reject(error),
+                    });
+                });
+            }
 
             closeModal();
             showSuccess(t('common:messages.success.create'));
@@ -127,21 +144,33 @@ export const useUserManagement = (options: UseUserManagementOptions): UseUserMan
         } catch (error) {
             console.error('Error creating user:', error);
             showError(t('common:messages.error.create'));
-            throw error; // Re-throw to let modal handle it if needed
+            throw error;
         } finally {
             setIsCreating(false);
         }
-    }, [createUser, closeModal, showSuccess, showError, t, onUserCreated, onRefreshData]);
+    }, [customCreateUser, createMutation, closeModal, showSuccess, showError, t, onUserCreated, onRefreshData]);
 
     const handleUpdateUser = useCallback(async (userData: CreateUserRequest) => {
-        if (!selectedUser || !updateUser) {
-            console.error('selectedUser or updateUser function not provided');
+        if (!selectedUser) {
+            console.error('selectedUser not provided');
             return;
         }
 
         try {
             setIsUpdating(true);
-            const updatedUser = await updateUser(selectedUser.id, userData);
+
+            // Use custom update function if provided, otherwise use React Query mutation
+            let updatedUser: User;
+            if (customUpdateUser) {
+                updatedUser = await customUpdateUser(selectedUser.id, userData);
+            } else {
+                updatedUser = await new Promise<User>((resolve, reject) => {
+                    updateMutation.mutate({ id: selectedUser.id, data: userData }, {
+                        onSuccess: (data) => resolve(data),
+                        onError: (error) => reject(error),
+                    });
+                });
+            }
 
             closeModal();
             showSuccess(t('common:messages.success.update'));
@@ -160,7 +189,7 @@ export const useUserManagement = (options: UseUserManagementOptions): UseUserMan
         } finally {
             setIsUpdating(false);
         }
-    }, [selectedUser, updateUser, closeModal, showSuccess, showError, t, onUserUpdated, onRefreshData]);
+    }, [selectedUser, customUpdateUser, updateMutation, closeModal, showSuccess, showError, t, onUserUpdated, onRefreshData]);
 
     const confirmDeleteUser = useCallback(async () => {
         if (!selectedUser) {
@@ -175,12 +204,18 @@ export const useUserManagement = (options: UseUserManagementOptions): UseUserMan
             if (customDeleteHandler) {
                 await customDeleteHandler(selectedUser);
                 showSuccess(customDeleteSuccessMessage || t('common:messages.success.delete'));
-            } else if (deleteUser) {
-                await deleteUser(selectedUser.id);
+            } else if (customDeleteUser) {
+                await customDeleteUser(selectedUser.id);
                 showSuccess(t('common:messages.success.delete'));
             } else {
-                console.error('No delete function provided');
-                return;
+                // Use React Query mutation with optimistic update
+                await new Promise<void>((resolve, reject) => {
+                    deleteMutation.mutate(selectedUser.id, {
+                        onSuccess: () => resolve(),
+                        onError: (error) => reject(error),
+                    });
+                });
+                showSuccess(t('common:messages.success.delete'));
             }
 
             closeModal();
@@ -202,7 +237,8 @@ export const useUserManagement = (options: UseUserManagementOptions): UseUserMan
     }, [
         selectedUser,
         customDeleteHandler,
-        deleteUser,
+        customDeleteUser,
+        deleteMutation,
         closeModal,
         showSuccess,
         showError,

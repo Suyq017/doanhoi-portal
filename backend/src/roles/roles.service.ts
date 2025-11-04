@@ -25,7 +25,7 @@ export class RolesService {
 
     if (search) {
       queryBuilder.andWhere(
-        '(role.name ILIKE :search OR role.displayName ILIKE :search OR role.description ILIKE :search)',
+        '(role.name ILIKE :search OR role.description ILIKE :search)',
         { search: `%${search}%` }
       );
     }
@@ -63,7 +63,7 @@ export class RolesService {
   }
 
   async create(createRoleDto: CreateRoleDto) {
-    const { name, displayName, description, permissionIds } = createRoleDto;
+    const { name, description, permissionIds } = createRoleDto;
 
     // Check if role name already exists
     const existingRole = await this.roleRepository.findOne({ where: { name } });
@@ -82,7 +82,6 @@ export class RolesService {
 
     const role = this.roleRepository.create({
       name,
-      displayName,
       description,
       permissions,
     });
@@ -188,7 +187,7 @@ export class RolesService {
       message: `Successfully deleted ${roles.length} roles`,
       deletedRoles: roles.length,
       deletedUserRoleAssignments: totalUserRoleAssignments,
-      roleNames: roles.map(r => r.displayName || r.name)
+      roleNames: roles.map(r => r.name)
     };
   }
 
@@ -203,7 +202,7 @@ export class RolesService {
     return this.roleRepository.find({
       relations: ['permissions'],
       where: { isActive: true },
-      order: { isSystemRole: 'DESC', displayName: 'ASC' },
+      order: { isSystemRole: 'DESC', name: 'ASC' },
     });
   }
 
@@ -298,21 +297,18 @@ export class RolesService {
     // Define default roles
     const defaultRoles = [
       {
-        name: 'super_admin',
-        displayName: 'Quản trị viên hệ thống',
+        name: 'Quản trị viên hệ thống',
         description: 'Có toàn quyền trên hệ thống',
         isSystemRole: true,
         permissions: allPermissions, // All permissions
       },
       {
-        name: 'org_admin',
-        displayName: 'Quản trị viên tổ chức',
+        name: 'Quản trị viên tổ chức',
         description: 'Quản lý toàn bộ tổ chức và thành viên',
         permissions: [...dashboardPerms, ...userPerms, ...orgPerms, ...deptPerms, ...classPerms],
       },
       {
-        name: 'manager',
-        displayName: 'Quản lý',
+        name: 'Quản lý',
         description: 'Xem và chỉnh sửa thông tin cơ bản',
         permissions: [
           ...dashboardPerms,
@@ -321,8 +317,7 @@ export class RolesService {
         ],
       },
       {
-        name: 'editor',
-        displayName: 'Biên tập viên',
+        name: 'Biên tập viên',
         description: 'Thêm và chỉnh sửa thông tin',
         permissions: [
           ...dashboardPerms,
@@ -330,8 +325,7 @@ export class RolesService {
         ],
       },
       {
-        name: 'viewer',
-        displayName: 'Người xem',
+        name: 'Người xem',
         description: 'Chỉ xem thông tin',
         permissions: [
           ...dashboardPerms,

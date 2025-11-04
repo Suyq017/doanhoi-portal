@@ -17,7 +17,6 @@ interface Permission {
 interface Role {
   id: string;
   name: string;
-  displayName: string;
   description?: string;
   isSystemRole: boolean;
   isActive: boolean;
@@ -42,12 +41,13 @@ interface RoleListResponse {
 
 interface CreateRoleRequest {
   name: string;
-  displayName: string;
   description?: string;
   permissionIds: string[];
 }
 
-interface UpdateRoleRequest extends Partial<CreateRoleRequest> {
+interface UpdateRoleRequest {
+  description?: string;
+  permissionIds?: string[];
   isActive?: boolean;
 }
 

@@ -97,7 +97,6 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
     const PERMISSION_GROUPS = usePermissionGroups();
 
     const [formData, setFormData] = useState<UpdateRoleRequest>({
-        displayName: '',
         description: '',
         permissionIds: [],
         isActive: true,
@@ -113,7 +112,6 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
             loadAvailablePermissions();
             // Initialize form with role data
             setFormData({
-                displayName: role.displayName,
                 description: role.description || '',
                 permissionIds: role.permissions?.map(p => p.id) || [],
                 isActive: role.isActive,
@@ -331,11 +329,12 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
     }; const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.displayName || !role) {
+        if (!role) {
             return;
-        }        // Validate form data
+        }
+
+        // Validate form data
         const validatedData: any = {
-            displayName: formData.displayName.trim(),
             permissionIds: formData.permissionIds || [],
             isActive: formData.isActive
         };
@@ -404,24 +403,10 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
                                             </div>
                                         </div>
 
-                                        <div>                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            {t('fields.displayName')} <span className="text-red-500">*</span>
-                                        </label>
-                                            <input
-                                                type="text"
-                                                name="displayName"
-                                                value={formData.displayName}
-                                                onChange={handleInputChange}
-                                                placeholder={t('placeholders.displayName')}
-                                                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-colors"
-                                                required
-                                                disabled={submitting}
-                                            />
-                                        </div>
-
-                                        <div>                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            {t('fields.description')}
-                                        </label>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                {t('fields.description')}
+                                            </label>
                                             <textarea
                                                 name="description"
                                                 value={formData.description}
@@ -669,12 +654,6 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
                                                                                                                 {t('labels.basicPermission')}
                                                                                                             </span>
                                                                                                         )}
-                                                                                                    </div>
-                                                                                                    <div className={`text-xs font-mono mt-1.5 ${isAccessPermission
-                                                                                                        ? 'text-gray-600 dark:text-gray-400'
-                                                                                                        : 'text-gray-500 dark:text-gray-500'
-                                                                                                        }`}>
-                                                                                                        {permission.code}
                                                                                                     </div>
                                                                                                 </div>
 
