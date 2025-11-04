@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Building2, Calendar, ChevronDown } from 'lucide-react';
 import { CtxhLimitConfig, CreateLimitConfigRequest, UpdateLimitConfigRequest, LimitConfigStatus } from '../../types';
-import { organizationService } from '../../../../shared/services';
+import { useOrganizationList } from '../../../../shared/hooks/queries';
 
 interface LimitConfigFormProps {
   isOpen: boolean;
@@ -64,14 +64,12 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
   const [organizationSearch, setOrganizationSearch] = useState('');
   const [organizationDropdownOpen, setOrganizationDropdownOpen] = useState(false);
 
-  // Mock organizations - In real app, fetch from API
-  const [organizations, setOrganizations] = useState([
-    { id: '1', name: 'Đoàn Trường' },
-    { id: '2', name: 'Hội Sinh viên' },
-    { id: '3', name: 'CLB Khoa học' },
-    { id: '4', name: 'CLB Thể thao' },
-    { id: '5', name: 'CLB Văn hóa' }
-  ]);
+  // Load organizations from TanStack Query
+  const { data: allOrganizations = [], isLoading: _loadingOrganizations } = useOrganizationList();
+  const organizations = React.useMemo(
+    () => allOrganizations.map(org => ({ id: org.id, name: org.name })),
+    [allOrganizations]
+  );
 
   // Filter organizations based on search
   const filteredOrganizations = organizations.filter(organization =>
@@ -84,21 +82,8 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
     return organization ? organization.name : '';
   };
 
-  // Load organizations
-  const loadOrganizations = async () => {
-    try {
-      const data = await organizationService.getOrganizations();
-      setOrganizations(data.map(org => ({ id: org.id, name: org.name })));
-    } catch (error) {
-      console.error('Failed to load organizations:', error);
-      // Keep mock data as fallback
-    }
-  };
-
   // Initialize form data
   useEffect(() => {
-    loadOrganizations();
-
     if (config) {
       // Editing mode - ensure all fields have valid values
       setFormData({
@@ -275,7 +260,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                   <Building2 className="inline h-4 w-4 mr-1" />
                   {t('limitConfig.organization')} <span className="text-red-500">*</span>
                 </label>
-                
+
                 {config ? (
                   // Edit mode - show selected organization as disabled input
                   <div>
@@ -309,14 +294,13 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                           setTimeout(() => setOrganizationDropdownOpen(false), 200);
                         }}
                         placeholder={t('limitConfig.selectOrganization')}
-                        className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          errors.organizationId
+                        className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.organizationId
                             ? 'border-red-300 focus:ring-red-500'
                             : 'border-gray-300 focus:border-blue-500'
-                        }`}
+                          }`}
                       />
-                      <ChevronDown 
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" 
+                      <ChevronDown
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
                       />
                     </div>
 
@@ -345,7 +329,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                     )}
                   </div>
                 )}
-                
+
                 {errors.organizationId && (
                   <p className="mt-1 text-xs text-red-500">{errors.organizationId}</p>
                 )}
@@ -365,8 +349,8 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                   onChange={(e) => handleInputChange('maxDays', parseFloat(e.target.value) || 0)}
                   disabled={submitting}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.maxDays
-                      ? 'border-red-300 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-500'
+                    ? 'border-red-300 focus:ring-red-500'
+                    : 'border-gray-300 focus:border-blue-500'
                     }`}
                   placeholder={t('limitConfig.maxDaysPlaceholder')}
                 />

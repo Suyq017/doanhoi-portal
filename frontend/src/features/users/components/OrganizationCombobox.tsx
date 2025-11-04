@@ -1,8 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Search, X, Building } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Organization } from '../../../shared/types/organization';
+
+// Performance optimization constants
+const DEBOUNCE_DELAY = 300; // ms
+const MAX_RESULTS = 20; // Reduced from 50 to 20 for faster initial render
 
 interface OrganizationComboboxProps {
     organizations: Organization[];
@@ -23,23 +27,46 @@ const OrganizationCombobox: React.FC<OrganizationComboboxProps> = ({
     error,
     placeholder,
 }) => {
-    const { t } = useTranslation(['users', 'common']); const [isOpen, setIsOpen] = useState(false);
+    const { t } = useTranslation(['users', 'common']);
+
+    const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
     const comboboxRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Debounce search term to avoid filtering on every keystroke
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, DEBOUNCE_DELAY);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
     // Find selected organization
     const selectedOrganization = organizations.find(org => org.id === selectedId);
 
-    // Advanced filtering: Score-based filtering to show most relevant results
-    const filteredOrganizations = (() => {
-        if (!searchTerm.trim()) {
-            return organizations; // Show all if no search term
+    // Advanced filtering with useMemo: Score-based filtering to show most relevant results
+    // OPTIMIZATION: Only filter when dropdown is open to avoid expensive computation on mount
+    const { filteredOrganizations, hiddenResultsCount } = useMemo(() => {
+        // Skip filtering if dropdown is not open - improves initial modal open performance
+        if (!isOpen) {
+            return { filteredOrganizations: [], hiddenResultsCount: 0 };
         }
 
-        const searchLower = searchTerm.toLowerCase().trim();
+        if (!debouncedSearchTerm.trim()) {
+            const limited = organizations.slice(0, MAX_RESULTS);
+            return {
+                filteredOrganizations: limited,
+                hiddenResultsCount: Math.max(0, organizations.length - MAX_RESULTS)
+            };
+        }
+
+        const searchLower = debouncedSearchTerm.toLowerCase().trim();
         const searchWords = searchLower.split(/\s+/); // Split search into words
 
         // Calculate relevance score for each organization
@@ -99,33 +126,45 @@ const OrganizationCombobox: React.FC<OrganizationComboboxProps> = ({
             return { org, score };
         });
 
-        // Filter out irrelevant results and sort by score
-        return scoredOrgs
+        // Filter out irrelevant results, sort by score, and limit results
+        const filtered = scoredOrgs
             .filter(item => item.score > 0) // Only show relevant results
             .sort((a, b) => b.score - a.score) // Sort by relevance
             .map(item => item.org);
-    })();
-    // Calculate dropdown position
+
+        const limited = filtered.slice(0, MAX_RESULTS);
+        return {
+            filteredOrganizations: limited,
+            hiddenResultsCount: Math.max(0, filtered.length - MAX_RESULTS)
+        };
+    }, [organizations, debouncedSearchTerm, isOpen]); // Add isOpen dependency
+
+    // Calculate dropdown position - optimized with requestAnimationFrame to avoid forced reflow
     const calculateDropdownPosition = () => {
-        if (comboboxRef.current) {
-            const rect = comboboxRef.current.getBoundingClientRect();
-            const dropdownHeight = 240; // max-h-60 = 240px
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const spaceAbove = rect.top;
+        if (!comboboxRef.current) return;
 
-            let top = rect.bottom + window.scrollY;
+        // Use requestAnimationFrame to defer position calculation and avoid forced reflow
+        requestAnimationFrame(() => {
+            if (comboboxRef.current) {
+                const rect = comboboxRef.current.getBoundingClientRect();
+                const dropdownHeight = 240; // max-h-60 = 240px
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const spaceAbove = rect.top;
 
-            // If not enough space below and more space above, show dropdown above
-            if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
-                top = rect.top + window.scrollY - dropdownHeight;
+                let top = rect.bottom + window.scrollY;
+
+                // If not enough space below and more space above, show dropdown above
+                if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+                    top = rect.top + window.scrollY - dropdownHeight;
+                }
+
+                setDropdownPosition({
+                    top,
+                    left: rect.left + window.scrollX,
+                    width: rect.width
+                });
             }
-
-            setDropdownPosition({
-                top,
-                left: rect.left + window.scrollX,
-                width: rect.width
-            });
-        }
+        });
     };  // Handle click outside to close dropdown and scroll/resize events
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -360,10 +399,10 @@ const OrganizationCombobox: React.FC<OrganizationComboboxProps> = ({
                             <div
                                 key={org.id}
                                 className={`px-3 py-3 cursor-pointer transition-colors border-l-4 ${isHighlighted
-                                        ? 'bg-doan-50 dark:bg-doan-900/20 text-doan-700 dark:text-doan-300 border-doan-400'
-                                        : isSelected
-                                            ? 'bg-doan-100 dark:bg-doan-900/30 text-doan-800 dark:text-doan-200 border-doan-500'
-                                            : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-transparent'
+                                    ? 'bg-doan-50 dark:bg-doan-900/20 text-doan-700 dark:text-doan-300 border-doan-400'
+                                    : isSelected
+                                        ? 'bg-doan-100 dark:bg-doan-900/30 text-doan-800 dark:text-doan-200 border-doan-500'
+                                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-transparent'
                                     }`}
                                 onMouseDown={(e) => {
                                     e.preventDefault();
@@ -408,20 +447,30 @@ const OrganizationCombobox: React.FC<OrganizationComboboxProps> = ({
                                 </div>
                             </div>
                         );
-                    })) : searchTerm ? (
+                    })) : debouncedSearchTerm ? (
                         <div className="px-4 py-6 text-center text-gray-500">
                             <Search className="w-5 h-5 mx-auto mb-2 text-gray-400" />
                             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {t('common:messages.noResults')}
+                                {t('common:messages.empty.noResults')}
                             </p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 {t('users:messages.organizationNotFound', {
-                                    searchTerm,
-                                    defaultValue: `Không tìm thấy tổ chức phù hợp với "${searchTerm}"`
+                                    searchTerm: debouncedSearchTerm,
+                                    defaultValue: `Không tìm thấy tổ chức phù hợp với "${debouncedSearchTerm}"`
                                 })}
                             </p>
                         </div>
                     ) : null}
+
+                    {/* More results hint */}
+                    {hiddenResultsCount > 0 && (
+                        <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                            {t('users:messages.moreResults', {
+                                count: hiddenResultsCount,
+                                defaultValue: `+ ${hiddenResultsCount} tổ chức khác. Hãy tìm kiếm cụ thể hơn...`
+                            })}
+                        </div>
+                    )}
                 </div>,
                 document.body
             )}

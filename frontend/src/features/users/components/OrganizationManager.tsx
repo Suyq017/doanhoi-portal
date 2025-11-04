@@ -1,8 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Search, Building, X, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Organization as SharedOrganization } from '../../../shared/types/organization';
+
+// Performance optimization constants
+const DEBOUNCE_DELAY = 300; // ms
+const MAX_RESULTS = 20; // Reduced from 50 to 20 for faster initial render
 
 // Extended Organization type with level for role assignment components
 interface Organization extends Omit<SharedOrganization, 'code'> {
@@ -31,6 +35,7 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
 
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [isSelecting, setIsSelecting] = useState(false);
 
@@ -38,19 +43,47 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLUListElement>(null);
 
-    // Get organizations that are not yet selected
-    const selectedIds = selectedOrganizations.map(org => org.id);
-    const availableOptions = availableOrganizations.filter(org => !selectedIds.includes(org.id));
+    // Debounce search term
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, DEBOUNCE_DELAY);
 
-    // Filter organizations based on search term
-    const filteredOrganizations = availableOptions.filter(org => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Get organizations that are not yet selected (with useMemo and Set for O(1) lookup)
+    // OPTIMIZATION: Only filter when dropdown is open to improve modal open performance
+    const { availableOptions, hiddenResultsCount } = useMemo(() => {
+        // Skip filtering if dropdown is not open - improves performance
+        if (!isOpen) {
+            return { availableOptions: [], hiddenResultsCount: 0 };
+        }
+
+        const selectedIds = new Set(selectedOrganizations.map(org => org.id));
+        const available = availableOrganizations.filter(org => !selectedIds.has(org.id));
+
+        if (!debouncedSearchTerm.trim()) {
+            const limited = available.slice(0, MAX_RESULTS);
+            return {
+                availableOptions: limited,
+                hiddenResultsCount: Math.max(0, available.length - MAX_RESULTS)
+            };
+        }
+
+        const searchLower = debouncedSearchTerm.toLowerCase();
+        const filtered = available.filter(org =>
             org.name.toLowerCase().includes(searchLower) ||
-            org.code.toLowerCase().includes(searchLower) ||
-            (org.description && org.description.toLowerCase().includes(searchLower))
+            org.code?.toLowerCase().includes(searchLower) ||
+            org.parent?.name?.toLowerCase().includes(searchLower)
         );
-    });
+
+        const limited = filtered.slice(0, MAX_RESULTS);
+        return {
+            availableOptions: limited,
+            hiddenResultsCount: Math.max(0, filtered.length - MAX_RESULTS)
+        };
+    }, [availableOrganizations, selectedOrganizations, debouncedSearchTerm, isOpen]);
 
     // Handle scroll events to update dropdown position
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, maxHeight: 200 });
@@ -192,7 +225,7 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                     setIsOpen(true);
                 } else {
                     setHighlightedIndex(prev =>
-                        prev < filteredOrganizations.length - 1 ? prev + 1 : 0
+                        prev < availableOptions.length - 1 ? prev + 1 : 0
                     );
                 }
                 break;
@@ -201,15 +234,15 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                 e.preventDefault();
                 if (isOpen) {
                     setHighlightedIndex(prev =>
-                        prev > 0 ? prev - 1 : filteredOrganizations.length - 1
+                        prev > 0 ? prev - 1 : availableOptions.length - 1
                     );
                 }
                 break;
 
             case 'Enter':
                 e.preventDefault();
-                if (isOpen && highlightedIndex >= 0 && filteredOrganizations[highlightedIndex]) {
-                    handleOrganizationAdd(filteredOrganizations[highlightedIndex]);
+                if (isOpen && highlightedIndex >= 0 && availableOptions[highlightedIndex]) {
+                    handleOrganizationAdd(availableOptions[highlightedIndex]);
                 }
                 break;
 
@@ -230,9 +263,9 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 flex-1 flex flex-col">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                                {t('users:labels.selectedOrganizations', { 
-                                    count: selectedOrganizations.length, 
-                                    defaultValue: `Tổ chức đã chọn (${selectedOrganizations.length})` 
+                                {t('users:labels.selectedOrganizations', {
+                                    count: selectedOrganizations.length,
+                                    defaultValue: `Tổ chức đã chọn (${selectedOrganizations.length})`
                                 })}
                             </span>
                             {!disabled && (
@@ -329,9 +362,9 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                         e.stopPropagation();
                     }}
                 >
-                    {filteredOrganizations.length > 0 ? (
+                    {availableOptions.length > 0 ? (
                         <ul ref={listRef} className="py-2">
-                            {filteredOrganizations.map((org, index) => (
+                            {availableOptions.map((org, index) => (
                                 <li key={org.id}>
                                     <button
                                         type="button"
@@ -347,8 +380,8 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                                         }}
                                         onMouseEnter={() => setHighlightedIndex(index)}
                                         className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${index === highlightedIndex
-                                                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                                                : ''
+                                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                                            : ''
                                             } border-l-4 border-transparent hover:border-blue-400`}
                                     >
                                         <div className="flex items-center">
@@ -367,15 +400,23 @@ const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                                     </button>
                                 </li>
                             ))}
+                            {hiddenResultsCount > 0 && (
+                                <li className="px-4 py-2 text-xs text-center text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+                                    {t('users:labels.moreResultsHint', {
+                                        count: hiddenResultsCount,
+                                        defaultValue: `Còn ${hiddenResultsCount} kết quả khác. Hãy tìm kiếm cụ thể hơn.`
+                                    })}
+                                </li>
+                            )}
                         </ul>
                     ) : (
                         <div className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
                             <Search className="w-5 h-5 mx-auto mb-2 text-gray-400" />
                             <p className="text-sm">
-                                {searchTerm
-                                    ? t('users:labels.organizationNotFound', { 
-                                        searchTerm, 
-                                        defaultValue: `Không tìm thấy tổ chức "${searchTerm}"` 
+                                {debouncedSearchTerm
+                                    ? t('users:labels.organizationNotFound', {
+                                        searchTerm: debouncedSearchTerm,
+                                        defaultValue: `Không tìm thấy tổ chức "${debouncedSearchTerm}"`
                                     })
                                     : availableOptions.length === 0
                                         ? t('users:labels.allOrganizationsAdded', { defaultValue: 'Tất cả tổ chức đã được thêm' })

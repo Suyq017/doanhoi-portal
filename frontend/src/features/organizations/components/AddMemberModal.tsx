@@ -146,25 +146,32 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             onSuccess(t('common:messages.success.add'));
             setUserCode('');
             onClose();
-        } catch (err) {
-            console.error('Error adding member:', (err as any).status);
-            if ((err as any).status === 400) {
-                const errorMessage = t('users:messages.userAlreadyExists');
+        } catch (err: any) {
+            const status = err?.response?.status;
+            const errorData = err?.response?.data;
+
+            console.error('Error adding member:', { status, errorData, err });
+
+            if (status === 400) {
+                const errorMessage = errorData?.message || t('users:messages.userAlreadyExists');
                 setError(errorMessage);
                 if (onError) {
                     onError(errorMessage);
                 }
-
-            } else if ((err as any).status === 404) {
-                const errorMessage = t('users:messages.noUsers');
+            } else if (status === 404) {
+                const errorMessage = errorData?.message || t('users:messages.noUsers');
                 setError(errorMessage);
                 if (onError) {
                     onError(errorMessage);
                 }
-
+            } else {
+                // Handle other errors
+                const errorMessage = errorData?.message || err?.message || t('common:messages.error.unknown');
+                setError(errorMessage);
+                if (onError) {
+                    onError(errorMessage);
+                }
             }
-
-
         } finally {
             setLoading(false);
         }

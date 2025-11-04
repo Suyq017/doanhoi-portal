@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { CtxhCategory, CtxhActivity, CreateActivityRequest, UpdateActivityRequest, ActivityStatus } from '../types';
 import { categoryService, activityService, limitConfigService } from '../services';
-import { organizationService } from '../../../shared/services/organizationService';
 import { useToast } from '../../../shared/hooks';
 import { useAuth } from '../../auth/context/AuthContext';
+import { useOrganizationList } from '../../../shared/hooks/queries';
 
 interface ActivityFormProps {
   isOpen: boolean;
@@ -50,11 +50,10 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   });
 
   const [categories, setCategories] = useState<CtxhCategory[]>([]);
-  const [organizations, setOrganizations] = useState<any[]>([]);
+  const { data: allOrganizations = [], isLoading: _loadingOrganizations } = useOrganizationList();
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
-  const [organizationsLoading, setOrganizationsLoading] = useState(false);
-  const [organizationConstraints, setOrganizationConstraints] = useState<{
+  const [organizationConstraints] = useState<{
     canSelectMultiple: boolean;
     fixedOrganization: any | null;
   }>({
@@ -90,12 +89,139 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     return num % 1 === 0 ? Math.floor(num).toString() : num.toString();
   };
 
+  // Helper function to filter organizations based on user's permission and organization level
+  const filterOrganizationsByPermission = (allOrganizations: any[]): any[] => {
+    console.log('🔍 [CTXH Filter] Starting filter with:', {
+      totalOrgs: allOrganizations.length,
+      userOrgs: auth.user?.organizations,
+      userRoles: auth.userRoles
+    });
+
+    // Super admin can see all organizations - check if user has super_admin role
+    const isSuperAdmin = auth.userRoles?.some(role => role.name === 'super_admin');
+    if (isSuperAdmin) {
+      console.log('✅ [CTXH Filter] User is super admin - returning all organizations');
+      return allOrganizations;
+    }
+
+    // Get user's organizations with ctxh.create permission
+    const userOrgsWithPermission = auth.user?.organizations?.filter(userOrg => {
+      const hasPerm = hasPermission('ctxh.activities.create', userOrg.organizationId);
+      console.log('🔑 [CTXH Filter] Checking permission for org:', {
+        orgId: userOrg.organizationId,
+        hasPermission: hasPerm
+      });
+      return hasPerm;
+    }) || [];
+
+    console.log('📋 [CTXH Filter] User orgs with permission:', userOrgsWithPermission);
+
+    if (userOrgsWithPermission.length === 0) {
+      console.log('❌ [CTXH Filter] No permissions found - returning empty');
+      return []; // No permission, return empty array
+    }
+
+    // Build a map of organizationId -> organization object
+    const orgMap = new Map<string, any>();
+    allOrganizations.forEach(org => orgMap.set(org.id, org));
+
+    // Helper function to get organization level (cấp)
+    const getOrganizationLevel = (org: any): number => {
+      const level1Types = ['doan_truong', 'hoi_sinh_vien_truong', 'clb_truong'];
+      const level2Types = ['doan_co_so', 'lien_chi_hoi', 'clb_khoa'];
+      const level3Types = ['chi_doan', 'chi_hoi'];
+
+      if (level1Types.includes(org.type)) return 1;
+      if (level2Types.includes(org.type)) return 2;
+      if (level3Types.includes(org.type)) return 3;
+      return 0; // Unknown
+    };
+
+    // Helper function to get all descendant IDs of an organization
+    const getDescendantIds = (orgId: string): Set<string> => {
+      const descendants = new Set<string>();
+      const queue = [orgId];
+
+      while (queue.length > 0) {
+        const currentId = queue.shift()!;
+        allOrganizations
+          .filter(org => org.parent?.id === currentId)
+          .forEach(childOrg => {
+            descendants.add(childOrg.id);
+            queue.push(childOrg.id);
+          });
+      }
+
+      return descendants;
+    };
+
+    const allowedOrgIds = new Set<string>();
+
+    userOrgsWithPermission.forEach(userOrg => {
+      const org = orgMap.get(userOrg.organizationId);
+      if (!org) {
+        console.log('⚠️ [CTXH Filter] Org not found in map:', userOrg.organizationId);
+        return;
+      }
+
+      const level = getOrganizationLevel(org);
+      console.log('🎯 [CTXH Filter] Processing org:', {
+        id: org.id,
+        name: org.name,
+        type: org.type,
+        level: level
+      });
+
+      if (level === 3) {
+        // Cấp 3: Không cho chọn tổ chức nào
+        console.log('🚫 [CTXH Filter] Level 3 org - no selection allowed');
+        // Do nothing - don't add any organizations
+      } else if (level === 2) {
+        // Cấp 2: Chỉ chọn chính nó và các tổ chức con (không chọn cha)
+        allowedOrgIds.add(org.id); // Add itself
+        const descendants = getDescendantIds(org.id);
+        console.log('✅ [CTXH Filter] Level 2 org - adding self + descendants:', {
+          self: org.id,
+          descendantsCount: descendants.size,
+          descendants: Array.from(descendants)
+        });
+        descendants.forEach(id => allowedOrgIds.add(id)); // Add all descendants
+      } else if (level === 1) {
+        // Cấp 1: Chọn nó và tất cả tổ chức con
+        allowedOrgIds.add(org.id); // Add itself
+        const descendants = getDescendantIds(org.id);
+        console.log('✅ [CTXH Filter] Level 1 org - adding self + descendants:', {
+          self: org.id,
+          descendantsCount: descendants.size,
+          descendants: Array.from(descendants)
+        });
+        descendants.forEach(id => allowedOrgIds.add(id)); // Add all descendants
+      }
+    });
+
+    // Filter organizations by allowed IDs
+    const filteredOrgs = allOrganizations.filter(org => allowedOrgIds.has(org.id));
+    console.log('✨ [CTXH Filter] Final result:', {
+      allowedOrgIdsCount: allowedOrgIds.size,
+      allowedOrgIds: Array.from(allowedOrgIds),
+      filteredOrgsCount: filteredOrgs.length,
+      filteredOrgNames: filteredOrgs.map(o => o.name)
+    });
+
+    return filteredOrgs;
+  };
+
+  // Filter organizations based on permissions
+  const filteredOrganizationsList = React.useMemo(() => {
+    return filterOrganizationsByPermission(allOrganizations);
+  }, [allOrganizations, auth.user?.organizations, auth.userRoles]);
+
   // Filter functions for combobox
   const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(categorySearch.toLowerCase())
   );
 
-  const filteredOrganizations = organizations.filter(org =>
+  const filteredOrganizations = filteredOrganizationsList.filter((org: any) =>
     org.name.toLowerCase().includes(organizationSearch.toLowerCase())
   );
 
@@ -106,7 +232,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   };
 
   const getSelectedOrganizationName = () => {
-    const org = organizations.find(o => o.id === formData.organizationId);
+    const org = filteredOrganizationsList.find((o: any) => o.id === formData.organizationId);
     return org?.name || '';
   };
 
@@ -355,7 +481,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   useEffect(() => {
     if (isOpen) {
       loadCategories();
-      loadOrganizations();
     }
   }, [isOpen]);
 
@@ -412,151 +537,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     } finally {
       setCategoriesLoading(false);
     }
-  };
-
-  const loadOrganizations = async () => {
-    try {
-      setOrganizationsLoading(true);
-
-      // Get all organizations
-      const response = await organizationService.getOrganizations();
-
-      // Filter organizations based on user's permissions and organization level
-      const filteredOrgs = filterOrganizationsByPermission(response);
-
-      setOrganizations(filteredOrgs);
-      setOrganizationConstraints({
-        canSelectMultiple: true,
-        fixedOrganization: null
-      });
-    } catch (error) {
-      console.error('Failed to load organizations:', error);
-      setOrganizations([]);
-    } finally {
-      setOrganizationsLoading(false);
-    }
-  };
-
-  // Helper function to filter organizations based on user's permission and organization level
-  const filterOrganizationsByPermission = (allOrganizations: any[]): any[] => {
-    console.log('🔍 [CTXH Filter] Starting filter with:', {
-      totalOrgs: allOrganizations.length,
-      userOrgs: auth.user?.organizations,
-      userRoles: auth.userRoles
-    });
-
-    // Super admin can see all organizations - check if user has super_admin role
-    const isSuperAdmin = auth.userRoles?.some(role => role.name === 'super_admin');
-    if (isSuperAdmin) {
-      console.log('✅ [CTXH Filter] User is super admin - returning all organizations');
-      return allOrganizations;
-    }
-
-    // Get user's organizations with ctxh.create permission
-    const userOrgsWithPermission = auth.user?.organizations?.filter(userOrg => {
-      const hasPerm = hasPermission('ctxh.activities.create', userOrg.organizationId);
-      console.log('🔑 [CTXH Filter] Checking permission for org:', {
-        orgId: userOrg.organizationId,
-        hasPermission: hasPerm
-      });
-      return hasPerm;
-    }) || [];
-
-    console.log('📋 [CTXH Filter] User orgs with permission:', userOrgsWithPermission);
-
-    if (userOrgsWithPermission.length === 0) {
-      console.log('❌ [CTXH Filter] No permissions found - returning empty');
-      return []; // No permission, return empty array
-    }
-
-    // Build a map of organizationId -> organization object
-    const orgMap = new Map<string, any>();
-    allOrganizations.forEach(org => orgMap.set(org.id, org));
-
-    // Helper function to get organization level (cấp)
-    const getOrganizationLevel = (org: any): number => {
-      const level1Types = ['doan_truong', 'hoi_sinh_vien_truong', 'clb_truong'];
-      const level2Types = ['doan_co_so', 'lien_chi_hoi', 'clb_khoa'];
-      const level3Types = ['chi_doan', 'chi_hoi'];
-
-      if (level1Types.includes(org.type)) return 1;
-      if (level2Types.includes(org.type)) return 2;
-      if (level3Types.includes(org.type)) return 3;
-      return 0; // Unknown
-    };
-
-    // Helper function to get all descendant IDs of an organization
-    const getDescendantIds = (orgId: string): Set<string> => {
-      const descendants = new Set<string>();
-      const queue = [orgId];
-
-      while (queue.length > 0) {
-        const currentId = queue.shift()!;
-        allOrganizations
-          .filter(org => org.parent?.id === currentId)
-          .forEach(childOrg => {
-            descendants.add(childOrg.id);
-            queue.push(childOrg.id);
-          });
-      }
-
-      return descendants;
-    };
-
-    const allowedOrgIds = new Set<string>();
-
-    userOrgsWithPermission.forEach(userOrg => {
-      const org = orgMap.get(userOrg.organizationId);
-      if (!org) {
-        console.log('⚠️ [CTXH Filter] Org not found in map:', userOrg.organizationId);
-        return;
-      }
-
-      const level = getOrganizationLevel(org);
-      console.log('🎯 [CTXH Filter] Processing org:', {
-        id: org.id,
-        name: org.name,
-        type: org.type,
-        level: level
-      });
-
-      if (level === 3) {
-        // Cấp 3: Không cho chọn tổ chức nào
-        console.log('🚫 [CTXH Filter] Level 3 org - no selection allowed');
-        // Do nothing - don't add any organizations
-      } else if (level === 2) {
-        // Cấp 2: Chỉ chọn chính nó và các tổ chức con (không chọn cha)
-        allowedOrgIds.add(org.id); // Add itself
-        const descendants = getDescendantIds(org.id);
-        console.log('✅ [CTXH Filter] Level 2 org - adding self + descendants:', {
-          self: org.id,
-          descendantsCount: descendants.size,
-          descendants: Array.from(descendants)
-        });
-        descendants.forEach(id => allowedOrgIds.add(id)); // Add all descendants
-      } else if (level === 1) {
-        // Cấp 1: Chọn nó và tất cả tổ chức con
-        allowedOrgIds.add(org.id); // Add itself
-        const descendants = getDescendantIds(org.id);
-        console.log('✅ [CTXH Filter] Level 1 org - adding self + descendants:', {
-          self: org.id,
-          descendantsCount: descendants.size,
-          descendants: Array.from(descendants)
-        });
-        descendants.forEach(id => allowedOrgIds.add(id)); // Add all descendants
-      }
-    });
-
-    // Filter organizations by allowed IDs
-    const filteredOrgs = allOrganizations.filter(org => allowedOrgIds.has(org.id));
-    console.log('✨ [CTXH Filter] Final result:', {
-      allowedOrgIdsCount: allowedOrgIds.size,
-      allowedOrgIds: Array.from(allowedOrgIds),
-      filteredOrgsCount: filteredOrgs.length,
-      filteredOrgNames: filteredOrgs.map(o => o.name)
-    });
-
-    return filteredOrgs;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -915,7 +895,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                   {t('activity.organization')} <span className="text-red-500">*</span>
                 </label>
 
-                {activity && organizations.length === 0 ? (
+                {activity && filteredOrganizationsList.length === 0 ? (
                   // LEVEL 3 EDIT MODE - Display current organization (disabled, read-only)
                   <div>
                     <div className="relative">
@@ -941,7 +921,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder={organizationsLoading ? t('activity.form.loading') : t('activity.form.selectOrganization')}
+                      placeholder={_loadingOrganizations ? t('activity.form.loading') : t('activity.form.selectOrganization')}
                       value={organizationDropdownOpen ? organizationSearch : getSelectedOrganizationName()}
                       onChange={(e) => {
                         setOrganizationSearch(e.target.value);
@@ -958,7 +938,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
                         : 'border-gray-300'
                         }`}
-                      disabled={organizationsLoading}
+                      disabled={_loadingOrganizations}
                     />
                     <button
                       type="button"
@@ -973,7 +953,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                     {organizationDropdownOpen && (
                       <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                         {filteredOrganizations.length > 0 ? (
-                          filteredOrganizations.map((org) => (
+                          filteredOrganizations.map((org: any) => (
                             <button
                               key={org.id}
                               type="button"
@@ -990,7 +970,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                           ))
                         ) : (
                           <div className="px-3 py-2 text-gray-500 text-sm">
-                            {organizationsLoading ? t('activity.form.loading') : t('activity.form.noResults')}
+                            {_loadingOrganizations ? t('activity.form.loading') : t('activity.form.noResults')}
                           </div>
                         )}
                       </div>
@@ -1003,7 +983,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                     )}
 
                     {/* Hint for Level 2 users */}
-                    {organizationConstraints.fixedOrganization && organizations.length > 1 && (
+                    {organizationConstraints.fixedOrganization && filteredOrganizationsList.length > 1 && (
                       <p className="mt-1 text-xs text-gray-500">
                         {t('activity.form.organizationLevel2Hint', {
                           org: organizationConstraints.fixedOrganization.name

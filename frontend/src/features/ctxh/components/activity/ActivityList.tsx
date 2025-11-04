@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Edit, Trash2, Eye, Calendar, ChevronDown } from 'lucide-react';
-import { 
-  CtxhActivity, 
+import {
+  CtxhActivity,
   ActivityQueryParams,
   PaginatedResponse,
   CtxhCategory,
   ActivityStatus
 } from '../../types';
 import { activityService, categoryService } from '../../services';
-import { organizationService } from '../../../../shared/services';
-import { Organization } from '../../../../shared/types/organization';
 import { debounce } from '../../utils';
 import { Pagination } from '../../../../shared/components';
+import { useOrganizationList } from '../../../../shared/hooks/queries';
 
 interface ActivityListProps {
   onCreateClick: () => void;
@@ -44,13 +43,19 @@ const ActivityList: React.FC<ActivityListProps> = ({
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
-  
+
   // Filter states
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
   const [categories, setCategories] = useState<CtxhCategory[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
+
+  // Load organizations from TanStack Query
+  const { data: allOrganizations = [], isLoading: _loadingOrganizations } = useOrganizationList();
+  const organizations = React.useMemo(
+    () => allOrganizations.map(org => ({ id: org.id, name: org.name })),
+    [allOrganizations]
+  );
 
   // Combobox states
   const [categorySearch, setCategorySearch] = useState('');
@@ -73,7 +78,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
     category.name.toLowerCase().includes(categorySearch.toLowerCase())
   );
 
-  const filteredOrganizations = organizations.filter(organization =>
+  const filteredOrganizations = organizations.filter((organization: any) =>
     organization.name.toLowerCase().includes(organizationSearch.toLowerCase())
   );
 
@@ -100,7 +105,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
   };
 
   const getSelectedOrganizationName = () => {
-    const organization = organizations.find(o => o.id === selectedOrganizationId);
+    const organization = organizations.find((o: any) => o.id === selectedOrganizationId);
     return organization ? organization.name : t('activity.allOrganizations');
   };
 
@@ -118,28 +123,16 @@ const ActivityList: React.FC<ActivityListProps> = ({
     }
   };
 
-  // Load organizations
-  const loadOrganizations = async () => {
-    try {
-      // Use basic organizations endpoint to allow filtering by any organization
-      const response = await organizationService.getOrganizations();
-      setOrganizations(response);
-    } catch (error) {
-      console.error('Failed to load organizations:', error);
-      showToast('error', 'Không thể tải danh sách tổ chức');
-    }
-  };
-
   const loadActivities = async (page: number = currentPage, search?: string, categoryId?: string, status?: string, organizationId?: string, newLimit?: number) => {
     try {
       setLoading(true);
-      
+
       // Determine which values to use
       const searchValue = search !== undefined ? search : searchTerm;
       const categoryIdValue = categoryId !== undefined ? categoryId : selectedCategoryId;
       const statusValue = status !== undefined ? status : selectedStatus;
       const organizationIdValue = organizationId !== undefined ? organizationId : selectedOrganizationId;
-      
+
       const params: ActivityQueryParams = {
         page,
         limit: newLimit !== undefined ? newLimit : limit,
@@ -166,7 +159,6 @@ const ActivityList: React.FC<ActivityListProps> = ({
   useEffect(() => {
     loadActivities();
     loadCategories();
-    loadOrganizations();
   }, [refreshTrigger]);
 
   // Close dropdowns when clicking outside
@@ -310,15 +302,14 @@ const ActivityList: React.FC<ActivityListProps> = ({
               >
                 <ChevronDown className="w-4 h-4" />
               </button>
-              
+
               {categoryDropdownOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
                   <button
                     type="button"
                     onClick={() => handleCategoryChange('')}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                      !selectedCategoryId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                    }`}
+                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${!selectedCategoryId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                      }`}
                   >
                     {t('activity.allCategories')}
                   </button>
@@ -328,9 +319,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         key={category.id}
                         type="button"
                         onClick={() => handleCategoryChange(category.id)}
-                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                          selectedCategoryId === category.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                        }`}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${selectedCategoryId === category.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                          }`}
                       >
                         {category.name}
                       </button>
@@ -372,27 +362,25 @@ const ActivityList: React.FC<ActivityListProps> = ({
               >
                 <ChevronDown className="w-4 h-4" />
               </button>
-              
+
               {organizationDropdownOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
                   <button
                     type="button"
                     onClick={() => handleOrganizationChange('')}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                      !selectedOrganizationId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                    }`}
+                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${!selectedOrganizationId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                      }`}
                   >
                     {t('activity.allOrganizations')}
                   </button>
                   {filteredOrganizations.length > 0 ? (
-                    filteredOrganizations.map((organization) => (
+                    filteredOrganizations.map((organization: any) => (
                       <button
                         key={organization.id}
                         type="button"
                         onClick={() => handleOrganizationChange(organization.id)}
-                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                          selectedOrganizationId === organization.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                        }`}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${selectedOrganizationId === organization.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                          }`}
                       >
                         {organization.name}
                       </button>
@@ -434,15 +422,14 @@ const ActivityList: React.FC<ActivityListProps> = ({
               >
                 <ChevronDown className="w-4 h-4" />
               </button>
-              
+
               {statusDropdownOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
                   <button
                     type="button"
                     onClick={() => handleStatusChange('')}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                      !selectedStatus ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                    }`}
+                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${!selectedStatus ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                      }`}
                   >
                     {t('activity.allStatuses')}
                   </button>
@@ -452,9 +439,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         key={status.value}
                         type="button"
                         onClick={() => handleStatusChange(status.value)}
-                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                          selectedStatus === status.value ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                        }`}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${selectedStatus === status.value ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                          }`}
                       >
                         {status.label}
                       </button>
@@ -514,7 +500,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                     <tr key={activity.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="w-1/4 px-6 py-4">
                         <div className="font-medium text-gray-900 dark:text-white break-words overflow-hidden">
-                          <div 
+                          <div
                             className="leading-5 overflow-hidden"
                             style={{
                               display: '-webkit-box',
@@ -529,7 +515,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         </div>
                         {activity.description && (
                           <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            <div 
+                            <div
                               className="overflow-hidden break-words leading-4"
                               style={{
                                 display: '-webkit-box',
@@ -545,8 +531,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         )}
                       </td>
                       <td className="w-48 px-6 py-4">
-                        <div 
-                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5" 
+                        <div
+                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5"
                           style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
@@ -559,8 +545,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         </div>
                       </td>
                       <td className="w-32 px-6 py-4">
-                        <div 
-                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5" 
+                        <div
+                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5"
                           style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
