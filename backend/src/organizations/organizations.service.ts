@@ -1178,173 +1178,49 @@ export class OrganizationsService {
   }
 
   /**
+   * Get user's primary organization from user_organizations table
+   * Returns the first active organization the user belongs to
+   * Used for auto-setting organization in CTXH activity forms
+   */
+  async getUserPrimaryOrganization(userId: string): Promise<{
+    organization: Organization | null;
+  }> {
+    try {
+      // Query user_organizations table directly to get user's first active organization
+      const userOrgQuery = `
+        SELECT o.*, uo."userId", uo."organizationId", uo.role, uo."isActive" as "userOrgIsActive"
+        FROM user_organizations uo
+        JOIN organizations o ON uo."organizationId" = o.id
+        WHERE uo."userId" = $1 
+        AND uo."isActive" = true
+        AND o."isActive" = true
+        ORDER BY uo."joinedAt" ASC
+        LIMIT 1
+      `;
+
+      const result = await this.organizationsRepository.query(userOrgQuery, [userId]);
+
+      if (result.length === 0) {
+        return { organization: null };
+      }
+
+      // Fetch full Organization entity with relations
+      const organization = await this.organizationsRepository.findOne({
+        where: { id: result[0].id },
+        relations: ['parent']
+      });
+
+      return { organization };
+    } catch (error) {
+      console.error('[OrganizationsService] Error getting user primary organization:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get organizations user can access for CTXH activity creation
    * Based on ctxh.activities.create permission and hierarchy level
    */
-  async getCtxhActivityAccessibleOrganizations(userId: string): Promise<{
-    organizations: Organization[];
-    canSelectMultiple: boolean;
-    fixedOrganization: Organization | null;
-  }> {
-    console.log(`[OrganizationsService] Getting CTXH activity organizations for user: ${userId}`);
-
-    // 1. Check if user is super admin
-    const superAdminQuery = `
-      SELECT ur.id
-      FROM user_roles ur
-      JOIN roles r ON ur."roleId" = r.id
-      JOIN role_permissions rp ON r.id = rp."roleId"
-      JOIN permissions p ON rp."permissionId" = p.id
-      WHERE ur."userId" = $1 
-      AND ur."organizationId" IS NULL
-      AND ur."isActive" = true
-      AND r.name = 'super_admin'
-      AND p."isActive" = true
-      LIMIT 1
-    `;
-
-    const superAdminResult = await this.organizationsRepository.query(superAdminQuery, [userId]);
-
-    if (superAdminResult.length > 0) {
-      console.log(`[OrganizationsService] User is super_admin - can access all organizations`);
-
-      const allOrgs = await this.organizationsRepository.find({
-        where: { isActive: true },
-        relations: ['parent'],
-        order: { name: 'ASC' }
-      });
-
-      return {
-        organizations: allOrgs,
-        canSelectMultiple: true,
-        fixedOrganization: null
-      };
-    }
-
-    // 2. Get organizations where user has ctxh.activities.create permission
-    const accessibleOrgsQuery = `
-      SELECT DISTINCT 
-        o.id, o.name, o.code, o.type, o."parentId", 
-        o."createdAt", o."updatedAt", o."isActive",
-        o.description
-      FROM user_roles ur
-      JOIN roles r ON ur."roleId" = r.id
-      JOIN role_permissions rp ON r.id = rp."roleId"
-      JOIN permissions p ON rp."permissionId" = p.id
-      JOIN organizations o ON ur."organizationId" = o.id
-      WHERE ur."userId" = $1 
-      AND ur."isActive" = true
-      AND p.code = 'ctxh.activities.create'
-      AND p."isActive" = true
-      AND o."isActive" = true
-      ORDER BY o.name ASC
-    `;
-
-    const accessibleOrganizations = await this.organizationsRepository.query(
-      accessibleOrgsQuery,
-      [userId]
-    );
-
-    console.log(`[OrganizationsService] Found ${accessibleOrganizations.length} organizations with ctxh.activities.create`);
-
-    if (accessibleOrganizations.length === 0) {
-      return {
-        organizations: [],
-        canSelectMultiple: false,
-        fixedOrganization: null
-      };
-    }
-
-    // 3. Analyze organization levels and build accessible list
-    const organizationsWithLevel = await Promise.all(
-      accessibleOrganizations.map(async (org) => {
-        const level = await this.getOrganizationLevel(org.id);
-        return { ...org, level };
-      })
-    );
-
-    // 4. Check for Level 3 restriction (Chi đoàn/Chi hội)
-    // Level 3 organizations CANNOT create CTXH activities
-    const hasLevel3Only = organizationsWithLevel.every(o => o.level === 3);
-
-    if (hasLevel3Only) {
-      console.log(`[OrganizationsService] User restricted to Level 3 org(s) - CANNOT create activities`);
-      return {
-        organizations: [],
-        canSelectMultiple: false,
-        fixedOrganization: null
-      };
-    }
-
-    // 5. Determine selection behavior based on levels
-    const hasLevel2Only = organizationsWithLevel.every(o => o.level === 2) &&
-      organizationsWithLevel.length === 1;
-
-    if (hasLevel2Only) {
-      // User has permission only on a single Level 2 organization
-      // Return Level 2 org + all its Level 3 children for selection
-      const level2Org = await this.organizationsRepository.findOne({
-        where: { id: organizationsWithLevel[0].id },
-        relations: ['parent']
-      });
-
-      console.log(`[OrganizationsService] User restricted to Level 2 org: ${level2Org.name} - including children`);
-
-      // Get all descendants (Level 3 children)
-      const descendants = await this.getAllDescendants(level2Org.id);
-      const allOrgs = [level2Org, ...descendants];
-
-      console.log(`[OrganizationsService] Level 2 accessible organizations: ${allOrgs.length} (Level 2 + ${descendants.length} children)`);
-
-      return {
-        organizations: allOrgs.sort((a, b) => a.name.localeCompare(b.name)),
-        canSelectMultiple: true, // Changed: Allow selection from dropdown
-        fixedOrganization: level2Org // Keep reference to parent Level 2 org
-      };
-    }
-
-    // 6. Build full accessible list (Level 1 + descendants, SKIP Level 3)
-    const allAccessibleOrgs: Organization[] = [];
-    const processedIds = new Set<string>();
-
-    for (const orgData of organizationsWithLevel) {
-      // IMPORTANT: Skip Level 3 organizations - they cannot create activities
-      if (orgData.level === 3) {
-        console.log(`[OrganizationsService] Skipping Level 3 org: ${orgData.name}`);
-        continue;
-      }
-
-      const org = await this.organizationsRepository.findOne({
-        where: { id: orgData.id },
-        relations: ['parent']
-      });
-
-      if (!org || processedIds.has(org.id)) continue;
-
-      allAccessibleOrgs.push(org);
-      processedIds.add(org.id);
-
-      // If Level 1, add all descendants
-      if (orgData.level === 1) {
-        const descendants = await this.getAllDescendants(org.id);
-        descendants.forEach(desc => {
-          if (!processedIds.has(desc.id)) {
-            allAccessibleOrgs.push(desc);
-            processedIds.add(desc.id);
-          }
-        });
-      }
-    }
-
-    console.log(`[OrganizationsService] Total accessible organizations: ${allAccessibleOrgs.length}`);
-
-    return {
-      organizations: allAccessibleOrgs.sort((a, b) => a.name.localeCompare(b.name)),
-      canSelectMultiple: true,
-      fixedOrganization: null
-    };
-  }
-
   /**
    * Get organizations user can view CTXH activities for
    * Based on ctxh.activities.view permission
@@ -1426,4 +1302,145 @@ export class OrganizationsService {
     }
   }
 
+  /**
+   * Search organizations user can view CTXH activities for with pagination
+   * Only returns Level 1 and Level 2 organizations (excludes Level 3)
+   * Based on ctxh.activities.view permission
+   */
+  async searchCtxhActivityViewableOrganizations(
+    userId: string,
+    search?: string,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{
+    data: Organization[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  }> {
+    try {
+      // Validate and set defaults
+      page = Math.max(1, page || 1);
+      limit = Math.min(Math.max(1, limit || 20), 100); // Max 100 items per page
+      const skip = (page - 1) * limit;
+
+      // Check if user is super admin
+      const superAdminQuery = `
+        SELECT ur.id
+        FROM user_roles ur
+        JOIN roles r ON ur."roleId" = r.id
+        JOIN role_permissions rp ON r.id = rp."roleId"
+        JOIN permissions p ON rp."permissionId" = p.id
+        WHERE ur."userId" = $1 
+        AND ur."organizationId" IS NULL
+        AND ur."isActive" = true
+        AND (p.code = 'system.access_admin' OR r.name = 'super_admin')
+        AND p."isActive" = true
+        LIMIT 1
+      `;
+
+      const superAdminResult = await this.organizationsRepository.query(superAdminQuery, [userId]);
+
+      // Level 1: doan_truong, hoi_sinh_vien_truong, clb_truong
+      // Level 2: doan_co_so, lien_chi_hoi, clb_khoa  
+      // Exclude Level 3: chi_doan, chi_hoi
+      const level1And2Types = [
+        OrganizationType.DOAN_TRUONG,
+        OrganizationType.HOI_SINH_VIEN_TRUONG,
+        OrganizationType.CLB_TRUONG,
+        OrganizationType.DOAN_CO_SO,
+        OrganizationType.LIEN_CHI_HOI,
+        OrganizationType.CLB_KHOA
+      ];
+
+      let queryBuilder = this.organizationsRepository
+        .createQueryBuilder('o')
+        .where('o.isActive = :isActive', { isActive: true })
+        .andWhere('o.type IN (:...types)', { types: level1And2Types })
+        .orderBy('o.name', 'ASC');
+
+      if (superAdminResult.length > 0) {
+        // Add search filter if provided
+        if (search && search.trim()) {
+          queryBuilder.andWhere(
+            '(o.name ILIKE :search OR o.code ILIKE :search)',
+            { search: `%${search.trim()}%` }
+          );
+        }
+      } else {
+        // Query for organizations where user has ctxh.activities.view permission
+        // Filter only Level 1 & 2: 
+        // Level 1: doan_truong, hoi_sinh_vien_truong, clb_truong
+        // Level 2: doan_co_so, lien_chi_hoi, clb_khoa
+        // Exclude Level 3: chi_doan, chi_hoi
+        const accessibleOrgsQuery = `
+          SELECT DISTINCT o.id
+          FROM user_roles ur
+          JOIN roles r ON ur."roleId" = r.id
+          JOIN role_permissions rp ON r.id = rp."roleId"
+          JOIN permissions p ON rp."permissionId" = p.id
+          JOIN organizations o ON ur."organizationId" = o.id
+          WHERE ur."userId" = $1 
+          AND ur."isActive" = true
+          AND p.code = 'ctxh.activities.view'
+          AND p."isActive" = true
+          AND o."isActive" = true
+          AND o.type IN ('doan_truong', 'hoi_sinh_vien_truong', 'clb_truong', 'doan_co_so', 'lien_chi_hoi', 'clb_khoa')
+        `;
+
+        const accessibleOrganizations = await this.organizationsRepository.query(accessibleOrgsQuery, [userId]);
+        const organizationIds = accessibleOrganizations.map(row => row.id);
+
+        if (organizationIds.length === 0) {
+          return {
+            data: [],
+            total: 0,
+            page,
+            limit,
+            totalPages: 0,
+            hasNextPage: false,
+            hasPrevPage: false
+          };
+        }
+
+        queryBuilder.andWhere('o.id IN (:...ids)', { ids: organizationIds });
+
+        // Add search filter if provided
+        if (search && search.trim()) {
+          queryBuilder.andWhere(
+            '(o.name ILIKE :search OR o.code ILIKE :search)',
+            { search: `%${search.trim()}%` }
+          );
+        }
+      }
+
+      // Get total count
+      const total = await queryBuilder.getCount();
+      const totalPages = Math.ceil(total / limit);
+
+      // Apply pagination
+      const data = await queryBuilder
+        .skip(skip)
+        .take(limit)
+        .getMany();
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      };
+    } catch (error) {
+      console.error('[OrganizationsService] Error searching viewable CTXH organizations:', error);
+      throw error;
+    }
+  }
+
 }
+

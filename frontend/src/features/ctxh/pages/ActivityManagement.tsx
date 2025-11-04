@@ -24,18 +24,15 @@ const ActivityManagement: React.FC = () => {
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError, confirmDialog, showConfirm } = useToast();
 
-  // Check if user can create activities (not Level 3 organization)
+  // Check if user can create activities (has a primary organization)
   useEffect(() => {
     const checkCreatePermission = async () => {
       try {
         setCheckingPermissions(true);
-        const response = await organizationService.getCtxhActivityAccessibleOrganizations();
+        const response = await organizationService.getUserPrimaryOrganization();
 
-        // User can create if they have at least one accessible organization
-        // - Super Admin / Level 1: organizations.length > 0, fixedOrganization = null
-        // - Level 2: organizations.length = 1, fixedOrganization = Organization
-        // - Level 3 / No permission: organizations.length = 0
-        const canCreate = response.organizations.length > 0;
+        // User can create if they have a primary organization
+        const canCreate = response.organization !== null;
         setCanCreateActivity(canCreate);
       } catch (error) {
         console.error('Failed to check create permission:', error);

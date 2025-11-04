@@ -261,17 +261,16 @@ class OrganizationService {
    * Get organizations user can access for CTXH activity creation
    * Based on ctxh.activities.create permission and hierarchy level
    */
-  async getCtxhActivityAccessibleOrganizations(): Promise<{
-    organizations: Organization[];
-    canSelectMultiple: boolean;
-    fixedOrganization: Organization | null;
+  /**
+   * Get user's primary organization from user_organizations table
+   * Returns the first active organization the user belongs to
+   */
+  async getUserPrimaryOrganization(): Promise<{
+    organization: Organization | null;
   }> {
-    const response = await apiClient.get<{
-      organizations: Organization[];
-      canSelectMultiple: boolean;
-      fixedOrganization: Organization | null;
-    }>('/organizations/ctxh-activity-accessible');
-    return response;
+    return apiClient.get<{
+      organization: Organization | null;
+    }>('/organizations/user-primary-organization');
   }
 
   async getCtxhActivityViewableOrganizations(): Promise<{
@@ -281,6 +280,45 @@ class OrganizationService {
       organizations: Organization[];
     }>('/organizations/ctxh-activity-viewable');
     return response;
+  }
+
+  /**
+   * Search organizations user can view CTXH activities for with pagination
+   * Only returns Level 1 and Level 2 organizations (excludes Level 3)
+   */
+  async searchCtxhActivityViewableOrganizations(params?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: Organization[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  }> {
+    const searchParams = new URLSearchParams();
+    
+    if (params?.search) searchParams.append('search', params.search);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    
+    const queryString = searchParams.toString();
+    const endpoint = queryString 
+      ? `/organizations/ctxh-activity-viewable/search?${queryString}` 
+      : '/organizations/ctxh-activity-viewable/search';
+    
+    return apiClient.get<{
+      data: Organization[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPrevPage: boolean;
+    }>(endpoint);
   }
 
 }

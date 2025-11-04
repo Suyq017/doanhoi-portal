@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Edit, Trash2, Eye, Calendar, ChevronDown } from 'lucide-react';
-import {
-  CtxhActivity,
+import { 
+  CtxhActivity, 
   ActivityQueryParams,
   PaginatedResponse,
   CtxhCategory,
   ActivityStatus
 } from '../../types';
 import { activityService, categoryService } from '../../services';
+import { organizationService } from '../../../../shared/services';
+import { Organization } from '../../../../shared/types/organization';
 import { debounce } from '../../utils';
 import { Pagination } from '../../../../shared/components';
 import { useOrganizationList } from '../../../../shared/hooks/queries';
@@ -36,6 +38,10 @@ const ActivityList: React.FC<ActivityListProps> = ({
   permissions
 }) => {
   const { t } = useTranslation('ctxh');
+  
+  // Prefetch organizations using React Query (for caching)
+  useOrganizationList();
+  
   const [activities, setActivities] = useState<CtxhActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,19 +49,15 @@ const ActivityList: React.FC<ActivityListProps> = ({
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
-
+  
   // Filter states
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
   const [categories, setCategories] = useState<CtxhCategory[]>([]);
-
-  // Load organizations from TanStack Query
-  const { data: allOrganizations = [], isLoading: _loadingOrganizations } = useOrganizationList();
-  const organizations = React.useMemo(
-    () => allOrganizations.map(org => ({ id: org.id, name: org.name })),
-    [allOrganizations]
-  );
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingOrganizations, setLoadingOrganizations] = useState(false);
 
   // Combobox states
   const [categorySearch, setCategorySearch] = useState('');
@@ -65,7 +67,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [organizationDropdownOpen, setOrganizationDropdownOpen] = useState(false);
 
-  // Create debounced search function
+  // Create debounced search function for activities
   const debouncedSearchRef = React.useRef(
     debounce((term: string, categoryId: string, status: string, organizationId: string) => {
       setCurrentPage(1);
@@ -73,15 +75,20 @@ const ActivityList: React.FC<ActivityListProps> = ({
     }, 300)
   );
 
-  // Filter functions for comboboxes
-  const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(categorySearch.toLowerCase())
+  // Create debounced search functions for comboboxes
+  const debouncedCategorySearchRef = React.useRef(
+    debounce((term: string) => {
+      loadCategories(term);
+    }, 300)
   );
 
-  const filteredOrganizations = organizations.filter((organization: any) =>
-    organization.name.toLowerCase().includes(organizationSearch.toLowerCase())
+  const debouncedOrganizationSearchRef = React.useRef(
+    debounce((term: string) => {
+      loadOrganizations(term);
+    }, 300)
   );
 
+  // Filter functions for comboboxes (status only - category & organization use server-side search)
   const statusOptions = [
     { value: ActivityStatus.DRAFT, label: t('activity.statusOptions.DRAFT') },
     { value: ActivityStatus.ACTIVE, label: t('activity.statusOptions.ACTIVE') },
@@ -105,34 +112,57 @@ const ActivityList: React.FC<ActivityListProps> = ({
   };
 
   const getSelectedOrganizationName = () => {
-    const organization = organizations.find((o: any) => o.id === selectedOrganizationId);
+    const organization = organizations.find(o => o.id === selectedOrganizationId);
     return organization ? organization.name : t('activity.allOrganizations');
   };
 
-  // Load categories
-  const loadCategories = async () => {
+  // Load categories with server-side search
+  const loadCategories = async (search?: string) => {
     try {
+      setLoadingCategories(true);
       const response = await categoryService.findAll({
         page: 1,
-        limit: 100 // Get all categories for filter
+        limit: 20, // Limit to 20 items per search
+        search: search || undefined
       });
       setCategories(response.data);
     } catch (error) {
       console.error('Failed to load categories:', error);
       showToast('error', t('activity.loadCategoriesError'));
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  // Load organizations with server-side search (Level 1 & 2 only)
+  const loadOrganizations = async (search?: string) => {
+    try {
+      setLoadingOrganizations(true);
+      // Use server-side search API for CTXH activity viewable organizations (Level 1 & 2 only)
+      const response = await organizationService.searchCtxhActivityViewableOrganizations({
+        page: 1,
+        limit: 20, // Limit to 20 items per search
+        search: search || undefined
+      });
+      setOrganizations(response.data);
+    } catch (error) {
+      console.error('Failed to load organizations:', error);
+      showToast('error', 'Không thể tải danh sách tổ chức');
+    } finally {
+      setLoadingOrganizations(false);
     }
   };
 
   const loadActivities = async (page: number = currentPage, search?: string, categoryId?: string, status?: string, organizationId?: string, newLimit?: number) => {
     try {
       setLoading(true);
-
+      
       // Determine which values to use
       const searchValue = search !== undefined ? search : searchTerm;
       const categoryIdValue = categoryId !== undefined ? categoryId : selectedCategoryId;
       const statusValue = status !== undefined ? status : selectedStatus;
       const organizationIdValue = organizationId !== undefined ? organizationId : selectedOrganizationId;
-
+      
       const params: ActivityQueryParams = {
         page,
         limit: newLimit !== undefined ? newLimit : limit,
@@ -157,8 +187,9 @@ const ActivityList: React.FC<ActivityListProps> = ({
   };
 
   useEffect(() => {
+    setCurrentPage(1);
     loadActivities();
-    loadCategories();
+    // Don't load categories/organizations on mount - load on-demand when dropdown opens
   }, [refreshTrigger]);
 
   // Close dropdowns when clicking outside
@@ -185,10 +216,12 @@ const ActivityList: React.FC<ActivityListProps> = ({
     };
   }, []);
 
-  // Filter change handlers
+  // Filter change handlers - reset to page 1 and reload
   useEffect(() => {
-    setCurrentPage(1);
-    loadActivities(1, searchTerm, selectedCategoryId, selectedStatus, selectedOrganizationId);
+    if (selectedCategoryId !== '' || selectedStatus !== '' || selectedOrganizationId !== '') {
+      setCurrentPage(1);
+      loadActivities(1, searchTerm, selectedCategoryId, selectedStatus, selectedOrganizationId);
+    }
   }, [selectedCategoryId, selectedStatus, selectedOrganizationId]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,12 +316,19 @@ const ActivityList: React.FC<ActivityListProps> = ({
                 placeholder={t('activity.allCategories')}
                 value={categoryDropdownOpen ? categorySearch : getSelectedCategoryName()}
                 onChange={(e) => {
-                  setCategorySearch(e.target.value);
+                  const value = e.target.value;
+                  setCategorySearch(value);
                   if (!categoryDropdownOpen) setCategoryDropdownOpen(true);
+                  // Trigger server-side search with debounce
+                  debouncedCategorySearchRef.current(value);
                 }}
                 onFocus={() => {
                   setCategoryDropdownOpen(true);
                   setCategorySearch('');
+                  // Load initial categories when dropdown opens
+                  if (categories.length === 0) {
+                    loadCategories();
+                  }
                 }}
                 onBlur={() => {
                   setTimeout(() => setCategoryDropdownOpen(false), 200);
@@ -297,38 +337,54 @@ const ActivityList: React.FC<ActivityListProps> = ({
               />
               <button
                 type="button"
-                onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                onClick={() => {
+                  const newState = !categoryDropdownOpen;
+                  setCategoryDropdownOpen(newState);
+                  if (newState && categories.length === 0) {
+                    loadCategories();
+                  }
+                }}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
               >
                 <ChevronDown className="w-4 h-4" />
               </button>
-
+              
               {categoryDropdownOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
-                  <button
-                    type="button"
-                    onClick={() => handleCategoryChange('')}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${!selectedCategoryId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                      }`}
-                  >
-                    {t('activity.allCategories')}
-                  </button>
-                  {filteredCategories.length > 0 ? (
-                    filteredCategories.map((category) => (
-                      <button
-                        key={category.id}
-                        type="button"
-                        onClick={() => handleCategoryChange(category.id)}
-                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${selectedCategoryId === category.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                          }`}
-                      >
-                        {category.name}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                      {t('activity.form.noResults')}
+                  {loadingCategories ? (
+                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-center">
+                      {t('activity.loading')}
                     </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleCategoryChange('')}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
+                          !selectedCategoryId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                        }`}
+                      >
+                        {t('activity.allCategories')}
+                      </button>
+                      {categories.length > 0 ? (
+                        categories.map((category) => (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => handleCategoryChange(category.id)}
+                            className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
+                              selectedCategoryId === category.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                            }`}
+                          >
+                            {category.name}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                          {t('activity.form.noResults')}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -343,12 +399,19 @@ const ActivityList: React.FC<ActivityListProps> = ({
                 placeholder={t('activity.allOrganizations')}
                 value={organizationDropdownOpen ? organizationSearch : getSelectedOrganizationName()}
                 onChange={(e) => {
-                  setOrganizationSearch(e.target.value);
+                  const value = e.target.value;
+                  setOrganizationSearch(value);
                   if (!organizationDropdownOpen) setOrganizationDropdownOpen(true);
+                  // Trigger server-side search with debounce
+                  debouncedOrganizationSearchRef.current(value);
                 }}
                 onFocus={() => {
                   setOrganizationDropdownOpen(true);
                   setOrganizationSearch('');
+                  // Load initial organizations when dropdown opens
+                  if (organizations.length === 0) {
+                    loadOrganizations();
+                  }
                 }}
                 onBlur={() => {
                   setTimeout(() => setOrganizationDropdownOpen(false), 200);
@@ -357,38 +420,54 @@ const ActivityList: React.FC<ActivityListProps> = ({
               />
               <button
                 type="button"
-                onClick={() => setOrganizationDropdownOpen(!organizationDropdownOpen)}
+                onClick={() => {
+                  const newState = !organizationDropdownOpen;
+                  setOrganizationDropdownOpen(newState);
+                  if (newState && organizations.length === 0) {
+                    loadOrganizations();
+                  }
+                }}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
               >
                 <ChevronDown className="w-4 h-4" />
               </button>
-
+              
               {organizationDropdownOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
-                  <button
-                    type="button"
-                    onClick={() => handleOrganizationChange('')}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${!selectedOrganizationId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                      }`}
-                  >
-                    {t('activity.allOrganizations')}
-                  </button>
-                  {filteredOrganizations.length > 0 ? (
-                    filteredOrganizations.map((organization: any) => (
-                      <button
-                        key={organization.id}
-                        type="button"
-                        onClick={() => handleOrganizationChange(organization.id)}
-                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${selectedOrganizationId === organization.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                          }`}
-                      >
-                        {organization.name}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                      {t('activity.form.noResults')}
+                  {loadingOrganizations ? (
+                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-center">
+                      {t('activity.loading')}
                     </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleOrganizationChange('')}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
+                          !selectedOrganizationId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                        }`}
+                      >
+                        {t('activity.allOrganizations')}
+                      </button>
+                      {organizations.length > 0 ? (
+                        organizations.map((organization) => (
+                          <button
+                            key={organization.id}
+                            type="button"
+                            onClick={() => handleOrganizationChange(organization.id)}
+                            className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
+                              selectedOrganizationId === organization.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                            }`}
+                          >
+                            {organization.name}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                          {t('activity.form.noResults')}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -422,14 +501,15 @@ const ActivityList: React.FC<ActivityListProps> = ({
               >
                 <ChevronDown className="w-4 h-4" />
               </button>
-
+              
               {statusDropdownOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
                   <button
                     type="button"
                     onClick={() => handleStatusChange('')}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${!selectedStatus ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                      }`}
+                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
+                      !selectedStatus ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                    }`}
                   >
                     {t('activity.allStatuses')}
                   </button>
@@ -439,8 +519,9 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         key={status.value}
                         type="button"
                         onClick={() => handleStatusChange(status.value)}
-                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${selectedStatus === status.value ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                          }`}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
+                          selectedStatus === status.value ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                        }`}
                       >
                         {status.label}
                       </button>
@@ -500,7 +581,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                     <tr key={activity.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="w-1/4 px-6 py-4">
                         <div className="font-medium text-gray-900 dark:text-white break-words overflow-hidden">
-                          <div
+                          <div 
                             className="leading-5 overflow-hidden"
                             style={{
                               display: '-webkit-box',
@@ -515,7 +596,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         </div>
                         {activity.description && (
                           <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            <div
+                            <div 
                               className="overflow-hidden break-words leading-4"
                               style={{
                                 display: '-webkit-box',
@@ -531,8 +612,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         )}
                       </td>
                       <td className="w-48 px-6 py-4">
-                        <div
-                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5"
+                        <div 
+                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5" 
                           style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
@@ -545,8 +626,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         </div>
                       </td>
                       <td className="w-32 px-6 py-4">
-                        <div
-                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5"
+                        <div 
+                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5" 
                           style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 2,

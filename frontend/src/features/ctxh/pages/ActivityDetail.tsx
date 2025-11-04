@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Calendar, ArrowLeft, Users, Settings, BarChart3 } from 'lucide-react';
-import { CtxhActivity, CtxhCategory, ParticipationResponse } from '../types';
-import { activityService, categoryService } from '../services';
+import { CtxhActivity, ParticipationResponse } from '../types';
+import { activityService } from '../services';
 import { useToast } from '../../../shared/hooks';
 import { Toast } from '../../../shared/components';
 import ParticipantManagement from '../components/ParticipantManagement';
@@ -17,7 +17,6 @@ const ActivityDetail: React.FC = () => {
   const ctxhPermissions = useCtxhPermissions();
 
   const [activity, setActivity] = useState<CtxhActivity | null>(null);
-  const [categories, setCategories] = useState<CtxhCategory[]>([]);
   const [participants, setParticipants] = useState<ParticipationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [participantsLoading, setParticipantsLoading] = useState(false);
@@ -27,7 +26,7 @@ const ActivityDetail: React.FC = () => {
   // Toast notifications
   const { toasts, hideToast, showError, showSuccess } = useToast();
 
-  // Load activity and categories
+  // Load activity
   useEffect(() => {
     const loadData = async () => {
       if (!id) {
@@ -37,21 +36,8 @@ const ActivityDetail: React.FC = () => {
 
       try {
         setLoading(true);
-
-        // Load activity and categories in parallel
-        const [activityResponse, categoriesResponse] = await Promise.all([
-          activityService.findOne(id),
-          categoryService.findAll({ limit: 100 })
-        ]);
-
+        const activityResponse = await activityService.findOne(id);
         setActivity(activityResponse);
-
-        // Handle categories response format
-        const categoriesData = Array.isArray(categoriesResponse)
-          ? categoriesResponse
-          : categoriesResponse.data || [];
-        setCategories(categoriesData);
-
       } catch (error) {
         console.error('Failed to load activity:', error);
         showError('Không thể tải thông tin hoạt động!');
@@ -80,12 +66,12 @@ const ActivityDetail: React.FC = () => {
     }
   };
 
-  // Load participants when activity is loaded or tab changes to overview
+  // Load participants when activity is loaded
   useEffect(() => {
-    if (activity && (activeTab === 'overview' || activeTab === 'participants')) {
+    if (activity) {
       loadParticipants();
     }
-  }, [activity, activeTab]);
+  }, [activity?.id]); // Only reload when activity ID changes
 
   // Calculate statistics from participants
   const getStatistics = () => {
@@ -100,19 +86,23 @@ const ActivityDetail: React.FC = () => {
   // Helper functions
   const getCategoryName = (categoryId: string | number | null | undefined): string => {
     if (!categoryId) return t('activity.uncategorized');
-    const category = categories.find(cat => String(cat.id) === String(categoryId));
-    return category?.name || t('activity.uncategorized');
+    // Use category from activity data instead of loading all categories
+    return activity?.category?.name || t('activity.uncategorized');
   };
 
   const formatDate = (dateString: string | Date | null): string => {
     if (!dateString) return t('common:labels.unknown');
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString(t('common:locale'), {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      
+      // Format: HH:mm DD/MM/YYYY
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${hours}:${minutes} ${day}/${month}/${year}`;
     } catch (error) {
       return t('common:labels.unknown');
     }
@@ -359,6 +349,7 @@ const ActivityDetail: React.FC = () => {
           {activeTab === 'participants' && activity && ctxhPermissions.activities.view && (
             <ParticipantManagement
               activity={activity}
+              participants={participants}
               onRefresh={() => {
                 // Refresh participants data for statistics
                 loadParticipants();

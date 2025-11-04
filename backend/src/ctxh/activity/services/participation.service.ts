@@ -248,6 +248,9 @@ export class ParticipationService {
       throw new NotFoundException(`Participation với ID ${participationId} không tồn tại`);
     }
 
+    // Store old actual_days to calculate the difference
+    const oldActualDays = participation.actual_days || 0;
+
     // Update participation
     await this.participationRepository.update(participationId, {
       actual_days: actualDays,
@@ -257,6 +260,11 @@ export class ParticipationService {
       updated_by: gradedBy,
       updated_at: new Date(),
     });
+
+    // Update user's ctxh_days
+    if (participation.student_code) {
+      await this.updateUserCtxhDays(participation.student_code, actualDays - oldActualDays);
+    }
 
     // Fetch updated participation
     const updatedParticipation = await this.participationRepository.findOne({
@@ -287,10 +295,93 @@ export class ParticipationService {
       throw new NotFoundException(`Participation với ID ${participationId} không tồn tại`);
     }
 
+    // Update user's ctxh_days (subtract the graded days)
+    if (participation.student_code && participation.actual_days) {
+      await this.updateUserCtxhDays(participation.student_code, -participation.actual_days);
+    }
+
     // Soft delete
     await this.participationRepository.update(participationId, {
       deleted_by: deletedBy,
       deleted_at: new Date(),
+    });
+  }
+
+  /**
+   * Update user's total ctxh_days
+   * @param studentCode - Student code to update
+   * @param daysDelta - Positive number to add, negative to subtract
+   */
+  private async updateUserCtxhDays(studentCode: string, daysDelta: number): Promise<void> {
+    if (daysDelta === 0) return; // No change needed
+
+    // Use raw query to safely get current ctxh_days and handle NaN at DB level
+    const result = await this.userRepository.query(
+      `SELECT id, code, 
+        CASE 
+          WHEN ctxh_days IS NULL OR ctxh_days = 'NaN'::numeric THEN 0
+          ELSE ctxh_days
+        END as ctxh_days
+       FROM users 
+       WHERE code = $1`,
+      [studentCode]
+    );
+
+    if (!result || result.length === 0) {
+      console.warn(`User with code ${studentCode} not found when updating ctxh_days`);
+      return;
+    }
+
+    const user = result[0];
+    let currentDays = parseFloat(user.ctxh_days) || 0;
+    
+    // Double-check for NaN after parsing
+    if (isNaN(currentDays)) {
+      console.warn(`User ${studentCode} has NaN ctxh_days after parsing, resetting to 0`);
+      currentDays = 0;
+    }
+    
+    const newDays = Math.max(0, currentDays + daysDelta); // Ensure non-negative
+
+    console.log(`Updating ctxh_days for ${studentCode}: ${currentDays} + ${daysDelta} = ${newDays}`);
+
+    // Update with the new value
+    await this.userRepository.query(
+      `UPDATE users 
+       SET ctxh_days = $1 
+       WHERE id = $2`,
+      [newDays, user.id]
+    );
+  }
+
+  /**
+   * Recalculate user's total ctxh_days from all participations
+   * @param studentCode - Student code to recalculate
+   */
+  private async recalculateUserCtxhDays(studentCode: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { code: studentCode },
+      select: ['id', 'code']
+    });
+
+    if (!user) {
+      console.warn(`User with code ${studentCode} not found when recalculating ctxh_days`);
+      return;
+    }
+
+    // Sum all actual_days from non-deleted participations
+    const result = await this.participationRepository
+      .createQueryBuilder('participation')
+      .select('COALESCE(SUM(participation.actual_days), 0)', 'total')
+      .where('participation.student_code = :studentCode', { studentCode })
+      .andWhere('participation.deleted_at IS NULL')
+      .andWhere('participation.status = :status', { status: ParticipationStatus.COMPLETED })
+      .getRawOne();
+
+    const totalDays = parseFloat(result.total) || 0;
+
+    await this.userRepository.update(user.id, {
+      ctxhDays: totalDays,
     });
   }
 
@@ -334,6 +425,9 @@ export class ParticipationService {
           continue;
         }
 
+        // Store old actual_days to calculate the difference
+        const oldActualDays = participation.actual_days || 0;
+
         // Update participation with grading info
         await this.participationRepository.update(participation.id, {
           actual_days: data.actualDays,
@@ -343,6 +437,9 @@ export class ParticipationService {
           updated_by: gradedBy,
           updated_at: new Date(),
         });
+
+        // Update user's ctxh_days
+        await this.updateUserCtxhDays(data.studentCode, data.actualDays - oldActualDays);
 
         successful.push({
           studentCode: data.studentCode,

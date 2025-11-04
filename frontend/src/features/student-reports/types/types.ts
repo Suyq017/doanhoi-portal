@@ -44,7 +44,9 @@ export interface StudentReport {
   };
   // Thêm fields từ API response
   total_activities_participated?: number;
-  total_days_completed?: number;
+  total_days_completed?: number; // Tổng = mới + cũ
+  ctxh_days_new_system?: number; // Ngày từ hệ thống mới (đã hoàn thành)
+  ctxh_days_old_system?: number; // Ngày từ hệ thống cũ
 }
 
 export interface StudentReportQueryParams {

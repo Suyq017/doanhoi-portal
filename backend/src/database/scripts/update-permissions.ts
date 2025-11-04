@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import { seedPermissions } from '../seeds/permissions.seed';
+import { addCtxhImportPermissions } from './add-ctxh-import-permissions';
 
 // Load environment variables
 dotenv.config();
@@ -76,6 +77,10 @@ async function updatePermissions() {
         // Run permissions seed (will create new and update existing)
         console.log('🔄 Updating permissions...\n');
         await seedPermissions(AppDataSource);
+
+        // Add CTXH Import permissions
+        console.log('\n🔄 Adding CTXH Import permissions...\n');
+        await addCtxhImportPermissions(AppDataSource);
 
         console.log('\n✅ Permissions update completed successfully!');
         console.log('📊 All permissions are now up to date.\n');

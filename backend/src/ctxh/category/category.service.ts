@@ -49,9 +49,8 @@ export class CategoryService {
 
     queryBuilder.orderBy('category.created_at', 'DESC');
 
-    // Get total count before pagination
-    const totalResults = await queryBuilder.getRawAndEntities();
-    const total = totalResults.entities.length;
+    // Get total count efficiently using getCount() instead of fetching all data
+    const total = await queryBuilder.getCount();
 
     // Apply pagination
     queryBuilder.skip(skip).take(limit);

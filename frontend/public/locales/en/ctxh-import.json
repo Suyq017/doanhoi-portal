@@ -1,0 +1,51 @@
+{
+  "title": "Import CTXH from Old System",
+  "description": "Import CTXH days from old system for students",
+  "uploadSection": {
+    "title": "Upload Excel File",
+    "description": "Import CTXH days from old system for students",
+    "dropzone": "Drag and drop Excel file here or click to select",
+    "fileSelected": "File selected",
+    "remove": "Remove"
+  },
+  "templateSection": {
+    "title": "Template File",
+    "description": "Download template file to see data structure",
+    "downloadButton": "Download template"
+  },
+  "import": {
+    "title": "Import CTXH from Old System",
+    "instructions": "Instructions",
+    "step1": "Download the template file here",
+    "step2": "Fill in Student Code and CTXH Days",
+    "step3": "Upload the file and click to continue",
+    "templateLinkText": "here"
+  },
+  "instructions": {
+    "title": "Instructions",
+    "step1": "Download the template file here",
+    "step2": "Fill in Student Code and CTXH Days",
+    "step3": "Upload the file and click to continue",
+    "templateLinkText": "here",
+    "notes": "Notes",
+    "note1": "Excel file must have exactly 2 columns: Student Code and Days",
+    "note2": "Student Code must be 7-10 digits",
+    "note3": "Days must be a positive number (e.g., 0.5, 1, 1.5, 2, ...)",
+    "note4": "System will validate all data before importing"
+  },
+  "importButton": "Import data",
+  "results": {
+    "title": "Import results",
+    "total": "Total records",
+    "successful": "Successful",
+    "failed": "Failed",
+    "errors": "Error details"
+  },
+  "messages": {
+    "selectFile": "Please select a file to import",
+    "invalidFormat": "Invalid file format. Please check again.",
+    "importing": "Importing data...",
+    "importSuccess": "Import successful!",
+    "importError": "An error occurred during import"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "title": "Báo cáo cá nhân",
-  "subtitle": "Bảng điểm CTXH cá nhân",
+  "subtitle": "Dữ liệu CTXH của sinh viên",
   "studentInfo": {
     "title": "Thông tin sinh viên",
     "name": "Họ và tên",
@@ -28,7 +28,7 @@
     "title": "Danh sách hoạt động",
     "name": "Tên hoạt động",
     "category": "Danh mục",
-    "startDate": "Ngày bắt đầu",
+    "startDate": "Ngày chấm điểm",
     "endDate": "Ngày kết thúc",
     "actualDays": "Số ngày thực tế",
     "status": "Trạng thái",
