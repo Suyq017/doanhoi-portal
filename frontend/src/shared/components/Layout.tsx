@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard, Heart, Calendar, BarChart, Settings, FileUp } from 'lucide-react';
+import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard, Heart, Calendar, BarChart, Settings, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -105,7 +105,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {
             name: t('navigation.ctxhImportOldSystem'),
             href: '/ctxh/import-old-system',
-            icon: FileUp,
+            icon: Upload,
             requiredPermission: 'ctxh.import.old_system'
           }
         ]
@@ -213,6 +213,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 return ctxhPermissions.activities.view;
               } else if (child.requiredPermission === 'ctxh.config.manage') {
                 return ctxhPermissions.config.manage;
+              } else if (child.requiredPermission === 'ctxh.import.old_system') {
+                return permissions.hasPermission('ctxh.import.old_system', permissions.currentOrganizationId);
               }
             }
             return false; // Default to false for CTXH items without permission
