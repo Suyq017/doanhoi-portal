@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard, Heart, Calendar, BarChart, Settings } from 'lucide-react';
+import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard, Heart, Calendar, BarChart, Settings, FileUp } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -101,6 +101,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             href: '/ctxh/limit-config',
             icon: Settings,
             requiredPermission: 'ctxh.config.manage'
+          },
+          {
+            name: t('navigation.ctxhImportOldSystem'),
+            href: '/ctxh/import-old-system',
+            icon: FileUp,
+            requiredPermission: 'ctxh.import.old_system'
           }
         ]
       },

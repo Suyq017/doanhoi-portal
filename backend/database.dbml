@@ -69,6 +69,8 @@ Table "users" {
   "authProvider" users_authprovider_enum [not null, default: 'local']
   "isActive" bool [not null, default: true]
   "lastLogin" timestamp
+  "ctxh_days" decimal(5,1) [note: 'Tổng số ngày CTXH hiện tại']
+  "ctxh_days_old_system" decimal(5,1) [note: 'Số ngày CTXH từ hệ thống cũ']
   "createdAt" timestamp [not null, default: `now()`]
   "updatedAt" timestamp [not null, default: `now()`]
 }
@@ -174,3 +176,37 @@ Ref "FK_user_roles_user":"users"."id" < "user_roles"."userId" [delete: cascade]
 Ref "FK_user_roles_role":"roles"."id" < "user_roles"."roleId" [delete: cascade]
 
 Ref "FK_user_roles_organization":"organizations"."id" < "user_roles"."organizationId" [delete: cascade]
+
+// CTXH Activity Enums
+Enum "activity_status_enum" {
+  "DRAFT"
+  "ACTIVE"
+  "COMPLETED"
+  "CANCELLED"
+}
+
+// CTXH Tables
+Table "ctxh_activity" {
+  "id" uuid [pk, not null, default: `uuid_generate_v4()`]
+  "name" varchar(255) [not null]
+  "description" text
+  "category_id" uuid [not null]
+  "organization_id" uuid [not null]
+  "start_date" timestamp
+  "end_date" timestamp
+  "total_days" decimal(5,1)
+  "location" varchar(500)
+  "status" activity_status_enum [not null, default: 'DRAFT']
+  "created_by" uuid [not null]
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_by" uuid
+  "updated_at" timestamp [not null, default: `now()`]
+  "deleted_by" uuid
+  "deleted_at" timestamp
+}
+
+// CTXH Activity References
+Ref "FK_ctxh_activity_organization":"organizations"."id" < "ctxh_activity"."organization_id"
+Ref "FK_ctxh_activity_creator":"users"."id" < "ctxh_activity"."created_by"
+Ref "FK_ctxh_activity_updater":"users"."id" < "ctxh_activity"."updated_by"
+Ref "FK_ctxh_activity_deleter":"users"."id" < "ctxh_activity"."deleted_by"

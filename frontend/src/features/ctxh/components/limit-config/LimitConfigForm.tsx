@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Building2, Calendar, ChevronDown } from 'lucide-react';
 import { CtxhLimitConfig, CreateLimitConfigRequest, UpdateLimitConfigRequest, LimitConfigStatus } from '../../types';
@@ -63,20 +63,29 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
   // Organization search states
   const [organizationSearch, setOrganizationSearch] = useState('');
   const [organizationDropdownOpen, setOrganizationDropdownOpen] = useState(false);
+  const [loadingOrganizations, setLoadingOrganizations] = useState(false);
+  const debouncedOrganizationSearchRef = useRef<NodeJS.Timeout>();
 
-  // Mock organizations - In real app, fetch from API
-  const [organizations, setOrganizations] = useState([
-    { id: '1', name: 'Đoàn Trường' },
-    { id: '2', name: 'Hội Sinh viên' },
-    { id: '3', name: 'CLB Khoa học' },
-    { id: '4', name: 'CLB Thể thao' },
-    { id: '5', name: 'CLB Văn hóa' }
-  ]);
+  // Organizations list (server-side search)
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string }>>([]);
 
-  // Filter organizations based on search
-  const filteredOrganizations = organizations.filter(organization =>
-    organization.name.toLowerCase().includes(organizationSearch.toLowerCase())
-  );
+  // Filter organizations based on search with server-side call
+  const loadOrganizations = async (search: string = '') => {
+    try {
+      setLoadingOrganizations(true);
+      // Call API with search and only level 1 & 2
+      const response = await organizationService.searchCtxhActivityViewableOrganizations({ 
+        search, 
+        limit: 20 
+      });
+      setOrganizations(response.data.map((org: any) => ({ id: org.id, name: org.name })));
+    } catch (error) {
+      console.error('Failed to load organizations:', error);
+      setOrganizations([]);
+    } finally {
+      setLoadingOrganizations(false);
+    }
+  };
 
   // Get selected organization name
   const getSelectedOrganizationName = () => {
@@ -84,20 +93,34 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
     return organization ? organization.name : '';
   };
 
-  // Load organizations
-  const loadOrganizations = async () => {
-    try {
-      const data = await organizationService.getOrganizations();
-      setOrganizations(data.map(org => ({ id: org.id, name: org.name })));
-    } catch (error) {
-      console.error('Failed to load organizations:', error);
-      // Keep mock data as fallback
+  // Debounced organization search
+  useEffect(() => {
+    // Clear previous timeout
+    if (debouncedOrganizationSearchRef.current) {
+      clearTimeout(debouncedOrganizationSearchRef.current);
     }
-  };
+
+    // Set new timeout for search
+    if (organizationDropdownOpen) {
+      debouncedOrganizationSearchRef.current = setTimeout(() => {
+        loadOrganizations(organizationSearch);
+      }, 300);
+    }
+
+    // Cleanup
+    return () => {
+      if (debouncedOrganizationSearchRef.current) {
+        clearTimeout(debouncedOrganizationSearchRef.current);
+      }
+    };
+  }, [organizationSearch, organizationDropdownOpen]);
 
   // Initialize form data
   useEffect(() => {
-    loadOrganizations();
+    // Load organizations only if editing and we need to show the selected org
+    if (config && config.organizationId && organizations.length === 0) {
+      loadOrganizations();
+    }
 
     if (config) {
       // Editing mode - ensure all fields have valid values
@@ -131,6 +154,20 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (organizationDropdownOpen && !target.closest('.organization-dropdown-container')) {
+        setOrganizationDropdownOpen(false);
+        setOrganizationSearch('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [organizationDropdownOpen]);
 
   const validateForm = (): boolean => {
     const newErrors: ValidationErrors = {};
@@ -291,22 +328,19 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                   </div>
                 ) : (
                   // Create mode - show searchable combobox
-                  <div className="relative">
+                  <div className="relative organization-dropdown-container">
                     <div className="relative">
                       <input
                         type="text"
                         value={organizationDropdownOpen ? organizationSearch : getSelectedOrganizationName()}
                         onChange={(e) => {
                           setOrganizationSearch(e.target.value);
-                          setOrganizationDropdownOpen(true);
+                          if (!organizationDropdownOpen) {
+                            setOrganizationDropdownOpen(true);
+                          }
                         }}
                         onFocus={() => {
-                          setOrganizationSearch('');
                           setOrganizationDropdownOpen(true);
-                        }}
-                        onBlur={() => {
-                          // Delay to allow click on dropdown item
-                          setTimeout(() => setOrganizationDropdownOpen(false), 200);
                         }}
                         placeholder={t('limitConfig.selectOrganization')}
                         className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
@@ -322,8 +356,13 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
 
                     {organizationDropdownOpen && (
                       <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                        {filteredOrganizations.length > 0 ? (
-                          filteredOrganizations.map((org) => (
+                        {loadingOrganizations ? (
+                          <div className="px-3 py-2 text-sm text-gray-500 flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+                            Đang tải...
+                          </div>
+                        ) : organizations.length > 0 ? (
+                          organizations.map((org: { id: string; name: string }) => (
                             <div
                               key={org.id}
                               onClick={() => {
@@ -338,7 +377,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                           ))
                         ) : (
                           <div className="px-3 py-2 text-sm text-gray-500">
-                            {t('common:noResults')}
+                            {organizationSearch ? 'Không tìm thấy tổ chức' : 'Nhập tên để tìm kiếm'}
                           </div>
                         )}
                       </div>

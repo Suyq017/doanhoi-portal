@@ -33,6 +33,8 @@
     "ctxhActivitiesPhonetic": "Community Service Activities",
     "ctxhLimitConfig": "Limit Configuration",
     "ctxhLimitConfigPhonetic": "Limit Configuration",
+    "ctxhImportOldSystem": "Import from Old System",
+    "ctxhImportOldSystemPhonetic": "Import Old Data",
     "ctxhStudentReport": "Personal Report",
     "ctxhStudentReportPhonetic": "Personal Report"
   },

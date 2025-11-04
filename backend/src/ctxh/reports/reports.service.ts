@@ -30,7 +30,7 @@ export class ReportsService {
     // First, check if student exists in users table
     const student = await this.userRepository.findOne({
       where: { code: studentCode },
-      select: ['id', 'code', 'familyName', 'givenName', 'email'],
+      select: ['id', 'code', 'familyName', 'givenName', 'email', 'ctxhDays', 'ctxhDaysOldSystem'],
     });
 
     if (!student) {
@@ -57,37 +57,11 @@ export class ReportsService {
       .orderBy('activity.start_date', 'DESC')
       .getRawMany();
 
-    // Debug: Log raw query results
-    console.log('Raw query results:', participations);
-
-    // Calculate total days completed
-    const completedParticipations = participations.filter(p => p.status === 'COMPLETED');
-    const totalDaysCompleted = completedParticipations.reduce((sum, p) => {
-      const days = Number(p.actual_days) || 0;
-      console.log(`Adding ${days} days for student ${p.student_code}, activity: ${p.activity_name}`);
-      return sum + days;
-    }, 0);
+    // Calculate totals
+    const ctxhDaysNew = student.ctxhDays || 0; // Ngày từ hệ thống mới
+    const ctxhDaysOld = student.ctxhDaysOldSystem || 0; // Ngày từ hệ thống cũ
+    const totalDaysCompleted = ctxhDaysNew + ctxhDaysOld; // Tổng = mới + cũ
     const totalActivities = participations.length;
-    
-    console.log('Total days calculation:', {
-      completedCount: completedParticipations.length,
-      totalDaysCompleted,
-      individualDays: completedParticipations.map(p => ({ 
-        student_code: p.student_code, 
-        activity: p.activity_name, 
-        actual_days: p.actual_days, 
-        type: typeof p.actual_days 
-      }))
-    });
-    
-    // Debug: Log participation data
-    console.log('Participations found:', participations.map(p => ({
-      activity_name: p.activity_name,
-      category_name: p.category_name,
-      actual_days: p.actual_days,
-      status: p.status,
-      updated_at: p.updated_at
-    })));
     
     // Prepare activities data for the DTO format
     const activities = participations.map(p => ({
@@ -99,9 +73,6 @@ export class ReportsService {
       created_at: p.created_at, // Add created_at for participation date
     }));
 
-    // Debug: Log transformed activities
-    console.log('Transformed activities:', activities);
-
     // Assuming required days is a fixed requirement (can be configured)
     const requiredDays = 15; // Standard CTXH requirement - updated to 15 days
     const isQualified = totalDaysCompleted >= requiredDays;
@@ -111,7 +82,9 @@ export class ReportsService {
       student_code: student.code,
       student_name: `${student.familyName} ${student.givenName}`.trim(),
       student_email: student.email,
-      total_days_completed: totalDaysCompleted,
+      total_days_completed: totalDaysCompleted, // Tổng = mới + cũ
+      ctxh_days_new_system: ctxhDaysNew, // Ngày từ hệ thống mới
+      ctxh_days_old_system: ctxhDaysOld, // Ngày từ hệ thống cũ
       total_activities_participated: totalActivities,
       required_days: requiredDays,
       is_qualified: isQualified,
@@ -124,7 +97,7 @@ export class ReportsService {
     // Verify student exists
     const student = await this.userRepository.findOne({
       where: { id: studentId },
-      select: ['id', 'code', 'fullName', 'email'],
+      select: ['id', 'code', 'familyName', 'givenName', 'email', 'ctxhDays', 'ctxhDaysOldSystem'],
     });
 
     if (!student) {
@@ -142,14 +115,14 @@ export class ReportsService {
       .getMany();
 
     // Calculate totals
-    const totalDaysCompleted = participations
-      .filter(p => p.status === ParticipationStatus.COMPLETED)
-      .reduce((sum, p) => sum + (p.actual_days || 0), 0);
+    const ctxhDaysNew = student.ctxhDays || 0; // Ngày từ hệ thống mới
+    const ctxhDaysOld = student.ctxhDaysOldSystem || 0; // Ngày từ hệ thống cũ
+    const totalDaysCompleted = ctxhDaysNew + ctxhDaysOld; // Tổng = mới + cũ
 
     const totalActivitiesParticipated = participations.length;
 
-    // Get required days (assuming 20 as default, can be configured)
-    const requiredDays = 20; // This should come from CtxhLimitConfig based on student's organization
+    // Get required days (assuming 15 as default, can be configured)
+    const requiredDays = 15; // This should come from CtxhLimitConfig based on student's organization
 
     const isQualified = totalDaysCompleted >= requiredDays;
 
@@ -162,12 +135,16 @@ export class ReportsService {
       completed_date: p.status === ParticipationStatus.COMPLETED ? p.updated_at : undefined,
     }));
 
+    const fullName = `${student.familyName} ${student.givenName}`.trim();
+
     return plainToClass(StudentReportDto, {
       student_id: student.id,
       student_code: student.code,
-      student_name: student.fullName,
+      student_name: fullName,
       student_email: student.email,
-      total_days_completed: totalDaysCompleted,
+      total_days_completed: totalDaysCompleted, // Tổng = mới + cũ
+      ctxh_days_new_system: ctxhDaysNew, // Ngày từ hệ thống mới
+      ctxh_days_old_system: ctxhDaysOld, // Ngày từ hệ thống cũ
       total_activities_participated: totalActivitiesParticipated,
       required_days: requiredDays,
       is_qualified: isQualified,

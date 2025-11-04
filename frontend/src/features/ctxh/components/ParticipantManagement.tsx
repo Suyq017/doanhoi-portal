@@ -14,17 +14,19 @@ import { useCtxhPermissions } from '../hooks';
 
 interface ParticipantManagementProps {
   activity: CtxhActivity;
+  participants: ParticipationResponse[];
   onRefresh?: () => void;
 }
 
 const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   activity,
+  participants: initialParticipants,
   onRefresh
 }) => {
   const { t } = useTranslation(['ctxh', 'common']);
   const ctxhPermissions = useCtxhPermissions();
-  const [participants, setParticipants] = useState<ParticipationResponse[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [participants, setParticipants] = useState<ParticipationResponse[]>(initialParticipants);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [newStudentCode, setNewStudentCode] = useState('');
@@ -312,10 +314,10 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     }
   });
 
-  // Load participants
+  // Sync participants with prop changes
   useEffect(() => {
-    loadParticipants();
-  }, [activity.id]);
+    setParticipants(initialParticipants);
+  }, [initialParticipants]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {

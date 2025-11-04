@@ -93,37 +93,29 @@ export class OrganizationsController {
         }
     }
 
-    @Get('ctxh-activity-accessible')
+    @Get('user-primary-organization')
     @UseGuards(JwtAuthGuard)
     @ApiOperation({
-        summary: 'Get organizations user can use for CTXH activity creation',
-        description: 'Returns organizations based on ctxh.activities.create permission and hierarchy level'
+        summary: 'Get user\'s primary organization from user_organizations table',
+        description: 'Returns the first active organization the user belongs to (for auto-setting in activity forms)'
     })
     @ApiResponse({
         status: 200,
-        description: 'Organizations retrieved successfully',
+        description: 'User primary organization',
         schema: {
             type: 'object',
             properties: {
-                organizations: {
-                    type: 'array',
-                    items: { type: 'object' }
-                },
-                canSelectMultiple: {
-                    type: 'boolean',
-                    description: 'Whether user can choose from multiple organizations'
-                },
-                fixedOrganization: {
+                organization: {
                     type: 'object',
                     nullable: true,
-                    description: 'If user is restricted to single org (level 2), this is set'
+                    description: 'User primary organization or null if not found'
                 }
             }
         }
     })
-    async getCtxhActivityAccessibleOrganizations(@Request() req: any) {
+    async getUserPrimaryOrganization(@Request() req: any) {
         const userId = req.user.id;
-        return this.organizationsService.getCtxhActivityAccessibleOrganizations(userId);
+        return this.organizationsService.getUserPrimaryOrganization(userId);
     }
 
     @Get('ctxh-activity-viewable')
@@ -136,6 +128,27 @@ export class OrganizationsController {
         const userId = req.user.id;
         const organizations = await this.organizationsService.getCtxhActivityViewableOrganizations(userId);
         return { organizations };
+    }
+
+    @Get('ctxh-activity-viewable/search')
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({
+        summary: 'Search organizations user can view CTXH activities for (Level 1 & 2 only)',
+        description: 'Returns paginated organizations based on ctxh.activities.view permission, excluding level 3'
+    })
+    async searchCtxhActivityViewableOrganizations(
+        @Request() req: any,
+        @Query('search') search?: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
+    ) {
+        const userId = req.user.id;
+        return this.organizationsService.searchCtxhActivityViewableOrganizations(
+            userId,
+            search,
+            page,
+            limit
+        );
     }
 
     @Get(':id/children')

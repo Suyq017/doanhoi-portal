@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { CtxhCategory, CtxhActivity, CreateActivityRequest, UpdateActivityRequest, ActivityStatus } from '../types';
 import { categoryService, activityService, limitConfigService } from '../services';
 import { organizationService } from '../../../shared/services/organizationService';
 import { useToast } from '../../../shared/hooks';
-import { useAuth } from '../../auth/context/AuthContext';
 
 interface ActivityFormProps {
   isOpen: boolean;
@@ -23,7 +22,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   title
 }) => {
   const { t } = useTranslation('ctxh');
-  const { auth, hasPermission } = useAuth();
 
   // Prevent body scroll when modal is open  
   useEffect(() => {
@@ -41,26 +39,19 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     name: '',
     description: '',
     categoryId: '',
-    organizationId: '', // Will be set from current user's org
+    organizationId: '', // Will be auto-set from user's accessible organization
     status: ActivityStatus.DRAFT,
-    startDate: '',
-    endDate: '',
+    startDate: '', // Now stores datetime (YYYY-MM-DDTHH:mm)
+    endDate: '', // Now stores datetime (YYYY-MM-DDTHH:mm)
     totalDays: '',
     location: ''
   });
 
   const [categories, setCategories] = useState<CtxhCategory[]>([]);
-  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [userOrganization, setUserOrganization] = useState<any | null>(null); // Single org for user
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
-  const [organizationsLoading, setOrganizationsLoading] = useState(false);
-  const [organizationConstraints, setOrganizationConstraints] = useState<{
-    canSelectMultiple: boolean;
-    fixedOrganization: any | null;
-  }>({
-    canSelectMultiple: true,
-    fixedOrganization: null
-  });
+  const [organizationLoading, setOrganizationLoading] = useState(false);
   const [dateValidation, setDateValidation] = useState({
     startDate: { isValid: true, message: '' },
     endDate: { isValid: true, message: '' }
@@ -76,11 +67,12 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     location: { isValid: true, message: '' }
   });
 
-  // Combobox search states
+  // Combobox search states (only for category now)
   const [categorySearch, setCategorySearch] = useState('');
-  const [organizationSearch, setOrganizationSearch] = useState('');
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
-  const [organizationDropdownOpen, setOrganizationDropdownOpen] = useState(false);
+
+  // Debounced search ref for category
+  const debouncedCategorySearchRef = useRef<NodeJS.Timeout | null>(null);
 
   // Toast notifications
   const { showError } = useToast();
@@ -90,24 +82,10 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     return num % 1 === 0 ? Math.floor(num).toString() : num.toString();
   };
 
-  // Filter functions for combobox
-  const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(categorySearch.toLowerCase())
-  );
-
-  const filteredOrganizations = organizations.filter(org =>
-    org.name.toLowerCase().includes(organizationSearch.toLowerCase())
-  );
-
-  // Helper functions to get selected names
+  // Helper function to get selected category name
   const getSelectedCategoryName = () => {
     const category = categories.find(c => c.id === formData.categoryId);
     return category?.name || '';
-  };
-
-  const getSelectedOrganizationName = () => {
-    const org = organizations.find(o => o.id === formData.organizationId);
-    return org?.name || '';
   };
 
   // Validate totalDays to only allow .0 or .5 increments
@@ -351,25 +329,77 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     });
   };
 
-  // Load categories and organizations for dropdown
+  // Load categories once when component mounts or when modal opens for the first time
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && categories.length === 0) {
       loadCategories();
-      loadOrganizations();
     }
   }, [isOpen]);
+
+  // Load user organization when modal opens (only for create mode)
+  useEffect(() => {
+    if (isOpen && !activity) {
+      loadUserOrganization();
+    } else if (isOpen && activity) {
+      // Edit mode: set organization from activity data
+      const activityOrg = (activity as any).organization;
+      if (activityOrg) {
+        setUserOrganization(activityOrg);
+      }
+    }
+  }, [isOpen, activity]);
+
+  // Close category dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.category-combobox')) {
+        setCategoryDropdownOpen(false);
+        setCategorySearch('');
+      }
+    };
+
+    if (categoryDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [categoryDropdownOpen]);
+
+  // Cleanup debounce timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debouncedCategorySearchRef.current) {
+        clearTimeout(debouncedCategorySearchRef.current);
+      }
+    };
+  }, []);
 
   // Populate form when editing
   useEffect(() => {
     if (activity) {
+      // Format datetime for datetime-local input (YYYY-MM-DDTHH:mm)
+      const formatDatetimeLocal = (dateStr: string) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        // Get local datetime string in format YYYY-MM-DDTHH:mm
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      };
+
       const newFormData = {
         name: activity.name || '',
         description: activity.description || '',
         categoryId: (activity as any).category_id || '', // API uses category_id
         organizationId: (activity as any).organization_id || '', // API uses organization_id
         status: activity.status || ActivityStatus.DRAFT,
-        startDate: (activity as any).start_date ? new Date((activity as any).start_date).toISOString().split('T')[0] : '',
-        endDate: (activity as any).end_date ? new Date((activity as any).end_date).toISOString().split('T')[0] : '',
+        startDate: formatDatetimeLocal((activity as any).start_date),
+        endDate: formatDatetimeLocal((activity as any).end_date),
         totalDays: (activity as any).total_days?.toString() || '',
         location: activity.location || '' // Use proper TypeScript property
       };
@@ -383,7 +413,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         name: '',
         description: '',
         categoryId: '',
-        organizationId: '', // Let user choose organization
+        organizationId: '', // Will be auto-set from loadUserOrganization
         status: ActivityStatus.DRAFT,
         startDate: '',
         endDate: '',
@@ -400,10 +430,13 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     }
   }, [activity, isOpen]);
 
-  const loadCategories = async () => {
+  const loadCategories = async (search?: string) => {
     try {
       setCategoriesLoading(true);
-      const response = await categoryService.findAll({ limit: 100 });
+      const response = await categoryService.findAll({ 
+        search: search || undefined,
+        limit: 20 
+      });
       const categoriesData = Array.isArray(response.data) ? response.data : [];
       setCategories(categoriesData);
     } catch (error) {
@@ -414,149 +447,33 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     }
   };
 
-  const loadOrganizations = async () => {
+  // Load user's organization for CTXH activity creation
+  const loadUserOrganization = async () => {
+    // This function is only called in CREATE mode (from useEffect)
     try {
-      setOrganizationsLoading(true);
-
-      // Get all organizations
-      const response = await organizationService.getOrganizations();
-
-      // Filter organizations based on user's permissions and organization level
-      const filteredOrgs = filterOrganizationsByPermission(response);
-
-      setOrganizations(filteredOrgs);
-      setOrganizationConstraints({
-        canSelectMultiple: true,
-        fixedOrganization: null
-      });
+      setOrganizationLoading(true);
+      const response = await organizationService.getUserPrimaryOrganization();
+      
+      if (response.organization) {
+        // User has an active organization
+        setUserOrganization(response.organization);
+        setFormData(prev => ({
+          ...prev,
+          organizationId: response.organization!.id
+        }));
+      } else {
+        // No organization found in user_organizations
+        console.warn('[ActivityForm] No organization found for user in user_organizations table');
+        setUserOrganization(null);
+        showError(t('activity.form.noAccessibleOrganization'));
+      }
     } catch (error) {
-      console.error('Failed to load organizations:', error);
-      setOrganizations([]);
+      console.error('Failed to load user organization:', error);
+      setUserOrganization(null);
+      showError(t('activity.form.loadOrganizationError'));
     } finally {
-      setOrganizationsLoading(false);
+      setOrganizationLoading(false);
     }
-  };
-
-  // Helper function to filter organizations based on user's permission and organization level
-  const filterOrganizationsByPermission = (allOrganizations: any[]): any[] => {
-    console.log('🔍 [CTXH Filter] Starting filter with:', {
-      totalOrgs: allOrganizations.length,
-      userOrgs: auth.user?.organizations,
-      userRoles: auth.userRoles
-    });
-
-    // Super admin can see all organizations - check if user has super_admin role
-    const isSuperAdmin = auth.userRoles?.some(role => role.name === 'super_admin');
-    if (isSuperAdmin) {
-      console.log('✅ [CTXH Filter] User is super admin - returning all organizations');
-      return allOrganizations;
-    }
-
-    // Get user's organizations with ctxh.create permission
-    const userOrgsWithPermission = auth.user?.organizations?.filter(userOrg => {
-      const hasPerm = hasPermission('ctxh.activities.create', userOrg.organizationId);
-      console.log('🔑 [CTXH Filter] Checking permission for org:', {
-        orgId: userOrg.organizationId,
-        hasPermission: hasPerm
-      });
-      return hasPerm;
-    }) || [];
-
-    console.log('📋 [CTXH Filter] User orgs with permission:', userOrgsWithPermission);
-
-    if (userOrgsWithPermission.length === 0) {
-      console.log('❌ [CTXH Filter] No permissions found - returning empty');
-      return []; // No permission, return empty array
-    }
-
-    // Build a map of organizationId -> organization object
-    const orgMap = new Map<string, any>();
-    allOrganizations.forEach(org => orgMap.set(org.id, org));
-
-    // Helper function to get organization level (cấp)
-    const getOrganizationLevel = (org: any): number => {
-      const level1Types = ['doan_truong', 'hoi_sinh_vien_truong', 'clb_truong'];
-      const level2Types = ['doan_co_so', 'lien_chi_hoi', 'clb_khoa'];
-      const level3Types = ['chi_doan', 'chi_hoi'];
-
-      if (level1Types.includes(org.type)) return 1;
-      if (level2Types.includes(org.type)) return 2;
-      if (level3Types.includes(org.type)) return 3;
-      return 0; // Unknown
-    };
-
-    // Helper function to get all descendant IDs of an organization
-    const getDescendantIds = (orgId: string): Set<string> => {
-      const descendants = new Set<string>();
-      const queue = [orgId];
-
-      while (queue.length > 0) {
-        const currentId = queue.shift()!;
-        allOrganizations
-          .filter(org => org.parent?.id === currentId)
-          .forEach(childOrg => {
-            descendants.add(childOrg.id);
-            queue.push(childOrg.id);
-          });
-      }
-
-      return descendants;
-    };
-
-    const allowedOrgIds = new Set<string>();
-
-    userOrgsWithPermission.forEach(userOrg => {
-      const org = orgMap.get(userOrg.organizationId);
-      if (!org) {
-        console.log('⚠️ [CTXH Filter] Org not found in map:', userOrg.organizationId);
-        return;
-      }
-
-      const level = getOrganizationLevel(org);
-      console.log('🎯 [CTXH Filter] Processing org:', {
-        id: org.id,
-        name: org.name,
-        type: org.type,
-        level: level
-      });
-
-      if (level === 3) {
-        // Cấp 3: Không cho chọn tổ chức nào
-        console.log('🚫 [CTXH Filter] Level 3 org - no selection allowed');
-        // Do nothing - don't add any organizations
-      } else if (level === 2) {
-        // Cấp 2: Chỉ chọn chính nó và các tổ chức con (không chọn cha)
-        allowedOrgIds.add(org.id); // Add itself
-        const descendants = getDescendantIds(org.id);
-        console.log('✅ [CTXH Filter] Level 2 org - adding self + descendants:', {
-          self: org.id,
-          descendantsCount: descendants.size,
-          descendants: Array.from(descendants)
-        });
-        descendants.forEach(id => allowedOrgIds.add(id)); // Add all descendants
-      } else if (level === 1) {
-        // Cấp 1: Chọn nó và tất cả tổ chức con
-        allowedOrgIds.add(org.id); // Add itself
-        const descendants = getDescendantIds(org.id);
-        console.log('✅ [CTXH Filter] Level 1 org - adding self + descendants:', {
-          self: org.id,
-          descendantsCount: descendants.size,
-          descendants: Array.from(descendants)
-        });
-        descendants.forEach(id => allowedOrgIds.add(id)); // Add all descendants
-      }
-    });
-
-    // Filter organizations by allowed IDs
-    const filteredOrgs = allOrganizations.filter(org => allowedOrgIds.has(org.id));
-    console.log('✨ [CTXH Filter] Final result:', {
-      allowedOrgIdsCount: allowedOrgIds.size,
-      allowedOrgIds: Array.from(allowedOrgIds),
-      filteredOrgsCount: filteredOrgs.length,
-      filteredOrgNames: filteredOrgs.map(o => o.name)
-    });
-
-    return filteredOrgs;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -840,7 +757,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Category */}
-              <div className="relative">
+              <div className="relative category-combobox">
                 <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('activity.category')} <span className="text-red-500">*</span>
                 </label>
@@ -850,12 +767,24 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                     placeholder={categoriesLoading ? t('activity.form.loading') : t('activity.form.selectCategory')}
                     value={categoryDropdownOpen ? categorySearch : getSelectedCategoryName()}
                     onChange={(e) => {
-                      setCategorySearch(e.target.value);
+                      const searchValue = e.target.value;
+                      setCategorySearch(searchValue);
                       if (!categoryDropdownOpen) setCategoryDropdownOpen(true);
+                      
+                      // Debounced server-side search
+                      if (debouncedCategorySearchRef.current) {
+                        clearTimeout(debouncedCategorySearchRef.current);
+                      }
+                      debouncedCategorySearchRef.current = setTimeout(() => {
+                        loadCategories(searchValue);
+                      }, 300);
                     }}
                     onFocus={() => {
                       setCategoryDropdownOpen(true);
                       setCategorySearch('');
+                      if (categories.length === 0) {
+                        loadCategories();
+                      }
                     }}
                     onBlur={() => {
                       setTimeout(() => setCategoryDropdownOpen(false), 200);
@@ -868,7 +797,12 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                   />
                   <button
                     type="button"
-                    onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                    onClick={() => {
+                      setCategoryDropdownOpen(!categoryDropdownOpen);
+                      if (!categoryDropdownOpen && categories.length === 0) {
+                        loadCategories();
+                      }
+                    }}
                     className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -878,8 +812,10 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
 
                   {categoryDropdownOpen && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                      {filteredCategories.length > 0 ? (
-                        filteredCategories.map((category) => (
+                      {categoriesLoading ? (
+                        <div className="px-3 py-2 text-sm text-gray-500">{t('activity.form.loading')}</div>
+                      ) : categories.length > 0 ? (
+                        categories.map((category) => (
                           <button
                             key={category.id}
                             type="button"
@@ -896,7 +832,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                         ))
                       ) : (
                         <div className="px-3 py-2 text-gray-500 text-sm">
-                          {categoriesLoading ? t('activity.form.loading') : t('activity.form.noResults')}
+                          {t('activity.form.noResults')}
                         </div>
                       )}
                     </div>
@@ -909,108 +845,38 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 )}
               </div>
 
-              {/* Organization */}
+              {/* Organization - Auto-set from user, read-only */}
               <div className="relative">
                 <label htmlFor="organizationId" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('activity.organization')} <span className="text-red-500">*</span>
                 </label>
-
-                {activity && organizations.length === 0 ? (
-                  // LEVEL 3 EDIT MODE - Display current organization (disabled, read-only)
-                  <div>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={(activity as any).organization?.name || getSelectedOrganizationName() || t('activity.form.organizationNotAvailable')}
-                        disabled
-                        className="w-full py-2 px-3 pr-10 border border-gray-300 rounded-md 
-                                 bg-gray-100 text-gray-700 cursor-not-allowed"
-                      />
-                      <div className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      {t('activity.form.organizationLevel3Restricted')}
-                    </p>
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={
+                      organizationLoading 
+                        ? t('activity.form.loading')
+                        : userOrganization?.name || (activity as any)?.organization?.name || t('activity.form.noOrganization')
+                    }
+                    disabled
+                    className="w-full py-2 px-3 pr-10 border border-gray-300 rounded-md 
+                             bg-gray-100 text-gray-700 cursor-not-allowed"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
                   </div>
-                ) : (
-                  // NORMAL COMBOBOX - User can select
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder={organizationsLoading ? t('activity.form.loading') : t('activity.form.selectOrganization')}
-                      value={organizationDropdownOpen ? organizationSearch : getSelectedOrganizationName()}
-                      onChange={(e) => {
-                        setOrganizationSearch(e.target.value);
-                        if (!organizationDropdownOpen) setOrganizationDropdownOpen(true);
-                      }}
-                      onFocus={() => {
-                        setOrganizationDropdownOpen(true);
-                        setOrganizationSearch('');
-                      }}
-                      onBlur={() => {
-                        setTimeout(() => setOrganizationDropdownOpen(false), 200);
-                      }}
-                      className={`w-full border rounded-md px-3 py-2 pr-10 focus:ring-blue-500 focus:border-blue-500 ${!fieldValidation.organizationId.isValid
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                        : 'border-gray-300'
-                        }`}
-                      disabled={organizationsLoading}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setOrganizationDropdownOpen(!organizationDropdownOpen)}
-                      className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-
-                    {organizationDropdownOpen && (
-                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                        {filteredOrganizations.length > 0 ? (
-                          filteredOrganizations.map((org) => (
-                            <button
-                              key={org.id}
-                              type="button"
-                              onClick={() => {
-                                handleInputChange('organizationId', org.id);
-                                setOrganizationDropdownOpen(false);
-                                setOrganizationSearch('');
-                              }}
-                              className={`w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none ${formData.organizationId === org.id ? 'bg-blue-50 text-blue-700' : 'text-gray-900'
-                                }`}
-                            >
-                              {org.name}
-                            </button>
-                          ))
-                        ) : (
-                          <div className="px-3 py-2 text-gray-500 text-sm">
-                            {organizationsLoading ? t('activity.form.loading') : t('activity.form.noResults')}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {!fieldValidation.organizationId.isValid && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {fieldValidation.organizationId.message}
-                      </p>
-                    )}
-
-                    {/* Hint for Level 2 users */}
-                    {organizationConstraints.fixedOrganization && organizations.length > 1 && (
-                      <p className="mt-1 text-xs text-gray-500">
-                        {t('activity.form.organizationLevel2Hint', {
-                          org: organizationConstraints.fixedOrganization.name
-                        })}
-                      </p>
-                    )}
-                  </div>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  {t('activity.form.organizationAutoSetHint')}
+                </p>
+                
+                {!fieldValidation.organizationId.isValid && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {fieldValidation.organizationId.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -1038,13 +904,13 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Start Date */}
+              {/* Start Date & Time */}
               <div>
                 <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('activity.startDate')}
                 </label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   id="startDate"
                   value={formData.startDate}
                   onChange={(e) => handleInputChange('startDate', e.target.value)}
@@ -1065,13 +931,13 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 )}
               </div>
 
-              {/* End Date */}
+              {/* End Date & Time */}
               <div>
                 <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('activity.endDate')}
                 </label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   id="endDate"
                   value={formData.endDate}
                   onChange={(e) => handleInputChange('endDate', e.target.value)}

@@ -44,9 +44,17 @@ export class StudentReportDto {
   @Expose()
   student_email: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Tổng số ngày CTXH (hệ thống mới + cũ)' })
   @Expose()
   total_days_completed: number;
+
+  @ApiProperty({ description: 'Số ngày CTXH từ hoạt động đã hoàn thành (hệ thống mới)', required: false })
+  @Expose()
+  ctxh_days_new_system?: number;
+
+  @ApiProperty({ description: 'Số ngày CTXH từ hệ thống cũ', required: false })
+  @Expose()
+  ctxh_days_old_system?: number;
 
   @ApiProperty()
   @Expose()

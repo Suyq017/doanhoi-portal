@@ -132,6 +132,27 @@ export class User {
   trainingLevel: string;
   //bậc đào tạo
 
+  // CTXH fields
+  @Column({ 
+    name: 'ctxh_days', 
+    type: 'decimal', 
+    precision: 5, 
+    scale: 1, 
+    nullable: true,
+    comment: 'Tổng số ngày CTXH hiện tại'
+  })
+  ctxhDays: number;
+
+  @Column({ 
+    name: 'ctxh_days_old_system', 
+    type: 'decimal', 
+    precision: 5, 
+    scale: 1, 
+    nullable: true,
+    comment: 'Số ngày CTXH từ hệ thống cũ'
+  })
+  ctxhDaysOldSystem: number;
+
   // Getter cho fullName để tương thích với code cũ
   get fullName(): string {
     return `${this.familyName} ${this.givenName}`.trim();

@@ -1,0 +1,41 @@
+{
+  "title": "Nhập CTXH từ hệ thống cũ",
+  "description": "Nhập số ngày CTXH từ hệ thống cũ cho sinh viên",
+  "uploadSection": {
+    "title": "Tải lên file Excel",
+    "description": "File Excel cần có 2 cột: MSSV và Số ngày",
+    "dropzone": "Kéo thả file Excel vào đây hoặc nhấn để chọn file",
+    "fileSelected": "Đã chọn file",
+    "remove": "Xóa"
+  },
+  "templateSection": {
+    "title": "File mẫu",
+    "description": "Tải xuống file mẫu để xem cấu trúc dữ liệu",
+    "downloadButton": "Tải file mẫu"
+  },
+  "instructions": {
+    "title": "Hướng dẫn",
+    "step1": "Tải xuống file mẫu",
+    "step2": "Điền MSSV và Số ngày CTXH của sinh viên",
+    "step3": "Tải file lên và nhấn nút Import",
+    "notes": "Lưu ý",
+    "note1": "File Excel phải có 2 cột: MSSV và Số ngày",
+    "note2": "Số ngày phải là số dương",
+    "note3": "MSSV phải tồn tại trong hệ thống"
+  },
+  "importButton": "Import dữ liệu",
+  "results": {
+    "title": "Kết quả import",
+    "total": "Tổng số bản ghi",
+    "successful": "Thành công",
+    "failed": "Thất bại",
+    "errors": "Lỗi chi tiết"
+  },
+  "messages": {
+    "selectFile": "Vui lòng chọn file để import",
+    "invalidFormat": "File không đúng định dạng. Vui lòng kiểm tra lại.",
+    "importing": "Đang import dữ liệu...",
+    "importSuccess": "Import thành công!",
+    "importError": "Có lỗi xảy ra khi import"
+  }
+}

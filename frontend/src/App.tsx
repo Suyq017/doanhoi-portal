@@ -19,7 +19,7 @@ import {
   MyCampaignsPage,
   PaymentCampaignDetailPage
 } from './features/fee-collection';
-import { CategoryManagement, ActivityManagement, ActivityDetail, LimitConfigManagement } from './features/ctxh/pages';
+import { CategoryManagement, ActivityManagement, ActivityDetail, LimitConfigManagement, CtxhOldSystemImportPage } from './features/ctxh/pages';
 import { StudentReportsPage } from './features/student-reports';
 import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
@@ -199,6 +199,18 @@ function App() {
                           <Layout>
                             <OrganizationStatsProvider>
                               <LimitConfigManagement />
+                            </OrganizationStatsProvider>
+                          </Layout>
+                        </EnhancedProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/ctxh/import-old-system"
+                      element={
+                        <EnhancedProtectedRoute requiredPermissions={['ctxh.import.old_system']}>
+                          <Layout>
+                            <OrganizationStatsProvider>
+                              <CtxhOldSystemImportPage />
                             </OrganizationStatsProvider>
                           </Layout>
                         </EnhancedProtectedRoute>

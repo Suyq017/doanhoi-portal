@@ -36,10 +36,10 @@ export class CtxhActivity {
   @Column({ type: 'uuid' })
   organization_id: string;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   start_date: Date;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   end_date: Date;
 
   @Column({ type: 'decimal', precision: 5, scale: 1, nullable: true })

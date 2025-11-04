@@ -51,6 +51,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
   const [categories, setCategories] = useState<CtxhCategory[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingOrganizations, setLoadingOrganizations] = useState(false);
 
   // Combobox states
   const [categorySearch, setCategorySearch] = useState('');
@@ -60,7 +62,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [organizationDropdownOpen, setOrganizationDropdownOpen] = useState(false);
 
-  // Create debounced search function
+  // Create debounced search function for activities
   const debouncedSearchRef = React.useRef(
     debounce((term: string, categoryId: string, status: string, organizationId: string) => {
       setCurrentPage(1);
@@ -68,15 +70,20 @@ const ActivityList: React.FC<ActivityListProps> = ({
     }, 300)
   );
 
-  // Filter functions for comboboxes
-  const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(categorySearch.toLowerCase())
+  // Create debounced search functions for comboboxes
+  const debouncedCategorySearchRef = React.useRef(
+    debounce((term: string) => {
+      loadCategories(term);
+    }, 300)
   );
 
-  const filteredOrganizations = organizations.filter(organization =>
-    organization.name.toLowerCase().includes(organizationSearch.toLowerCase())
+  const debouncedOrganizationSearchRef = React.useRef(
+    debounce((term: string) => {
+      loadOrganizations(term);
+    }, 300)
   );
 
+  // Filter functions for comboboxes (status only - category & organization use server-side search)
   const statusOptions = [
     { value: ActivityStatus.DRAFT, label: t('activity.statusOptions.DRAFT') },
     { value: ActivityStatus.ACTIVE, label: t('activity.statusOptions.ACTIVE') },
@@ -104,29 +111,40 @@ const ActivityList: React.FC<ActivityListProps> = ({
     return organization ? organization.name : t('activity.allOrganizations');
   };
 
-  // Load categories
-  const loadCategories = async () => {
+  // Load categories with server-side search
+  const loadCategories = async (search?: string) => {
     try {
+      setLoadingCategories(true);
       const response = await categoryService.findAll({
         page: 1,
-        limit: 100 // Get all categories for filter
+        limit: 20, // Limit to 20 items per search
+        search: search || undefined
       });
       setCategories(response.data);
     } catch (error) {
       console.error('Failed to load categories:', error);
       showToast('error', t('activity.loadCategoriesError'));
+    } finally {
+      setLoadingCategories(false);
     }
   };
 
-  // Load organizations
-  const loadOrganizations = async () => {
+  // Load organizations with server-side search (Level 1 & 2 only)
+  const loadOrganizations = async (search?: string) => {
     try {
-      // Use basic organizations endpoint to allow filtering by any organization
-      const response = await organizationService.getOrganizations();
-      setOrganizations(response);
+      setLoadingOrganizations(true);
+      // Use server-side search API for CTXH activity viewable organizations (Level 1 & 2 only)
+      const response = await organizationService.searchCtxhActivityViewableOrganizations({
+        page: 1,
+        limit: 20, // Limit to 20 items per search
+        search: search || undefined
+      });
+      setOrganizations(response.data);
     } catch (error) {
       console.error('Failed to load organizations:', error);
       showToast('error', 'Không thể tải danh sách tổ chức');
+    } finally {
+      setLoadingOrganizations(false);
     }
   };
 
@@ -164,9 +182,9 @@ const ActivityList: React.FC<ActivityListProps> = ({
   };
 
   useEffect(() => {
+    setCurrentPage(1);
     loadActivities();
-    loadCategories();
-    loadOrganizations();
+    // Don't load categories/organizations on mount - load on-demand when dropdown opens
   }, [refreshTrigger]);
 
   // Close dropdowns when clicking outside
@@ -193,10 +211,12 @@ const ActivityList: React.FC<ActivityListProps> = ({
     };
   }, []);
 
-  // Filter change handlers
+  // Filter change handlers - reset to page 1 and reload
   useEffect(() => {
-    setCurrentPage(1);
-    loadActivities(1, searchTerm, selectedCategoryId, selectedStatus, selectedOrganizationId);
+    if (selectedCategoryId !== '' || selectedStatus !== '' || selectedOrganizationId !== '') {
+      setCurrentPage(1);
+      loadActivities(1, searchTerm, selectedCategoryId, selectedStatus, selectedOrganizationId);
+    }
   }, [selectedCategoryId, selectedStatus, selectedOrganizationId]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -291,12 +311,19 @@ const ActivityList: React.FC<ActivityListProps> = ({
                 placeholder={t('activity.allCategories')}
                 value={categoryDropdownOpen ? categorySearch : getSelectedCategoryName()}
                 onChange={(e) => {
-                  setCategorySearch(e.target.value);
+                  const value = e.target.value;
+                  setCategorySearch(value);
                   if (!categoryDropdownOpen) setCategoryDropdownOpen(true);
+                  // Trigger server-side search with debounce
+                  debouncedCategorySearchRef.current(value);
                 }}
                 onFocus={() => {
                   setCategoryDropdownOpen(true);
                   setCategorySearch('');
+                  // Load initial categories when dropdown opens
+                  if (categories.length === 0) {
+                    loadCategories();
+                  }
                 }}
                 onBlur={() => {
                   setTimeout(() => setCategoryDropdownOpen(false), 200);
@@ -305,7 +332,13 @@ const ActivityList: React.FC<ActivityListProps> = ({
               />
               <button
                 type="button"
-                onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                onClick={() => {
+                  const newState = !categoryDropdownOpen;
+                  setCategoryDropdownOpen(newState);
+                  if (newState && categories.length === 0) {
+                    loadCategories();
+                  }
+                }}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
               >
                 <ChevronDown className="w-4 h-4" />
@@ -313,32 +346,40 @@ const ActivityList: React.FC<ActivityListProps> = ({
               
               {categoryDropdownOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
-                  <button
-                    type="button"
-                    onClick={() => handleCategoryChange('')}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                      !selectedCategoryId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                    }`}
-                  >
-                    {t('activity.allCategories')}
-                  </button>
-                  {filteredCategories.length > 0 ? (
-                    filteredCategories.map((category) => (
+                  {loadingCategories ? (
+                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-center">
+                      {t('activity.loading')}
+                    </div>
+                  ) : (
+                    <>
                       <button
-                        key={category.id}
                         type="button"
-                        onClick={() => handleCategoryChange(category.id)}
+                        onClick={() => handleCategoryChange('')}
                         className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                          selectedCategoryId === category.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                          !selectedCategoryId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
                         }`}
                       >
-                        {category.name}
+                        {t('activity.allCategories')}
                       </button>
-                    ))
-                  ) : (
-                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                      {t('activity.form.noResults')}
-                    </div>
+                      {categories.length > 0 ? (
+                        categories.map((category) => (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => handleCategoryChange(category.id)}
+                            className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
+                              selectedCategoryId === category.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                            }`}
+                          >
+                            {category.name}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                          {t('activity.form.noResults')}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -353,12 +394,19 @@ const ActivityList: React.FC<ActivityListProps> = ({
                 placeholder={t('activity.allOrganizations')}
                 value={organizationDropdownOpen ? organizationSearch : getSelectedOrganizationName()}
                 onChange={(e) => {
-                  setOrganizationSearch(e.target.value);
+                  const value = e.target.value;
+                  setOrganizationSearch(value);
                   if (!organizationDropdownOpen) setOrganizationDropdownOpen(true);
+                  // Trigger server-side search with debounce
+                  debouncedOrganizationSearchRef.current(value);
                 }}
                 onFocus={() => {
                   setOrganizationDropdownOpen(true);
                   setOrganizationSearch('');
+                  // Load initial organizations when dropdown opens
+                  if (organizations.length === 0) {
+                    loadOrganizations();
+                  }
                 }}
                 onBlur={() => {
                   setTimeout(() => setOrganizationDropdownOpen(false), 200);
@@ -367,7 +415,13 @@ const ActivityList: React.FC<ActivityListProps> = ({
               />
               <button
                 type="button"
-                onClick={() => setOrganizationDropdownOpen(!organizationDropdownOpen)}
+                onClick={() => {
+                  const newState = !organizationDropdownOpen;
+                  setOrganizationDropdownOpen(newState);
+                  if (newState && organizations.length === 0) {
+                    loadOrganizations();
+                  }
+                }}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
               >
                 <ChevronDown className="w-4 h-4" />
@@ -375,32 +429,40 @@ const ActivityList: React.FC<ActivityListProps> = ({
               
               {organizationDropdownOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
-                  <button
-                    type="button"
-                    onClick={() => handleOrganizationChange('')}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                      !selectedOrganizationId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                    }`}
-                  >
-                    {t('activity.allOrganizations')}
-                  </button>
-                  {filteredOrganizations.length > 0 ? (
-                    filteredOrganizations.map((organization) => (
+                  {loadingOrganizations ? (
+                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-center">
+                      {t('activity.loading')}
+                    </div>
+                  ) : (
+                    <>
                       <button
-                        key={organization.id}
                         type="button"
-                        onClick={() => handleOrganizationChange(organization.id)}
+                        onClick={() => handleOrganizationChange('')}
                         className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                          selectedOrganizationId === organization.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                          !selectedOrganizationId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
                         }`}
                       >
-                        {organization.name}
+                        {t('activity.allOrganizations')}
                       </button>
-                    ))
-                  ) : (
-                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                      {t('activity.form.noResults')}
-                    </div>
+                      {organizations.length > 0 ? (
+                        organizations.map((organization) => (
+                          <button
+                            key={organization.id}
+                            type="button"
+                            onClick={() => handleOrganizationChange(organization.id)}
+                            className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
+                              selectedOrganizationId === organization.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                            }`}
+                          >
+                            {organization.name}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                          {t('activity.form.noResults')}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}

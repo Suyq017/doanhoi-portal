@@ -27,6 +27,7 @@ export class LimitConfigService {
 
   /**
    * Get all descendant organizations (children, grandchildren, etc.) of a given organization
+   * Excludes level 3 organizations (chi_doan, chi_hoi)
    */
   private async getDescendantOrganizations(organizationId: string): Promise<Organization[]> {
     const organization = await this.organizationRepository.findOne({
@@ -41,12 +42,19 @@ export class LimitConfigService {
     const treeRepository = this.organizationRepository.manager.getTreeRepository(Organization);
     const descendants = await treeRepository.findDescendants(organization);
     
-    // Remove the parent organization itself from the list
-    return descendants.filter(descendant => descendant.id !== organizationId);
+    // Level 3 organization types to exclude
+    const level3Types = ['chi_doan', 'chi_hoi'];
+    
+    // Remove the parent organization itself and level 3 organizations
+    return descendants.filter(descendant => 
+      descendant.id !== organizationId && 
+      !level3Types.includes(descendant.type)
+    );
   }
 
   /**
    * Apply the same config to all descendant organizations
+   * Only affects organizations that don't have DRAFT or INACTIVE configs
    */
   private async applyConfigToDescendants(
     parentOrganizationId: string, 
@@ -70,25 +78,24 @@ export class LimitConfigService {
         },
       });
 
-      // If no existing config, create one
       if (!existingConfig) {
+        // No existing config - create new one
         configsToCreate.push({
           organization_id: descendant.id,
           max_days: configData.max_days,
-          description: `Kế thừa từ tổ chức cha`,
+          description: configData.description,
           status: configData.status || LimitConfigStatus.ACTIVE,
           created_by: createdBy,
         });
-      } else if (existingConfig.status !== LimitConfigStatus.ACTIVE) {
-        // If existing config is not active, update it
+      } else if (existingConfig.status === LimitConfigStatus.ACTIVE) {
+        // Existing ACTIVE config - update with new values
         await this.limitConfigRepository.update(existingConfig.id, {
           max_days: configData.max_days,
-          description: `Kế thừa từ tổ chức cha`,
-          status: configData.status || LimitConfigStatus.ACTIVE,
           updated_by: createdBy,
           updated_at: new Date(),
         });
       }
+      // Skip DRAFT and INACTIVE configs - don't touch them
     }
 
     // Bulk create configs for organizations without existing configs
@@ -99,6 +106,7 @@ export class LimitConfigService {
 
   /**
    * Update descendant organizations with new config values
+   * Only affects ACTIVE configs or creates new configs
    */
   private async updateDescendantsConfig(
     parentOrganizationId: string,
@@ -120,8 +128,8 @@ export class LimitConfigService {
         },
       });
 
-      if (existingConfig) {
-        // Update existing config with parent's values
+      if (existingConfig && existingConfig.status === LimitConfigStatus.ACTIVE) {
+        // Update existing ACTIVE config with parent's values
         const updatePayload: any = {
           updated_by: updatedBy,
           updated_at: new Date(),
@@ -131,57 +139,17 @@ export class LimitConfigService {
           updatePayload.max_days = updateData.max_days;
         }
 
-        if (updateData.status !== undefined) {
-          updatePayload.status = updateData.status;
-        }
-
-        // Update description to indicate inheritance
-        updatePayload.description = `Kế thừa từ tổ chức cha`;
-
         await this.limitConfigRepository.update(existingConfig.id, updatePayload);
-      } else if (updateData.status === LimitConfigStatus.ACTIVE) {
-        // Create new config for descendant if parent is being activated
+      } else if (!existingConfig && updateData.max_days !== undefined) {
+        // Create new config for descendant if no config exists
         await this.limitConfigRepository.save({
           organization_id: descendant.id,
-          max_days: updateData.max_days || 50.0, // Default value
-          description: `Kế thừa từ tổ chức cha`,
+          max_days: updateData.max_days,
           status: LimitConfigStatus.ACTIVE,
           created_by: updatedBy,
         });
       }
-    }
-  }
-
-  /**
-   * Remove descendant configs that were inherited from parent
-   */
-  private async removeDescendantsConfig(
-    parentOrganizationId: string,
-    deletedBy: string
-  ): Promise<void> {
-    const descendants = await this.getDescendantOrganizations(parentOrganizationId);
-
-    if (descendants.length === 0) {
-      return;
-    }
-
-    for (const descendant of descendants) {
-      // Find inherited configs (configs with "Kế thừa từ tổ chức cha" description)
-      const inheritedConfigs = await this.limitConfigRepository.find({
-        where: {
-          organization_id: descendant.id,
-          description: 'Kế thừa từ tổ chức cha',
-          deleted_at: IsNull(),
-        },
-      });
-
-      // Soft delete all inherited configs
-      for (const config of inheritedConfigs) {
-        await this.limitConfigRepository.update(config.id, {
-          deleted_by: deletedBy,
-          deleted_at: new Date(),
-        });
-      }
+      // Skip DRAFT and INACTIVE configs - don't touch them
     }
   }
 
@@ -325,8 +293,8 @@ export class LimitConfigService {
       updated_at: new Date(),
     });
 
-    // If updating max_days or status to ACTIVE, apply to descendants
-    if (updateLimitConfigDto.max_days !== undefined || updateLimitConfigDto.status === LimitConfigStatus.ACTIVE) {
+    // Apply updates to descendant organizations (only ACTIVE configs or create new ones)
+    if (updateLimitConfigDto.max_days !== undefined) {
       await this.updateDescendantsConfig(config.organization_id, updateLimitConfigDto, updatedBy);
     }
 
@@ -347,9 +315,6 @@ export class LimitConfigService {
       deleted_by: deletedBy,
       deleted_at: new Date(),
     });
-
-    // Also remove descendant configs that were inherited
-    await this.removeDescendantsConfig(config.organization_id, deletedBy);
   }
 
   async restore(id: string, updatedBy: string): Promise<LimitConfigResponseDto> {
