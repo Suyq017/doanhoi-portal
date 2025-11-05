@@ -12,7 +12,7 @@ import { OrganizationsSubDetailPage } from './features/organizations';
 // import { OrganizationMembersPage } from './features/organizations';
 import { ClassesPage } from './features/classes';
 import { PermissionsPage } from './features/permissions';
-import { AuthProvider, AuthCallback, LoginPage, ProtectedRoute, EnhancedProtectedRoute, AuthGuard } from './features/auth';
+import { AuthProvider, AuthCallback, LoginPage, AdminLoginPage, ProtectedRoute, EnhancedProtectedRoute, AuthGuard } from './features/auth';
 import {
   PaymentCampaignsPage,
   PaymentResultPage,
@@ -29,11 +29,13 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>        <Suspense fallback={<AppLoadingScreen />}>
+      <AuthProvider>        
+        <Suspense fallback={<AppLoadingScreen />}>
         <Router>
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/admin-doan-hoi/login" element={<AdminLoginPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
 
             {/* Protected Routes wrapped in AuthGuard */}
@@ -53,7 +55,8 @@ function App() {
                           </Layout>
                         </ProtectedRoute>
                       }
-                    />                <Route
+                    />                
+                    <Route
                       path="/users"
                       element={
                         <EnhancedProtectedRoute requiredPermissions={['users.access']}>
@@ -64,7 +67,8 @@ function App() {
                           </Layout>
                         </EnhancedProtectedRoute>
                       }
-                    />                <Route
+                    />                
+                    <Route
                       path="/organizations"
                       element={
                         <EnhancedProtectedRoute requiredPermissions={['organizations.access']}>
@@ -75,7 +79,8 @@ function App() {
                           </Layout>
                         </EnhancedProtectedRoute>
                       }
-                    />                <Route
+                    />                
+                    <Route
                       path="/organizations/:type/:code"
                       element={
                         <EnhancedProtectedRoute requiredPermissions={['organizations.access']}>
@@ -101,7 +106,8 @@ function App() {
                           </Layout>
                         </EnhancedProtectedRoute>
                       }
-                    />                <Route
+                    />                
+                    <Route
 
                     />
                     <Route
@@ -115,7 +121,8 @@ function App() {
                           </Layout>
                         </EnhancedProtectedRoute>
                       }
-                    />                <Route
+                    />                
+                    <Route
                       path="/classes"
                       element={
                         <EnhancedProtectedRoute requiredPermissions={['classes.access']}>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe } from 'lucide-react';
 
 const LanguageSwitcher: React.FC = () => {
   const { i18n } = useTranslation();
@@ -19,7 +18,6 @@ const LanguageSwitcher: React.FC = () => {
   return (
     <div className="relative group">
       <button className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-        <Globe className="w-4 h-4" />
         <span>{currentLanguage.flag}</span>
         <span className="hidden sm:inline">{currentLanguage.name}</span>
       </button>

@@ -245,16 +245,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className={`min-h-screen bg-background ${isDarkMode ? 'dark' : ''}`} style={{ overflowX: 'hidden', maxWidth: '100vw' }}>
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 shadow-lg transform transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-doan-600 shadow-lg transform transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <h1 className="text-lg font-bold text-transparent bg-gradient-to-r from-doan-500 to-hsv-500 bg-clip-text">
+          <div className="flex items-center justify-between p-4 border-b-2 border-white">
+            <h1 className="text-lg font-bold text-white">
               {t('appName')}
             </h1>
             <button
               onClick={() => setIsSidebarOpen(false)}
-              className="p-1 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="p-1 rounded-md lg:hidden hover:bg-white hover:bg-opacity-20 text-white"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -276,8 +276,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <button
                       onClick={() => toggleMenu(item.key!)}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${hasActiveChild
-                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-l-2 border-doan-500'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'bg-white bg-opacity-20 text-white border-l-2 border-white'
+                        : 'text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-white'
                         }`}
                     >
                       <div className="flex items-center">
@@ -301,8 +301,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                               key={child.name}
                               to={child.href}
                               className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(child.href)
-                                ? 'bg-doan-500 text-white'
-                                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                ? 'bg-white text-doan-500'
+                                : 'text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-white'
                                 }`}
                             >
                               <ChildIcon className="w-4 h-4 mr-3" />
@@ -322,8 +322,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   key={item.name}
                   to={item.href!}
                   className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(item.href!)
-                    ? 'bg-doan-500 text-white'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-white text-doan-500'
+                    : 'text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-white'
                     }`}
                 >
                   <Icon className="w-5 h-5 mr-3" />
@@ -334,8 +334,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="p-4 border-t border-doan-400">
+            <div className="text-xs text-white text-opacity-60">
               {t('footer.copyright')}
             </div>
           </div>
@@ -345,7 +345,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Main content */}
       <div className={`transition-all ${isSidebarOpen ? 'lg:ml-64' : ''}`} style={{ overflowX: 'hidden', maxWidth: '100%' }}>
         {/* Top bar */}
-        <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-700" style={{ width: '100%', maxWidth: '100%' }}>
+        <header className="bg-white border-b border-gray-300 shadow-sm dark:bg-gray-900 dark:border-gray-700" style={{ width: '100%', maxWidth: '100%' }}>
           <div className="flex items-center justify-between px-4 py-3" style={{ maxWidth: '100%' }}>
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}

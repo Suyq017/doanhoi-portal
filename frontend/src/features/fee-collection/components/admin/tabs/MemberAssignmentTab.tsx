@@ -217,9 +217,6 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Member Selection */}
                 <div>
-                  <h4 className="mb-3 font-medium text-gray-900 text-md dark:text-white">
-                    {t('memberAssignmentTab:selectMembers')}
-                  </h4>
                   <MemberSelector
                     organizationId={campaign.organizationId}
                     selectedMemberIds={selectedMemberIds}
@@ -229,9 +226,6 @@ const MemberAssignmentTab: React.FC<MemberAssignmentTabProps> = ({ campaign, onA
 
                 {/* Assignment Form */}
                 <div>
-                  <h4 className="mb-3 font-medium text-gray-900 text-md dark:text-white">
-                    {t('memberAssignmentTab:setupFeeLevel')}
-                  </h4>
                   <AssignmentBulkForm
                     campaignId={campaign.id}
                     selectedMemberIds={selectedMemberIds}

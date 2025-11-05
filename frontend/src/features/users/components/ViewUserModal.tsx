@@ -255,7 +255,8 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('users:fields.userType')}
-                  </label>              <div className="inline-flex px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full">
+                  </label>              
+                  <div className="inline-flex px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full">
                     {getUserTypeText(displayUser.userType)}
                   </div>
                 </div>
@@ -263,10 +264,24 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('users:fields.membershipStatus')}
-                  </label>              <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getMembershipStatusColor(displayUser.membershipStatus)}`}>
+                  </label>              
+                  <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getMembershipStatusColor(displayUser.membershipStatus)}`}>
                     {getMembershipStatusText(displayUser.membershipStatus)}
                   </div>
-                </div>              </div>              {/* User Organizations */}
+                </div>     
+
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('users:fields.isActive')}
+                  </label>              
+                  <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getMembershipStatusColor(displayUser.membershipStatus)}`}>
+                    {getMembershipStatusText(displayUser.isActive ? t('users:membershipStatus.active') : t('user:membershipStatus.inactive'))}
+                  </div>
+                </div>    
+
+              </div>
+              
+              {/* User Organizations */}
               <div className="space-y-4">
                 <h3 className="flex items-center text-lg font-medium text-gray-900 dark:text-white">
                   <Users className="w-5 h-5 mr-2" />
@@ -275,7 +290,8 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
 
                 {userOrganizations.length > 0 ? (
                   <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
-                    <div className="flex flex-wrap gap-2">                      {userOrganizations
+                    <div className="flex flex-wrap gap-2">                     
+                      {userOrganizations
                       .sort((a, b) => a.level - b.level) // Sort by level: parent -> child -> grandchild
                       .map((org) => (
                         <span
@@ -311,7 +327,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                     {displayUser.managementDepartment && (
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {t('users:fields.managementDepartment')}
+                          {t('users:fields.managementDepartmentCode')}
                         </label>
                         <div className="text-gray-900 dark:text-white">
                           {displayUser.managementDepartment.name}
@@ -322,7 +338,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                     {displayUser.trainingDepartment && (
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {t('users:fields.trainingDepartment')}
+                          {t('users:fields.trainingDepartmentCode')}
                         </label>
                         <div className="text-gray-900 dark:text-white">
                           {displayUser.trainingDepartment.name}
@@ -340,8 +356,21 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                         </div>
                       </div>
                     )}
-                  </div>            </div>
-              )}              {/* User Roles & Permissions */}
+                    {displayUser.facultyCode && (
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('users:fields.facultyCode')}
+                        </label>
+                        <div className="text-gray-900 dark:text-white">
+                          {displayUser.facultyCode}
+                        </div>
+                      </div>
+                    )}
+                  </div>            
+                </div>
+              )}              
+              
+              {/* User Roles & Permissions */}
               <div className="space-y-4">
                 <h3 className="flex items-center text-lg font-medium text-gray-900 dark:text-white">
                   <Shield className="w-5 h-5 mr-2" />
@@ -399,7 +428,8 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                   <label className="flex items-center block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     <Calendar className="w-4 h-4 mr-1" />
                     {t('common:fields.createdAt')}
-                  </label>              <div className="text-gray-900 dark:text-white">
+                  </label>              
+                  <div className="text-gray-900 dark:text-white">
                     {new Date(displayUser.createdAt).toLocaleString('vi-VN')}
                   </div>
                 </div>
@@ -408,8 +438,10 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                   <label className="flex items-center block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     <Calendar className="w-4 h-4 mr-1" />
                     {t('common:fields.updatedAt')}
-                  </label>              <div className="text-gray-900 dark:text-white">
-                    {new Date(displayUser.updatedAt).toLocaleString('vi-VN')}              </div>
+                  </label>              
+                  <div className="text-gray-900 dark:text-white">
+                    {new Date(displayUser.updatedAt).toLocaleString('vi-VN')}              
+                  </div>
                 </div>
               </div>
             </>

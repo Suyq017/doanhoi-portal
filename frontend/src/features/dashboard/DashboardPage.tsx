@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BarChart3, Users, Building } from 'lucide-react';
+// import { BarChart3, Users, Building } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/context/AuthContext';
@@ -37,40 +37,40 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const stats = [
-    {
-      name: t('dashboard:stats.totalMembers'),
-      value: '1,234',
-      change: '+12%',
-      changeType: 'increase',
-      icon: Users,
-      color: 'bg-doan-500',
-    },
-    {
-      name: t('dashboard:stats.doanMembers'),
-      value: '856',
-      change: '+8%',
-      changeType: 'increase',
-      icon: Users,
-      color: 'bg-doan-500',
-    },
-    {
-      name: t('dashboard:stats.hoiMembers'),
-      value: '678',
-      change: '+15%',
-      changeType: 'increase',
-      icon: Users,
-      color: 'bg-hsv-500',
-    },
-    {
-      name: t('dashboard:stats.organizations'),
-      value: '45',
-      change: '+3%',
-      changeType: 'increase',
-      icon: Building,
-      color: 'bg-gray-500',
-    },
-  ];
+  // const stats = [
+  //   {
+  //     name: t('dashboard:stats.totalMembers'),
+  //     value: '1,234',
+  //     change: '+12%',
+  //     changeType: 'increase',
+  //     icon: Users,
+  //     color: 'bg-doan-500',
+  //   },
+  //   {
+  //     name: t('dashboard:stats.doanMembers'),
+  //     value: '856',
+  //     change: '+8%',
+  //     changeType: 'increase',
+  //     icon: Users,
+  //     color: 'bg-doan-500',
+  //   },
+  //   {
+  //     name: t('dashboard:stats.hoiMembers'),
+  //     value: '678',
+  //     change: '+15%',
+  //     changeType: 'increase',
+  //     icon: Users,
+  //     color: 'bg-hsv-500',
+  //   },
+  //   {
+  //     name: t('dashboard:stats.organizations'),
+  //     value: '45',
+  //     change: '+3%',
+  //     changeType: 'increase',
+  //     icon: Building,
+  //     color: 'bg-gray-500',
+  //   },
+  // ];
 
   return (
     <div className="space-y-6">
@@ -84,7 +84,7 @@ const Dashboard: React.FC = () => {
         </p>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -117,12 +117,12 @@ const Dashboard: React.FC = () => {
             </div>
           );
         })}
-      </div>
+      </div> */}
 
       {/* Content Cards */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* <div className="grid grid-cols-1 gap-6 lg:grid-cols-2"> */}
         {/* Recent Activities */}
-        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        {/* <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
           <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
             {t('dashboard:activities.title')}
           </h3>
@@ -146,10 +146,10 @@ const Dashboard: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Quick Actions */}
-        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        {/* <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
           <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
             {t('dashboard:actions.title')}
           </h3>
@@ -174,7 +174,7 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* AWS S3 Configuration Section */}
       <AwsS3ConfigSection />
