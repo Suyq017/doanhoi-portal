@@ -311,6 +311,462 @@ async getUserRoles(userId: string, organizationId?: string) {
 
 ## 🔄 Luồng Hoạt Động
 
+### 📊 Sequence Diagrams
+
+#### 1. User Login & Load Permissions
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend (AuthContext)
+    participant API as Backend API
+    participant Guard as JwtAuthGuard
+    participant DB as Database
+    
+    U->>F: Login(email, password)
+    F->>API: POST /auth/login
+    API->>DB: Validate credentials
+    DB-->>API: User data
+    API->>DB: Generate access + refresh tokens
+    API-->>F: { accessToken, refreshToken, user }
+    
+    F->>F: Save tokens to localStorage
+    F->>F: Set user in state
+    
+    Note over F,API: Automatically load permissions
+    F->>API: GET /auth/me/permissions?organizationId=xxx
+    API->>Guard: Validate JWT token
+    Guard->>Guard: Extract userId from token
+    Guard-->>API: User authenticated
+    
+    API->>DB: Query user_roles WHERE userId AND organizationId
+    DB-->>API: UserRoles with Roles + Permissions
+    
+    API->>API: Format response with roles array
+    API-->>F: { userId, organizationId, roles: [...] }
+    
+    F->>F: Store userRoles in state
+    F->>F: Store userPermissions in state
+    F->>F: Render UI with permissions
+    
+    Note over F: UI filters navigation items<br/>based on permissions
+```
+
+#### 2. Protected API Request Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as Component (UsersPage)
+    participant API as Backend API
+    participant JG as JwtAuthGuard
+    participant PG as PermissionGuard
+    participant RS as RolesService
+    participant DB as Database
+    participant Svc as UsersService
+    
+    U->>C: Click "Create User" button
+    
+    Note over C: Frontend check (UI only)
+    C->>C: Check canCreateUser()
+    C->>C: hasPermission('users.create', orgId)
+    
+    alt Has Permission (Frontend)
+        C->>C: Show button enabled
+        U->>C: Click button
+        C->>API: POST /users (with JWT token)
+        
+        Note over API,JG: Step 1: Authentication
+        API->>JG: Validate request
+        JG->>JG: Extract JWT from headers
+        JG->>JG: Verify token signature
+        JG->>JG: Check token expiration
+        JG->>JG: Extract user from payload
+        JG->>API: Attach user to request
+        
+        Note over API,PG: Step 2: Authorization
+        API->>PG: Check permissions
+        PG->>PG: Read @RequirePermissions('users.create')
+        PG->>PG: Extract organizationId from request
+        
+        PG->>RS: hasPermission(userId, 'users.create', orgId)
+        RS->>DB: SELECT user_roles WHERE userId AND orgId
+        DB-->>RS: UserRoles with Roles
+        RS->>RS: Check if any role has 'users.create'
+        
+        alt Has Permission (Backend)
+            RS-->>PG: true
+            PG-->>API: Allow request
+            
+            Note over API,Svc: Step 3: Business Logic
+            API->>Svc: create(userData)
+            Svc->>DB: INSERT INTO users
+            DB-->>Svc: Created user
+            Svc-->>API: User entity
+            API-->>C: 201 Created { user }
+            C->>C: Show success toast
+            C->>C: Refresh user list
+        else No Permission (Backend)
+            RS-->>PG: false
+            PG-->>API: Throw ForbiddenException
+            API-->>C: 403 Forbidden
+            C->>C: Show error toast
+        end
+        
+    else No Permission (Frontend)
+        C->>C: Hide/Disable button
+        Note over U,C: User cannot click
+    end
+```
+
+#### 3. Create Role Flow
+
+```mermaid
+sequenceDiagram
+    participant Admin as Admin User
+    participant UI as Permissions Page
+    participant API as Roles API
+    participant Guard as Guards
+    participant Svc as RolesService
+    participant DB as Database
+    
+    Admin->>UI: Click "Create Role"
+    UI->>Admin: Show create form
+    Admin->>UI: Fill form (name, permissions)
+    Admin->>UI: Submit
+    
+    UI->>API: POST /roles
+    Note over UI,API: Body: { name, displayName,<br/>description, permissionIds }
+    
+    API->>Guard: JwtAuthGuard validates token
+    Guard-->>API: User authenticated
+    
+    API->>Guard: PermissionGuard checks
+    Guard->>Guard: Read @RequirePermissions('permissions.create')
+    Guard->>Svc: hasPermission(userId, 'permissions.create')
+    
+    Note over Guard,Svc: SYSTEM permission<br/>(no organizationId needed)
+    
+    Svc->>DB: Query user_roles WHERE organizationId IS NULL
+    DB-->>Svc: System-level roles
+    Svc->>Svc: Check roles have 'permissions.create'
+    
+    alt Has Permission
+        Svc-->>Guard: true
+        Guard-->>API: Allow
+        
+        API->>Svc: create(roleData)
+        Svc->>DB: Check role name uniqueness
+        
+        alt Name exists
+            DB-->>Svc: Conflict
+            Svc-->>API: ConflictException
+            API-->>UI: 409 Conflict
+        else Name available
+            Svc->>DB: Validate permissionIds
+            DB-->>Svc: Permissions valid
+            
+            Svc->>DB: BEGIN TRANSACTION
+            Svc->>DB: INSERT INTO roles
+            Svc->>DB: INSERT INTO role_permissions (roleId, permissionIds)
+            Svc->>DB: COMMIT
+            
+            DB-->>Svc: Created role with permissions
+            Svc-->>API: Role entity
+            API-->>UI: 201 Created
+            UI->>UI: Show success toast
+            UI->>UI: Refresh roles table
+        end
+        
+    else No Permission
+        Svc-->>Guard: false
+        Guard-->>API: ForbiddenException
+        API-->>UI: 403 Forbidden
+        UI->>UI: Show error toast
+    end
+```
+
+#### 4. Assign Role to User Flow
+
+```mermaid
+sequenceDiagram
+    participant Admin as Admin
+    participant UI as Users Page
+    participant API as Roles API
+    participant Guard as Guards
+    participant Svc as RolesService
+    participant DB as Database
+    
+    Admin->>UI: Select user
+    Admin->>UI: Click "Assign Role"
+    UI->>Admin: Show assign dialog
+    Admin->>UI: Select role + organization
+    Admin->>UI: Submit
+    
+    UI->>API: POST /roles/assign
+    Note over UI,API: Body: { userId, roleId,<br/>organizationId? }
+    
+    API->>Guard: Validate & check permissions
+    Guard->>Svc: hasPermission('permissions.create', orgId)
+    
+    alt Has Permission
+        Guard-->>API: Allow
+        
+        API->>Svc: assignRole(userId, roleId, orgId)
+        
+        Svc->>DB: Check user exists
+        DB-->>Svc: User found
+        
+        Svc->>DB: Check role exists
+        DB-->>Svc: Role found
+        
+        Svc->>DB: Check if organization context matches
+        Note over Svc,DB: If role requires ORGANIZATION context,<br/>organizationId must be provided
+        
+        alt Context mismatch
+            Svc-->>API: BadRequestException
+            API-->>UI: 400 Bad Request
+        else Context valid
+            Svc->>DB: Check UserRole uniqueness
+            Note over Svc,DB: UNIQUE(userId, roleId, organizationId)
+            
+            alt Already assigned
+                DB-->>Svc: Duplicate
+                Svc-->>API: ConflictException
+                API-->>UI: 409 Conflict
+            else Not assigned yet
+                Svc->>DB: INSERT INTO user_roles
+                DB-->>Svc: Created UserRole
+                
+                Svc->>DB: Load UserRole with relations
+                DB-->>Svc: UserRole + Role + Permissions
+                
+                Svc-->>API: UserRole entity
+                API-->>UI: 201 Created
+                UI->>UI: Show success toast
+                UI->>UI: Refresh user's roles
+            end
+        end
+        
+    else No Permission
+        Guard-->>API: ForbiddenException
+        API-->>UI: 403 Forbidden
+    end
+```
+
+#### 5. Multi-Organization Permission Check
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant UI as Frontend
+    participant API as Dashboard API
+    participant PG as PermissionGuard
+    participant RS as RolesService
+    participant DB as Database
+    
+    Note over User,UI: User has different roles<br/>in different organizations
+    
+    User->>UI: Navigate to /dashboard?organizationId=org-cntt
+    UI->>API: GET /dashboard?organizationId=org-cntt
+    
+    API->>PG: Check permission
+    PG->>PG: Extract organizationId='org-cntt'
+    PG->>RS: hasPermission(userId, 'dashboard.access', 'org-cntt')
+    
+    RS->>DB: Query user_roles WHERE userId AND<br/>(organizationId='org-cntt' OR organizationId IS NULL)
+    
+    Note over RS,DB: Returns both:<br/>- Global roles (orgId=null)<br/>- Org-specific roles (orgId=org-cntt)
+    
+    DB-->>RS: UserRoles: [<br/>  { role: 'org_admin', orgId: 'org-cntt' },<br/>  { role: 'viewer', orgId: null }<br/>]
+    
+    RS->>RS: Check org_admin.permissions
+    RS->>RS: Found 'dashboard.access' ✓
+    RS-->>PG: true
+    PG-->>API: Allow
+    
+    API-->>UI: Dashboard data for org-cntt
+    
+    Note over User,UI: Now switch to different org
+    
+    User->>UI: Switch to org-co-khi
+    UI->>API: GET /dashboard?organizationId=org-co-khi
+    
+    API->>PG: Check permission
+    PG->>RS: hasPermission(userId, 'dashboard.access', 'org-co-khi')
+    
+    RS->>DB: Query user_roles WHERE userId AND<br/>(organizationId='org-co-khi' OR organizationId IS NULL)
+    
+    DB-->>RS: UserRoles: [<br/>  { role: 'viewer', orgId: 'org-co-khi' },<br/>  { role: 'viewer', orgId: null }<br/>]
+    
+    RS->>RS: Check viewer.permissions
+    RS->>RS: Found 'dashboard.access' ✓
+    RS-->>PG: true
+    PG-->>API: Allow
+    
+    API-->>UI: Dashboard data for org-co-khi
+    
+    Note over UI: But with limited actions<br/>(viewer role)
+```
+
+#### 6. System Role Protection Flow
+
+```mermaid
+sequenceDiagram
+    participant Admin as Admin
+    participant UI as Permissions Page
+    participant API as Roles API
+    participant Guard as PermissionGuard
+    participant Svc as RolesService
+    participant DB as Database
+    
+    Admin->>UI: Try to delete "Super Admin" role
+    UI->>API: DELETE /roles/:id
+    
+    API->>Guard: Validate & authorize
+    Guard->>Svc: hasPermission('permissions.delete')
+    Svc-->>Guard: true (Admin has permission)
+    Guard-->>API: Allow
+    
+    API->>Svc: remove(roleId)
+    Svc->>DB: SELECT role WHERE id=roleId
+    DB-->>Svc: Role { isSystemRole: true }
+    
+    Svc->>Svc: Check isSystemRole flag
+    
+    alt Is System Role
+        Svc-->>API: BadRequestException<br/>("Cannot delete system role")
+        API-->>UI: 400 Bad Request
+        UI->>UI: Show error toast
+        Note over UI: System role protected!
+    else Not System Role
+        Svc->>DB: DELETE FROM user_roles WHERE roleId
+        Svc->>DB: DELETE FROM role_permissions WHERE roleId
+        Svc->>DB: DELETE FROM roles WHERE id
+        DB-->>Svc: Deleted
+        Svc-->>API: Success
+        API-->>UI: 200 OK
+        UI->>UI: Show success toast
+        UI->>UI: Remove from table
+    end
+```
+
+#### 7. Frontend Permission Check Flow
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant Layout as Layout.tsx
+    participant Auth as AuthContext
+    participant LS as LocalStorage
+    participant Users as UsersPage
+    
+    Note over User,Layout: On app load/login
+    
+    User->>Layout: Render app
+    Layout->>Auth: Get permissions state
+    Auth->>LS: Load cached permissions
+    LS-->>Auth: userRoles, userPermissions
+    Auth-->>Layout: { userRoles, userPermissions }
+    
+    Layout->>Layout: getFilteredNavigation()
+    
+    loop For each nav item
+        Layout->>Layout: Check requiredPermission
+        
+        alt Has requiredPermission
+            Layout->>Auth: hasPermission(code, orgId)
+            Auth->>Auth: Check in userPermissions array
+            
+            alt Permission found
+                Auth-->>Layout: true
+                Layout->>Layout: Include in navigation
+            else Permission not found
+                Auth-->>Layout: false
+                Layout->>Layout: Exclude from navigation
+            end
+        else No requiredPermission
+            Layout->>Layout: Include by default
+        end
+    end
+    
+    Layout->>User: Render filtered navigation
+    
+    Note over User,Users: User clicks "Users" menu
+    
+    User->>Users: Navigate to /users
+    Users->>Users: Render page
+    
+    Users->>Auth: usePermissions()
+    Auth-->>Users: { canCreateUser, canDeleteUser, ... }
+    
+    Users->>Users: Check canCreateUser()
+    
+    alt Can create
+        Users->>User: Show "Create User" button
+    else Cannot create
+        Users->>User: Hide "Create User" button
+    end
+    
+    Users->>Users: Render user table
+    
+    loop For each user row
+        Users->>Users: Check canDeleteUser()
+        
+        alt Can delete
+            Users->>User: Show delete button
+        else Cannot delete
+            Users->>User: Hide delete button
+        end
+    end
+```
+
+#### 8. Permission Invalidation on Role Change
+
+```mermaid
+sequenceDiagram
+    participant Admin as Admin
+    participant UI as Permissions Page
+    participant API as Roles API
+    participant Svc as RolesService
+    participant DB as Database
+    participant WS as WebSocket
+    participant User as Affected User
+    participant UserUI as User's Frontend
+    
+    Admin->>UI: Update role permissions
+    UI->>API: PATCH /roles/:id
+    Note over UI,API: Body: { permissionIds: [new_list] }
+    
+    API->>Svc: update(roleId, data)
+    Svc->>DB: BEGIN TRANSACTION
+    Svc->>DB: DELETE FROM role_permissions WHERE roleId
+    Svc->>DB: INSERT new role_permissions
+    Svc->>DB: COMMIT
+    
+    DB-->>Svc: Updated role
+    Svc-->>API: Success
+    API-->>UI: 200 OK
+    
+    Note over API,WS: Notify affected users
+    API->>WS: Emit 'role_updated' event
+    WS->>User: Broadcast to users with this role
+    
+    User->>UserUI: Receive WebSocket event
+    UserUI->>UserUI: Invalidate cached permissions
+    UserUI->>API: GET /auth/me/permissions
+    API->>DB: Query fresh permissions
+    DB-->>API: Updated permissions
+    API-->>UserUI: New permissions
+    
+    UserUI->>UserUI: Update AuthContext state
+    UserUI->>UserUI: Re-render UI
+    
+    Note over UserUI: Navigation items may<br/>appear/disappear based on<br/>new permissions
+```
+
+---
+
 ### Flow 1: Tạo Role Mới
 
 ```

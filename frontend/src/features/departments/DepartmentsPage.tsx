@@ -437,8 +437,8 @@ const Departments: React.FC = () => {
                 <tr
                   key={department.id}
                   className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedDepartmentIds.includes(department.id)
-                      ? 'bg-blue-50 dark:bg-blue-900/20'
-                      : ''
+                    ? 'bg-blue-50 dark:bg-blue-900/20'
+                    : ''
                     }`}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
