@@ -43,9 +43,6 @@ export interface PaymentFeeLevel {
   levelName: string;
   amount: number;
   description: string;
-  note: string;
-  isDefault: boolean;
-  orderIndex: number;
   createdAt: string;
   updatedAt: string;
 
@@ -58,9 +55,6 @@ export interface CreatePaymentFeeLevelDto {
   levelName: string;
   amount: number;
   description: string;
-  note: string;
-  isDefault?: boolean;
-  orderIndex?: number;
 }
 
 export interface UpdatePaymentFeeLevelDto {

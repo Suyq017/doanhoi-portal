@@ -7,6 +7,8 @@ import UserPermissionInfo from "../../components/admin/UserPermissionInfo";
 import { Organization, PaymentCampaign } from "../../types";
 import { PermissionGuard } from "@/shared/components/PermissionGuard";
 import { useAccessibleOrganizations } from "@/shared/hooks/queries";
+import { useToast } from '@/shared/hooks/useToast';
+import { Toast } from '@/shared/components';
 
 export const PaymentCampaignsPage = () => {
   const { t } = useTranslation('paymentCampaigns');
@@ -35,6 +37,9 @@ export const PaymentCampaignsPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<PaymentCampaign | null>(null);
+  
+  // ✅ Toast hook for success messages
+  const { toasts, showSuccess, hideToast } = useToast();
   // ✅ Remove refreshTrigger - cache automatically updates via mutations
 
   const handleCreateCampaign = () => {
@@ -154,6 +159,7 @@ export const PaymentCampaignsPage = () => {
                 onSave={handleCampaignSaved}
                 onCancel={handleCloseModals}
                 accessibleOrganizations={accessibleOrganizations}
+                onShowSuccess={showSuccess}
               />
               </div>
             </div>
@@ -176,12 +182,26 @@ export const PaymentCampaignsPage = () => {
                 onSave={handleCampaignSaved}
                 onCancel={handleCloseModals}
                 accessibleOrganizations={accessibleOrganizations}
+                onShowSuccess={showSuccess}
               />
               </div>
             </div>
           </div>
         )}
       </PermissionGuard>
+
+      {/* Toast Container - Outside modal for proper z-index */}
+      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            duration={toast.duration}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
     </>
   );
 };

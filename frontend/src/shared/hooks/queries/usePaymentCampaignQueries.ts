@@ -188,7 +188,7 @@ export const useUpdatePaymentCampaign = () => {
     return useMutation({
         mutationFn: async ({ id, data }: { id: string; data: UpdatePaymentCampaignDto }) => {
             const response = await paymentCampaignService.updatePaymentCampaign(id, data);
-            return response.data;
+            return response.data || response;
         },
 
         // Optimistic update

@@ -32,6 +32,7 @@ interface PaymentCampaignFormProps {
   onSave?: () => void;
   onCancel?: () => void;
   accessibleOrganizations?: Organization[]; // New prop for accessible organizations
+  onShowSuccess?: (message: string) => void; // New prop for showing success toast
 }
 
 const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
@@ -39,12 +40,15 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
   mode,
   onSave,
   onCancel,
-  accessibleOrganizations
+  accessibleOrganizations,
+  onShowSuccess
 }) => {
   const { t } = useTranslation('paymentCampaigns');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ✅ Remove local toast hook - will use parent's toast
 
   // ✅ TanStack Query mutations
   const createMutation = useCreatePaymentCampaign();
@@ -134,16 +138,19 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
       setError(null);
 
       if (mode === 'create') {
-        // ✅ Create campaign with TanStack Query mutation
+        // Create campaign only
         const campaignData: CreatePaymentCampaignDto = {
           organizationId: formData.organizationId,
           name: formData.name,
           description: formData.description,
-          startDate: `${formData.startDate}T${formData.startTime}:00`,
-          endDate: `${formData.endDate}T${formData.endTime}:00`
+          startDate: `${formData.startDate}T${formData.startTime}:00.000Z`,
+          endDate: `${formData.endDate}T${formData.endTime}:00.000Z`
         };
 
         const newCampaign = await createMutation.mutateAsync(campaignData);
+
+        // Show success toast
+        onShowSuccess?.(t('messages.createSuccess'));
 
         // Use callback if provided, otherwise navigate
         if (onSave) {
@@ -153,15 +160,18 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           navigate(`/admin/payment-campaigns/${newCampaign.id}`);
         }
       } else if (campaign) {
-        // ✅ Update campaign with TanStack Query mutation
+        // Update campaign
         const updateData: UpdatePaymentCampaignDto = {
           name: formData.name,
           description: formData.description,
-          startDate: `${formData.startDate}T${formData.startTime}:00`,
-          endDate: `${formData.endDate}T${formData.endTime}:00`
+          startDate: `${formData.startDate}T${formData.startTime}:00.000Z`,
+          endDate: `${formData.endDate}T${formData.endTime}:00.000Z`
         };
 
         await updateMutation.mutateAsync({ id: campaign.id, data: updateData });
+
+        // Show success toast
+        onShowSuccess?.(t('messages.updateSuccess'));
 
         // Use callback if provided, otherwise navigate
         if (onSave) {
@@ -345,7 +355,6 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           </button>
         </div>
       </form>
-
     </div>
   );
 };

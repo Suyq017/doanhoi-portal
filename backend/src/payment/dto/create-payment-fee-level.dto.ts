@@ -16,16 +16,4 @@ export class CreatePaymentFeeLevelDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsOptional()
-  @IsString()
-  note?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isDefault?: boolean;
-
-  @IsOptional()
-  @IsNumber()
-  orderIndex?: number;
 }

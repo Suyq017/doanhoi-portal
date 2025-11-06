@@ -18,13 +18,6 @@ i18n
       loadPath: '/locales/{{lng}}/{{ns}}.json',
     },
 
-    detection: {
-      order: ['localStorage', 'cookie', 'navigator', 'htmlTag'],
-      lookupLocalStorage: 'i18nextLng',
-      lookupCookie: 'i18nextLng',
-      caches: ['localStorage', 'cookie'],
-    },
-
     ns: ['common', 'users', 'organizations', 'dashboard', 'classes', 'departments', 'auth', 'permissions', 'paymentCampaigns', 'feeLevels', 'memberAssignments', 'payosConfig', 'userPermissions', 'myPayments', 'ctxh', 'student-reports'],
     defaultNS: 'common',
   });

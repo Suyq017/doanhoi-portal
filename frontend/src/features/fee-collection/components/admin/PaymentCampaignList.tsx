@@ -302,7 +302,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                 setPage(1); // Reset to first page
               }}
               options={organizationOptions}
-              placeholder={t('listComponent.selectOrganization', { defaultValue: 'Chọn tổ chức...' })}
+              placeholder={t('formComponent.selectOrganization', { defaultValue: 'Chọn tổ chức...' })}
               className="w-full"
             />
           </div>
