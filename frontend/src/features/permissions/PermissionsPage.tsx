@@ -4,7 +4,7 @@ import { Toast } from '../../shared';
 import {
   useRoleModals,
   useSearchFilters,
-  useRoleList,
+  useRoleListWithCache, // ✅ Use TanStack Query version
   useBulkSelection,
   useRoleActions
 } from './hooks';
@@ -29,7 +29,7 @@ const PermissionsPage: React.FC = () => {
   // Initialize hooks
   const modalsHook = useRoleModals();
   const searchFiltersHook = useSearchFilters(() => setCurrentPage(1));
-  const roleListHook = useRoleList({
+  const roleListHook = useRoleListWithCache({ // ✅ Use TanStack Query version with cache
     searchTerm: searchFiltersHook.debouncedSearchTerm,
     statusFilter: searchFiltersHook.statusFilter,
     page: currentPage,
@@ -70,7 +70,7 @@ const PermissionsPage: React.FC = () => {
   }
 
   if (roleListHook.error) {
-    return <ErrorState error={roleListHook.error} onRetry={roleListHook.loadRoles} />;
+    return <ErrorState error={roleListHook.error} onRetry={roleListHook.refreshRoles} />; // ✅ Use refreshRoles instead of loadRoles
   } return (
     <div className="space-y-6">
       {/* Header */}

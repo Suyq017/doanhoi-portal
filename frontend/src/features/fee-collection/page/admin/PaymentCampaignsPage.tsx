@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from 'react-i18next';
 import { Plus } from "lucide-react";
 import PaymentCampaignList from "../../components/admin/PaymentCampaignList";
@@ -6,74 +6,36 @@ import PaymentCampaignForm from "../../components/admin/PaymentCampaignForm";
 import UserPermissionInfo from "../../components/admin/UserPermissionInfo";
 import { Organization, PaymentCampaign } from "../../types";
 import { PermissionGuard } from "@/shared/components/PermissionGuard";
-import { organizationService } from "@/shared/services/organizationService";
+import { useAccessibleOrganizations } from "@/shared/hooks/queries";
 
 export const PaymentCampaignsPage = () => {
-  const { t } = useTranslation('paymentCampaigns'); const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [accessibleOrganizations, setAccessibleOrganizations] = useState<Organization[]>([]);
+  const { t } = useTranslation('paymentCampaigns');
+
+  // ✅ Use TanStack Query for accessible organizations
+  const {
+    data: rawAccessibleOrganizations = [],
+    isLoading: pageLoading,
+    error: orgsError
+  } = useAccessibleOrganizations();
+
+  // Map from service Organization type to fee-collection Organization type
+  const accessibleOrganizations: Organization[] = (rawAccessibleOrganizations || []).map(org => ({
+    id: org.id,
+    name: org.name,
+    code: org.code || '',
+    type: org.type || '',
+    parentId: org.parentId,
+    level: 1,
+    path: org.name,
+    isActive: true,
+    createdAt: org.createdAt || new Date().toISOString(),
+    updatedAt: org.updatedAt || new Date().toISOString()
+  }));
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<PaymentCampaign | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [pageLoading, setPageLoading] = useState(true);
-  useEffect(() => {
-    const initializePage = async () => {
-      setPageLoading(true);
-      await loadAccessibleOrganizations();
-      setPageLoading(false);
-    };
-
-    initializePage();
-  }, []);
-  const loadAccessibleOrganizations = async () => {
-    try {
-      // Use getAccessibleOrganizations to only get organizations user has payment-campaigns.create permission for
-      const orgs = await organizationService.getAccessibleOrganizations();
-
-      // Map from shared Organization type to fee-collection Organization type
-      const mappedOrgs: Organization[] = (orgs || []).map(org => ({
-        id: org.id,
-        name: org.name,
-        code: org.code || '',
-        type: org.type || '',
-        parentId: org.parentId,
-        level: 1, // Default level if not provided
-        path: org.name, // Use name as path if no path available
-        isActive: true, // Default to true if not provided
-        createdAt: org.createdAt || new Date().toISOString(),
-        updatedAt: org.updatedAt || new Date().toISOString()
-      }));
-
-      setOrganizations(mappedOrgs);
-      setAccessibleOrganizations(mappedOrgs);
-    } catch (error) {
-      console.error('[PaymentCampaignsPage] Error loading organizations with create permission:', error);
-
-      // If the accessible organizations endpoint fails (e.g., user not authenticated or no permissions),
-      // fall back to loading all organizations as a safety measure
-      try {
-        const allOrgs = await organizationService.getOrganizations();
-        const mappedAllOrgs: Organization[] = (allOrgs || []).map(org => ({
-          id: org.id,
-          name: org.name,
-          code: org.code || '',
-          type: org.type || '',
-          parentId: org.parentId,
-          level: 1,
-          path: org.name,
-          isActive: true,
-          createdAt: org.createdAt || new Date().toISOString(),
-          updatedAt: org.updatedAt || new Date().toISOString()
-        }));
-        setOrganizations(mappedAllOrgs);
-        setAccessibleOrganizations(mappedAllOrgs);
-      } catch (fallbackError) {
-        console.error('[PaymentCampaignsPage] Fallback also failed:', fallbackError);
-        setOrganizations([]);
-        setAccessibleOrganizations([]);
-      }
-    }
-  };
+  // ✅ Remove refreshTrigger - cache automatically updates via mutations
 
   const handleCreateCampaign = () => {
     setShowCreateModal(true);
@@ -91,7 +53,8 @@ export const PaymentCampaignsPage = () => {
   };
 
   const handleCampaignSaved = () => {
-    setRefreshTrigger(prev => prev + 1);
+    // ✅ Cache will be automatically invalidated by mutations
+    // No need for manual refetch trigger
     handleCloseModals();
   };
 
@@ -120,6 +83,27 @@ export const PaymentCampaignsPage = () => {
     );
   }
 
+  // Show error if organizations failed to load
+  if (orgsError) {
+    return (
+      <div className="">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {t('pageTitle')}
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              {t('pageDescription')}
+            </p>
+          </div>
+        </div>
+        <div className="px-4 py-3 mt-6 text-red-700 border border-red-200 rounded bg-red-50 dark:bg-red-900 dark:border-red-800 dark:text-red-200">
+          {t('loadingDescription')}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="space-y-6">
@@ -135,7 +119,7 @@ export const PaymentCampaignsPage = () => {
             <p className="mt-2 text-gray-600 dark:text-gray-400">
               {t('pageDescription')}
             </p>
-          </div>          
+          </div>
           {/* Create Button - Only show if user has permission */}
           <PermissionGuard permission="payment-campaigns.create">
             <div className="mt-4 sm:mt-0">
@@ -152,9 +136,8 @@ export const PaymentCampaignsPage = () => {
 
         {/* Payment Campaign List Component */}
         <PaymentCampaignList
-          organizations={organizations}
+          organizations={accessibleOrganizations}
           onEditCampaign={handleEditCampaign}
-          refreshTrigger={refreshTrigger}
         />
       </div>
       {/* Create Campaign Modal - Permission guarded */}

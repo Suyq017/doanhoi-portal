@@ -18,7 +18,7 @@ const SystemConfigPage: React.FC = () => {
         const checkPermission = async () => {
             try {
                 if (!auth.user) {
-                    navigate('/login');
+                    navigate('/admin-doan-hoi/login');
                     return;
                 }
 

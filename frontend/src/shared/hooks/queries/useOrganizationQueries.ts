@@ -69,6 +69,9 @@ export const organizationKeys = {
     // Detail query
     detail: (type: string, code: string) =>
         [...organizationKeys.all, 'detail', type, code] as const,
+
+    // User's primary organization query
+    userPrimary: () => [...organizationKeys.all, 'user-primary'] as const,
 };
 
 /**
@@ -207,6 +210,39 @@ export const useOrganizationList = (options?: {
                 a.name.localeCompare(b.name, 'vi')
             );
         },
+    });
+};
+
+/**
+ * Hook for fetching user's primary organization
+ * Cache key: ['organizations', 'user-primary']
+ * 
+ * Use cases:
+ * - ActivityManagement - check if user can create activities
+ * - Any component that needs to know user's primary org
+ * 
+ * Benefits:
+ * - Cached for 10 minutes (rarely changes)
+ * - Shared across all components
+ * - Auto-refetch when stale
+ */
+export const useUserPrimaryOrganization = (options?: {
+    enabled?: boolean;
+}) => {
+    return useQuery({
+        queryKey: organizationKeys.userPrimary(),
+        queryFn: () => organizationService.getUserPrimaryOrganization(),
+
+        // Cache config - primary org rarely changes
+        staleTime: 10 * 60 * 1000,  // 10 minutes
+        gcTime: 30 * 60 * 1000,     // 30 minutes
+
+        // Refetch strategy
+        refetchOnMount: false,       // Don't refetch if cache is fresh
+        refetchOnWindowFocus: false, // Don't refetch on tab switch
+
+        // Optional enable control
+        enabled: options?.enabled !== false,
     });
 };
 

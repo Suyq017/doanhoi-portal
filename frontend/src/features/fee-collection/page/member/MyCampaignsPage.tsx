@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CreditCard, Clock, CheckCircle, AlertCircle, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { usePaymentAssignments, PaymentAssignment } from '../../../../shared/hooks/usePaymentAssignments';
+import { useUserPaymentAssignments } from '@/shared/hooks/queries';
+import type { PaymentAssignment } from '@/shared/hooks/queries';
 import { paymentService } from '../../../../shared/services/fee-collection-service';
 import { usePermissions } from '../../../../shared/hooks/usePermissions';
 import { useToast } from '../../../../shared/hooks/useToast';
@@ -21,9 +22,6 @@ interface Filters {
 export const MyCampaignsPage: React.FC = () => {
   const { t } = useTranslation('myPayments');
   const { showError, toasts, hideToast } = useToast();
-  const [assignments, setAssignments] = useState<PaymentAssignment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({
     status: '',
     search: '',
@@ -32,7 +30,7 @@ export const MyCampaignsPage: React.FC = () => {
     page: 1,
     limit: 10
   });
-  const { getUserAssignments } = usePaymentAssignments();
+
   const {
     canAccessMyPaymentsInOrg,
     userRoles,
@@ -40,14 +38,31 @@ export const MyCampaignsPage: React.FC = () => {
     permissionsLoading
   } = usePermissions();
 
+  // ✅ Get current user ID from localStorage
+  const userData = localStorage.getItem('user');
+  const userId = userData ? JSON.parse(userData)?.id : null;
+
+  // ✅ Use TanStack Query to fetch user assignments
+  const {
+    data,
+    isLoading: loading,
+    error: queryError,
+    refetch
+  } = useUserPaymentAssignments(userId);
+
+  const assignments = data?.assignments || [];
+  const error = queryError ? (queryError instanceof Error ? queryError.message : t('errors.loadError')) : null;
+
   // Helper function để lấy tên tổ chức từ assignment hoặc hiển thị organizationId
   const getOrganizationName = (organizationId?: string) => {
     if (!organizationId) return 'N/A';
 
     // Tìm tên tổ chức từ assignments nếu có
-    const assignment = assignments.find(a => a.campaign.organization.id === organizationId);
+    const assignment = assignments.find((a: PaymentAssignment) => a.campaign.organization.id === organizationId);
     return assignment?.campaign.organization.name || `Tổ chức ${organizationId}`;
   };
+
+  // ✅ Remove useEffect and fetchAssignments - TanStack Query handles this automatically
 
   // Select options
   const statusOptions: SelectOption[] = [
@@ -68,40 +83,12 @@ export const MyCampaignsPage: React.FC = () => {
     { value: 'desc', label: t('sort.descending') }
   ];
 
-  useEffect(() => {
-    fetchAssignments();
-  }, []);
-
-  const fetchAssignments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await getUserAssignments();
-
-      // Áp dụng cơ chế phân quyền: chỉ hiển thị assignments từ những tổ chức mà user có quyền truy cập
-      const filteredAssignments = result.filter((assignment: PaymentAssignment) => {
-        return true;
-        // Super admin có thể xem tất cả
-        if (isSuperAdmin()) {
-          return true;
-        }
-
-        // Kiểm tra quyền truy cập theo từng tổ chức
-        return canAccessMyPaymentsInOrg(assignment.campaign.organization.id);
-      });
-
-      setAssignments(filteredAssignments || []);
-    } catch (err) {
-      setError(t('errors.loadError'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ✅ TanStack Query handles fetching automatically - no need for useEffect
 
   const handlePayNow = async (assignmentId: string) => {
     try {
       // Tìm assignment để lấy thông tin thanh toán
-      const assignment = assignments.find(a => a.id === assignmentId);
+      const assignment = assignments.find((a: PaymentAssignment) => a.id === assignmentId);
       if (!assignment) {
         showError(t('errors.assignmentNotFound'));
         return;
@@ -141,7 +128,7 @@ export const MyCampaignsPage: React.FC = () => {
   };
 
   const filteredAndSortedAssignments = assignments
-    .filter(assignment => {
+    .filter((assignment: PaymentAssignment) => {
       // Chỉ hiển thị assignments từ campaigns có status ACTIVE hoặc CANCELLED
       const isValidCampaignStatus = assignment.campaign.status === 'ACTIVE' || assignment.campaign.status === 'CANCELLED';
 
@@ -152,7 +139,7 @@ export const MyCampaignsPage: React.FC = () => {
 
       return isValidCampaignStatus && matchesStatus && matchesSearch;
     })
-    .sort((a, b) => {
+    .sort((a: PaymentAssignment, b: PaymentAssignment) => {
       // Ưu tiên PENDING lên đầu
       if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
       if (b.status === 'PENDING' && a.status !== 'PENDING') return 1;
@@ -186,21 +173,21 @@ export const MyCampaignsPage: React.FC = () => {
   const paginatedAssignments = filteredAndSortedAssignments.slice(startIndex, endIndex);
 
   // Lọc assignments để chỉ tính những assignments từ campaigns có status hợp lệ
-  const validAssignments = assignments.filter(a =>
+  const validAssignments = assignments.filter((a: PaymentAssignment) =>
     a.campaign.status === 'ACTIVE' || a.campaign.status === 'CANCELLED'
   );
   const summaryStats = {
     total: validAssignments.length,
     pending: validAssignments
-      .filter(a => a.status === 'PENDING')
+      .filter((a: PaymentAssignment) => a.status === 'PENDING')
       .length,
     overdue: validAssignments
-      .filter(a => a.status === 'OVERDUE')
+      .filter((a: PaymentAssignment) => a.status === 'OVERDUE')
       .length,
-    paid: validAssignments.filter(a => a.status === 'PAID').length,
+    paid: validAssignments.filter((a: PaymentAssignment) => a.status === 'PAID').length,
     totalAmount: validAssignments
-      .filter(a => a.status === 'PENDING')
-      .reduce((sum, a) => {
+      .filter((a: PaymentAssignment) => a.status === 'PENDING')
+      .reduce((sum: number, a: PaymentAssignment) => {
         const amount = Number(a.feeLevel?.amount) || 0;
         return sum + amount;
       }, 0)
@@ -249,7 +236,7 @@ export const MyCampaignsPage: React.FC = () => {
             <div className="mb-4 text-xl text-red-500">⚠️</div>
             <p className="text-red-600 dark:text-red-400">{error}</p>
             <button
-              onClick={fetchAssignments}
+              onClick={() => refetch()}
               className="px-4 py-2 mt-4 text-white rounded-lg bg-doan-600 hover:bg-doan-700"
             >
               {t('actions.retry')}
@@ -442,7 +429,7 @@ export const MyCampaignsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-              {paginatedAssignments.map((assignment) => (
+              {paginatedAssignments.map((assignment: PaymentAssignment) => (
                 <tr key={assignment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>

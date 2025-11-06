@@ -1,30 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
-  User, 
-  Calendar, 
-  CheckCircle, 
-  Clock, 
-  BarChart3 
+import {
+  User,
+  Calendar,
+  CheckCircle,
+  Clock,
+  BarChart3
 } from 'lucide-react';
-import { 
-  StudentReport,
-  ParticipationStatus 
+import {
+  ParticipationStatus
 } from '../types';
-import { studentReportsService } from '../services/studentReportsService';
 import { userService } from '../../../shared/services/userService';
 import { useAuth } from '../../auth/context/AuthContext';
+import { useStudentReport } from '@/shared/hooks/queries';
 
 const StudentReportsPage: React.FC = () => {
   const { t } = useTranslation('student-reports');
-  
+
   // Auth context để lấy thông tin user
   const { auth } = useAuth();
-    
+
+  // Get student code from auth
+  const studentCode = auth.user?.code || '2212870'; // fallback for testing
+
   // State management
-  const [report, setReport] = useState<StudentReport | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [studentInfo, setStudentInfo] = useState<{name?: string, email?: string}>({});
+  const [studentInfo, setStudentInfo] = useState<{ name?: string, email?: string }>({});
+
+  // ✅ Use TanStack Query for student report
+  const {
+    data: report,
+    isLoading: loading,
+  } = useStudentReport(studentCode, {}, {
+    enabled: !!auth.user || !auth.isLoading
+  });
 
   // Format days to show integers when possible (e.g., 3.0 -> 3, 3.5 -> 3.5)
   const formatDays = (days: number | null | undefined): string => {
@@ -32,46 +40,31 @@ const StudentReportsPage: React.FC = () => {
     // Remove trailing zeros after decimal point
     return parseFloat(days.toString()).toString();
   };
-    
-  // Load report data
+
+  // Load student info if not in report
   useEffect(() => {
-    const loadReport = async () => {
-      // Lấy student code từ auth context
-      const studentCode = auth.user?.code || '2212870'; // fallback for testing
-            
-      setLoading(true);
-      try {
-        const reportData = await studentReportsService.getMyReport(studentCode, {});
-        setReport(reportData);
-                
-        // Nếu không có tên hoặc email, thử tra cứu từ user service
-        if (!reportData.student_name || !reportData.student_email) {
-          try {
-            const usersResponse = await userService.getUsers({ search: studentCode, limit: 1 });
-            if (usersResponse.users && usersResponse.users.length > 0) {
-              const user = usersResponse.users[0];
-              setStudentInfo({
-                name: user.familyName + ' ' + user.givenName,
-                email: user.email
-              });
-            }
-          } catch (userError) {
-            // Silent fail
+    const loadStudentInfo = async () => {
+      // Nếu không có tên hoặc email từ report, thử tra cứu từ user service
+      if (report && (!report.student_name || !report.student_email)) {
+        try {
+          const usersResponse = await userService.getUsers({ search: studentCode, limit: 1 });
+          if (usersResponse.users && usersResponse.users.length > 0) {
+            const user = usersResponse.users[0];
+            setStudentInfo({
+              name: user.familyName + ' ' + user.givenName,
+              email: user.email
+            });
           }
+        } catch (userError) {
+          // Silent fail
         }
-      } catch (error) {
-        console.error('Error fetching student report:', error);
-        setReport(null);
-      } finally {
-        setLoading(false);
       }
     };
 
-    // Chỉ load khi đã có thông tin auth
-    if (auth.user || !auth.isLoading) {
-      loadReport();
+    if (report) {
+      loadStudentInfo();
     }
-  }, [auth.user, auth.isLoading]);
+  }, [report, studentCode]);
 
   // Status display helpers
   const getStatusDisplay = (status: string) => {
@@ -280,7 +273,7 @@ const StudentReportsPage: React.FC = () => {
                               {getStatusDisplay(activity.status)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                              {activity.completed_date 
+                              {activity.completed_date
                                 ? new Date(activity.completed_date).toLocaleDateString('vi-VN')
                                 : (activity.status === 'COMPLETED' ? t('studentInfo.unknown') : '-')
                               }

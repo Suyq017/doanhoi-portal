@@ -14,17 +14,17 @@ export const useAuthRedirect = () => {
         // Only redirect if auth check is complete
         if (!auth.isLoading) {
             // If user is on login page and is authenticated, redirect to intended page
-            if (auth.isAuthenticated && location.pathname === '/login') {
+            if (auth.isAuthenticated && (location.pathname === '/login' || location.pathname === '/admin-doan-hoi/login')) {
                 const from = location.state?.from?.pathname || '/';
                 navigate(from, { replace: true });
             }
 
             // If user is not authenticated and not on public routes, redirect to login
-            const publicRoutes = ['/login', '/auth/callback'];
+            const publicRoutes = ['/login', '/admin-doan-hoi/login', '/auth/callback'];
             const isPublicRoute = publicRoutes.includes(location.pathname);
 
             if (!auth.isAuthenticated && !isPublicRoute) {
-                navigate('/login', {
+                navigate('/admin-doan-hoi/login', {
                     state: { from: location },
                     replace: true
                 });

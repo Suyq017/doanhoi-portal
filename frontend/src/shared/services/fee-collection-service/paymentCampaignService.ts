@@ -4,7 +4,7 @@ import {
   UpdatePaymentCampaignDto,
   PaymentCampaignFilters,
   ApiResponse,
-  PaginatedResponse,
+  PaymentCampaignPaginatedResponse,
   Organization
 } from '../../../features/fee-collection/types';
 import { authService } from '../../../features/auth/services/authService';
@@ -21,7 +21,7 @@ class PaymentCampaignService {
   }
 
   // CRUD Operations
-  async getPaymentCampaigns(filters: PaymentCampaignFilters = {}): Promise<PaginatedResponse<PaymentCampaign>> {
+  async getPaymentCampaigns(filters: PaymentCampaignFilters = {}): Promise<PaymentCampaignPaginatedResponse> {
     const params = new URLSearchParams();
 
     if (filters.organizationId) params.append('organizationId', filters.organizationId);

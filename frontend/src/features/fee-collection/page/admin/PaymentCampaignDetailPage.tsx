@@ -487,27 +487,11 @@ const PaymentCampaignDetailPage: React.FC = () => {
               <div className="font-medium text-gray-900 dark:text-white">
                 <div className="mb-1">
                   <span className="text-gray-500 text-s dark:text-gray-400">{t('detail.from')}: </span>
-                  {new Date(campaign.startDate).toLocaleDateString('vi-VN', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                  })} - {new Date(campaign.startDate).toLocaleTimeString('vi-VN', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                  })}
+                  {campaign.startDate.split('T')[0]} - {campaign.startDate.split('T')[1]?.substring(0, 5)}
                 </div>
                 <div>
                   <span className="text-gray-500 text-s dark:text-gray-400">{t('detail.to')}: </span>
-                  {new Date(campaign.endDate).toLocaleDateString('vi-VN', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                  })} - {new Date(campaign.endDate).toLocaleTimeString('vi-VN', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                  })}
+                  {campaign.endDate.split('T')[0]} - {campaign.endDate.split('T')[1]?.substring(0, 5)}
                 </div>
               </div>
             </div>

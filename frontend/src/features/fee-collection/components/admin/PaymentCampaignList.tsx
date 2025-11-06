@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Eye, Edit, Trash2, Play, CheckCircle, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -8,39 +8,80 @@ import SearchableCombobox from '@/shared/components/SearchableCombobox';
 import Select, { SelectOption } from '@/shared/components/Select';
 import { UserTablePagination } from '@/shared/components/UserTable/UserTablePagination';
 import { PaymentCampaign, PaymentCampaignFilters, Organization } from '../../types';
-import { paymentCampaignService } from '@/shared/services/fee-collection-service';
 import { usePermissions } from '@/shared/hooks/usePermissions';
+import {
+  usePaymentCampaignList,
+  useChangeCampaignStatus,
+  useDeletePaymentCampaign
+} from '@/shared/hooks/queries';
 
 interface PaymentCampaignListProps {
   organizations: Organization[];
   onEditCampaign?: (campaign: PaymentCampaign) => void;
-  refreshTrigger?: number;
+  // ✅ refreshTrigger removed - cache automatically updates via mutations
 }
 
 const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
   organizations,
-  onEditCampaign,
-  refreshTrigger
+  onEditCampaign
 }) => {
   const { t } = useTranslation('paymentCampaigns');
   const permissions = usePermissions();
   const { toasts, confirmDialog, showSuccess, showError, showConfirm, hideToast } = useToast();
-  const [campaigns, setCampaigns] = useState<PaymentCampaign[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null); // Track which action is loading
-  const [searchTerm, setSearchTerm] = useState(''); // Local search term state
-  const [filters, setFilters] = useState<PaymentCampaignFilters>({
-    page: 1,
-    limit: 10
-  });
 
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0
-  });
+  // State for individual filter values
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const limit = 10; // Fixed limit - no need for state
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | undefined>(undefined);
+  const [selectedStatus, setSelectedStatus] = useState<string | undefined>(undefined);
+  const [startDate, setStartDate] = useState<string | undefined>(undefined);
+  const [endDate, setEndDate] = useState<string | undefined>(undefined);
+
+  // 🔍 Debug log - component mount
+  useEffect(() => {
+    console.log('🎯 [PaymentCampaignList] Component mounted/updated');
+  }, []);
+
+  // ✅ Create stable filters object with useMemo
+  const filters = useMemo<PaymentCampaignFilters>(() => ({
+    page,
+    limit,
+    search: searchTerm || undefined,
+    organizationId: selectedOrganizationId,
+    status: selectedStatus as any,
+    startDate,
+    endDate
+  }), [page, limit, searchTerm, selectedOrganizationId, selectedStatus, startDate, endDate]);
+
+  // 🔍 Debug log - filters changed
+  useEffect(() => {
+    console.log('📊 [PaymentCampaignList] Filters changed:', filters);
+  }, [filters]);
+
+  // ✅ Use TanStack Query for campaigns list
+  const {
+    data,
+    isLoading: loading,
+    error: queryError,
+    isPlaceholderData
+  } = usePaymentCampaignList(filters);
+
+  // ✅ Backend returns 'campaigns' key in response
+  const campaigns = data?.campaigns || [];
+  const pagination = {
+    page: data?.page || 1,
+    limit: data?.limit || 10,
+    total: data?.total || 0,
+    totalPages: data?.totalPages || 0
+  };
+
+  // Convert query error to string
+  const error = queryError ? (queryError instanceof Error ? queryError.message : 'Failed to load campaigns') : null;
+
+  // ✅ Use TanStack Query mutations
+  const changeStatusMutation = useChangeCampaignStatus();
+  const deleteMutation = useDeletePaymentCampaign();
 
   // Row-level permission checks
   const canEditCampaign = (campaign: PaymentCampaign) => {
@@ -64,11 +105,8 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
   const debouncedSearch = useCallback(
     (searchValue: string) => {
       const timeoutId = setTimeout(() => {
-        setFilters(prev => ({
-          ...prev,
-          search: searchValue || undefined,
-          page: 1
-        }));
+        setSearchTerm(searchValue);
+        setPage(1); // Reset to first page when searching
       }, 500); // 500ms delay
 
       return () => clearTimeout(timeoutId);
@@ -77,10 +115,14 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
   );
 
   // Handle search term change
+  const [localSearchTerm, setLocalSearchTerm] = useState('');
   useEffect(() => {
-    const cleanup = debouncedSearch(searchTerm);
+    const cleanup = debouncedSearch(localSearchTerm);
     return cleanup;
-  }, [searchTerm, debouncedSearch]);
+  }, [localSearchTerm, debouncedSearch]);
+
+  // ✅ Remove refreshTrigger logic - cache automatically updates via mutations
+  // Note: Mutations will call queryClient.invalidateQueries() to trigger refetch
 
   // Create organization options for SearchableCombobox
   const organizationOptions = [
@@ -100,39 +142,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
     { value: 'CANCELLED', label: t('listComponent.cancelled') }
   ];
 
-  useEffect(() => {
-    loadCampaigns();
-  }, [filters]);
-
-  // Reload campaigns when refreshTrigger changes
-  useEffect(() => {
-    if (refreshTrigger && refreshTrigger > 0) {
-      loadCampaigns();
-    }
-  }, [refreshTrigger]);
-
-  const loadCampaigns = async () => {
-    try {
-      setLoading(true);
-      setError(null); // Clear any previous errors
-      const response: any = await paymentCampaignService.getPaymentCampaigns(filters);
-      setCampaigns(response.campaigns);
-      setPagination({
-        page: response.page,
-        limit: response.limit,
-        total: response.total,
-        totalPages: response.totalPages
-      });
-    } catch (err) {
-      console.error('Error loading campaigns:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load campaigns';
-      setError(errorMessage);
-      showError(t('messages.errorLoading') + `: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // ✅ Status change handler with TanStack Query mutation
   const handleStatusChange = async (id: string, action: 'activate' | 'complete' | 'cancel') => {
     // Show confirmation dialog for activate action
     if (action === 'activate') {
@@ -179,40 +189,17 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
       if (!shouldCancel) return;
     }
 
+    // ✅ Use TanStack Query mutation with optimistic update
     try {
-      setActionLoading(`${id}-${action}`);
-      let response;
-      switch (action) {
-        case 'activate':
-          response = await paymentCampaignService.activatePaymentCampaign(id);
-          break;
-        case 'complete':
-          response = await paymentCampaignService.completePaymentCampaign(id);
-          break;
-        case 'cancel':
-          response = await paymentCampaignService.cancelPaymentCampaign(id);
-          break;
-      }
+      await changeStatusMutation.mutateAsync({ id, action });
 
-      // Handle response properly - it might be response.data or just response
-      const updatedCampaign = response?.data || response;
-
-      if (updatedCampaign) {
-        // Update the campaign in the list
-        setCampaigns(prev => prev.map(campaign =>
-          campaign.id === id ? updatedCampaign : campaign
-        ));
-
-        // Show success toast
-        const actionMessages = {
-          activate: t('messages.activateSuccess'),
-          complete: t('messages.completeSuccess'),
-          cancel: t('messages.cancelSuccess')
-        };
-        showSuccess(actionMessages[action]);
-      } else {
-        showError(t('messages.errorStatusUpdate'));
-      }
+      // Show success toast
+      const actionMessages = {
+        activate: t('messages.activateSuccess'),
+        complete: t('messages.completeSuccess'),
+        cancel: t('messages.cancelSuccess')
+      };
+      showSuccess(actionMessages[action]);
     } catch (err) {
       console.error('Error in handleStatusChange:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update campaign status';
@@ -220,14 +207,10 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
         action === 'complete' ? t('actions.complete').toLowerCase() :
           t('actions.cancel').toLowerCase();
       showError(t('messages.errorActivate', { error: errorMessage }).replace('kích hoạt', actionText));
-
-      // Reload campaigns to ensure UI is in sync
-      await loadCampaigns();
-    } finally {
-      setActionLoading(null);
     }
   };
 
+  // ✅ Delete handler with TanStack Query mutation
   const handleDelete = async (id: string) => {
     const campaign = campaigns.find(c => c.id === id);
     if (!campaign) return;
@@ -245,9 +228,9 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
 
     if (!shouldDelete) return;
 
+    // ✅ Use TanStack Query mutation with optimistic update
     try {
-      await paymentCampaignService.deletePaymentCampaign(id);
-      setCampaigns(prev => prev.filter(campaign => campaign.id !== id));
+      await deleteMutation.mutateAsync(id);
       showSuccess(t('messages.deleteSuccess'));
     } catch (err) {
       console.error('Error in handleDelete:', err);
@@ -313,8 +296,11 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
               {t('listComponent.organization')}
             </label>
             <SearchableCombobox
-              value={filters.organizationId || ''}
-              onChange={(value) => setFilters(prev => ({ ...prev, organizationId: value || undefined, page: 1 }))}
+              value={selectedOrganizationId || ''}
+              onChange={(value) => {
+                setSelectedOrganizationId(value || undefined);
+                setPage(1); // Reset to first page
+              }}
               options={organizationOptions}
               placeholder={t('listComponent.selectOrganization', { defaultValue: 'Chọn tổ chức...' })}
               className="w-full"
@@ -327,8 +313,11 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
             </label>
             <Select
               options={statusOptions}
-              value={filters.status || ''}
-              onChange={(value) => setFilters(prev => ({ ...prev, status: value as PaymentCampaign['status'] || undefined, page: 1 }))}
+              value={selectedStatus || ''}
+              onChange={(value) => {
+                setSelectedStatus(value || undefined);
+                setPage(1); // Reset to first page
+              }}
               placeholder={t('listComponent.allStatus')}
             />
           </div>
@@ -339,8 +328,11 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
             </label>
             <input
               type="date"
-              value={filters.startDate || ''}
-              onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value || undefined, page: 1 }))}
+              value={startDate || ''}
+              onChange={(e) => {
+                setStartDate(e.target.value || undefined);
+                setPage(1); // Reset to first page
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 focus:border-doan-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -351,8 +343,11 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
             </label>
             <input
               type="date"
-              value={filters.endDate || ''}
-              onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value || undefined, page: 1 }))}
+              value={endDate || ''}
+              onChange={(e) => {
+                setEndDate(e.target.value || undefined);
+                setPage(1); // Reset to first page
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 focus:border-doan-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -364,8 +359,8 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
             <input
               type="text"
               placeholder={t('searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
               className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -469,7 +464,8 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                             {canDeleteCampaign(campaign) && (
                               <button
                                 onClick={() => handleDelete(campaign.id)}
-                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                disabled={deleteMutation.isPending}
+                                className="text-red-600 hover:text-red-900 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
                                 title={t('listComponent.delete')}
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -482,7 +478,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                             {canEditCampaign(campaign) && (
                               <button
                                 onClick={() => handleStatusChange(campaign.id, 'complete')}
-                                disabled={actionLoading === `${campaign.id}-complete`}
+                                disabled={changeStatusMutation.isPending}
                                 className="text-blue-600 hover:text-blue-900 disabled:opacity-50 dark:text-blue-400 dark:hover:text-blue-300"
                                 title={t('listComponent.complete')}
                               >
@@ -492,7 +488,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                             {canEditCampaign(campaign) && (
                               <button
                                 onClick={() => handleStatusChange(campaign.id, 'cancel')}
-                                disabled={actionLoading === `${campaign.id}-cancel`}
+                                disabled={changeStatusMutation.isPending}
                                 className="text-red-600 hover:text-red-900 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
                                 title={t('listComponent.cancel')}
                               >
@@ -506,7 +502,8 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                             {canDeleteCampaign(campaign) && (
                               <button
                                 onClick={() => handleDelete(campaign.id)}
-                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                disabled={deleteMutation.isPending}
+                                className="text-red-600 hover:text-red-900 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
                                 title={t('listComponent.deleteTooltip')}
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -530,8 +527,17 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
         totalPages={pagination.totalPages}
         total={pagination.total}
         limit={pagination.limit}
-        onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
+        onPageChange={(newPage) => setPage(newPage)}
       />
+
+      {/* Pagination Loading Indicator */}
+      {isPlaceholderData && (
+        <div className="flex items-center justify-center py-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Loading new page...
+          </div>
+        </div>
+      )}
 
       {/* Empty State */}
       {campaigns.length === 0 && !loading && (

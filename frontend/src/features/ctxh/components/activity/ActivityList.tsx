@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Edit, Trash2, Eye, Calendar, ChevronDown } from 'lucide-react';
-import { 
-  CtxhActivity, 
+import {
+  CtxhActivity,
   ActivityQueryParams,
-  PaginatedResponse,
   CtxhCategory,
   ActivityStatus
 } from '../../types';
-import { activityService, categoryService } from '../../services';
+import { categoryService } from '../../services';
 import { organizationService } from '../../../../shared/services';
 import { Organization } from '../../../../shared/types/organization';
-import { debounce } from '../../utils';
 import { Pagination } from '../../../../shared/components';
-import { useOrganizationList } from '../../../../shared/hooks/queries';
+import { useOrganizationList, useActivityList } from '../../../../shared/hooks/queries';
 
 interface ActivityListProps {
   onCreateClick: () => void;
@@ -21,7 +19,6 @@ interface ActivityListProps {
   onDeleteClick: (activity: CtxhActivity) => void;
   onViewClick: (activity: CtxhActivity) => void;
   showToast: (type: 'success' | 'error' | 'info', message: string) => void;
-  refreshTrigger: number;
   permissions?: {
     create: boolean;
     update: boolean;
@@ -34,22 +31,19 @@ const ActivityList: React.FC<ActivityListProps> = ({
   onDeleteClick,
   onViewClick,
   showToast,
-  refreshTrigger,
   permissions
 }) => {
   const { t } = useTranslation('ctxh');
-  
+
   // Prefetch organizations using React Query (for caching)
   useOrganizationList();
-  
-  const [activities, setActivities] = useState<CtxhActivity[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // State for filters and pagination
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
-  
+
   // Filter states
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -67,26 +61,69 @@ const ActivityList: React.FC<ActivityListProps> = ({
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [organizationDropdownOpen, setOrganizationDropdownOpen] = useState(false);
 
-  // Create debounced search function for activities
-  const debouncedSearchRef = React.useRef(
-    debounce((term: string, categoryId: string, status: string, organizationId: string) => {
-      setCurrentPage(1);
-      loadActivities(1, term, categoryId, status, organizationId);
-    }, 300)
-  );
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to page 1 when searching
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Build query params with useMemo for stable reference
+  const queryParams = useMemo<ActivityQueryParams>(() => ({
+    page: currentPage,
+    limit: limit,
+    search: debouncedSearchTerm || undefined,
+    category_id: selectedCategoryId || undefined,
+    status: selectedStatus as ActivityStatus || undefined,
+    organization_id: selectedOrganizationId || undefined,
+  }), [currentPage, limit, debouncedSearchTerm, selectedCategoryId, selectedStatus, selectedOrganizationId]);
+
+  // Use TanStack Query hook for activities
+  const {
+    data: activityData,
+    isLoading,
+    isError,
+    error
+  } = useActivityList(queryParams);
+
+  // Extract data from response
+  const activities = activityData?.data || [];
+  const total = activityData?.total || 0;
+  const totalPages = activityData?.totalPages || 1;
+
+  // Show error toast if query fails
+  useEffect(() => {
+    if (isError && error) {
+      showToast('error', t('activity.loadActivitiesError'));
+    }
+  }, [isError, error, showToast, t]);
 
   // Create debounced search functions for comboboxes
-  const debouncedCategorySearchRef = React.useRef(
-    debounce((term: string) => {
-      loadCategories(term);
-    }, 300)
-  );
+  const debouncedCategorySearchRef = React.useRef<NodeJS.Timeout>();
+  const debouncedOrganizationSearchRef = React.useRef<NodeJS.Timeout>();
 
-  const debouncedOrganizationSearchRef = React.useRef(
-    debounce((term: string) => {
+  // Debounced category search
+  const handleCategorySearch = (term: string) => {
+    if (debouncedCategorySearchRef.current) {
+      clearTimeout(debouncedCategorySearchRef.current);
+    }
+    debouncedCategorySearchRef.current = setTimeout(() => {
+      loadCategories(term);
+    }, 300);
+  };
+
+  // Debounced organization search
+  const handleOrganizationSearch = (term: string) => {
+    if (debouncedOrganizationSearchRef.current) {
+      clearTimeout(debouncedOrganizationSearchRef.current);
+    }
+    debouncedOrganizationSearchRef.current = setTimeout(() => {
       loadOrganizations(term);
-    }, 300)
-  );
+    }, 300);
+  };
 
   // Filter functions for comboboxes (status only - category & organization use server-side search)
   const statusOptions = [
@@ -153,44 +190,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
     }
   };
 
-  const loadActivities = async (page: number = currentPage, search?: string, categoryId?: string, status?: string, organizationId?: string, newLimit?: number) => {
-    try {
-      setLoading(true);
-      
-      // Determine which values to use
-      const searchValue = search !== undefined ? search : searchTerm;
-      const categoryIdValue = categoryId !== undefined ? categoryId : selectedCategoryId;
-      const statusValue = status !== undefined ? status : selectedStatus;
-      const organizationIdValue = organizationId !== undefined ? organizationId : selectedOrganizationId;
-      
-      const params: ActivityQueryParams = {
-        page,
-        limit: newLimit !== undefined ? newLimit : limit,
-        ...(searchValue && { search: searchValue }),
-        ...(categoryIdValue && { category_id: categoryIdValue }),
-        ...(statusValue && { status: statusValue as ActivityStatus }),
-        ...(organizationIdValue && { organization_id: organizationIdValue })
-      };
-
-      const response: PaginatedResponse<CtxhActivity> = await activityService.findAll(params);
-      setActivities(response.data);
-      setTotalPages(response.totalPages);
-      setTotal(response.total);
-      setCurrentPage(response.page);
-    } catch (error) {
-      console.error('Error loading activities:', error);
-      showToast('error', t('activity.loadActivitiesError'));
-      setActivities([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    setCurrentPage(1);
-    loadActivities();
-    // Don't load categories/organizations on mount - load on-demand when dropdown opens
-  }, [refreshTrigger]);
+  // Remove loadActivities function - now handled by TanStack Query
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -217,35 +217,33 @@ const ActivityList: React.FC<ActivityListProps> = ({
   }, []);
 
   // Filter change handlers - reset to page 1 and reload
-  useEffect(() => {
-    if (selectedCategoryId !== '' || selectedStatus !== '' || selectedOrganizationId !== '') {
-      setCurrentPage(1);
-      loadActivities(1, searchTerm, selectedCategoryId, selectedStatus, selectedOrganizationId);
-    }
-  }, [selectedCategoryId, selectedStatus, selectedOrganizationId]);
+  // ✅ TanStack Query automatically refetches when queryParams change - no manual filtering needed
+  // Remove useEffect - state changes trigger query refetch via queryParams dependency
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    debouncedSearchRef.current(value, selectedCategoryId, selectedStatus, selectedOrganizationId);
   };
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategoryId(categoryId);
     setCategoryDropdownOpen(false);
     setCategorySearch('');
+    setCurrentPage(1); // Reset to first page on filter change
   };
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
     setStatusDropdownOpen(false);
     setStatusSearch('');
+    setCurrentPage(1); // Reset to first page on filter change
   };
 
   const handleOrganizationChange = (organizationId: string) => {
     setSelectedOrganizationId(organizationId);
     setOrganizationDropdownOpen(false);
     setOrganizationSearch('');
+    setCurrentPage(1); // Reset to first page on filter change
   };
 
   const handleEdit = (activity: CtxhActivity) => {
@@ -254,7 +252,6 @@ const ActivityList: React.FC<ActivityListProps> = ({
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    loadActivities(page, searchTerm, selectedCategoryId, selectedStatus, selectedOrganizationId);
   };
 
   const getStatusColor = (status: string) => {
@@ -320,7 +317,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                   setCategorySearch(value);
                   if (!categoryDropdownOpen) setCategoryDropdownOpen(true);
                   // Trigger server-side search with debounce
-                  debouncedCategorySearchRef.current(value);
+                  handleCategorySearch(value);
                 }}
                 onFocus={() => {
                   setCategoryDropdownOpen(true);
@@ -348,7 +345,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
               >
                 <ChevronDown className="w-4 h-4" />
               </button>
-              
+
               {categoryDropdownOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
                   {loadingCategories ? (
@@ -360,9 +357,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCategoryChange('')}
-                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                          !selectedCategoryId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                        }`}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${!selectedCategoryId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                          }`}
                       >
                         {t('activity.allCategories')}
                       </button>
@@ -372,9 +368,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                             key={category.id}
                             type="button"
                             onClick={() => handleCategoryChange(category.id)}
-                            className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                              selectedCategoryId === category.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                            }`}
+                            className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${selectedCategoryId === category.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                              }`}
                           >
                             {category.name}
                           </button>
@@ -403,7 +398,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                   setOrganizationSearch(value);
                   if (!organizationDropdownOpen) setOrganizationDropdownOpen(true);
                   // Trigger server-side search with debounce
-                  debouncedOrganizationSearchRef.current(value);
+                  handleOrganizationSearch(value);
                 }}
                 onFocus={() => {
                   setOrganizationDropdownOpen(true);
@@ -431,7 +426,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
               >
                 <ChevronDown className="w-4 h-4" />
               </button>
-              
+
               {organizationDropdownOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
                   {loadingOrganizations ? (
@@ -443,9 +438,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                       <button
                         type="button"
                         onClick={() => handleOrganizationChange('')}
-                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                          !selectedOrganizationId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                        }`}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${!selectedOrganizationId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                          }`}
                       >
                         {t('activity.allOrganizations')}
                       </button>
@@ -455,9 +449,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                             key={organization.id}
                             type="button"
                             onClick={() => handleOrganizationChange(organization.id)}
-                            className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                              selectedOrganizationId === organization.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                            }`}
+                            className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${selectedOrganizationId === organization.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                              }`}
                           >
                             {organization.name}
                           </button>
@@ -501,15 +494,14 @@ const ActivityList: React.FC<ActivityListProps> = ({
               >
                 <ChevronDown className="w-4 h-4" />
               </button>
-              
+
               {statusDropdownOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
                   <button
                     type="button"
                     onClick={() => handleStatusChange('')}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                      !selectedStatus ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                    }`}
+                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${!selectedStatus ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                      }`}
                   >
                     {t('activity.allStatuses')}
                   </button>
@@ -519,9 +511,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         key={status.value}
                         type="button"
                         onClick={() => handleStatusChange(status.value)}
-                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${
-                          selectedStatus === status.value ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                        }`}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${selectedStatus === status.value ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                          }`}
                       >
                         {status.label}
                       </button>
@@ -543,7 +534,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
 
       {/* Table */}
       <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
@@ -581,7 +572,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                     <tr key={activity.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="w-1/4 px-6 py-4">
                         <div className="font-medium text-gray-900 dark:text-white break-words overflow-hidden">
-                          <div 
+                          <div
                             className="leading-5 overflow-hidden"
                             style={{
                               display: '-webkit-box',
@@ -596,7 +587,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         </div>
                         {activity.description && (
                           <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            <div 
+                            <div
                               className="overflow-hidden break-words leading-4"
                               style={{
                                 display: '-webkit-box',
@@ -612,8 +603,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         )}
                       </td>
                       <td className="w-48 px-6 py-4">
-                        <div 
-                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5" 
+                        <div
+                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5"
                           style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
@@ -626,8 +617,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         </div>
                       </td>
                       <td className="w-32 px-6 py-4">
-                        <div 
-                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5" 
+                        <div
+                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5"
                           style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
@@ -716,7 +707,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
           onLimitChange={(newLimit) => {
             setLimit(newLimit);
             setCurrentPage(1);
-            loadActivities(1, undefined, undefined, undefined, undefined, newLimit);
+            // ✅ TanStack Query auto-refetches when limit/page changes via queryParams
           }}
           showLimitSelector
         />

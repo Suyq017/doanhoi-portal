@@ -19,6 +19,7 @@ export interface User {
     updatedAt: string;
     managementDepartment?: any;
     trainingDepartment?: any;
+    facultyCode?: string;
     class?: any;
     userRoles?: UserRole[];
     organizations?: UserOrganization[];

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CtxhCategory, CreateCategoryRequest, UpdateCategoryRequest } from '../types';
-import { categoryService } from '../services/categoryService';
 import { getErrorMessage } from '../utils';
 import CategoryList from '../components/category/CategoryList';
 import CategoryForm from '../components/category/CategoryForm';
@@ -11,6 +10,12 @@ import { Toast } from '../../../shared/components';
 import { useToast } from '../../../shared/hooks';
 import { useCtxhPermissions } from '../hooks';
 import { Plus } from 'lucide-react';
+import {
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+  useRestoreCategory,
+} from '../../../shared/hooks/queries';
 
 const CategoryManagement: React.FC = () => {
   const { t } = useTranslation('ctxh');
@@ -19,14 +24,18 @@ const CategoryManagement: React.FC = () => {
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError } = useToast();
 
+  // TanStack Query mutations
+  const createMutation = useCreateCategory();
+  const updateMutation = useUpdateCategory();
+  const deleteMutation = useDeleteCategory();
+  const restoreMutation = useRestoreCategory();
+
   // State management
   const [selectedCategory, setSelectedCategory] = useState<CtxhCategory | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'delete' | 'restore' | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Toast wrapper for CategoryList
   const handleShowToast = (type: 'success' | 'error' | 'info', message: string) => {
@@ -54,28 +63,24 @@ const CategoryManagement: React.FC = () => {
   };
 
   const handleFormSave = async (data: CreateCategoryRequest | UpdateCategoryRequest) => {
-    setLoading(true);
     try {
       if (selectedCategory) {
         // Update existing category
-        await categoryService.update(selectedCategory.id, data as UpdateCategoryRequest);
+        await updateMutation.mutateAsync({ id: selectedCategory.id, data: data as UpdateCategoryRequest });
         showSuccess(t('category.updated'));
       } else {
         // Create new category
-        await categoryService.create(data as CreateCategoryRequest);
+        await createMutation.mutateAsync(data as CreateCategoryRequest);
         showSuccess(t('category.created'));
       }
 
       setIsFormOpen(false);
       setSelectedCategory(undefined);
-      // Trigger refresh of CategoryList
-      setRefreshTrigger(prev => prev + 1);
+      // ✅ Cache tự động refetch, không cần refreshTrigger
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       showError(errorMessage);
       throw error; // Re-throw to let the form handle it
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -95,23 +100,20 @@ const CategoryManagement: React.FC = () => {
   const handleConfirmAction = async () => {
     if (!selectedCategory || !confirmAction) return;
 
-    setLoading(true);
     try {
       if (confirmAction === 'delete') {
-        await categoryService.delete(selectedCategory.id);
+        await deleteMutation.mutateAsync(selectedCategory.id);
         showSuccess(t('category.deleted'));
       } else if (confirmAction === 'restore') {
-        await categoryService.restore(selectedCategory.id);
+        await restoreMutation.mutateAsync(selectedCategory.id);
         showSuccess(t('category.restored'));
       }
 
-      // Trigger refresh of CategoryList
-      setRefreshTrigger(prev => prev + 1);
+      // ✅ Cache tự động refetch
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       showError(errorMessage);
     } finally {
-      setLoading(false);
       setIsConfirmDialogOpen(false);
       setSelectedCategory(undefined);
       setConfirmAction(null);
@@ -178,7 +180,6 @@ const CategoryManagement: React.FC = () => {
         onDeleteClick={handleDeleteClick}
         onViewDetailClick={handleViewDetailClick}
         showToast={handleShowToast}
-        refreshTrigger={refreshTrigger}
         permissions={{
           create: ctxhPermissions.categories.create,
           update: ctxhPermissions.categories.update,
@@ -192,7 +193,7 @@ const CategoryManagement: React.FC = () => {
         category={selectedCategory}
         onSave={handleFormSave}
         onClose={handleFormClose}
-        loading={loading}
+        loading={createMutation.isPending || updateMutation.isPending}
       />
 
       {/* Category Detail Modal */}

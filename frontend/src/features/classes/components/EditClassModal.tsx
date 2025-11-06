@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
-import { 
-  Class, 
-  UpdateClassRequest, 
+import {
+  Class,
+  UpdateClassRequest,
   classService,
-  departmentService,
   Select
 } from '../../../shared';
+import { useDepartmentListQuery } from '../../../shared/hooks/queries/useDepartmentQueries'; // ✅ Use TanStack Query
 
 interface EditClassModalProps {
   isOpen: boolean;
@@ -26,7 +26,11 @@ const EditClassModal: React.FC<EditClassModalProps> = ({
   const { t } = useTranslation(['classes', 'common']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [departments, setDepartments] = useState<any[]>([]);
+
+  // ✅ Use TanStack Query cache for departments
+  const { data: departmentsResponse } = useDepartmentListQuery({ limit: 1000 });
+  const departments = useMemo(() => departmentsResponse?.departments ?? [], [departmentsResponse]);
+
   const [formData, setFormData] = useState<UpdateClassRequest>({
     name: classData.name,
     year: classData.year,
@@ -36,7 +40,6 @@ const EditClassModal: React.FC<EditClassModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      loadDepartments();
       setFormData({
         name: classData.name,
         year: classData.year,
@@ -46,23 +49,14 @@ const EditClassModal: React.FC<EditClassModalProps> = ({
     }
   }, [isOpen, classData]);
 
-  const loadDepartments = async () => {
-    try {
-      const response = await departmentService.getDepartments({ limit: 1000 });
-      setDepartments(response.departments);
-    } catch (error) {
-      console.error('Error loading departments:', error);
-    }
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
-    
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' 
+      [name]: type === 'checkbox'
         ? (e.target as HTMLInputElement).checked
-        : type === 'number' 
+        : type === 'number'
           ? (value ? Number(value) : undefined)
           : value
     }));
@@ -78,7 +72,7 @@ const EditClassModal: React.FC<EditClassModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     if (!formData.name?.trim()) {
       setError(t('common:validation.required', { field: t('classes:fields.name') }));
       return;
@@ -86,7 +80,7 @@ const EditClassModal: React.FC<EditClassModalProps> = ({
 
     try {
       setLoading(true);
-      
+
       // Prepare data for submission, removing empty strings
       const submitData: UpdateClassRequest = {
         ...(formData.name && { name: formData.name.trim() }),
@@ -94,7 +88,7 @@ const EditClassModal: React.FC<EditClassModalProps> = ({
         ...(formData.departmentId && { departmentId: formData.departmentId }),
         ...(formData.isActive !== undefined && { isActive: formData.isActive })
       };
-      
+
       await classService.updateClass(classData.id, submitData);
       onSuccess();
     } catch (err: any) {
@@ -119,7 +113,7 @@ const EditClassModal: React.FC<EditClassModalProps> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={handleOverlayClick}
     >
@@ -146,7 +140,7 @@ const EditClassModal: React.FC<EditClassModalProps> = ({
               {error}
             </div>
           )}
-          
+
           <div className="space-y-4">
             {/* Name */}
             <div>

@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Edit, Trash2, Eye } from 'lucide-react';
-import { 
-  CtxhCategory, 
-  CategoryQueryParams,
-  PaginatedResponse
+import {
+  CtxhCategory,
+  CategoryQueryParams
 } from '../../types';
-import { categoryService } from '../../services';
-import { getErrorMessage, debounce } from '../../utils';
+import { getErrorMessage } from '../../utils';
 import { Pagination } from '../../../../shared/components';
+import { useCategoryList } from '../../../../shared/hooks/queries';
 
 interface CategoryListProps {
   onCreateClick: () => void;
@@ -16,7 +15,6 @@ interface CategoryListProps {
   onDeleteClick: (category: CtxhCategory) => void;
   onViewDetailClick: (category: CtxhCategory) => void;
   showToast: (type: 'success' | 'error' | 'info', message: string) => void;
-  refreshTrigger: number;
   permissions?: {
     create: boolean;
     update: boolean;
@@ -29,55 +27,56 @@ const CategoryList: React.FC<CategoryListProps> = ({
   onDeleteClick,
   onViewDetailClick,
   showToast,
-  refreshTrigger,
   permissions
 }) => {
   const { t } = useTranslation('ctxh');
-  
-  const [categories, setCategories] = useState<CtxhCategory[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // State for filters
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
 
-  const debouncedSearch = debounce((term: string) => {
-    setCurrentPage(1);
-    loadCategories(1, term);
-  }, 300);
-
-  const loadCategories = async (page: number = currentPage, search?: string, newLimit?: number) => {
-    try {
-      setLoading(true);
-      const params: CategoryQueryParams = {
-        page,
-        limit: newLimit !== undefined ? newLimit : limit,
-        search: search !== undefined ? search : searchTerm
-      };
-
-      const response: PaginatedResponse<CtxhCategory> = await categoryService.findAll(params);
-      setCategories(response.data);
-      setTotalPages(response.totalPages);
-      setTotal(response.total);
-      setCurrentPage(response.page);
-    } catch (error) {
-      console.error('Error loading categories:', error);
-      showToast('error', 'Không thể tải danh sách danh mục: ' + getErrorMessage(error));
-      setCategories([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Debounce search term
   useEffect(() => {
-    loadCategories();
-  }, [refreshTrigger]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to page 1 when searching
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Build query params
+  const queryParams = useMemo<CategoryQueryParams>(() => ({
+    page: currentPage,
+    limit: limit,
+    search: debouncedSearchTerm || undefined,
+  }), [currentPage, limit, debouncedSearchTerm]);
+
+  // Use TanStack Query hook
+  const {
+    data: paginatedData,
+    isLoading,
+    isError,
+    error
+  } = useCategoryList(queryParams);
+
+  // Extract data from response
+  const categories = paginatedData?.data || [];
+  const total = paginatedData?.total || 0;
+  const totalPages = paginatedData?.totalPages || 1;
+
+  // Show error toast if query fails
+  useEffect(() => {
+    if (isError && error) {
+      showToast('error', 'Không thể tải danh sách danh mục: ' + getErrorMessage(error));
+    }
+  }, [isError, error, showToast]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    debouncedSearch(value);
   };
 
   const handleEdit = (category: CtxhCategory) => {
@@ -86,7 +85,11 @@ const CategoryList: React.FC<CategoryListProps> = ({
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    loadCategories(page);
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1); // Reset to page 1 when changing limit
   };
 
   return (
@@ -115,7 +118,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
 
       {/* Table */}
       <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
@@ -148,7 +151,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                     <tr key={category.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="w-1/4 px-6 py-4">
                         <div className="font-medium text-gray-900 dark:text-white break-words overflow-hidden">
-                          <div 
+                          <div
                             className="leading-5"
                             style={{
                               display: '-webkit-box',
@@ -164,7 +167,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                       </td>
                       <td className="w-1/2 px-6 py-4">
                         <div className="text-gray-500 dark:text-gray-400 overflow-hidden">
-                          <div 
+                          <div
                             className="break-words leading-5"
                             style={{
                               display: '-webkit-box',
@@ -268,7 +271,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                             <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider mb-1">
                               {t('category.description')}
                             </div>
-                            <div 
+                            <div
                               className="text-sm text-gray-500 dark:text-gray-400 break-words overflow-hidden"
                               style={{
                                 display: '-webkit-box',
@@ -319,11 +322,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
         limit={limit}
         onPageChange={handlePageChange}
         showLimitSelector={true}
-        onLimitChange={(newLimit) => {
-          setLimit(newLimit);
-          setCurrentPage(1);
-          loadCategories(1, undefined, newLimit);
-        }}
+        onLimitChange={handleLimitChange}
       />
     </div>
   );

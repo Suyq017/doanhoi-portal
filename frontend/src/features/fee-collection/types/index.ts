@@ -12,7 +12,7 @@ export interface PaymentCampaign {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
-  
+
   // Relationships
   organization?: Organization;
   feeLevels?: PaymentFeeLevel[];
@@ -48,7 +48,7 @@ export interface PaymentFeeLevel {
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
-  
+
   // Relationships
   campaign?: PaymentCampaign;
   assignments?: PaymentAssignment[];
@@ -132,7 +132,7 @@ export interface OrganizationPayOSConfig {
   note?: string;
   createdAt: string;
   updatedAt: string;
-  
+
   // Relationships
   organization?: Organization;
 }
@@ -167,7 +167,7 @@ export interface Organization {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  
+
   // Relationships
   parent?: Organization;
   children?: Organization[];
@@ -181,7 +181,7 @@ export interface UserOrganization {
   role: string;
   isActive: boolean;
   joinedAt: string;
-  
+
   // Relationships
   user?: User;
   organization?: Organization;
@@ -194,6 +194,16 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+// Payment Campaign specific paginated response (uses 'campaigns' key)
+export interface PaymentCampaignPaginatedResponse {
+  campaigns: PaymentCampaign[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Generic paginated response (uses 'data' key)
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;

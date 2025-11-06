@@ -8,8 +8,11 @@ import {
   UpdatePaymentCampaignDto,
   Organization
 } from '../../types';
-import { paymentCampaignService } from '@/shared/services/fee-collection-service';
-import { useOrganizationList } from '@/shared/hooks/queries';
+import {
+  useOrganizationList,
+  useCreatePaymentCampaign,
+  useUpdatePaymentCampaign
+} from '@/shared/hooks/queries';
 import SearchableCombobox from '@/shared/components/SearchableCombobox';
 
 interface PaymentCampaignBasicFormData {
@@ -42,6 +45,10 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ✅ TanStack Query mutations
+  const createMutation = useCreatePaymentCampaign();
+  const updateMutation = useUpdatePaymentCampaign();
 
   // TanStack Query - auto-cache, shared with CreateUserModal
   const {
@@ -127,7 +134,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
       setError(null);
 
       if (mode === 'create') {
-        // Create campaign only
+        // ✅ Create campaign with TanStack Query mutation
         const campaignData: CreatePaymentCampaignDto = {
           organizationId: formData.organizationId,
           name: formData.name,
@@ -136,8 +143,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           endDate: `${formData.endDate}T${formData.endTime}:00`
         };
 
-        const campaignResponse = await paymentCampaignService.createPaymentCampaign(campaignData);
-        const newCampaign: any = campaignResponse;
+        const newCampaign = await createMutation.mutateAsync(campaignData);
 
         // Use callback if provided, otherwise navigate
         if (onSave) {
@@ -147,7 +153,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           navigate(`/admin/payment-campaigns/${newCampaign.id}`);
         }
       } else if (campaign) {
-        // Update campaign
+        // ✅ Update campaign with TanStack Query mutation
         const updateData: UpdatePaymentCampaignDto = {
           name: formData.name,
           description: formData.description,
@@ -155,7 +161,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           endDate: `${formData.endDate}T${formData.endTime}:00`
         };
 
-        await paymentCampaignService.updatePaymentCampaign(campaign.id, updateData);
+        await updateMutation.mutateAsync({ id: campaign.id, data: updateData });
 
         // Use callback if provided, otherwise navigate
         if (onSave) {

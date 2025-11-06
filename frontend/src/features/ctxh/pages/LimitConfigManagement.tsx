@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { CtxhLimitConfig, CreateLimitConfigRequest, UpdateLimitConfigRequest } from '../types';
-import { limitConfigService } from '../services/limitConfigService';
 import LimitConfigList from '../components/limit-config/LimitConfigList';
 import LimitConfigForm from '../components/limit-config/LimitConfigForm';
 import ConfirmDialog from '../../../shared/components/ConfirmDialog';
 import { Toast } from '../../../shared/components';
 import { useToast } from '../../../shared/hooks';
+import {
+  useCreateLimitConfig,
+  useUpdateLimitConfig,
+  useDeleteLimitConfig,
+  useRestoreLimitConfig
+} from '../../../shared/hooks/queries';
 
 const LimitConfigManagement: React.FC = () => {
   const { t } = useTranslation('ctxh');
@@ -34,13 +39,17 @@ const LimitConfigManagement: React.FC = () => {
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError } = useToast();
 
+  // ✅ TanStack Query mutations
+  const createMutation = useCreateLimitConfig();
+  const updateMutation = useUpdateLimitConfig();
+  const deleteMutation = useDeleteLimitConfig();
+  const restoreMutation = useRestoreLimitConfig();
+
   // State management
   const [selectedConfig, setSelectedConfig] = useState<CtxhLimitConfig | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'delete' | 'restore' | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Toast wrapper for LimitConfigList  
   const handleShowToast = (type: 'success' | 'error' | 'info' | 'warning', message: string) => {
@@ -68,28 +77,24 @@ const LimitConfigManagement: React.FC = () => {
   };
 
   const handleFormSave = async (data: CreateLimitConfigRequest | UpdateLimitConfigRequest) => {
-    setLoading(true);
     try {
       if (selectedConfig) {
         // Update existing config
-        await limitConfigService.update(selectedConfig.id, data as UpdateLimitConfigRequest);
+        await updateMutation.mutateAsync({ id: selectedConfig.id, data: data as UpdateLimitConfigRequest });
         showSuccess(t('limitConfig.updated'));
       } else {
         // Create new config
-        await limitConfigService.create(data as CreateLimitConfigRequest);
+        await createMutation.mutateAsync(data as CreateLimitConfigRequest);
         showSuccess(t('limitConfig.created'));
       }
 
       setIsFormOpen(false);
       setSelectedConfig(undefined);
-      // Trigger refresh of LimitConfigList
-      setRefreshTrigger(prev => prev + 1);
+      // ✅ Cache tự động refetch - không cần refreshTrigger
     } catch (error) {
       const errorMessage = translateError(error);
       showError(errorMessage);
       throw error; // Re-throw to let the form handle it
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -107,30 +112,25 @@ const LimitConfigManagement: React.FC = () => {
   };
 
   const handleConfirmAction = async () => {
-    if (!selectedConfig || !confirmAction || loading) return;
+    if (!selectedConfig || !confirmAction) return;
 
-    setLoading(true);
     try {
       if (confirmAction === 'delete') {
-        await limitConfigService.delete(selectedConfig.id);
+        await deleteMutation.mutateAsync(selectedConfig.id);
         showSuccess(t('limitConfig.deleted'));
       } else if (confirmAction === 'restore') {
-        await limitConfigService.restore(selectedConfig.id);
+        await restoreMutation.mutateAsync(selectedConfig.id);
         showSuccess(t('limitConfig.restored'));
       }
 
-      // Close dialog first
+      // Close dialog
       setIsConfirmDialogOpen(false);
       setSelectedConfig(undefined);
       setConfirmAction(null);
-      
-      // Then trigger refresh
-      setRefreshTrigger(prev => prev + 1);
+      // ✅ Cache tự động refetch
     } catch (error) {
       const errorMessage = translateError(error);
       showError(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -195,7 +195,6 @@ ${t('limitConfig.organization')}: ${selectedConfig.organization?.name || 'N/A'}`
         onDeleteClick={handleDeleteClick}
         onRestoreClick={handleRestoreClick}
         showToast={handleShowToast}
-        refreshTrigger={refreshTrigger}
       />
 
       {/* Limit Config Form Modal */}
@@ -204,7 +203,7 @@ ${t('limitConfig.organization')}: ${selectedConfig.organization?.name || 'N/A'}`
         config={selectedConfig}
         onSave={handleFormSave}
         onClose={handleFormClose}
-        loading={loading}
+        loading={createMutation.isPending || updateMutation.isPending}
       />
 
       {/* Confirm Dialog */}
@@ -217,7 +216,7 @@ ${t('limitConfig.organization')}: ${selectedConfig.organization?.name || 'N/A'}`
         cancelText={t('common.cancel')}
         onConfirm={handleConfirmAction}
         onCancel={handleCancelAction}
-        loading={loading}
+        loading={deleteMutation.isPending || restoreMutation.isPending}
       />
 
       {/* Toasts */}

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
-import LoginForm from '../components/LoginForm';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 import { useAuth } from '../context/AuthContext';
 
@@ -42,7 +41,17 @@ const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-doan-900 shadow-lg p-8">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {t('auth:form.title')}
+            </h2>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              {t('auth:form.buttons.signInWithGoogle')}
+            </p>
+          </div>
+
           {/* Error message */}
           {error && (
             <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">
@@ -52,18 +61,6 @@ const LoginPage: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* Login Form */}
-          <LoginForm onSuccess={handleSuccess} onError={handleError} />
-
-          {/* Divider */}
-          <div className="my-6 flex items-center">
-            <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
-            <span className="flex-shrink mx-4 text-gray-500 dark:text-gray-400 text-sm">
-              {t('auth:form.or')}
-            </span>
-            <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
-          </div>
 
           {/* Google Login Button */}
           <GoogleLoginButton onSuccess={handleSuccess} onError={handleError} />

@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CtxhActivity } from '../types';
-import { activityService } from '../services';
 import ActivityForm from '../components/ActivityForm';
 import ActivityList from '../components/activity/ActivityList';
 import { useToast } from '../../../shared/hooks';
 import { Toast, ConfirmDialog } from '../../../shared/components';
-import { organizationService } from '../../../shared/services';
+import {
+  useCreateActivity,
+  useUpdateActivity,
+  useDeleteActivity,
+  useUserPrimaryOrganization,
+} from '../../../shared/hooks/queries';
 
 const ActivityManagement: React.FC = () => {
   const { t } = useTranslation('ctxh');
@@ -17,34 +21,22 @@ const ActivityManagement: React.FC = () => {
   const navigate = useNavigate();
   const [showActivityForm, setShowActivityForm] = useState(false);
   const [editingActivity, setEditingActivity] = useState<CtxhActivity | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [canCreateActivity, setCanCreateActivity] = useState(true);
-  const [checkingPermissions, setCheckingPermissions] = useState(true);
 
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError, confirmDialog, showConfirm } = useToast();
 
-  // Check if user can create activities (has a primary organization)
-  useEffect(() => {
-    const checkCreatePermission = async () => {
-      try {
-        setCheckingPermissions(true);
-        const response = await organizationService.getUserPrimaryOrganization();
+  // ✅ TanStack Query mutations
+  const createMutation = useCreateActivity();
+  const updateMutation = useUpdateActivity();
+  const deleteMutation = useDeleteActivity();
 
-        // User can create if they have a primary organization
-        const canCreate = response.organization !== null;
-        setCanCreateActivity(canCreate);
-      } catch (error) {
-        console.error('Failed to check create permission:', error);
-        // Default to false for safety
-        setCanCreateActivity(false);
-      } finally {
-        setCheckingPermissions(false);
-      }
-    };
+  // ✅ Use cached query for user's primary organization
+  const { data: primaryOrgData, isLoading: checkingPermissions } = useUserPrimaryOrganization();
 
-    checkCreatePermission();
-  }, []);
+  // User can create if they have a primary organization
+  const canCreateActivity = primaryOrgData?.organization !== null;
+
+  // Remove old useEffect - now handled by TanStack Query
 
   const handleCreateActivity = () => {
     setEditingActivity(null);
@@ -72,9 +64,9 @@ const ActivityManagement: React.FC = () => {
     if (!confirmed) return;
 
     try {
-      await activityService.delete(activity.id);
-      setRefreshTrigger(prev => prev + 1);
+      await deleteMutation.mutateAsync(activity.id);
       showSuccess(t('activity.deleted'));
+      // ✅ Cache tự động refetch
     } catch (error: any) {
       console.error('Failed to delete activity:', error);
 
@@ -106,16 +98,16 @@ const ActivityManagement: React.FC = () => {
   const handleActivitySaved = () => {
     setShowActivityForm(false);
     setEditingActivity(null);
-    setRefreshTrigger(prev => prev + 1);
+    // ✅ Cache tự động refetch, không cần refreshTrigger
     showSuccess(editingActivity ? t('activity.updated') : t('activity.created'));
   };
 
   const handleActivitySubmit = async (data: any) => {
     try {
       if (editingActivity) {
-        await activityService.update(editingActivity.id, data);
+        await updateMutation.mutateAsync({ id: editingActivity.id, data });
       } else {
-        await activityService.create(data);
+        await createMutation.mutateAsync(data);
       }
       handleActivitySaved();
     } catch (error: any) {
@@ -184,7 +176,6 @@ const ActivityManagement: React.FC = () => {
         onDeleteClick={handleDeleteActivity}
         onViewClick={handleViewActivity}
         showToast={handleShowToast}
-        refreshTrigger={refreshTrigger}
         permissions={{
           create: true,
           update: true,

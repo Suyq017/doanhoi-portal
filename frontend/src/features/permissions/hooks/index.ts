@@ -1,6 +1,7 @@
 export { useRoleModals } from './useRoleModals';
 export { useSearchFilters } from './useSearchFilters';
 export { useRoleList } from './useRoleList';
+export { useRoleListWithCache } from './useRoleListWithCache'; // ✅ New TanStack Query version
 export { useBulkSelection } from './useBulkSelection';
 export { useRoleActions } from './useRoleActions';
 

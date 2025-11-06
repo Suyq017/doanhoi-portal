@@ -295,7 +295,7 @@ Sau khi tạo link thành công:
    - Số tiền
    - Nội dung chuyển khoản
 5. Kiểm tra thông tin
-6. Xác nhận thanh toán bằng mã PIN/vân tay/FaceID
+6. Xác nhận thanh toán
 
 ---
 

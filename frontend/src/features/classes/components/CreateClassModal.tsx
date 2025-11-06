@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
-import { 
-  CreateClassRequest, 
+import {
+  CreateClassRequest,
   classService,
-  departmentService,
   Select
 } from '../../../shared';
+import { useDepartmentListQuery } from '../../../shared/hooks/queries/useDepartmentQueries'; // ✅ Use TanStack Query
 
 interface CreateClassModalProps {
   isOpen: boolean;
@@ -23,7 +23,11 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
   const { t } = useTranslation(['classes', 'common']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [departments, setDepartments] = useState<any[]>([]);
+
+  // ✅ Use TanStack Query cache for departments
+  const { data: departmentsResponse } = useDepartmentListQuery({ limit: 1000 });
+  const departments = useMemo(() => departmentsResponse?.departments ?? [], [departmentsResponse]);
+
   const [formData, setFormData] = useState<CreateClassRequest>({
     name: '',
     year: new Date().getFullYear(),
@@ -31,29 +35,14 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     isActive: true,
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      loadDepartments();
-    }
-  }, [isOpen]);
-
-  const loadDepartments = async () => {
-    try {
-      const response = await departmentService.getDepartments({ limit: 1000 });
-      setDepartments(response.departments);
-    } catch (error) {
-      console.error('Error loading departments:', error);
-    }
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
-    
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' 
+      [name]: type === 'checkbox'
         ? (e.target as HTMLInputElement).checked
-        : type === 'number' 
+        : type === 'number'
           ? (value ? Number(value) : undefined)
           : value
     }));
@@ -69,7 +58,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     if (!formData.name.trim()) {
       setError(t('common:validation.required', { field: t('classes:fields.name') }));
       return;
@@ -77,7 +66,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
     try {
       setLoading(true);
-      
+
       // Prepare data for submission, removing empty strings
       const submitData: CreateClassRequest = {
         name: formData.name.trim(),
@@ -85,7 +74,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
         isActive: formData.isActive,
         ...(formData.departmentId && { departmentId: formData.departmentId })
       };
-      
+
       await classService.createClass(submitData);
       onSuccess();
     } catch (err: any) {
@@ -116,7 +105,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={handleOverlayClick}
     >
@@ -143,7 +132,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
               {error}
             </div>
           )}
-          
+
           <div className="space-y-4">
             {/* Name */}
             <div>

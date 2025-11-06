@@ -4,7 +4,6 @@ import { Plus, Search, Filter, Eye, Edit, Trash2, Users, Upload, X } from 'lucid
 import type { Class } from '../../shared/types';
 import {
   classService,
-  departmentService,
   Toast,
   useToast,
   Select,
@@ -26,6 +25,7 @@ import { classColumns } from '../../shared/utils/importColumns';
 // } from '../../shared/services/classImportService';
 import { useClassPagePermissions } from './hooks/useClassPagePermissions';
 import { useClassList } from '../../shared/hooks/useClassList';
+import { useDepartmentListQuery } from '../../shared/hooks/queries/useDepartmentQueries'; // ✅ Use TanStack Query for departments
 import CreateClassModal from './components/CreateClassModal';
 import EditClassModal from './components/EditClassModal';
 import ViewClassModal from './components/ViewClassModal';
@@ -80,12 +80,17 @@ const ClassesPage: React.FC = () => {
   // State for multiple selection (for bulk actions)
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
 
+  // ===================================
+  // DEPARTMENTS: Use TanStack Query cache
+  // ===================================
+  const { data: departmentsResponse } = useDepartmentListQuery({ limit: 1000 });
+  const departments = departmentsResponse?.departments ?? [];
+
   // Helpers function for selection
   const isAllSelected = classes.length > 0 && selectedClassIds.length === classes.length;
   const isSomeSelected = selectedClassIds.length > 0;
 
   // Local state for modals
-  const [departments, setDepartments] = useState<any[]>([]);
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -209,24 +214,11 @@ const ClassesPage: React.FC = () => {
         return false;
     }
   });
-  // Load data - Only load departments (classes loaded by React Query)
-  useEffect(() => {
-    loadDepartments();
-  }, []);
 
   // Reset selection when classes change
   useEffect(() => {
     setSelectedClassIds([]);
   }, [classes]);
-
-  const loadDepartments = async () => {
-    try {
-      const response = await departmentService.getDepartments({ limit: 1000 });
-      setDepartments(response.departments);
-    } catch (error) {
-      console.error('Error loading departments:', error);
-    }
-  };
   // Event handlers
   const handleEdit = (classItem: Class) => {
     setSelectedClass(classItem);
