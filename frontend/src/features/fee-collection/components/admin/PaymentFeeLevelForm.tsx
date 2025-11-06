@@ -17,9 +17,6 @@ interface FeeLevelFormData {
   levelName: string;
   amount: number;
   description: string;
-  note: string;
-  isDefault: boolean;
-  orderIndex: number;
 }
 
 const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
@@ -35,9 +32,6 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
     levelName: '',
     amount: 0,
     description: '',
-    note: '',
-    isDefault: false,
-    orderIndex: 0
   });
 
   useEffect(() => {
@@ -61,9 +55,6 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
           levelName: levelData.levelName,
           amount: levelData.amount,
           description: levelData.description || '',
-          note: levelData.note || '',
-          isDefault: levelData.isDefault,
-          orderIndex: levelData.orderIndex
         });
       } else {
         // For create mode, get next order index
@@ -108,9 +99,6 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
           levelName: formData.levelName,
           amount: formData.amount,
           description: formData.description,
-          note: formData.note,
-          isDefault: formData.isDefault,
-          orderIndex: formData.orderIndex
         };
 
         await paymentFeeLevelService.createFeeLevel(campaignId, createData);
@@ -119,9 +107,6 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
           levelName: formData.levelName,
           amount: formData.amount,
           description: formData.description,
-          note: formData.note,
-          isDefault: formData.isDefault,
-          orderIndex: formData.orderIndex
         };
 
         await paymentFeeLevelService.updateFeeLevel(campaignId, id, updateData);
@@ -238,34 +223,6 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder={t('form.descriptionPlaceholder')}
               />
-            </div>
-
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                {t('form.detailedNote')}
-              </label>
-              <textarea
-                value={formData.note}
-                onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder={t('form.notePlaceholder')}
-              />
-            </div>
-
-            <div>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.isDefault}
-                  onChange={(e) => setFormData(prev => ({ ...prev, isDefault: e.target.checked }))}
-                  className="text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700">{t('isDefault')}</span>
-              </label>
-              <p className="mt-1 text-xs text-gray-500">
-                {t('defaultNote')}
-              </p>
             </div>
           </div>
         </div>

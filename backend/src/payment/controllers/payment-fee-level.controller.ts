@@ -17,11 +17,6 @@ export class PaymentFeeLevelController {
     return this.feeLevelService.findByCampaign(campaignId);
   }
 
-  @Get('campaign/:campaignId/default')
-  getDefaultForCampaign(@Param('campaignId') campaignId: string) {
-    return this.feeLevelService.getDefaultForCampaign(campaignId);
-  }
-
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.feeLevelService.findOne(id);
@@ -37,16 +32,4 @@ export class PaymentFeeLevelController {
     return this.feeLevelService.remove(id);
   }
 
-  @Post(':id/set-default')
-  setAsDefault(@Param('id') id: string) {
-    return this.feeLevelService.setAsDefault(id);
-  }
-
-  @Put('campaign/:campaignId/reorder')
-  reorder(
-    @Param('campaignId') campaignId: string,
-    @Body('feeLevelIds') feeLevelIds: string[]
-  ) {
-    return this.feeLevelService.reorder(campaignId, feeLevelIds);
-  }
 }

@@ -28,15 +28,13 @@ export class PaymentFeeLevelService {
       throw new NotFoundException('Payment campaign not found');
     }
 
-    // If this is set as default, unset other defaults in the same campaign
-    if (createDto.isDefault) {
-      await this.feeLevelRepository.update(
-        { campaignId: createDto.campaignId },
-        { isDefault: false }
-      );
+    // ✅ Convert empty strings to null for nullable fields
+    const processedDto = { ...createDto };
+    if (processedDto.description === '') {
+      processedDto.description = null;
     }
 
-    const feeLevel = this.feeLevelRepository.create(createDto);
+    const feeLevel = this.feeLevelRepository.create(processedDto);
     return this.feeLevelRepository.save(feeLevel);
   }
 
@@ -47,7 +45,6 @@ export class PaymentFeeLevelService {
     return this.feeLevelRepository.find({
       where: { campaignId },
       relations: ['campaign'],
-      order: { orderIndex: 'ASC', createdAt: 'ASC' }
     });
   }
 
@@ -73,15 +70,13 @@ export class PaymentFeeLevelService {
   async update(id: string, updateDto: UpdatePaymentFeeLevelDto): Promise<PaymentFeeLevel> {
     const feeLevel = await this.findOne(id);
 
-    // If setting as default, unset other defaults in the same campaign
-    if (updateDto.isDefault) {
-      await this.feeLevelRepository.update(
-        { campaignId: feeLevel.campaignId, id: { $ne: id } as any },
-        { isDefault: false }
-      );
+    // ✅ Convert empty strings to null for nullable fields
+    const processedDto = { ...updateDto };
+    if (processedDto.description === undefined) {
+      processedDto.description = null;
     }
 
-    Object.assign(feeLevel, updateDto);
+    Object.assign(feeLevel, processedDto);
     return this.feeLevelRepository.save(feeLevel);
   }
 
@@ -104,57 +99,5 @@ export class PaymentFeeLevelService {
     }
 
     await this.feeLevelRepository.remove(feeLevel);
-  }
-
-  /**
-   * Set fee level as default
-   */
-  async setAsDefault(id: string): Promise<PaymentFeeLevel> {
-    const feeLevel = await this.findOne(id);
-
-    // Unset other defaults in the same campaign
-    await this.feeLevelRepository.update(
-      { campaignId: feeLevel.campaignId },
-      { isDefault: false }
-    );
-
-    // Set this one as default
-    feeLevel.isDefault = true;
-    return this.feeLevelRepository.save(feeLevel);
-  }
-
-  /**
-   * Get default fee level for campaign
-   */
-  async getDefaultForCampaign(campaignId: string): Promise<PaymentFeeLevel | null> {
-    return this.feeLevelRepository.findOne({
-      where: { campaignId, isDefault: true },
-      relations: ['campaign']
-    });
-  }
-
-  /**
-   * Reorder fee levels
-   */
-  async reorder(campaignId: string, feeLevelIds: string[]): Promise<PaymentFeeLevel[]> {
-    const feeLevels = await this.findByCampaign(campaignId);
-    
-    // Validate all provided IDs exist in this campaign
-    const existingIds = feeLevels.map(fl => fl.id);
-    const invalidIds = feeLevelIds.filter(id => !existingIds.includes(id));
-    
-    if (invalidIds.length > 0) {
-      throw new BadRequestException(`Invalid fee level IDs: ${invalidIds.join(', ')}`);
-    }
-
-    // Update order index for each fee level
-    const updatePromises = feeLevelIds.map((id, index) => 
-      this.feeLevelRepository.update(id, { orderIndex: index })
-    );
-
-    await Promise.all(updatePromises);
-
-    // Return updated fee levels
-    return this.findByCampaign(campaignId);
   }
 }

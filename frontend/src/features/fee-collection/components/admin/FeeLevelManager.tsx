@@ -18,7 +18,6 @@ interface FeeLevelFormData {
   levelName: string;
   amount: number;
   description: string;
-  note: string;
 }
 
 const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly = false, onFeeLevelsChange }) => {
@@ -32,7 +31,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
     levelName: '',
     amount: 0,
     description: '',
-    note: ''
   });
 
   useEffect(() => {
@@ -62,7 +60,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
       levelName: '',
       amount: 0,
       description: '',
-      note: ''
     });
     setEditingId(null);
     setIsCreating(false);
@@ -78,7 +75,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
       levelName: feeLevel.levelName,
       amount: feeLevel.amount,
       description: feeLevel.description,
-      note: feeLevel.note
     });
     setEditingId(feeLevel.id);
     setIsCreating(false);
@@ -111,8 +107,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
           levelName: formData.levelName,
           amount: formData.amount,
           description: formData.description,
-          note: formData.note,
-          orderIndex: feeLevels.length
         };
         
         await paymentFeeLevelService.createFeeLevel(campaignId, createData);
@@ -121,7 +115,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
           levelName: formData.levelName,
           amount: formData.amount,
           description: formData.description,
-          note: formData.note
         };
         
         await paymentFeeLevelService.updateFeeLevel(campaignId, editingId, updateData);
@@ -210,6 +203,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                 {t('form.amount')} <span className="text-red-500">*</span>
               </label>
               <input
+                value={formData.amount}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 placeholder="50000"
@@ -228,19 +222,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 placeholder={t('form.descriptionPlaceholder')}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t('form.note')}
-              </label>
-              <textarea
-                value={formData.note}
-                onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                placeholder={t('form.notePlaceholder')}
               />
             </div>
           </div>
@@ -290,11 +271,6 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                     </div>
                   )}
                   
-                  {level.note && (
-                    <div className="p-2 mt-2 text-sm text-gray-500 rounded bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                      {level.note}
-                    </div>
-                  )}
                 </div>
 
                 {!readOnly && (
