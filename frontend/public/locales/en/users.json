@@ -12,7 +12,10 @@
     "viewPhonetic": "User Details",
     "delete": "Delete User",
     "deletePhonetic": "Delete User",
-    "assignRoles": "Assign Roles to User"
+    "assignRoles": "Assign Roles to User",
+    "personalInfo": "Personal Information",
+    "trainingInfo": "Training Information",
+    "academicInfo": "Academic Information"
   },
   "fields": {
     "code": "Student/Staff ID",
@@ -39,6 +42,7 @@
     "managementDepartment": "Management Department",
     "trainingDepartment": "Training Department",
     "trainingDepartmentCode": "Training Department Code",
+    "managementDepartmentCode": "Management Department Code",
     "organizationCodes": "Organization Codes",
     "isActive": "Active Status",
     "info": "Information",
@@ -70,7 +74,13 @@
     "search": "Search by name, email, ID...",
     "selectRole": "Select a role",
     "selectOrganization": "Select an organization (optional)",
-    "selectUser": "Select a user to assign roles"
+    "selectUser": "Select a user to assign roles",
+    "identityCard": "Example: 0123456789",
+    "admissionYear": "Example: 2024",
+    "curriculumYear": "Example: 2024",
+    "facultyCode": "Example: CN_KHM - Khoa học Máy tính",
+    "trainingSystem": "Example: CQ - Chính quy",
+    "trainingLevel": "Example: ĐH - Đại học"
   },
   "types": {
     "student": "Student",

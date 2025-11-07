@@ -228,7 +228,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
               {/* Contact Info */}
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
-                  <label className="flex items-center block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="flex items-center mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     <Mail className="w-4 h-4 mr-1" />
                     {t('common:fields.email')}
                   </label>              <div className="text-gray-900 dark:text-white">
@@ -239,7 +239,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="flex items-center block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="flex items-center mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     <Phone className="w-4 h-4 mr-1" />
                     {t('common:fields.phone')}
                   </label>              <div className="text-gray-900 dark:text-white">
@@ -249,6 +249,140 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Personal Info */}
+              {((displayUser as any).identityCard || (displayUser as any).birthDate || (displayUser as any).gender) && (
+                <div>
+                  <h3 className="flex items-center text-lg font-medium text-gray-900 dark:text-white mb-4">
+                    <User className="w-5 h-5 mr-2" />
+                    {t('users:titles.personalInfo')}
+                  </h3>
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    {/* Identity Card */}
+                    {(displayUser as any).identityCard && (
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('users:fields.identityCard')}
+                        </label>
+                        <div className="text-gray-900 dark:text-white">
+                          {(displayUser as any).identityCard}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Birth Date */}
+                    {(displayUser as any).birthDate && (
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('users:fields.birthDate')}
+                        </label>
+                        <div className="text-gray-900 dark:text-white">
+                          {new Date((displayUser as any).birthDate).toLocaleDateString('vi-VN')}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gender */}
+                    {(displayUser as any).gender && (
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('users:fields.gender')}
+                        </label>
+                        <div className="text-gray-900 dark:text-white">
+                          {(displayUser as any).gender === 'NAM' ? t('users:gender.male') : 
+                           (displayUser as any).gender === 'NU' ? t('users:gender.female') : ''}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Academic Info */}
+              {((displayUser as any).admissionYear || (displayUser as any).curriculumYear) && (
+                <div>
+                  <h3 className="flex items-center text-lg font-medium text-gray-900 dark:text-white mb-4">
+                    <Calendar className="w-5 h-5 mr-2" />
+                    {t('users:titles.academicInfo')}
+                  </h3>
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    {/* Admission Year */}
+                    {(displayUser as any).admissionYear && (
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('users:fields.admissionYear')}
+                        </label>
+                        <div className="text-gray-900 dark:text-white">
+                          {(displayUser as any).admissionYear}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Curriculum Year */}
+                    {(displayUser as any).curriculumYear && (
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('users:fields.curriculumYear')}
+                        </label>
+                        <div className="text-gray-900 dark:text-white">
+                          {(displayUser as any).curriculumYear}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Training Info & Status */}
+              {((displayUser as any).trainingSystem || (displayUser as any).trainingLevel || displayUser.isActive !== undefined) && (
+                <div>
+                  <h3 className="flex items-center text-lg font-medium text-gray-900 dark:text-white mb-4">
+                    <Building className="w-5 h-5 mr-2" />
+                    {t('users:titles.trainingInfo')}
+                  </h3>
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    {/* Training System */}
+                    {(displayUser as any).trainingSystem && (
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('users:fields.trainingSystem')}
+                        </label>
+                        <div className="text-gray-900 dark:text-white">
+                          {(displayUser as any).trainingSystem}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Training Level */}
+                    {(displayUser as any).trainingLevel && (
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('users:fields.trainingLevel')}
+                        </label>
+                        <div className="text-gray-900 dark:text-white">
+                          {(displayUser as any).trainingLevel}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Active Status */}
+                    {displayUser.isActive !== undefined && (
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('users:fields.isActive')}
+                        </label>
+                        <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                          displayUser.isActive 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                        }`}>
+                          {displayUser.isActive ? 'Đang học' : 'Đã thôi học'}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* User Type and Status */}
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -267,15 +401,6 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                   </label>              
                   <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getMembershipStatusColor(displayUser.membershipStatus)}`}>
                     {getMembershipStatusText(displayUser.membershipStatus)}
-                  </div>
-                </div>     
-
-                <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t('users:fields.isActive')}
-                  </label>              
-                  <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getMembershipStatusColor(displayUser.membershipStatus)}`}>
-                    {getMembershipStatusText(displayUser.isActive ? t('users:membershipStatus.active') : t('user:membershipStatus.inactive'))}
                   </div>
                 </div>    
 
@@ -349,7 +474,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                     {displayUser.class && (
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {t('users:fields.class')}
+                          {t('users:fields.className')}
                         </label>
                         <div className="text-gray-900 dark:text-white">
                           {displayUser.class.name}
@@ -425,7 +550,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
               {/* Timestamps */}
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
-                  <label className="flex items-center block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="flex items-center mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     <Calendar className="w-4 h-4 mr-1" />
                     {t('common:fields.createdAt')}
                   </label>              
@@ -435,7 +560,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="flex items-center block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="flex items-center mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     <Calendar className="w-4 h-4 mr-1" />
                     {t('common:fields.updatedAt')}
                   </label>              
