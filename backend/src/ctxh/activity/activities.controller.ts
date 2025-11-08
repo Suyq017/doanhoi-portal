@@ -293,7 +293,7 @@ export class ActivitiesController {
     status: 400,
     description: 'Dữ liệu batch không hợp lệ'
   })
-  @RequirePermissions('ctxh.activities.update')
+  @RequirePermissions('ctxh.activities.update', 'ctxh.activities.manage_participants')
   async addParticipantsBatch(
     @Param('id') id: string,
     @Body() batchData: { students: Array<{ student_code: string }> },
@@ -340,7 +340,7 @@ export class ActivitiesController {
     status: 400,
     description: 'Dữ liệu batch không hợp lệ'
   })
-  @RequirePermissions('ctxh.activities.update')
+  @RequirePermissions('ctxh.activities.update', 'ctxh.activities.manage_participants')
   async gradeParticipantsBatch(
     @Param('id') id: string,
     @Body() batchData: {
@@ -416,7 +416,7 @@ export class ActivitiesController {
     status: 409,
     description: 'Sinh viên đã tham gia hoạt động này'
   })
-  @RequirePermissions('ctxh.activities.update')
+  @RequirePermissions('ctxh.activities.update', 'ctxh.activities.manage_participants')
   addStudent(
     @Param('id') id: string,
     @Body() addStudentDto: AddStudentDto,
@@ -462,7 +462,7 @@ export class ActivitiesController {
     status: 404,
     description: 'Hoạt động không tồn tại'
   })
-  @RequirePermissions('ctxh.activities.update')
+  @RequirePermissions('ctxh.activities.update', 'ctxh.activities.manage_participants')
   @UseInterceptors(FileInterceptor('file'))
   async uploadParticipants(
     @Param('id') id: string,
@@ -498,7 +498,7 @@ export class ActivitiesController {
     status: 404,
     description: 'Hoạt động hoặc sinh viên tham gia không tồn tại'
   })
-  @RequirePermissions('ctxh.activities.update')
+  @RequirePermissions('ctxh.activities.update', 'ctxh.activities.manage_participants')
   async gradeParticipants(
     @Param('id') id: string,
     @Body() gradeDto: GradeParticipantsDto,
@@ -599,7 +599,7 @@ export class ActivitiesController {
     status: 404,
     description: 'Hoạt động không tồn tại'
   })
-  @RequirePermissions('ctxh.activities.update')
+  @RequirePermissions('ctxh.activities.update', 'ctxh.activities.manage_participants')
   async bulkGradeFromExcel(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
@@ -644,7 +644,7 @@ export class ActivitiesController {
     status: 404,
     description: 'Hoạt động hoặc sinh viên tham gia không tồn tại'
   })
-  @RequirePermissions('ctxh.activities.update')
+  @RequirePermissions('ctxh.activities.update', 'ctxh.activities.manage_participants')
   removeParticipant(
     @Param('id') id: string,
     @Param('participationId') participationId: string,

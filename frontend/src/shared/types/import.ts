@@ -108,6 +108,7 @@ export interface ImportModalConfig {
   // Template & File handling
   templateUrl?: string;
   templateFileName?: string;
+  downloadTemplate?: () => void;
   acceptedFileTypes: string[];
   maxFileSize: number;
 

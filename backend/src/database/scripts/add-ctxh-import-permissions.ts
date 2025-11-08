@@ -12,7 +12,7 @@ export async function addCtxhImportPermissions(dataSource: DataSource) {
   const newPermissions = [
     {
       code: 'ctxh.import.old_system',
-      name: 'ctxh.import.old_system',
+      name: 'Nhập ngày CTXH từ hệ thống cũ',
       description: 'Nhập dữ liệu CTXH từ hệ thống cũ',
       category: 'ctxh',
     },

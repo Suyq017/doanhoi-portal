@@ -76,6 +76,14 @@ export const usePermissions = () => {
             return result;
         },
 
+        // CTXH permissions
+        canAccessCtxh: () => hasPermission('ctxh.access', currentOrganizationId),
+        canViewCtxhActivities: () => hasPermission('ctxh.activities.view', currentOrganizationId),
+        canCreateCtxhActivity: () => hasPermission('ctxh.activities.create', currentOrganizationId),
+        canUpdateCtxhActivity: () => hasPermission('ctxh.activities.update', currentOrganizationId),
+        canDeleteCtxhActivity: () => hasPermission('ctxh.activities.delete', currentOrganizationId),
+        canManageCtxhParticipants: () => hasPermission('ctxh.activities.manage_participants', currentOrganizationId),
+
         // Payment campaigns permissions - organization specific
         canCreatePaymentCampaignInOrg: (orgId: string) => hasPermission('payment-campaigns.create', orgId),
         canUpdatePaymentCampaignInOrg: (orgId: string) => hasPermission('payment-campaigns.update', orgId),

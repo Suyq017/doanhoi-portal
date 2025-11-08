@@ -6,6 +6,7 @@ import { CtxhActivity } from '../types';
 import ActivityForm from '../components/ActivityForm';
 import ActivityList from '../components/activity/ActivityList';
 import { useToast } from '../../../shared/hooks';
+import { usePermissions } from '../../../shared/hooks';
 import { Toast, ConfirmDialog } from '../../../shared/components';
 import {
   useCreateActivity,
@@ -33,8 +34,15 @@ const ActivityManagement: React.FC = () => {
   // ✅ Use cached query for user's primary organization
   const { data: primaryOrgData, isLoading: checkingPermissions } = useUserPrimaryOrganization();
 
+  // ✅ Get permissions
+  const {
+    canCreateCtxhActivity,
+    canUpdateCtxhActivity,
+    canDeleteCtxhActivity
+  } = usePermissions();
+
   // User can create if they have a primary organization
-  const canCreateActivity = primaryOrgData?.organization !== null;
+  const canCreateActivity = primaryOrgData?.organization !== null && canCreateCtxhActivity();
 
   // Remove old useEffect - now handled by TanStack Query
 
@@ -177,9 +185,9 @@ const ActivityManagement: React.FC = () => {
         onViewClick={handleViewActivity}
         showToast={handleShowToast}
         permissions={{
-          create: true,
-          update: true,
-          delete: true
+          create: canCreateCtxhActivity(),
+          update: canUpdateCtxhActivity(),
+          delete: canDeleteCtxhActivity()
         }}
       />
 
