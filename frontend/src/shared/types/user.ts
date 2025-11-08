@@ -60,6 +60,17 @@ export interface CreateUserRequest {
     trainingDepartmentId?: string;
     classId?: string;
 
+    // NEW: Additional user fields
+    identityCard?: string;
+    birthDate?: string;
+    gender?: 'male' | 'female' | 'other';
+    admissionYear?: string;
+    curriculumYear?: string;
+    facultyCode?: string;
+    trainingSystem?: string;
+    trainingLevel?: string;
+    isActive?: boolean;
+
     // NEW: Multiple role-organization assignments (preferred)
     roleAssignments?: UserRoleAssignment[];
     // DEPRECATED: Keep for backward compatibility

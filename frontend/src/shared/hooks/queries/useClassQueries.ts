@@ -92,6 +92,34 @@ export const useClassDetailQuery = (classId: string, options?: { enabled?: boole
 };
 
 /**
+ * Hook to fetch all classes (for dropdowns, selects)
+ * 
+ * Features:
+ * - No pagination (limit: 1000)
+ * - Longer cache time since it's used for reference
+ * - Returns only active classes by default
+ * 
+ * Usage:
+ * const { data: classes = [], isLoading } = useAllClassesQuery();
+ */
+export const useAllClassesQuery = (includeInactive: boolean = false) => {
+    return useQuery({
+        queryKey: [...classKeys.all, 'all', includeInactive],
+        queryFn: async () => {
+            const response = await classService.getClasses({
+                limit: 1000,
+                page: 1,
+                ...(includeInactive ? {} : { isActive: true })
+            });
+            return response.classes;
+        },
+        staleTime: 5 * 60 * 1000,      // 5 minutes (longer since reference data)
+        gcTime: 15 * 60 * 1000,         // 15 minutes
+        refetchOnWindowFocus: false,    // Don't refetch on focus for reference data
+    });
+};
+
+/**
  * ========================
  * MUTATION HOOKS
  * ========================
