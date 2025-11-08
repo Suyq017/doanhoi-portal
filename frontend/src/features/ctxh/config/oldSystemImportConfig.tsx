@@ -294,6 +294,7 @@ const downloadCtxhOldSystemTemplate = () => {
 export const ctxhOldSystemImportConfig: ImportModalConfig = {
   // File handling
   templateFileName: 'ctxh_old_system_template.xlsx',
+  downloadTemplate: downloadCtxhOldSystemTemplate,
   acceptedFileTypes: ['.xlsx', '.xls'],
   maxFileSize: 5 * 1024 * 1024, // 5MB
 
