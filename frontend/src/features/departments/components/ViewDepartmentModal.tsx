@@ -109,7 +109,7 @@ const ViewDepartmentModal: React.FC<ViewDepartmentModalProps> = ({
                     {t('departments:fields.managementUsers')}
                   </p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {department.managementUsers?.length || 0}
+                    {department.managementUserCount || 0}
                   </p>
                 </div>
               </div>
@@ -123,7 +123,7 @@ const ViewDepartmentModal: React.FC<ViewDepartmentModalProps> = ({
                     {t('departments:fields.trainingUsers')}
                   </p>
                   <p className="text-2xl font-bold text-green-600">
-                    {department.trainingUsers?.length || 0}
+                    {department.trainingUserCount|| 0}
                   </p>
                 </div>
               </div>

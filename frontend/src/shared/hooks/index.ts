@@ -1,5 +1,6 @@
 export { useToast } from './useToast';
 export { useImportConfig } from './useImportConfig';
+export { usePermissions } from './usePermissions';
 export type {
   UseImportConfigOptions,
   UseImportConfigReturn,

@@ -61,14 +61,37 @@ export class DepartmentsService {
   }
 
   async findOne(id: string): Promise<Department> {
+    // First get department basic info
     const department = await this.departmentsRepository.findOne({
-      where: { id },
-      relations: ['managementUsers', 'trainingUsers']
+      where: { id }
     });
 
     if (!department) {
       throw new NotFoundException('Department not found');
     }
+
+    // Then get user counts in separate optimized queries
+    const [managementUserCount, trainingUserCount] = await Promise.all([
+      this.departmentsRepository
+        .createQueryBuilder('department')
+        .leftJoin('department.managementUsers', 'managementUser')
+        .select('COUNT(managementUser.id)', 'count')
+        .where('department.id = :id', { id })
+        .getRawOne()
+        .then(result => parseInt(result.count, 10)),
+
+      this.departmentsRepository
+        .createQueryBuilder('department')
+        .leftJoin('department.trainingUsers', 'trainingUser')
+        .select('COUNT(trainingUser.id)', 'count')
+        .where('department.id = :id', { id })
+        .getRawOne()
+        .then(result => parseInt(result.count, 10))
+    ]);
+
+    // Attach counts to department
+    (department as any).managementUserCount = managementUserCount;
+    (department as any).trainingUserCount = trainingUserCount;
 
     return department;
   }
@@ -97,8 +120,8 @@ export class DepartmentsService {
   async remove(id: string): Promise<void> {
     const department = await this.findOne(id);
 
-    // Check if department has users
-    const hasUsers = department.managementUsers?.length > 0 || department.trainingUsers?.length > 0;
+    // Check if department has users using counts
+    const hasUsers = (department as any).managementUserCount > 0 || (department as any).trainingUserCount > 0;
     if (hasUsers) {
       throw new BadRequestException('Cannot delete department with associated users');
     }
@@ -116,19 +139,11 @@ export class DepartmentsService {
 
     for (const id of ids) {
       try {
-        // Find department with relations to check for users
-        const department = await this.departmentsRepository.findOne({
-          where: { id },
-          relations: ['managementUsers', 'trainingUsers'],
-        });
+        // Use findOne which now returns department with user counts
+        const department = await this.findOne(id);
 
-        if (!department) {
-          errors.push({ id, error: 'Department not found' });
-          continue;
-        }
-
-        // Check if department has users
-        const hasUsers = department.managementUsers?.length > 0 || department.trainingUsers?.length > 0;
+        // Check if department has users using counts
+        const hasUsers = (department as any).managementUserCount > 0 || (department as any).trainingUserCount > 0;
         if (hasUsers) {
           errors.push({ id, error: 'Cannot delete department with associated users' });
           continue;
@@ -137,7 +152,11 @@ export class DepartmentsService {
         await this.departmentsRepository.remove(department);
         deleted++;
       } catch (error) {
-        errors.push({ id, error: error.message || 'Unknown error occurred' });
+        if (error instanceof NotFoundException) {
+          errors.push({ id, error: 'Department not found' });
+        } else {
+          errors.push({ id, error: error.message || 'Unknown error occurred' });
+        }
       }
     }
 

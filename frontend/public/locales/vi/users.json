@@ -12,7 +12,10 @@
     "viewPhonetic": "Thông tin chi tiết người dùng",
     "delete": "Xóa người dùng",
     "deletePhonetic": "Xóa người dùng",
-    "assignRoles": "Gán quyền cho người dùng"
+    "assignRoles": "Gán quyền cho người dùng",
+    "personalInfo": "Thông tin cá nhân",
+    "trainingInfo": "Thông tin đào tạo",
+    "academicInfo": "Thông tin học tập"
   },
   "fields": {
     "code": "Mã số sinh viên/cán bộ",
@@ -89,7 +92,13 @@
     "search": "Tìm kiếm theo tên, email, mã số...",
     "selectRole": "Chọn vai trò",
     "selectOrganization": "Chọn tổ chức (tùy chọn)",
-    "selectUser": "Chọn người dùng để gán quyền"
+    "selectUser": "Chọn người dùng để gán quyền",
+    "identityCard": "Ví dụ: 0123456789",
+    "admissionYear": "Ví dụ: 2024",
+    "curriculumYear": "Ví dụ: 2024",
+    "facultyCode": "Ví dụ: CN_KHM - Khoa học Máy tính",
+    "trainingSystem": "Ví dụ: CQ - Chính quy",
+    "trainingLevel": "Ví dụ: ĐH - Đại học"
   },
   "types": {
     "student": "Sinh viên",
@@ -125,8 +134,8 @@
     "hoi_vienPhonetic": "Hội viên",
     "both": "Đoàn viên & Hội viên",
     "bothPhonetic": "Đoàn viên và Hội viên",
-    "active": "Hoạt động",
-    "inactive": "Không hoạt động",
+    "active": "Còn học",
+    "inactive": "Đã thôi học",
     "graduated": "Đã tốt nghiệp",
     "all": "Tất cả trạng thái",
     "allPhonetic": "Tất cả trạng thái"

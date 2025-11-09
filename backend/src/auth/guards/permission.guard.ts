@@ -28,7 +28,11 @@ export class PermissionGuard implements CanActivate {
       throw new ForbiddenException('User not authenticated');
     }
 
-    // Check if user has required permissions through roles
+    // Check if user has ANY of the required permissions (OR logic)
+    // This allows multiple permissions where having at least one grants access
+    let hasAnyPermission = false;
+    const missingPermissions = [];
+
     for (const permission of requiredPermissions) {
       const hasPermission = await this.rolesService.hasPermission(
         user.id,
@@ -36,9 +40,18 @@ export class PermissionGuard implements CanActivate {
         organizationId
       );
 
-      if (!hasPermission) {
-        throw new ForbiddenException(`Permission denied: ${permission}`);
+      if (hasPermission) {
+        hasAnyPermission = true;
+        break; // Found one permission, grant access
+      } else {
+        missingPermissions.push(permission);
       }
+    }
+
+    if (!hasAnyPermission) {
+      throw new ForbiddenException(
+        `Permission denied. Requires one of: ${requiredPermissions.join(' OR ')}`
+      );
     }
 
     return true;

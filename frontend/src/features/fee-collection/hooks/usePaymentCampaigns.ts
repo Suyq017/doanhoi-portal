@@ -30,7 +30,7 @@ export const usePaymentCampaigns = (initialFilters: PaymentCampaignFilters = {})
 
       setState(prev => ({
         ...prev,
-        campaigns: response.data,
+        campaigns: response.campaigns,
         pagination: {
           page: response.page,
           limit: response.limit,

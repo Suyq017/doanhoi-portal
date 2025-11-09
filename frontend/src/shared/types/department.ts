@@ -6,8 +6,8 @@ export interface Department {
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
-    managementUsers?: any[];
-    trainingUsers?: any[];
+    managementUserCount: number;
+    trainingUserCount: number;
 }
 
 export interface CreateDepartmentRequest {

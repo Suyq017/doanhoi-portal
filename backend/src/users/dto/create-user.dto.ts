@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, IsEnum, IsUUID, IsArray, ValidateIf, ValidateNested, IsDateString } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsEnum, IsUUID, IsArray, ValidateIf, ValidateNested, IsDateString, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { UserType, MembershipStatus, Gender } from '../../entities/user.entity';
@@ -121,7 +121,7 @@ export class CreateUserDto {
   @IsString()
   curriculumYear?: string;
   
-  @ApiPropertyOptional({ description: 'Mã khoa' })
+  @ApiPropertyOptional({ description: 'Mã ngành' })
   @IsOptional()
   @IsString()
   facultyCode?: string;
@@ -135,4 +135,9 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   trainingLevel?: string;
+
+  @ApiPropertyOptional({ description: 'Trạng thái hoạt động của người dùng' })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

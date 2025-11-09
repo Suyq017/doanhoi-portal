@@ -23,15 +23,6 @@ export class PaymentFeeLevel {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'text', nullable: true })
-  note: string;
-
-  @Column({ name: 'is_default', type: 'boolean', default: false })
-  isDefault: boolean;
-
-  @Column({ name: 'order_index', type: 'int', default: 0 })
-  orderIndex: number;
-
   @OneToMany(() => PaymentAssignment, assignment => assignment.feeLevel)
   assignments: PaymentAssignment[];
 

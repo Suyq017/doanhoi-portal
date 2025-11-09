@@ -7,7 +7,11 @@ import { Organization as SharedOrganization } from '../../../shared/types/organi
 import { roleService, type Role } from '../../permissions/services/roleService';
 import { organizationService } from '../../../shared/services/organizationService';
 import { userService } from '../../../shared/services/userService';
+
 import { useOrganizationList } from '../../../shared/hooks/queries';
+import { useAllDepartmentsQuery } from '../../../shared/hooks/queries/useDepartmentQueries';
+import { useAllClassesQuery } from '../../../shared/hooks/queries/useClassQueries';
+import SearchableCombobox from '../../../shared/components/SearchableCombobox';
 import RolesOrganizationManager from './RolesOrganizationManager';
 import OrganizationManager from './OrganizationManager';
 import { RoleAssignment } from '../hooks/useGrantRoles';
@@ -51,11 +55,28 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     userType: 'student',
     membershipStatus: 'none',
     organizationId: '',
+    // New fields
+    classId: '',
+    managementDepartmentId: '',
+    trainingDepartmentId: '',
+    identityCard: '',
+    birthDate: '',
+    gender: undefined,
+    admissionYear: '',
+    curriculumYear: '',
+    facultyCode: '',
+    trainingSystem: '',
+    trainingLevel: '',
+    isActive: true,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [roles, setRoles] = useState<Role[]>([]);
   const { data: allOrganizations = [] } = useOrganizationList();
+  const { data: allDepartments = [] } = useAllDepartmentsQuery();
+  const { data: allClasses = [] } = useAllClassesQuery();
+
+
 
   // Transform organizations with useMemo to prevent infinite loop
   const organizations = useMemo(() =>
@@ -117,10 +138,25 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         userType: currentUser.userType,
         membershipStatus: currentUser.membershipStatus,
         organizationId,
+        // New fields
+        classId: currentUser.class?.id || '',
+        managementDepartmentId: currentUser.managementDepartment?.id || '',
+        trainingDepartmentId: currentUser.trainingDepartment?.id || '',
+        identityCard: (currentUser as any).identityCard || '',
+        birthDate: (currentUser as any).birthDate ? (currentUser as any).birthDate.split('T')[0] : '', // Convert to YYYY-MM-DD format
+        gender: (currentUser as any).gender || undefined,
+        admissionYear: (currentUser as any).admissionYear || '',
+        curriculumYear: (currentUser as any).curriculumYear || '',
+        facultyCode: currentUser.facultyCode || '',
+        trainingSystem: (currentUser as any).trainingSystem || '',
+        trainingLevel: (currentUser as any).trainingLevel || '',
+        isActive: currentUser.isActive !== undefined ? currentUser.isActive : true,
       };
 
       setFormData(newFormData);
-      setErrors({});      // Set role assignments - don't create empty assignment if user has no roles
+      setErrors({});
+
+      // Set role assignments - don't create empty assignment if user has no roles
       const assignments = convertUserRolesToAssignments(currentUser);
       setRoleAssignments(assignments);
 
@@ -432,18 +468,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       newErrors.givenName = t('common:validation.required', { field: t('users:fields.givenName') });
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = t('common:validation.required', { field: t('common:fields.email') });
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = t('common:validation.email');
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = t('common:validation.required', { field: t('common:fields.phone') });
-    } else if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = t('common:validation.phone');
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }; const handleSubmit = async (e: React.FormEvent) => {
@@ -553,7 +577,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }; const handleClose = () => {
+  }; 
+  
+  const handleClose = () => {
     setFormData({
       code: '',
       familyName: '',
@@ -564,7 +590,22 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       userType: 'student',
       membershipStatus: 'none',
       organizationId: '',
-    }); setRoleAssignments([]); // Reset to empty array instead of creating default assignment
+      // Reset new fields
+      classId: '',
+      managementDepartmentId: '',
+      trainingDepartmentId: '',
+      identityCard: '',
+      birthDate: '',
+      gender: undefined,
+      admissionYear: '',
+      curriculumYear: '',
+      facultyCode: '',
+      trainingSystem: '',
+      trainingLevel: '',
+      isActive: true,
+    });
+    
+    setRoleAssignments([]); // Reset to empty array instead of creating default assignment
     setUserOrganizations([]);
     setIsSubmitting(false);
     setErrors({});
@@ -799,7 +840,234 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 <option value="none">{t('users:membershipStatus.none')}</option>
                 <option value="doan_vien">{t('users:membershipStatus.doan_vien')}</option>
                 <option value="hoi_vien">{t('users:membershipStatus.hoi_vien')}</option>
-                <option value="both">{t('users:membershipStatus.both')}</option>              </select>            </div>          </div>          {/* Organization Management */}
+                <option value="both">{t('users:membershipStatus.both')}</option>
+              </select>
+            </div>
+          </div>
+
+          {/* New Additional Fields Section */}
+          <div className="border-t pt-4">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+              {t('users:titles.personalInfo')}
+            </h3>
+            
+            {/* Row 1: Class and Identity Card */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Class Combobox */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('users:fields.className')}
+                </label>
+                <SearchableCombobox
+                  options={allClasses.map(c => ({
+                    value: c.id,
+                    label: `${c.name}`,
+                    searchText: `${c.name}`
+                  }))}
+                  value={formData.classId || ''}
+                  onChange={(value) => setFormData(prev => ({ ...prev, classId: value }))}
+                  placeholder="Chọn lớp học..."
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Identity Card */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('users:fields.identityCard')}
+                </label>
+                <input
+                  type="text"
+                  name="identityCard"
+                  value={formData.identityCard || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder={t('users:placeholders.identityCard', { defaultValue: 'Nhập số CMND/CCCD' })}
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            {/* Row 2: Management and Training Departments */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {/* Management Department */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('users:fields.managementDepartmentCode')}
+                </label>
+                <SearchableCombobox
+                  options={allDepartments.map(dept => ({
+                    value: dept.id,
+                    label: `${dept.name} (${dept.code})`,
+                    searchText: `${dept.name} ${dept.code}`
+                  }))}
+                  value={formData.managementDepartmentId || ''}
+                  onChange={(value) => setFormData(prev => ({ ...prev, managementDepartmentId: value }))}
+                  placeholder="Chọn đơn vị quản lý..."
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Training Department */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('users:fields.trainingDepartmentCode')}
+                </label>
+                <SearchableCombobox
+                  options={allDepartments.map(dept => ({
+                    value: dept.id,
+                    label: `${dept.name} (${dept.code})`,
+                    searchText: `${dept.name} ${dept.code}`
+                  }))}
+                  value={formData.trainingDepartmentId || ''}
+                  onChange={(value) => setFormData(prev => ({ ...prev, trainingDepartmentId: value }))}
+                  placeholder="Chọn khoa đào tạo..."
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Birth Date and Gender */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {/* Birth Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('users:fields.birthDate')}
+                </label>
+                <input
+                  type="date"
+                  name="birthDate"
+                  value={formData.birthDate || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Gender */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Giới tính
+                </label>
+                <select
+                  name="gender"
+                  value={formData.gender || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  disabled={loading}
+                >
+                  <option value="">Chọn giới tính...</option>
+                  <option value="NAM">Nam</option>
+                  <option value="NU">Nữ</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Row 4: Academic Years and Faculty */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              {/* Admission Year */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('users:fields.admissionYear')}
+                </label>
+                <input
+                  type="text"
+                  name="admissionYear"
+                  value={formData.admissionYear || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder={t('users:placeholders.admissionYear', { defaultValue: 'Ví dụ: 2024' })}
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Curriculum Year */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('users:fields.curriculumYear')}
+                </label>
+                <input
+                  type="text"
+                  name="curriculumYear"
+                  value={formData.curriculumYear || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder={t('users:placeholders.curriculumYear', { defaultValue: 'Ví dụ: 2024' })}
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Faculty Code */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('users:fields.facultyCode')}
+                </label>
+                <input
+                  type="text"
+                  name="facultyCode"
+                  value={formData.facultyCode || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder={t('users:placeholders.facultyCode', { defaultValue: 'Ví dụ: CNTT' })}
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            {/* Row 5: Training System, Level and Active Status */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              {/* Training System */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('users:fields.trainingSystem')}
+                </label>
+                <input
+                  type="text"
+                  name="trainingSystem"
+                  value={formData.trainingSystem || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder={t('users:placeholders.trainingSystem', { defaultValue: 'Ví dụ: Chính quy, Liên thông, Từ xa...' })}
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Training Level */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('users:fields.trainingLevel')}
+                </label>
+                <input
+                  type="text"
+                  name="trainingLevel"
+                  value={formData.trainingLevel || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder={t('users:placeholders.trainingLevel', { defaultValue: 'Ví dụ: Đại học, Thạc sĩ, Tiến sĩ...' })}
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Active Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('users:fields.isActive')}
+                </label>
+                <select
+                  name="isActive"
+                  value={formData.isActive ? 'true' : 'false'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.value === 'true' }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  disabled={loading}
+                >
+                  <option value="true">{t('users:membershipStatus.active')}</option>
+                  <option value="false">{t('users:membershipStatus.inactive')}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Organization Management */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('users:labels.memberOrganizations', { defaultValue: 'Tổ chức thành viên' })}

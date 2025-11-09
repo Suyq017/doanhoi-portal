@@ -13,10 +13,7 @@ export interface PaymentFeeLevel {
     levelName: string;
     amount: number;
     description?: string;
-    note?: string;
-    isDefault: boolean;
     isActive: boolean;
-    orderIndex: number;
     createdAt: string;
     updatedAt: string;
 }
@@ -25,19 +22,15 @@ export interface CreatePaymentFeeLevelDto {
     levelName: string;
     amount: number;
     description?: string;
-    note?: string;
-    isDefault?: boolean;
-    orderIndex?: number;
 }
 
 export interface UpdatePaymentFeeLevelDto {
     levelName?: string;
     amount?: number;
     description?: string;
-    note?: string;
-    isDefault?: boolean;
-    orderIndex?: number;
-}export interface PaymentCampaign {
+}
+
+export interface PaymentCampaign {
     id: string;
     name: string;
     description?: string;

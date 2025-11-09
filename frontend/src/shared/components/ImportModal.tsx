@@ -604,13 +604,23 @@ const ImportModal = ({
                 {t(`${config.entityName}:import.step1`).includes(t(`${config.entityName}:import.templateLinkText`)) ? (
                   <>
                     {t(`${config.entityName}:import.step1`).split(t(`${config.entityName}:import.templateLinkText`))[0]}
-                    <a
-                      href={config.templateUrl}
-                      download={config.templateFileName}
-                      className="font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
-                    >
-                      {t(`${config.entityName}:import.templateLinkText`)}
-                    </a>
+                    {config.downloadTemplate ? (
+                      <button
+                        type="button"
+                        onClick={config.downloadTemplate}
+                        className="font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+                      >
+                        {t(`${config.entityName}:import.templateLinkText`)}
+                      </button>
+                    ) : (
+                      <a
+                        href={config.templateUrl}
+                        download={config.templateFileName}
+                        className="font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+                      >
+                        {t(`${config.entityName}:import.templateLinkText`)}
+                      </a>
+                    )}
                     {t(`${config.entityName}:import.step1`).split(t(`${config.entityName}:import.templateLinkText`))[1]}
                   </>
                 ) : (

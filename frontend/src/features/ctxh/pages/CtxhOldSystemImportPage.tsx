@@ -1,7 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Upload } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { ImportModal } from '@/shared/components';
 import { ctxhOldSystemImportConfig } from '../config/oldSystemImportConfig';
 
@@ -9,34 +8,6 @@ export const CtxhOldSystemImportPage = () => {
   const { t } = useTranslation('ctxh-import');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [modalKey, setModalKey] = useState(0);
-
-  // Generate template blob URL
-  const templateBlobUrl = useMemo(() => {
-    const template = [
-      ['MSSV', 'Số ngày'],
-      ['2211234', 15],
-      ['2211235', 20],
-      ['2211236', 10.5]
-    ];
-
-    const ws = XLSX.utils.aoa_to_sheet(template);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Template');
-    
-    // Generate blob
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    return URL.createObjectURL(blob);
-  }, []);
-
-  // Cleanup blob URL on unmount
-  useEffect(() => {
-    return () => {
-      if (templateBlobUrl) {
-        URL.revokeObjectURL(templateBlobUrl);
-      }
-    };
-  }, [templateBlobUrl]);
 
   const handleImportSuccess = (result: any) => {
     console.log('Import completed:', result);
@@ -46,14 +17,6 @@ export const CtxhOldSystemImportPage = () => {
   const handleImportError = (error: Error) => {
     console.error('Import failed:', error);
     // Optionally show error toast
-  };
-
-  // Create enhanced config with blob URL for template
-  const enhancedConfig = {
-    ...ctxhOldSystemImportConfig,
-    templateUrl: templateBlobUrl,
-    onSuccess: handleImportSuccess,
-    onError: handleImportError
   };
 
   return (
@@ -101,7 +64,11 @@ export const CtxhOldSystemImportPage = () => {
         key={modalKey}
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        config={enhancedConfig}
+        config={{
+          ...ctxhOldSystemImportConfig,
+          onSuccess: handleImportSuccess,
+          onError: handleImportError
+        }}
       />
     </div>
   );

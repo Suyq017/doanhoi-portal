@@ -5,6 +5,7 @@ interface Option {
   value: string;
   label: string;
   disabled?: boolean;
+  searchText?: string; // Optional text to search in (if different from label)
 }
 
 interface SearchableComboboxProps {
@@ -40,7 +41,7 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
     typeof option.label === 'string' &&
     option.value !== undefined &&
     option.value !== null &&
-    option.label.toLowerCase().includes(searchTerm.toLowerCase())
+    (option.searchText || option.label).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Get display value - with safety checks

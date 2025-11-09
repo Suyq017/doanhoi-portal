@@ -92,6 +92,34 @@ export const useDepartmentDetailQuery = (departmentId: string, options?: { enabl
 };
 
 /**
+ * Hook to fetch all departments (for dropdowns, selects)
+ * 
+ * Features:
+ * - No pagination (limit: 1000)
+ * - Longer cache time since it's used for reference
+ * - Returns only active departments by default
+ * 
+ * Usage:
+ * const { data: departments = [], isLoading } = useAllDepartmentsQuery();
+ */
+export const useAllDepartmentsQuery = (includeInactive: boolean = false) => {
+    return useQuery({
+        queryKey: [...departmentKeys.all, 'all', includeInactive],
+        queryFn: async () => {
+            const response = await departmentService.getDepartments({
+                limit: 1000,
+                page: 1,
+                ...(includeInactive ? {} : { isActive: true })
+            });
+            return response.departments;
+        },
+        staleTime: 5 * 60 * 1000,      // 5 minutes (longer since reference data)
+        gcTime: 15 * 60 * 1000,         // 15 minutes
+        refetchOnWindowFocus: false,    // Don't refetch on focus for reference data
+    });
+};
+
+/**
  * ========================
  * MUTATION HOOKS
  * ========================
