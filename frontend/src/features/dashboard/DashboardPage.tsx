@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/context/AuthContext';
 import { dashboardService } from './services/dashboardService';
+import { S3StorageChart } from './components/S3StorageChart';
+import { S3TrendChart } from './components/S3TrendChart';
 
 const Dashboard: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'common']);
@@ -111,6 +113,15 @@ const Dashboard: React.FC = () => {
             </div>
           );
         })}
+      </div>
+
+      {/* S3 Storage Statistics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* S3 Storage Distribution */}
+        <S3StorageChart />
+
+        {/* S3 Trend Chart */}
+        <S3TrendChart />
       </div>
     </div>
   );

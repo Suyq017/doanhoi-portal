@@ -27,18 +27,11 @@ const ViewDepartmentModal: React.FC<ViewDepartmentModalProps> = ({
     });
   };
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   if (!isOpen) return null;
 
   return createPortal(
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={handleOverlayClick}
     >
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
@@ -89,11 +82,10 @@ const ViewDepartmentModal: React.FC<ViewDepartmentModalProps> = ({
               {t('common:fields.status')}
             </label>
             <span
-              className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                department.isActive
+              className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${department.isActive
                   ? 'bg-green-100 text-green-800'
                   : 'bg-red-100 text-red-800'
-              }`}
+                }`}
             >
               {department.isActive ? t('common:status.active') : t('common:status.inactive')}
             </span>
@@ -123,7 +115,7 @@ const ViewDepartmentModal: React.FC<ViewDepartmentModalProps> = ({
                     {t('departments:fields.trainingUsers')}
                   </p>
                   <p className="text-2xl font-bold text-green-600">
-                    {department.trainingUserCount|| 0}
+                    {department.trainingUserCount || 0}
                   </p>
                 </div>
               </div>

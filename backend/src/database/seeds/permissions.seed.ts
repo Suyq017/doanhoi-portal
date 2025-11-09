@@ -445,6 +445,14 @@ export const seedPermissions = async (dataSource: DataSource) => {
             context: PermissionContext.ORGANIZATION,
             sortOrder: 92,
         },
+        {
+            code: 'ctxh.import.old_system',
+            name: 'Nhập ngày CTXH từ hệ thống cũ',
+            description: 'Nhập dữ liệu CTXH từ hệ thống cũ',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 93,
+        },
     ];
 
     for (const permissionData of permissions) {

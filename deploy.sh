@@ -63,7 +63,10 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 print_status "5. Chờ services khởi động..."
 sleep 30
 
-print_status "6. Kiểm tra trạng thái services..."
+print_status "6. Cập nhật permissions trong database..."
+docker exec doanhoi-backend-prod npm run update:permissions || print_warning "⚠️ Không thể cập nhật permissions. Có thể database chưa sẵn sàng."
+
+print_status "7. Kiểm tra trạng thái services..."
 
 # Kiểm tra PostgreSQL
 if docker exec doanhoi-postgres-prod pg_isready -U postgres > /dev/null 2>&1; then
@@ -86,7 +89,7 @@ else
     print_warning "⚠️ Frontend có thể vẫn đang khởi động..."
 fi
 
-print_status "7. Hiển thị containers đang chạy:"
+print_status "8. Hiển thị containers đang chạy:"
 docker compose -f docker-compose.prod.yml ps
 
 print_status "🎉 Deploy hoàn tất!"
