@@ -24,6 +24,7 @@ export const seedRoles = async (dataSource: DataSource) => {
             'ctxh.categories.view', 'ctxh.categories.create', 'ctxh.categories.update', 'ctxh.categories.delete',
             'ctxh.activities.view', 'ctxh.activities.create', 'ctxh.activities.update', 'ctxh.activities.delete', 'ctxh.activities.manage_participants',
             'ctxh.reports.view', 'ctxh.reports.export', 'ctxh.config.manage',
+            'ctxh.import.old_system',
             // Payment permissions
             'payment-campaigns.access', 'payment-campaigns.create', 'payment-campaigns.read', 'payment-campaigns.update', 'payment-campaigns.delete', 'payment-campaigns.manage_assignments', 'payment-campaigns.view_reports', 'payment-campaigns.export',
             'my-payments.access',

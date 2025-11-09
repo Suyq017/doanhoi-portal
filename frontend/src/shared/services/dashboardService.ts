@@ -2,7 +2,8 @@ import { apiClient } from './apiClient';
 import {
   DashboardStats,
   OrganizationStats,
-  RecentActivity
+  RecentActivity,
+  S3Statistics
 } from '../types/dashboard';
 
 class DashboardService {
@@ -82,6 +83,14 @@ class DashboardService {
         category: 'hoi'
       }
     ];
+  }
+
+  async getS3Statistics(organizationId?: string): Promise<S3Statistics> {
+    const url = organizationId
+      ? `/dashboard/s3-stats?organizationId=${organizationId}`
+      : '/dashboard/s3-stats';
+    const response = await apiClient.get<S3Statistics>(url);
+    return response;
   }
 }
 

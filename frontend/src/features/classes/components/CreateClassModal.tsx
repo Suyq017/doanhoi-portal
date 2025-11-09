@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import {
   CreateClassRequest,
   classService,
-  Select
+  Combobox
 } from '../../../shared';
 import { useDepartmentListQuery } from '../../../shared/hooks/queries/useDepartmentQueries'; // ✅ Use TanStack Query
 
@@ -96,18 +96,11 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     onClose();
   };
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      handleClose();
-    }
-  };
-
   if (!isOpen) return null;
 
   return createPortal(
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={handleOverlayClick}
     >
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
@@ -174,17 +167,17 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('classes:fields.department')}
               </label>
-              <Select
-                options={[
-                  { value: '', label: `-- ${t('common:actions.select')} --` },
-                  ...departments.map(dept => ({
-                    value: dept.id,
-                    label: dept.name
-                  }))
-                ]}
+              <Combobox
+                options={departments.map(dept => ({
+                  id: dept.id,
+                  label: dept.name
+                }))}
                 value={formData.departmentId}
-                onChange={(value) => handleSelectChange('departmentId', value)}
+                onSelect={(value) => handleSelectChange('departmentId', value)}
+                onClear={() => handleSelectChange('departmentId', '')}
+                placeholder={`-- ${t('common:actions.select')} --`}
                 disabled={loading}
+                dropdownPortal={true}
                 className="w-full"
               />
             </div>

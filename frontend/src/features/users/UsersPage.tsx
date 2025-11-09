@@ -213,19 +213,21 @@ const Users: React.FC = () => {
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             {t('users:subtitle')}
-          </p>        </div>        <div className="flex items-center mt-4 space-x-3 sm:mt-0">          {/* Grant Roles Button */}
-          <button
-            onClick={() => setIsGrantRolesModalOpen(true)}
-            className="inline-flex items-center px-4 py-2 text-white transition-colors duration-200 rounded-md bg-doan-600 hover:bg-doan-700 focus:outline-none focus:ring-2 focus:ring-doan-500 focus:ring-offset-2"
-          >
-            <Shield className="w-5 h-5 mr-2" />
-            <span className="font-medium">
-              {t('users:actions.grantRoles', { defaultValue: 'Cấp vai trò' })}
-            </span>
-          </button>
+          </p>        </div>        <div className="flex items-center mt-4 space-x-3 sm:mt-0">          {/* Grant Roles Button - Temporarily Hidden */}
+          {false && (
+            <button
+              onClick={() => setIsGrantRolesModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 text-white transition-colors duration-200 rounded-md bg-doan-600 hover:bg-doan-700 focus:outline-none focus:ring-2 focus:ring-doan-500 focus:ring-offset-2"
+            >
+              <Shield className="w-5 h-5 mr-2" />
+              <span className="font-medium">
+                {t('users:actions.grantRoles', { defaultValue: 'Cấp vai trò' })}
+              </span>
+            </button>
+          )}
 
-          {/* Role Assignment Button */}
-          <ConditionalRender condition={userPermissions.canManageRoles}>
+          {/* Role Assignment Button - Temporarily Hidden */}
+          <ConditionalRender condition={false && userPermissions.canManageRoles}>
             <button
               onClick={() => setIsRoleAssignmentModalOpen(true)}
               className="inline-flex items-center px-4 py-2 transition-colors border rounded-md border-doan-600 text-doan-600 hover:bg-doan-50 dark:hover:bg-doan-900/20"
