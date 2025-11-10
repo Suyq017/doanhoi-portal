@@ -16,7 +16,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['dataManagement']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['dataManagement', 'ctxh']);
   const location = useLocation();
   const { t } = useTranslation('common');
   const permissions = usePermissions();
