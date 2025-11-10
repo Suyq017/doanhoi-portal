@@ -16,3 +16,8 @@ export { CtxhLimitConfig, LimitConfigStatus } from './ctxh-limit-config.entity';
 
 // AWS S3 Config
 export { AwsS3Config } from './aws-s3-config.entity';
+
+// Template System
+export { Template, TemplateStatus } from './template.entity';
+export { TemplateField, FieldType } from './template-field.entity';
+export { TemplateSubmission, SubmissionStatus } from './template-submission.entity';

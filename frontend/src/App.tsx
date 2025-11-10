@@ -22,6 +22,10 @@ import {
 } from './features/fee-collection';
 import { CategoryManagement, ActivityManagement, ActivityDetail, LimitConfigManagement, CtxhOldSystemImportPage } from './features/ctxh/pages';
 import { StudentReportsPage } from './features/student-reports';
+import FormsPage from './features/templates/pages/FormsPage';
+import TemplateListPage from './features/templates/pages/admin/TemplateListPage';
+import TemplateUploadPage from './features/templates/pages/admin/TemplateUploadPage';
+import TemplateConfigPage from './features/templates/pages/admin/TemplateConfigPage';
 import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
 
@@ -233,7 +237,53 @@ function App() {
                             </Layout>
                           </ProtectedRoute>
                         }
-                      />                    {/* Admin Payment Routes */}
+                      />
+
+                      {/* Template Routes - User */}
+                      <Route
+                        path="/forms"
+                        element={
+                          <ProtectedRoute>
+                            <Layout>
+                              <FormsPage />
+                            </Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+
+                      {/* Template Routes - Admin */}
+                      <Route
+                        path="/admin/templates"
+                        element={
+                          <ProtectedRoute>
+                            <Layout>
+                              <TemplateListPage />
+                            </Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/templates/upload"
+                        element={
+                          <ProtectedRoute>
+                            <Layout>
+                              <TemplateUploadPage />
+                            </Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/templates/:id/configure"
+                        element={
+                          <ProtectedRoute>
+                            <Layout>
+                              <TemplateConfigPage />
+                            </Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+
+                      {/* Admin Payment Routes */}
                       <Route
                         path="/admin/payment-campaigns"
                         element={
