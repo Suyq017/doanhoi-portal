@@ -581,14 +581,176 @@ rate(doanhoi_import_duration_seconds_count[5m])
 
 ### 5.4. Default System Metrics (từ prom-client)
 
+> **📌 Lưu ý:** Các metrics này được **tự động thu thập** bởi `prom-client` khi enable `defaultMetrics: { enabled: true }` trong `MetricsModule`. Không cần code thêm gì!
+
+#### CPU Metrics
+
+| Metric Name | Type | Description | Unit |
+|------------|------|-------------|------|
+| `process_cpu_user_seconds_total` | Counter | Tổng thời gian CPU spent ở user mode | seconds |
+| `process_cpu_system_seconds_total` | Counter | Tổng thời gian CPU spent ở system mode | seconds |
+| `process_cpu_seconds_total` | Counter | Tổng thời gian CPU (user + system) | seconds |
+
+**Query ví dụ:**
+```promql
+# CPU usage percentage (last 5 minutes)
+rate(process_cpu_user_seconds_total[5m]) * 100
+
+# Total CPU usage (user + system)
+rate(process_cpu_seconds_total[5m]) * 100
+```
+
+#### Memory Metrics
+
+| Metric Name | Type | Description | Unit |
+|------------|------|-------------|------|
+| `process_resident_memory_bytes` | Gauge | Resident Set Size (RAM đang dùng) | bytes |
+| `process_virtual_memory_bytes` | Gauge | Virtual memory size | bytes |
+| `process_heap_bytes` | Gauge | Process heap size | bytes |
+| `nodejs_heap_size_total_bytes` | Gauge | Total size của V8 heap | bytes |
+| `nodejs_heap_size_used_bytes` | Gauge | Used size của V8 heap | bytes |
+| `nodejs_heap_space_size_total_bytes` | Gauge | Total size của từng heap space | bytes |
+| `nodejs_heap_space_size_used_bytes` | Gauge | Used size của từng heap space | bytes |
+| `nodejs_heap_space_size_available_bytes` | Gauge | Available size của từng heap space | bytes |
+| `nodejs_external_memory_bytes` | Gauge | Memory dùng bởi C++ objects bound to JS | bytes |
+
+**Query ví dụ:**
+```promql
+# Memory usage percentage
+(nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes) * 100
+
+# Memory in MB
+nodejs_heap_size_used_bytes / 1024 / 1024
+
+# RSS Memory (actual RAM usage)
+process_resident_memory_bytes / 1024 / 1024
+```
+
+#### Event Loop Metrics
+
+| Metric Name | Type | Description | Unit |
+|------------|------|-------------|------|
+| `nodejs_eventloop_lag_seconds` | Gauge | Event loop lag (độ trễ) | seconds |
+| `nodejs_eventloop_lag_min_seconds` | Gauge | Min lag trong window | seconds |
+| `nodejs_eventloop_lag_max_seconds` | Gauge | Max lag trong window | seconds |
+| `nodejs_eventloop_lag_mean_seconds` | Gauge | Mean lag trong window | seconds |
+| `nodejs_eventloop_lag_stddev_seconds` | Gauge | Standard deviation của lag | seconds |
+| `nodejs_eventloop_lag_p50_seconds` | Gauge | 50th percentile lag | seconds |
+| `nodejs_eventloop_lag_p90_seconds` | Gauge | 90th percentile lag | seconds |
+| `nodejs_eventloop_lag_p99_seconds` | Gauge | 99th percentile lag | seconds |
+
+**Query ví dụ:**
+```promql
+# Event loop lag in milliseconds
+nodejs_eventloop_lag_seconds * 1000
+
+# Alert nếu lag > 100ms
+nodejs_eventloop_lag_seconds > 0.1
+```
+
+**🔑 Giải thích Event Loop Lag:**
+- Event loop lag là thời gian chờ giữa khi một callback được schedule và khi nó thực sự chạy
+- Lag cao → Server đang quá tải hoặc có blocking operations
+- **Healthy lag**: < 50ms
+- **Warning lag**: 50-100ms
+- **Critical lag**: > 100ms
+
+#### Garbage Collection Metrics
+
+| Metric Name | Type | Description | Unit |
+|------------|------|-------------|------|
+| `nodejs_gc_duration_seconds` | Histogram | Thời gian GC mất | seconds |
+| `nodejs_gc_runs_total` | Counter | Tổng số lần GC chạy | count |
+
+**Query ví dụ:**
+```promql
+# GC rate (times per second)
+rate(nodejs_gc_runs_total[5m])
+
+# Average GC duration
+rate(nodejs_gc_duration_seconds_sum[5m]) / rate(nodejs_gc_duration_seconds_count[5m])
+```
+
+#### Process Metrics
+
+| Metric Name | Type | Description | Unit |
+|------------|------|-------------|------|
+| `process_open_fds` | Gauge | Số file descriptors đang mở | count |
+| `process_max_fds` | Gauge | Số max file descriptors | count |
+| `process_start_time_seconds` | Gauge | Unix timestamp khi process start | seconds |
+| `process_uptime_seconds` | Counter | Thời gian process đã chạy | seconds |
+
+**Query ví dụ:**
+```promql
+# Process uptime in hours
+process_uptime_seconds / 3600
+
+# File descriptor usage percentage
+(process_open_fds / process_max_fds) * 100
+```
+
+#### Node.js Version Info
+
 | Metric Name | Type | Description |
 |------------|------|-------------|
-| `process_cpu_user_seconds_total` | Counter | CPU time spent in user mode |
-| `process_cpu_system_seconds_total` | Counter | CPU time spent in system mode |
-| `process_resident_memory_bytes` | Gauge | Resident memory size |
-| `nodejs_heap_size_total_bytes` | Gauge | Total heap size |
-| `nodejs_heap_size_used_bytes` | Gauge | Used heap size |
-| `nodejs_eventloop_lag_seconds` | Gauge | Event loop lag |
+| `nodejs_version_info` | Gauge | Node.js version info (labels: version, major, minor, patch) |
+
+**Query ví dụ:**
+```promql
+# Get Node.js version
+nodejs_version_info
+```
+
+---
+
+### 5.5. Cách Metrics được Thu Thập Tự Động
+
+**File: `backend/src/metrics/metrics.module.ts`**
+
+```typescript
+PrometheusModule.register({
+  defaultMetrics: {
+    enabled: true,              // ✅ Bật auto-collect metrics
+    config: {
+      prefix: 'doanhoi_',       // Prefix cho custom metrics
+      // Default metrics sẽ KHÔNG có prefix
+      // Vì chúng follow chuẩn Prometheus naming
+    },
+  },
+  // ...
+})
+```
+
+**🔑 Cách hoạt động:**
+
+1. **Khi enable `defaultMetrics`**, `prom-client` tự động bắt đầu collect metrics
+2. **Metrics được update** định kỳ (mỗi 10 giây mặc định)
+3. **Không cần code thêm**, chỉ cần enable trong config
+4. **Metrics xuất hiện** tại `/metrics` endpoint cùng với custom metrics
+
+**Xem default metrics:**
+```bash
+curl http://localhost:9200/metrics | grep "process_\|nodejs_"
+```
+
+**Output ví dụ:**
+```prometheus
+# HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.
+# TYPE process_cpu_user_seconds_total counter
+process_cpu_user_seconds_total 2.345
+
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 52428800
+
+# HELP nodejs_heap_size_used_bytes Used heap size in bytes.
+# TYPE nodejs_heap_size_used_bytes gauge
+nodejs_heap_size_used_bytes 15728640
+
+# HELP nodejs_eventloop_lag_seconds Lag of event loop in seconds.
+# TYPE nodejs_eventloop_lag_seconds gauge
+nodejs_eventloop_lag_seconds 0.00234
+```
 
 ---
 
