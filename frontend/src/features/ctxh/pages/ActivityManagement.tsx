@@ -44,8 +44,6 @@ const ActivityManagement: React.FC = () => {
   // User can create if they have a primary organization
   const canCreateActivity = primaryOrgData?.organization !== null && canCreateCtxhActivity();
 
-  // Remove old useEffect - now handled by TanStack Query
-
   const handleCreateActivity = () => {
     setEditingActivity(null);
     setShowActivityForm(true);
@@ -119,24 +117,12 @@ const ActivityManagement: React.FC = () => {
       }
       handleActivitySaved();
     } catch (error: any) {
-      console.error('Failed to save activity:', error);
-
+      // Get error message from various possible locations
+      const errorMessage = error.message || error.response?.data?.message || error.response?.data?.error;
+      
       // Handle specific server errors
-      if (error.response?.data?.message) {
-        const serverMessage = error.response.data.message;
-
-        // Check if it's a duplicate error
-        if (serverMessage.includes('duplicate') || serverMessage.includes('already exists') || serverMessage.includes('đã tồn tại')) {
-          showError(t('activity.validation.duplicateNameCategory'));
-        }
-        // Check if it's a day limit exceeded error
-        else if (serverMessage.includes('vượt quá giới hạn') || serverMessage.includes('exceed') || serverMessage.includes('limit')) {
-          showError(t('activity.dayLimitExceeded') + ': ' + serverMessage);
-        }
-        // Show the original server message for other errors
-        else {
-          showError(serverMessage);
-        }
+      if (errorMessage) {
+        showError(errorMessage);
       } else {
         showError(t('activity.saveError'));
       }

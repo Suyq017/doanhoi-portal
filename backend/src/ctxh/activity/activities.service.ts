@@ -59,18 +59,18 @@ export class ActivitiesService {
       throw new NotFoundException(`Danh mục với ID ${createActivityDto.category_id} không tồn tại`);
     }
 
-    // Check for duplicate activity name in the same organization
+    // Check for duplicate activity name in the same category
     const existingActivity = await this.activityRepository.findOne({
       where: {
         name: createActivityDto.name,
-        organization_id: createActivityDto.organization_id,
+        category_id: createActivityDto.category_id,
         deleted_at: IsNull(),
       },
     });
 
     if (existingActivity) {
       throw new ConflictException(
-        `Hoạt động "${createActivityDto.name}" đã tồn tại trong tổ chức này`
+        `Hoạt động "${createActivityDto.name}" đã tồn tại trong danh mục này`
       );
     }
 
@@ -475,19 +475,22 @@ export class ActivitiesService {
       }
     }
 
-    // Check for duplicate name if name is being updated
-    if (updateActivityDto.name && updateActivityDto.name !== activity.name) {
+    // Check for duplicate name if name or category is being updated
+    if (updateActivityDto.name || updateActivityDto.category_id) {
+      const checkName = updateActivityDto.name || activity.name;
+      const checkCategoryId = updateActivityDto.category_id || activity.category_id;
+      
       const existingActivity = await this.activityRepository.findOne({
         where: {
-          name: updateActivityDto.name,
-          organization_id: updateActivityDto.organization_id || activity.organization_id,
+          name: checkName,
+          category_id: checkCategoryId,
           deleted_at: IsNull(),
         },
       });
 
       if (existingActivity && existingActivity.id !== id) {
         throw new ConflictException(
-          `Hoạt động "${updateActivityDto.name}" đã tồn tại trong tổ chức này`
+          `Hoạt động "${checkName}" đã tồn tại trong danh mục này`
         );
       }
     }
