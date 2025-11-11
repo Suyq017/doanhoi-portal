@@ -49,7 +49,7 @@ const AdminLoginPage: React.FC = () => {
             <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">
               <div className="flex items-center">
                 <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-                <span className="text-sm text-red-700 dark:text-red-300">{error}</span>
+                <span className="text-sm text-red-700 dark:text-red-300">{t('auth:form.error.loginFailed')}</span>
               </div>
             </div>
           )}
