@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard, Heart, Calendar, BarChart, Settings, Upload, FileText } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
 import { LoginButton } from '../../features/auth';
@@ -13,14 +13,31 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+const EXPANDED_MENUS_KEY = 'expandedMenus';
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['dataManagement', 'ctxh']);
+  
+  // Load expanded menus from localStorage, default to ['dataManagement', 'ctxh'] if not found
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(EXPANDED_MENUS_KEY);
+      return saved ? JSON.parse(saved) : ['dataManagement', 'ctxh'];
+    } catch {
+      return ['dataManagement', 'ctxh'];
+    }
+  });
+  
   const location = useLocation();
   const { t } = useTranslation('common');
   const permissions = usePermissions();
   const ctxhPermissions = useCtxhPermissions();
+
+  // Save expanded menus to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(EXPANDED_MENUS_KEY, JSON.stringify(expandedMenus));
+  }, [expandedMenus]);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -286,7 +303,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {navigation.map((item) => {
               const Icon = item.icon;
 
