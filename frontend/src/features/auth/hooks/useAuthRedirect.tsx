@@ -14,7 +14,7 @@ export const useAuthRedirect = () => {
         // Only redirect if auth check is complete
         if (!auth.isLoading) {
             // If user is on login page and is authenticated, redirect to intended page
-            if (auth.isAuthenticated && location.pathname === '/login') {
+            if (auth.isAuthenticated && (location.pathname === '/login')) {
                 const from = location.state?.from?.pathname || '/';
                 navigate(from, { replace: true });
             }

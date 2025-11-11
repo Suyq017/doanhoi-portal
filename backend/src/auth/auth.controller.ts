@@ -95,12 +95,18 @@ export class AuthController {
   @ApiOperation({ summary: 'Google OAuth callback' })
   async googleAuthRedirect(@Request() req, @Res() res: Response) {
     try {
-      ;
-
       if (!req.user) {
         console.error('No user data received from Google OAuth');
         const frontendUrl = process.env.FRONTEND_URL;
         const errorUrl = `${frontendUrl}/auth/callback?error=no_user_data`;
+        return res.redirect(errorUrl);
+      }
+
+      // Check if req.user contains an error (user not found in database)
+      if (req.user.error) {
+        console.error('Google OAuth user validation error:', req.user.error);
+        const frontendUrl = process.env.FRONTEND_URL;
+        const errorUrl = `${frontendUrl}/auth/callback?error=user_not_found`;
         return res.redirect(errorUrl);
       }
 
@@ -120,7 +126,8 @@ export class AuthController {
     } catch (error) {
       console.error('Google OAuth callback error:', error);
       const frontendUrl = process.env.FRONTEND_URL;
-      const errorUrl = `${frontendUrl}/auth/callback?error=callback_error`; return res.redirect(errorUrl);
+      const errorUrl = `${frontendUrl}/auth/callback?error=callback_error`; 
+      return res.redirect(errorUrl);
     }
   }
 
