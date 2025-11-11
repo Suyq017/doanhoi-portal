@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, Loader, AlertCircle, Link2, Unlink } from 'lucide-react';
+import { ArrowLeft, Save, Loader, AlertCircle, Link2, Unlink, ChevronDown } from 'lucide-react';
 import { getTemplateById, configureFields, updateTemplate } from '@/shared/services/template.service';
-import type { FieldType, ConfigureFieldDto } from '@/shared/types/template.types';
+import type { FieldType, ConfigureFieldDto, TemplateStatus } from '@/shared/types/template.types';
 import { useToast } from '@/shared/hooks/useToast';
 import { Toast } from '@/shared/components';
 
@@ -16,7 +16,23 @@ const TemplateConfigPage: React.FC = () => {
   const [selectedFields, setSelectedFields] = useState<Set<number>>(new Set());
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
-  const [templateStatus, setTemplateStatus] = useState<'processing' | 'active' | 'inactive' | 'error'>('active');
+  const [templateStatus, setTemplateStatus] = useState<'processing' | 'active' | 'inactive' | 'error'>('processing');
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+        setStatusDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const { data: template, isLoading } = useQuery({
     queryKey: ['template', id],
@@ -50,13 +66,44 @@ const TemplateConfigPage: React.FC = () => {
     }
   }, [template]);
 
+  // Status options
+  const statusOptions = [
+    { value: 'active', label: 'Hoạt động' },
+    { value: 'inactive', label: 'Không hoạt động' },
+    { value: 'processing', label: 'Đang xử lý' },
+    { value: 'error', label: 'Lỗi' },
+  ];
+
+  const getStatusLabel = (value: string) => {
+    return statusOptions.find(opt => opt.value === value)?.label || value;
+  };
+
+  const handleStatusChange = (value: string) => {
+    setTemplateStatus(value as any);
+    setStatusDropdownOpen(false);
+  };
+
   const saveMutation = useMutation({
     mutationFn: async (data: { fields: ConfigureFieldDto[] }) => {
+      // Determine final status: 
+      // - If user selected a status in dropdown, use that
+      // - Otherwise, if template is currently processing, auto-change to active when saving
+      // - For other statuses, keep the current status
+      let finalStatus: TemplateStatus = templateStatus as TemplateStatus;
+      if (!templateStatus || templateStatus === template?.status) {
+        // User didn't change the dropdown or it matches current template status
+        if (template?.status === 'processing') {
+          finalStatus = 'active' as TemplateStatus; // Auto-change processing to active
+        } else {
+          finalStatus = (template?.status || 'active') as TemplateStatus; // Keep current status or default to active
+        }
+      }
+      
       // Update template info first
       await updateTemplate(id!, {
         name: templateName,
         description: templateDescription,
-        status: templateStatus,
+        status: finalStatus,
       });
       // Then update fields
       return configureFields(id!, data);
@@ -64,7 +111,7 @@ const TemplateConfigPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['template', id] });
       queryClient.invalidateQueries({ queryKey: ['templates'] });
-      showSuccess('Cấu hình đã được lưu');
+      showSuccess('Cấu hình đã được lưu thành công!');
       setTimeout(() => navigate('/admin/templates'), 1500);
     },
     onError: (error: any) => {
@@ -200,35 +247,116 @@ const TemplateConfigPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {toasts.map((toast) => (
-        <Toast key={toast.id} {...toast} onClose={() => hideToast(toast.id)} />
-      ))}
+      {/* Toasts - Fixed position at top-right */}
+      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
 
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-6">
           <button
             onClick={() => navigate('/admin/templates')}
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-4"
+            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-3 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
             Quay lại danh sách
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Cấu hình: {template.name}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Cấu hình các trường dữ liệu cho biểu mẫu
-          </p>
-        </div>
-      </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Cấu hình biểu mẫu
+              </h1>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Cấu hình các trường dữ liệu cho biểu mẫu "{template.name}"
+              </p>
+            </div>
+            
+            {/* Status Selector */}
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Trạng thái:
+              </label>
+              <div className="relative" ref={statusDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                  className="w-48 px-4 py-2 text-left border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm font-medium flex items-center justify-between"
+                >
+                  <span>{getStatusLabel(templateStatus)}</span>
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </button>
 
-      {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {statusDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600">
+                    {statusOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleStatusChange(option.value)}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none ${
+                          templateStatus === option.value
+                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium'
+                            : 'text-gray-900 dark:text-white'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Processing Status Alert - Based on actual template status */}
+        {template.status === 'processing' && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-3 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
+                  Biểu mẫu đang ở trạng thái "Đang xử lý"
+                </h3>
+                <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                  Biểu mẫu này chưa được kích hoạt và người dùng chưa thể sử dụng. 
+                  Để kích hoạt, vui lòng chọn trạng thái <strong>"Hoạt động"</strong> ở góc trên và nhấn <strong>"Lưu cấu hình"</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Inactive Status Info - Based on actual template status */}
+        {template.status === 'inactive' && (
+          <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-gray-600 dark:text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-300 mb-1">
+                  Biểu mẫu đang tạm ngưng
+                </h3>
+                <p className="text-sm text-gray-700 dark:text-gray-400">
+                  Biểu mẫu này không khả dụng với người dùng. Chuyển sang <strong>"Hoạt động"</strong> để kích hoạt lại.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Hướng dẫn các loại dữ liệu */}
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-4">
-            📖 Hướng dẫn các loại dữ liệu
+          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-4 flex items-center">
+            <span className="mr-2">📖</span>
+            Hướng dẫn các loại dữ liệu
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
@@ -271,52 +399,35 @@ const TemplateConfigPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Template Info Section */}
-          <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+            <div className="px-6 py-5">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Thông tin biểu mẫu
               </h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-5">
                 {/* Template Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Tên biểu mẫu
                   </label>
                   <input
                     type="text"
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
-                    className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
                   />
                 </div>
 
-                {/* Template Status */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Trạng thái
-                  </label>
-                  <select
-                    value={templateStatus}
-                    onChange={(e) => setTemplateStatus(e.target.value as any)}
-                    className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="active">Hoạt động</option>
-                    <option value="inactive">Không hoạt động</option>
-                    <option value="processing">Đang xử lý</option>
-                    <option value="error">Lỗi</option>
-                  </select>
-                </div>
-
                 {/* Template Description */}
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Mô tả
                   </label>
                   <textarea
                     rows={3}
                     value={templateDescription}
                     onChange={(e) => setTemplateDescription(e.target.value)}
-                    className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
                   />
                 </div>
               </div>
@@ -328,23 +439,23 @@ const TemplateConfigPage: React.FC = () => {
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <span className="text-sm text-blue-800 dark:text-blue-300">
-                    Đã chọn {selectedFields.size} field(s)
+                  <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                    Đã chọn {selectedFields.size} trường
                   </span>
                 </div>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={mergeFieldsToDateParts}
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
                   >
-                    <Link2 className="h-4 w-4 mr-1" />
+                    <Link2 className="h-4 w-4 mr-2" />
                     Nhóm thành Date Parts
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedFields(new Set())}
-                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors shadow-sm"
                   >
                     Hủy
                   </button>
@@ -353,18 +464,25 @@ const TemplateConfigPage: React.FC = () => {
             </div>
           )}
 
-          <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:p-6 space-y-6">
+          {/* Fields Configuration Section */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+            <div className="px-6 py-5">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Cấu hình các trường dữ liệu
+              </h3>
+              <div className="space-y-6">
               {fields.map((field, index) => (
                 <div
                   key={field.fieldName}
-                  className={`border-b border-gray-200 dark:border-gray-700 pb-6 last:border-0 ${
-                    selectedFields.has(index) ? 'bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg' : ''
+                  className={`border border-gray-200 dark:border-gray-700 rounded-lg p-5 transition-colors ${
+                    selectedFields.has(index) 
+                      ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-300 dark:border-blue-700' 
+                      : 'bg-gray-50 dark:bg-gray-900/50'
                   }`}
                 >
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-4">
                     {/* Checkbox for selection */}
-                    <div className="sm:col-span-2 flex items-center gap-3">
+                    <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
                       <input
                         type="checkbox"
                         checked={selectedFields.has(index)}
@@ -377,61 +495,62 @@ const TemplateConfigPage: React.FC = () => {
                     </div>
 
                     {/* Field Name (Read-only) */}
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Tên trường (Field Name)
                       </label>
                       <input
                         type="text"
                         value={field.fieldName}
                         disabled
-                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm bg-gray-50 sm:text-sm"
+                        className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 rounded-lg shadow-sm bg-gray-100 text-gray-600 sm:text-sm cursor-not-allowed"
                       />
                     </div>
 
-                    {/* Display Name */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Tên hiển thị
-                      </label>
-                      <input
-                        type="text"
-                        value={field.displayName}
-                        onChange={(e) =>
-                          updateField(index, { displayName: e.target.value })
-                        }
-                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      />
-                    </div>
-
-                    {/* Field Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Loại trường
-                      </label>
-                      <div className="flex gap-2">
-                        <select
-                          value={field.fieldType}
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      {/* Display Name */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Tên hiển thị
+                        </label>
+                        <input
+                          type="text"
+                          value={field.displayName}
                           onChange={(e) =>
-                            updateField(index, { fieldType: e.target.value as FieldType })
+                            updateField(index, { displayName: e.target.value })
                           }
-                          className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        >
-                          <option value="text">Text</option>
-                          <option value="textarea">Textarea</option>
-                          <option value="email">Email</option>
-                          <option value="number">Number</option>
-                          <option value="date">Date</option>
-                          <option value="date_parts">Date Parts (Ngày/Tháng/Năm)</option>
-                          <option value="select">Select</option>
-                          <option value="radio">Radio</option>
-                          <option value="checkbox">Checkbox</option>
-                        </select>
-                        {field.fieldType === 'date_parts' && (
-                          <button
-                            type="button"
-                            onClick={() => ungroupDatePartsField(index)}
-                            className="mt-1 inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                          className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
+                        />
+                      </div>
+
+                      {/* Field Type */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Loại trường
+                        </label>
+                        <div className="flex gap-2">
+                          <select
+                            value={field.fieldType}
+                            onChange={(e) =>
+                              updateField(index, { fieldType: e.target.value as FieldType })
+                            }
+                            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
+                          >
+                            <option value="text">Text</option>
+                            <option value="textarea">Textarea</option>
+                            <option value="email">Email</option>
+                            <option value="number">Number</option>
+                            <option value="date">Date</option>
+                            <option value="date_parts">Date Parts (Ngày/Tháng/Năm)</option>
+                            <option value="select">Select</option>
+                            <option value="radio">Radio</option>
+                            <option value="checkbox">Checkbox</option>
+                          </select>
+                          {field.fieldType === 'date_parts' && (
+                            <button
+                              type="button"
+                              onClick={() => ungroupDatePartsField(index)}
+                              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors shadow-sm"
                             title="Tách thành 3 fields riêng"
                           >
                             <Unlink className="h-4 w-4" />
@@ -439,10 +558,11 @@ const TemplateConfigPage: React.FC = () => {
                         )}
                       </div>
                     </div>
+                    </div>
 
                     {/* Help Text */}
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Văn bản hướng dẫn
                       </label>
                       <input
@@ -452,13 +572,13 @@ const TemplateConfigPage: React.FC = () => {
                           updateField(index, { helpText: e.target.value })
                         }
                         placeholder="Hướng dẫn điền trường này"
-                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
                       />
                     </div>
 
                     {/* Required Checkbox */}
-                    <div className="sm:col-span-2">
-                      <label className="inline-flex items-center">
+                    <div className="flex items-center">
+                      <label className="inline-flex items-center mt-6">
                         <input
                           type="checkbox"
                           checked={field.validationRules?.required || false}
@@ -472,7 +592,7 @@ const TemplateConfigPage: React.FC = () => {
                           }
                           className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
                         />
-                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                        <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                           Bắt buộc nhập
                         </span>
                       </label>
@@ -480,8 +600,8 @@ const TemplateConfigPage: React.FC = () => {
 
                     {/* Options for select/radio */}
                     {(field.fieldType === 'select' || field.fieldType === 'radio') && (
-                      <div className="sm:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <div className="col-span-full">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Các tùy chọn (mỗi dòng 1 option: value|label)
                         </label>
                         <textarea
@@ -496,7 +616,7 @@ const TemplateConfigPage: React.FC = () => {
                             updateField(index, { options });
                           }}
                           placeholder="nam|Nam&#10;nu|Nữ&#10;khac|Khác"
-                          className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono text-xs"
+                          className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm font-mono text-xs"
                         />
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                           Ví dụ: "nam|Nam" hoặc chỉ "Nam" (dùng làm cả value và label)
@@ -507,21 +627,22 @@ const TemplateConfigPage: React.FC = () => {
                 </div>
               ))}
             </div>
+            </div>
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end space-x-3">
+          <div className="flex justify-end gap-3">
             <button
               type="button"
               onClick={() => navigate('/admin/templates')}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors shadow-sm"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={saveMutation.isPending}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saveMutation.isPending ? (
                 <>

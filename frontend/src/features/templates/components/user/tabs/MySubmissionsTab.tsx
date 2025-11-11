@@ -136,9 +136,17 @@ const MySubmissionsTab: React.FC = () => {
 
   return (
     <div>
-      {toasts.map((toast) => (
-        <Toast key={toast.id} {...toast} onClose={() => hideToast(toast.id)} />
-      ))}
+      {/* Toasts - Fixed position at top-right */}
+      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
 
       <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">

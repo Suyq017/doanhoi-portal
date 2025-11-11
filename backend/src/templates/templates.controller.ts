@@ -53,6 +53,30 @@ export class TemplatesController {
     return this.templatesService.uploadTemplate(file, dto, req.user.id);
   }
 
+  @Post('parse')
+  @ApiOperation({ summary: 'Parse Word template to extract placeholders (without saving)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async parseTemplate(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+
+    if (!file.originalname.endsWith('.docx')) {
+      throw new BadRequestException('Only .docx files are allowed');
+    }
+
+    return this.templatesService.parseTemplate(file.buffer);
+  }
+
   @Put(':id/configure-fields')
   @ApiOperation({ summary: 'Configure fields for a template' })
   async configureFields(

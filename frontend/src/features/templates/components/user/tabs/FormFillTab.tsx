@@ -269,9 +269,17 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack }) => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {toasts.map((toast) => (
-        <Toast key={toast.id} {...toast} onClose={() => hideToast(toast.id)} />
-      ))}
+      {/* Toasts - Fixed position at top-right */}
+      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
 
       {/* Header */}
       <div className="mb-6">

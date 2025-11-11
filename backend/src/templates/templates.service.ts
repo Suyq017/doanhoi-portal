@@ -112,9 +112,8 @@ export class TemplatesService {
       // Auto-create fields from schema
       if (schema && schema.placeholders && schema.placeholders.length > 0) {
         await this.autoCreateFields(savedTemplate.id, schema.placeholders);
-        // Update status to ACTIVE
-        savedTemplate.status = TemplateStatus.ACTIVE;
-        await this.templateRepository.save(savedTemplate);
+        // Keep status as PROCESSING until admin configures it
+        // Status will be updated to ACTIVE when admin saves configuration
       }
 
       return this.findOne(savedTemplate.id);
@@ -126,9 +125,9 @@ export class TemplatesService {
   }
 
   /**
-   * Parse Word template to extract placeholders
+   * Parse Word template to extract placeholders (public API)
    */
-  private async parseTemplate(buffer: Buffer): Promise<any> {
+  async parseTemplate(buffer: Buffer): Promise<any> {
     try {
       const zip = new PizZip(buffer);
       

@@ -48,6 +48,19 @@ export const uploadTemplate = async (
 };
 
 /**
+ * Parse template file to extract fields (without saving)
+ */
+export const parseTemplateFile = async (file: File): Promise<{ placeholders: string[] }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return apiClient.uploadFile<{ placeholders: string[] }>(
+    `${TEMPLATES_BASE}/parse`,
+    formData
+  );
+};
+
+/**
  * Update template
  */
 export const updateTemplate = async (
