@@ -77,6 +77,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onError }) => {
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
           {t('auth:form.subtitle')}
         </p>
+        {/* Logo under subtitle (served from public/assets) */}
+        <div className="mt-4">
+          <img
+            src="/assets/logo_doan_hoi_BK_1.png"
+            alt={t('auth:form.logoAlt', { defaultValue: 'Đoàn Hội BK logo' })}
+            className="mx-auto w-52 h-auto object-contain"
+          />
+        </div>
       </div>
 
       <div className="space-y-4">

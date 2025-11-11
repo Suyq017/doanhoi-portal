@@ -22,7 +22,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
     // Redirect to login if not authenticated
     if (!auth.isAuthenticated) {
-        return <Navigate to="/admin-doan-hoi/login" state={{ from: location }} replace />;
+        return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
     return <>{children}</>;

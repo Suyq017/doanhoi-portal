@@ -50,8 +50,16 @@ const LoginPage: React.FC = () => {
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
               {t('auth:form.buttons.signInWithGoogle')}
             </p>
+            <div className="mt-4">
+              <img
+                src="/assets/logo_doan_hoi_BK_1.png"
+                alt={t('auth:form.logoAlt', { defaultValue: 'Đoàn Hội BK logo' })}
+                className="mx-auto w-52 h-auto object-contain"
+              />
+            </div>
+            
           </div>
-
+          
           {/* Error message */}
           {error && (
             <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">

@@ -259,13 +259,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className={`min-h-screen bg-background ${isDarkMode ? 'dark' : ''}`} style={{ overflowX: 'hidden', maxWidth: '100vw' }}>
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-doan-600 shadow-lg transform transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-hsv-500 dark:bg-doan-500 shadow-lg transform transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b-2 border-white">
+          <div className="flex flex-col items-center justify-between p-4 border-b-2 border-white">
             <h1 className="text-lg font-bold text-white">
               {t('appName')}
             </h1>
+            <div className="mt-4">
+              <img
+                src="/assets/logo_doan_hoi_BK_1.png"
+                alt={t('auth:form.logoAlt', { defaultValue: 'Đoàn Hội BK logo' })}
+                className="mx-auto w-52 h-auto object-contain"
+              />
+            </div>
             <button
               onClick={() => setIsSidebarOpen(false)}
               className="p-1 rounded-md lg:hidden hover:bg-white hover:bg-opacity-20 text-white"
@@ -273,7 +280,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Menu className="w-5 h-5" />
             </button>
           </div>
-
+          
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
             {navigation.map((item) => {
