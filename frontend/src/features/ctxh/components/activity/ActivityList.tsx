@@ -544,19 +544,19 @@ const ActivityList: React.FC<ActivityListProps> = ({
         ) : (
           <>
             <div className="overflow-x-auto max-w-full">
-              <table className="w-full table-fixed min-w-[1000px]">
+              <table className="w-full min-w-[1200px]">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
                     <th className="w-1/4 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('activity.name')}
                     </th>
-                    <th className="w-48 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                    <th className="w-1/4 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('activity.category')}
                     </th>
-                    <th className="w-32 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                    <th className="w-1/4 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('activity.location')}
                     </th>
-                    <th className="w-40 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                    <th className="w-1/4 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
                       {t('activity.time')}
                     </th>
                     <th className="w-24 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
@@ -602,7 +602,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                           </div>
                         )}
                       </td>
-                      <td className="w-48 px-6 py-4">
+                      <td className="w-1/4 px-6 py-4">
                         <div
                           className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5"
                           style={{
@@ -616,7 +616,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                           {activity.category?.name || '-'}
                         </div>
                       </td>
-                      <td className="w-32 px-6 py-4">
+                      <td className="w-1/4 px-6 py-4">
                         <div
                           className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5"
                           style={{
@@ -630,7 +630,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                           {activity.location || t('activity.noLocation')}
                         </div>
                       </td>
-                      <td className="w-40 px-6 py-4">
+                      <td className="w-1/4 px-6 py-4">
                         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                           <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
                           <div className="overflow-hidden">

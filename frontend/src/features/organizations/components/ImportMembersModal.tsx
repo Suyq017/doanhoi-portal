@@ -183,17 +183,10 @@ const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
 
     if (!isOpen) return null;
 
-    const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (e.target === e.currentTarget && !loading) {
-            handleClose();
-        }
-    };
-
     const modalContent = (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] px-4"
             style={{ margin: 0, top: 0, left: 0, right: 0, bottom: 0 }}
-            onClick={handleOverlayClick}
         >
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
                 {/* Header */}
@@ -313,7 +306,7 @@ const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
                                     <div
                                         key={index}
                                         className={`p-3 border-b border-gray-200 dark:border-gray-600 last:border-b-0 ${!data.isValid ? 'bg-red-50 dark:bg-red-900/10' :
-                                                data.warnings.length > 0 ? 'bg-yellow-50 dark:bg-yellow-900/10' : ''
+                                            data.warnings.length > 0 ? 'bg-yellow-50 dark:bg-yellow-900/10' : ''
                                             }`}
                                     >
                                         <div className="flex items-start justify-between">

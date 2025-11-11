@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Filter, Eye, Edit, Trash2, Users, Upload, X } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, Users, Upload, X } from 'lucide-react';
 import type { Class } from '../../shared/types';
 import {
   classService,
@@ -274,14 +274,7 @@ const ClassesPage: React.FC = () => {
     setSelectedClass(null);
   };
 
-  // Clear filters
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setYearFilter('');
-    setDepartmentFilter('');
-    setStatusFilter('');
-    setCurrentPage(1);
-  };
+  // Removed: handleClearFilters - Filter button removed from UI
 
   // Selection handlers
   const handleSelectAll = useCallback(() => {
@@ -405,7 +398,7 @@ const ClassesPage: React.FC = () => {
 
       {/* Filters */}
       <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
@@ -446,17 +439,6 @@ const ClassesPage: React.FC = () => {
               onChange={(value) => setStatusFilter(value === '' ? '' : value === 'true')}
               className="w-full"
             />
-          </div>
-
-          {/* Clear Filters */}
-          <div>
-            <button
-              onClick={handleClearFilters}
-              className="flex items-center justify-center w-full px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-md dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            >
-              <Filter className="w-5 h-5 mr-2" />
-              {t('common:actions.filter')}
-            </button>
           </div>
         </div>
       </div>

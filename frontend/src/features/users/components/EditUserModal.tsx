@@ -866,7 +866,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                   }))}
                   value={formData.classId || ''}
                   onChange={(value) => setFormData(prev => ({ ...prev, classId: value }))}
-                  placeholder="Chọn lớp học..."
+                  placeholder={t('users:placeholders.className')}
                   disabled={loading}
                 />
               </div>
@@ -903,7 +903,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                   }))}
                   value={formData.managementDepartmentId || ''}
                   onChange={(value) => setFormData(prev => ({ ...prev, managementDepartmentId: value }))}
-                  placeholder="Chọn đơn vị quản lý..."
+                  placeholder={t('users:placeholders.managementDepartment')}
                   disabled={loading}
                 />
               </div>
@@ -921,7 +921,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                   }))}
                   value={formData.trainingDepartmentId || ''}
                   onChange={(value) => setFormData(prev => ({ ...prev, trainingDepartmentId: value }))}
-                  placeholder="Chọn khoa đào tạo..."
+                  placeholder={t('users:placeholders.trainingDepartment')}
                   disabled={loading}
                 />
               </div>
@@ -956,9 +956,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   disabled={loading}
                 >
-                  <option value="">Chọn giới tính...</option>
-                  <option value="NAM">Nam</option>
-                  <option value="NU">Nữ</option>
+                  <option value="">{t('users:placeholders.gender')}</option>
+                  <option value="NAM">{t('users:gender.male')}</option>
+                  <option value="NU">{t('users:gender.female')}</option>
                 </select>
               </div>
             </div>

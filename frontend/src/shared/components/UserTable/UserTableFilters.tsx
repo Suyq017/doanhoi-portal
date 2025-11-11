@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Select, { SelectOption } from '../Select';
 
@@ -40,7 +40,7 @@ export const UserTableFilters: React.FC<UserTableFiltersProps> = ({
 
     return (
         <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-            <div className={`grid grid-cols-1 gap-4 ${showAdvancedFilters ? 'md:grid-cols-4' : 'md:grid-cols-2'}`}>
+            <div className={`grid grid-cols-1 gap-4 ${showAdvancedFilters ? 'md:grid-cols-3' : 'md:grid-cols-1'}`}>
                 {/* Search */}
                 <div className="relative">
                     <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
@@ -76,14 +76,6 @@ export const UserTableFilters: React.FC<UserTableFiltersProps> = ({
                         </div>
                     </>
                 )}
-
-                {/* Filter Button - Optional, can be removed if not needed */}
-                <div>
-                    <button className="flex items-center justify-center w-full px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-md dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
-                        <Filter className="w-5 h-5 mr-2" />
-                        {t('common:actions.filter')}
-                    </button>
-                </div>
             </div>
         </div>
     );

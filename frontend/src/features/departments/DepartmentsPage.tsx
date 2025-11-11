@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { Search, Filter, Edit, Trash2, Eye, UserPlus, Upload, X } from "lucide-react";
+import { Search, Edit, Trash2, Eye, UserPlus, Upload, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   departmentService,
@@ -336,7 +336,7 @@ const Departments: React.FC = () => {
 
       {/* Filters */}
       <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Search */}
           <div className="relative">
             <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
@@ -357,17 +357,6 @@ const Departments: React.FC = () => {
               onChange={setFilterStatus}
               className="w-full"
             />
-          </div>
-
-          {/* Empty column for consistency */}
-          <div></div>
-
-          {/* Filter Button */}
-          <div>
-            <button className="flex items-center justify-center w-full px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-md dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
-              <Filter className="w-5 h-5 mr-2" />
-              {t('common:actions.filter')}
-            </button>
           </div>
         </div>
       </div>

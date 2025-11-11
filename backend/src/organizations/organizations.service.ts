@@ -1186,7 +1186,7 @@ export class OrganizationsService {
     organization: Organization | null;
   }> {
     try {
-      // Query user_organizations table directly to get user's first active organization
+      // First, try to get from user_organizations table
       const userOrgQuery = `
         SELECT o.*, uo."userId", uo."organizationId", uo.role, uo."isActive" as "userOrgIsActive"
         FROM user_organizations uo
@@ -1198,7 +1198,23 @@ export class OrganizationsService {
         LIMIT 1
       `;
 
-      const result = await this.organizationsRepository.query(userOrgQuery, [userId]);
+      let result = await this.organizationsRepository.query(userOrgQuery, [userId]);
+      
+      // If not found in user_organizations, try user_roles table
+      if (result.length === 0) {
+        const userRoleQuery = `
+          SELECT DISTINCT o.*, ur."userId", ur."organizationId"
+          FROM user_roles ur
+          JOIN organizations o ON ur."organizationId" = o.id
+          WHERE ur."userId" = $1 
+          AND ur."organizationId" IS NOT NULL
+          AND o."isActive" = true
+          ORDER BY o."createdAt" ASC
+          LIMIT 1
+        `;
+        
+        result = await this.organizationsRepository.query(userRoleQuery, [userId]);
+      }
 
       if (result.length === 0) {
         return { organization: null };

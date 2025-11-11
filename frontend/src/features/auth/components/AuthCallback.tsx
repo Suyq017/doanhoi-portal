@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 
 const AuthCallback: React.FC = () => {
@@ -8,6 +9,7 @@ const AuthCallback: React.FC = () => {
   const { setTokens, setUser } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation('auth');
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -22,26 +24,7 @@ const AuthCallback: React.FC = () => {
 
         if (errorParam) {
           console.error('OAuth error:', errorParam);
-          let errorMessage = '';
-          
-          switch (errorParam) {
-            case 'user_not_found':
-              errorMessage = 'Tài khoản không tồn tại trong hệ thống. Vui lòng liên hệ quản trị viên để được cấp quyền truy cập.';
-              break;
-            case 'no_user_data':
-              errorMessage = 'Không nhận được thông tin người dùng từ Google. Vui lòng thử lại.';
-              break;
-            case 'missing_tokens':
-              errorMessage = 'Lỗi xác thực. Vui lòng thử đăng nhập lại.';
-              break;
-            case 'callback_error':
-              errorMessage = 'Có lỗi xảy ra trong quá trình đăng nhập. Vui lòng thử lại.';
-              break;
-            default:
-              errorMessage = 'Có lỗi xảy ra trong quá trình đăng nhập. Vui lòng thử lại.';
-          }
-          
-          setError(errorMessage);
+          setError(t('form.error.googleLoginFailed'));
           setIsProcessing(false);
           return;
         }
@@ -70,12 +53,12 @@ const AuthCallback: React.FC = () => {
             throw new Error('Failed to get user profile');
           }
         } else {
-          setError('Liên kết đăng nhập không hợp lệ. Vui lòng thử đăng nhập lại.');
+          setError(t('form.error.googleLoginFailed'));
           setIsProcessing(false);
         }
       } catch (error) {
         console.error('Auth callback error:', error);
-        setError('Có lỗi xảy ra trong quá trình đăng nhập. Vui lòng thử lại.');
+        setError(t('form.error.googleLoginFailed'));
         setIsProcessing(false);
       }
     };
@@ -107,7 +90,7 @@ const AuthCallback: React.FC = () => {
             
             {/* Error Title */}
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              Đăng nhập thất bại
+              {t('form.error.loginFailed')}
             </h2>
             
             {/* Error Message */}
@@ -120,7 +103,7 @@ const AuthCallback: React.FC = () => {
               onClick={() => navigate('/login')}
               className="w-full bg-doan-500 hover:bg-doan-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
             >
-              Quay lại trang đăng nhập
+              {t('form.buttons.backToLogin')}
             </button>
           </div>
         </div>
@@ -132,7 +115,7 @@ const AuthCallback: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="text-center">
         <div className="w-12 h-12 mx-auto mb-4 border-b-2 rounded-full animate-spin border-doan-500"></div>
-        <p className="text-gray-600 dark:text-gray-400">Đang xử lý đăng nhập...</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('form.processing')}</p>
       </div>
     </div>
   );

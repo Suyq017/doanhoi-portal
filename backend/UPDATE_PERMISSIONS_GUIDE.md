@@ -41,6 +41,11 @@ npm run update:permissions
 npm run update:super-admin
 ```
 
+**Bước 3: Verify permissions (Optional)**
+```bash
+npm run verify:super-admin
+```
+
 ## 📝 Chi tiết scripts
 
 ### 1. `update:permissions`
@@ -57,11 +62,25 @@ npm run update:super-admin
   - Hiển thị danh sách permissions mới được thêm
   - Cảnh báo nếu có permissions bị thiếu trong database
 
+### 3. `verify:super-admin` (Mới)
+- File: `src/database/scripts/verify-super-admin-permissions.ts`
+- Chức năng:
+  - Kiểm tra xem super_admin có đầy đủ permissions không
+  - Hiển thị tất cả permissions theo category
+  - Phát hiện permissions bị thiếu hoặc thừa
+  - Exit code 0 nếu OK, 1 nếu có vấn đề
+- Usage:
+  ```bash
+  npm run verify:super-admin
+  ```
+
 ## ✅ Những gì đã được sửa
 
 ### Permissions đã bổ sung cho super_admin:
+- ✅ `system-config.access` - Truy cập cấu hình hệ thống (AWS S3, PayOS, etc.)
+- ✅ `ctxh.import.old_system` - Nhập dữ liệu CTXH từ hệ thống cũ
 - ✅ `ctxh.reports.view` - Xem báo cáo CTXH
-- ✅ `ctxh.reports.export` - Xuất báo cáo CTXH (đã có từ trước nhưng được xác nhận)
+- ✅ `ctxh.reports.export` - Xuất báo cáo CTXH
 
 ### Cấu trúc permissions hiện tại:
 
@@ -90,12 +109,16 @@ npm run update:super-admin
 - `permissions.access`, `permissions.create`, `permissions.update`
 - `permissions.delete`, `permissions.view_details`
 
-#### CTXH (13 permissions)
+#### System Configuration (1 permission)
+- `system-config.access`
+
+#### CTXH (14 permissions)
 - `ctxh.access`
 - Categories: `view`, `create`, `update`, `delete`
 - Activities: `view`, `create`, `update`, `delete`, `manage_participants`
 - Reports: `view`, `export`
 - Config: `manage`
+- Import: `import.old_system`
 
 #### Payment Campaigns (9 permissions)
 - `payment-campaigns.access`, `payment-campaigns.create`
@@ -104,7 +127,7 @@ npm run update:super-admin
 - `payment-campaigns.view_reports`, `payment-campaigns.export`
 - `my-payments.access`
 
-**Tổng cộng: 52 permissions** cho role super_admin
+**Tổng cộng: 54 permissions** cho role super_admin
 
 ## 🔧 Troubleshooting
 

@@ -30,7 +30,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
       onSuccess();
     } catch (error: any) {
       console.error('Error deleting class:', error);
-      
+
       // Handle specific error for classes with students
       if (error.message?.includes('students')) {
         showError(t('classes:messages.cannotDeleteWithStudents'));
@@ -40,20 +40,13 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
     }
   };
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   if (!isOpen) return null;
 
   const hasStudents = classData.students && classData.students.length > 0;
 
   return createPortal(
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
-      onClick={handleOverlayClick}
     >
       <div className="w-full max-w-md bg-white rounded-lg shadow-xl dark:bg-gray-800">
         {/* Header */}

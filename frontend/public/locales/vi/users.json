@@ -98,7 +98,11 @@
     "curriculumYear": "Ví dụ: 2024",
     "facultyCode": "Ví dụ: CN_KHM - Khoa học Máy tính",
     "trainingSystem": "Ví dụ: CQ - Chính quy",
-    "trainingLevel": "Ví dụ: ĐH - Đại học"
+    "trainingLevel": "Ví dụ: ĐH - Đại học",
+    "className": "Chọn lớp học...",
+    "managementDepartment": "Chọn đơn vị quản lý...",
+    "trainingDepartment": "Chọn khoa đào tạo...",
+    "gender": "Chọn giới tính..."
   },
   "types": {
     "student": "Sinh viên",
