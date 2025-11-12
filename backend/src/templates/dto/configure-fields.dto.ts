@@ -50,6 +50,29 @@ class FieldOptionDto {
   value: string;
 }
 
+class DatePartsMappingDto {
+  @ApiProperty({ 
+    description: 'Original field name for day part',
+    example: '1' 
+  })
+  @IsString()
+  dayField: string;
+
+  @ApiProperty({ 
+    description: 'Original field name for month part',
+    example: '2' 
+  })
+  @IsString()
+  monthField: string;
+
+  @ApiProperty({ 
+    description: 'Original field name for year part',
+    example: '3' 
+  })
+  @IsString()
+  yearField: string;
+}
+
 export class ConfigureFieldDto {
   @ApiProperty({
     description: 'Field name extracted from template (e.g., student_name from {{student_name}})',
@@ -94,6 +117,16 @@ export class ConfigureFieldDto {
   @ValidateNested({ each: true })
   @Type(() => FieldOptionDto)
   options?: FieldOptionDto[];
+
+  @ApiProperty({ 
+    required: false, 
+    type: DatePartsMappingDto,
+    description: 'Mapping for DATE fields created from 3 separate fields' 
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DatePartsMappingDto)
+  datePartsMapping?: DatePartsMappingDto;
 
   @ApiProperty({ required: false, example: 'Nhập họ và tên đầy đủ' })
   @IsOptional()

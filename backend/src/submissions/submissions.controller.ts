@@ -80,7 +80,7 @@ export class SubmissionsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete submission (draft only)' })
+  @ApiOperation({ summary: 'Delete submission' })
   async delete(
     @Param('id') id: string,
     @Request() req: any,

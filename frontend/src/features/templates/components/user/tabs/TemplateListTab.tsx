@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FileText, AlertCircle, Clock } from 'lucide-react';
+import { FileText, AlertCircle, Search } from 'lucide-react';
 import { getAllTemplates } from '@/shared/services/template.service';
+import { Pagination } from '@/shared/components';
 import type { Template } from '@/shared/types/template.types';
 
 interface TemplateListTabProps {
@@ -9,18 +10,37 @@ interface TemplateListTabProps {
 }
 
 const TemplateListTab: React.FC<TemplateListTabProps> = ({ onSelectTemplate }) => {
-  const { data: templates, isLoading, error } = useQuery({
-    queryKey: ['templates', 'active'],
-    queryFn: () => getAllTemplates('active'),
-  });
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setPage(1); // Reset to page 1 when search changes
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Reset to page 1 when limit changes
+  useEffect(() => {
+    setPage(1);
+  }, [limit]);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['templates-active', debouncedSearch, page, limit],
+    queryFn: () => getAllTemplates({ 
+      status: 'active', // Chỉ lấy biểu mẫu active
+      search: debouncedSearch || undefined, 
+      page, 
+      limit 
+    }),
+    placeholderData: (previousData) => previousData,
+    staleTime: 5 * 60 * 1000, // 5 minutes - cache data
+  });
 
   if (error) {
     return (
@@ -40,73 +60,116 @@ const TemplateListTab: React.FC<TemplateListTabProps> = ({ onSelectTemplate }) =
     );
   }
 
-  if (!templates || templates.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <FileText className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-          Chưa có biểu mẫu nào
-        </h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Hiện tại chưa có biểu mẫu nào được kích hoạt
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {templates.map((template: Template) => (
-        <div
-          key={template.id}
-          className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => onSelectTemplate(template.id)}
-        >
-          <div className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <FileText className="h-8 w-8 text-blue-500" />
-                </div>
-                <div className="ml-3 flex-1">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                    {template.name}
-                  </h3>
-                  {template.description && (
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                      {template.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
+    <div className="space-y-6">
+      {/* Search Filter */}
+      <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div className="relative">
+          <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Tìm kiếm theo tên hoặc mô tả..."
+            className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+      </div>
 
-            <div className="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
-              <Clock className="h-4 w-4 mr-1" />
-              <span>
-                Cập nhật: {new Date(template.updatedAt).toLocaleDateString('vi-VN')}
-              </span>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center text-sm">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                  {template.fields?.length || 0} trường
-                </span>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectTemplate(template.id);
-                }}
-                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
-              >
-                Điền biểu mẫu →
-              </button>
+      {/* Table */}
+      <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        {isLoading ? (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
+              <p className="mt-4 text-gray-600 dark:text-gray-400">Đang tải biểu mẫu...</p>
             </div>
           </div>
-        </div>
-      ))}
+        ) : !data?.data || data.data.length === 0 ? (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <FileText className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                Không tìm thấy biểu mẫu
+              </h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Thử tìm kiếm với từ khóa khác
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto max-w-full">
+              <table className="w-full min-w-[1000px]">
+                <thead className="bg-gray-50 dark:bg-gray-900">
+                  <tr>
+                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                      Tên biểu mẫu
+                    </th>
+                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                      Mô tả
+                    </th>
+                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                      Cập nhật
+                    </th>
+                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                      Thao tác
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                  {data.data.map((template: Template) => (
+                    <tr
+                      key={template.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                      onClick={() => onSelectTemplate(template.id)}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <FileText className="h-5 w-5 text-blue-500 dark:text-blue-400 mr-2 flex-shrink-0" />
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {template.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          {template.description || '-'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(template.updatedAt).toLocaleDateString('vi-VN')}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectTemplate(template.id);
+                          }}
+                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                        >
+                          Điền biểu mẫu
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <Pagination
+              currentPage={page}
+              totalPages={data.totalPages}
+              total={data.total}
+              limit={limit}
+              onPageChange={setPage}
+              onLimitChange={setLimit}
+              showLimitSelector={true}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 };

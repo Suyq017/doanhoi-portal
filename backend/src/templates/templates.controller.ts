@@ -87,11 +87,14 @@ export class TemplatesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all templates (shared for all users)' })
+  @ApiOperation({ summary: 'Get all templates with pagination and filters' })
   async findAll(
     @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
   ) {
-    return this.templatesService.findAll(status);
+    return this.templatesService.findAll(status, search, page, limit);
   }
 
   @Get(':id')

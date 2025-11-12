@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, ArrowLeft, AlertCircle, Loader, CheckCircle } from 'lucide-react';
+import { Upload, FileText, ArrowLeft, AlertCircle, Loader } from 'lucide-react';
 import { uploadTemplate, parseTemplateFile } from '@/shared/services/template.service';
 import { useToast } from '@/shared/hooks/useToast';
 import { Toast } from '@/shared/components';
@@ -16,6 +16,7 @@ const TemplateUploadPage: React.FC = () => {
   const [dragActive, setDragActive] = useState(false);
   const [step, setStep] = useState<'upload' | 'info'>('upload'); // Step control
   const [detectedFields, setDetectedFields] = useState<string[]>([]);
+  const [placeholderCounts, setPlaceholderCounts] = useState<Record<string, number>>({});
   const [isParsing, setIsParsing] = useState(false);
 
   const uploadMutation = useMutation({
@@ -73,12 +74,14 @@ const TemplateUploadPage: React.FC = () => {
     parseTemplateFile(selectedFile)
       .then((result) => {
         setDetectedFields(result.placeholders || []);
+        setPlaceholderCounts(result.placeholderCounts || {});
         setIsParsing(false);
         setStep('info'); // Move to info step after file selected and parsed
       })
       .catch((error) => {
         console.error('Parse error:', error);
         setDetectedFields([]);
+        setPlaceholderCounts({});
         setIsParsing(false);
         // Still move to info step even if parse fails
         setStep('info');
@@ -90,6 +93,7 @@ const TemplateUploadPage: React.FC = () => {
     setName('');
     setDescription('');
     setDetectedFields([]);
+    setPlaceholderCounts({});
     setStep('upload'); // Back to upload step
   };
 
@@ -255,7 +259,6 @@ const TemplateUploadPage: React.FC = () => {
                     )}
                   </p>
                 </div>
-                <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />
               </div>
 
               {/* Show detected fields */}
@@ -278,6 +281,35 @@ const TemplateUploadPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* Show warning for duplicate placeholders */}
+              {!isParsing && Object.keys(placeholderCounts).length > 0 && (
+                (() => {
+                  const duplicates = Object.entries(placeholderCounts).filter(([, count]) => count > 1);
+                  if (duplicates.length === 0) return null;
+                  
+                  return (
+                    <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                      <div className="flex items-start">
+                        <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mr-2 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-yellow-800 dark:text-yellow-300 flex-1">
+                          <p className="font-semibold mb-2">⚠️ Cảnh báo: Phát hiện trường dữ liệu trùng lặp</p>
+                          <ul className="space-y-1 list-disc list-inside">
+                            {duplicates.map(([field, count]) => (
+                              <li key={field}>
+                                <code className="px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/40 rounded text-xs font-mono">
+                                  {`{{${field}}}`}
+                                </code>
+                                {' '}xuất hiện <strong>{count} lần</strong> - Hệ thống sẽ dùng chung giá trị khi người dùng nhập thông tin
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()
               )}
             </div>
 
@@ -349,10 +381,7 @@ const TemplateUploadPage: React.FC = () => {
                   Đang tải lên...
                 </>
               ) : (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Tạo biểu mẫu
-                </>
+                'Tạo biểu mẫu'
               )}
             </button>
           )}

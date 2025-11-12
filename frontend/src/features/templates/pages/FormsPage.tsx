@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FileText, ListChecks } from 'lucide-react';
+import type { TemplateSubmission } from '@/shared/types/template.types';
+import { useToast } from '@/shared/hooks/useToast';
+import Toast from '@/shared/components/Toast';
 
 // Tab components
 import TemplateListTab from '../components/user/tabs/TemplateListTab';
@@ -10,25 +13,52 @@ import MySubmissionsTab from '../components/user/tabs/MySubmissionsTab';
 const FormsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [editingSubmission, setEditingSubmission] = useState<TemplateSubmission | null>(null);
+  const [returnTab, setReturnTab] = useState<string>('templates'); // Tab để quay về
+  const { toasts, showSuccess, hideToast } = useToast();
 
   // Get active tab from URL
   const activeTab = searchParams.get('tab') || 'templates';
 
   const handleTabChange = (tabId: string) => {
     setSearchParams({ tab: tabId });
+    // Reset state khi chuyển tab
     if (tabId === 'templates') {
       setSelectedTemplateId(null);
+      setEditingSubmission(null);
+    } else if (tabId === 'submissions') {
+      setSelectedTemplateId(null);
+      setEditingSubmission(null);
     }
   };
 
   const handleSelectTemplate = (templateId: string) => {
     setSelectedTemplateId(templateId);
+    setReturnTab('templates'); // Đánh dấu quay về danh sách biểu mẫu
     setSearchParams({ tab: 'fill', templateId });
   };
 
   const handleBackToList = () => {
     setSelectedTemplateId(null);
-    setSearchParams({ tab: 'templates' });
+    setEditingSubmission(null);
+    setSearchParams({ tab: returnTab }); // Quay về tab được đánh dấu
+  };
+
+  const handleSubmitSuccess = (message: string) => {
+    setSelectedTemplateId(null);
+    setEditingSubmission(null);
+    setSearchParams({ tab: 'submissions' }); // Luôn chuyển về "Biểu mẫu của tôi" sau khi submit
+    // Hiển thị toast sau khi đã chuyển tab
+    setTimeout(() => {
+      showSuccess(message);
+    }, 100);
+  };
+
+  const handleEditSubmission = (submission: TemplateSubmission) => {
+    setEditingSubmission(submission);
+    setSelectedTemplateId(submission.templateId);
+    setReturnTab('submissions'); // Đánh dấu quay về biểu mẫu của tôi
+    setSearchParams({ tab: 'fill', templateId: submission.templateId, edit: submission.id });
   };
 
   const tabs = [
@@ -46,11 +76,23 @@ const FormsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Toasts - Fixed position at top-right */}
+      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
+      </div>
+
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Quản lý biểu mẫu
+            Biểu Mẫu
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Điền và quản lý các biểu mẫu của bạn
@@ -98,9 +140,11 @@ const FormsPage: React.FC = () => {
           <FormFillTab
             templateId={selectedTemplateId || searchParams.get('templateId')}
             onBack={handleBackToList}
+            onSubmitSuccess={handleSubmitSuccess}
+            editingSubmission={editingSubmission}
           />
         )}
-        {activeTab === 'submissions' && <MySubmissionsTab />}
+        {activeTab === 'submissions' && <MySubmissionsTab onEdit={handleEditSubmission} />}
       </div>
     </div>
   );

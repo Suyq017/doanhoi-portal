@@ -144,9 +144,16 @@ export class TemplatesService {
       const regex = /\{\{([^}]+)\}\}/g;
       const matches = plainText.match(regex) || [];
       
-      const uniquePlaceholders = [...new Set(
-        matches.map(tag => tag.replace(/\{\{|\}\}/g, '').trim())
-      )].filter(p => p.length > 0);
+      // Count occurrences of each placeholder
+      const placeholderCounts: Record<string, number> = {};
+      matches.forEach(tag => {
+        const placeholder = tag.replace(/\{\{|\}\}/g, '').trim();
+        if (placeholder.length > 0) {
+          placeholderCounts[placeholder] = (placeholderCounts[placeholder] || 0) + 1;
+        }
+      });
+
+      const uniquePlaceholders = Object.keys(placeholderCounts);
 
       // If no placeholders found, warn but don't fail
       if (uniquePlaceholders.length === 0) {
@@ -155,6 +162,7 @@ export class TemplatesService {
 
       return {
         placeholders: uniquePlaceholders,
+        placeholderCounts, // Thêm thông tin số lần xuất hiện
         totalFields: uniquePlaceholders.length,
       };
     } catch (error) {
@@ -223,10 +231,20 @@ export class TemplatesService {
   }
 
   /**
-   * Find all templates (shared for all users)
-   * Filter by status if provided
+   * Find all templates with pagination and filters
    */
-  async findAll(status?: string): Promise<Template[]> {
+  async findAll(
+    status?: string,
+    search?: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    data: Template[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     const where: any = {};
     
     // Filter by status if provided
@@ -234,11 +252,45 @@ export class TemplatesService {
       where.status = status;
     }
 
-    return this.templateRepository.find({
-      where,
-      relations: ['fields', 'creator', 'organization'],
-      order: { createdAt: 'DESC' },
-    });
+    // Search by name or description
+    const queryBuilder = this.templateRepository
+      .createQueryBuilder('template')
+      .leftJoinAndSelect('template.fields', 'fields')
+      .leftJoinAndSelect('template.creator', 'creator')
+      .leftJoinAndSelect('template.organization', 'organization')
+      .orderBy('template.createdAt', 'DESC');
+
+    // Apply status filter
+    if (status && status !== 'all') {
+      queryBuilder.andWhere('template.status = :status', { status });
+    }
+
+    // Apply search filter
+    if (search) {
+      queryBuilder.andWhere(
+        '(LOWER(template.name) LIKE LOWER(:search) OR LOWER(template.description) LIKE LOWER(:search))',
+        { search: `%${search}%` }
+      );
+    }
+
+    // Count total
+    const total = await queryBuilder.getCount();
+
+    // Apply pagination - ensure numbers not strings
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const skip = (pageNum - 1) * limitNum;
+    queryBuilder.skip(skip).take(limitNum);
+
+    const data = await queryBuilder.getMany();
+
+    return {
+      data,
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
+    };
   }
 
   /**
@@ -286,7 +338,7 @@ export class TemplatesService {
     // Check if template has submissions
     if (template.submissions && template.submissions.length > 0) {
       throw new BadRequestException(
-        `Cannot delete template. It has ${template.submissions.length} submission(s). Please delete all submissions first or set template status to inactive.`
+        `Không thể xóa biểu mẫu đã được sử dụng. Vui lòng xóa tất cả bản ghi của người dùng hoặc đặt trạng thái biểu mẫu thành "Không hoạt động".`
       );
     }
 

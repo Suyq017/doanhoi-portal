@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, Loader, AlertCircle, Link2, Unlink, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Save, Loader, AlertCircle, Link2, ChevronDown, Unlink } from 'lucide-react';
 import { getTemplateById, configureFields, updateTemplate } from '@/shared/services/template.service';
-import type { FieldType, ConfigureFieldDto, TemplateStatus } from '@/shared/types/template.types';
+import { FieldType, type ConfigureFieldDto, type TemplateStatus } from '@/shared/types/template.types';
 import { useToast } from '@/shared/hooks/useToast';
 import { Toast } from '@/shared/components';
+import { getAllFieldTypes, FIELD_TYPE_GROUPS } from '@/shared/constants/field-types';
 
 const TemplateConfigPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +15,16 @@ const TemplateConfigPage: React.FC = () => {
   const { toasts, showSuccess, showError, hideToast } = useToast();
   const [fields, setFields] = useState<ConfigureFieldDto[]>([]);
   const [selectedFields, setSelectedFields] = useState<Set<number>>(new Set());
+  const [showDateMappingDialog, setShowDateMappingDialog] = useState(false);
+  const [dateMappingFields, setDateMappingFields] = useState<{
+    dayFieldIndex: number | null;
+    monthFieldIndex: number | null;
+    yearFieldIndex: number | null;
+  }>({
+    dayFieldIndex: null,
+    monthFieldIndex: null,
+    yearFieldIndex: null,
+  });
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
   const [templateStatus, setTemplateStatus] = useState<'processing' | 'active' | 'inactive' | 'error'>('processing');
@@ -38,6 +49,7 @@ const TemplateConfigPage: React.FC = () => {
     queryKey: ['template', id],
     queryFn: () => getTemplateById(id!),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes - cache template data
   });
 
   // Initialize fields and template info when template loads
@@ -60,6 +72,7 @@ const TemplateConfigPage: React.FC = () => {
             helpText: f.helpText,
             defaultValue: f.defaultValue,
             isVisible: f.isVisible,
+            datePartsMapping: f.datePartsMapping,
           }))
         );
       }
@@ -111,8 +124,12 @@ const TemplateConfigPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['template', id] });
       queryClient.invalidateQueries({ queryKey: ['templates'] });
-      showSuccess('Cấu hình đã được lưu thành công!');
-      setTimeout(() => navigate('/admin/templates'), 1500);
+      // Navigate với state để hiển thị toast ở trang đích
+      navigate('/admin/templates', { 
+        state: { 
+          successMessage: 'Cấu hình đã được lưu thành công!' 
+        } 
+      });
     },
     onError: (error: any) => {
       showError(error?.response?.data?.message || 'Lưu cấu hình thất bại');
@@ -125,7 +142,23 @@ const TemplateConfigPage: React.FC = () => {
     );
   };
 
+  // Check if a field is already used in a DATE mapping
+  const isFieldMapped = (fieldName: string): boolean => {
+    return fields.some(f => 
+      f.fieldType === FieldType.DATE && 
+      f.datePartsMapping && 
+      (f.datePartsMapping.dayField === fieldName || 
+       f.datePartsMapping.monthField === fieldName || 
+       f.datePartsMapping.yearField === fieldName)
+    );
+  };
+
   const toggleFieldSelection = (index: number) => {
+    // Don't allow selection if field is already mapped
+    if (isFieldMapped(fields[index].fieldName)) {
+      return;
+    }
+
     setSelectedFields((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(index)) {
@@ -137,12 +170,22 @@ const TemplateConfigPage: React.FC = () => {
     });
   };
 
-  const mergeFieldsToDateParts = () => {
+  const mergeFieldsToDate = () => {
     if (selectedFields.size < 2) {
       showError('Vui lòng chọn ít nhất 2 fields để nhóm');
       return;
     }
 
+    if (selectedFields.size === 3) {
+      // Nếu chọn đúng 3 fields, hiển thị dialog để chọn day/month/year
+      setShowDateMappingDialog(true);
+    } else {
+      // Nếu chọn 2 fields hoặc nhiều hơn 3, merge không cần mapping
+      performMerge(null);
+    }
+  };
+
+  const performMerge = (mapping: { dayFieldIndex: number; monthFieldIndex: number; yearFieldIndex: number } | null) => {
     const selectedIndices = Array.from(selectedFields).sort((a, b) => a - b);
     const selectedFieldNames = selectedIndices.map((i) => fields[i].fieldName);
 
@@ -154,11 +197,16 @@ const TemplateConfigPage: React.FC = () => {
     const newField: ConfigureFieldDto = {
       fieldName: baseName,
       displayName: `${baseName} (Nhóm)`,
-      fieldType: 'date_parts' as FieldType,
+      fieldType: FieldType.DATE,
       position: fields[selectedIndices[0]].position,
       validationRules: { required: true },
       options: [],
       isVisible: true,
+      datePartsMapping: mapping ? {
+        dayField: fields[mapping.dayFieldIndex].fieldName,
+        monthField: fields[mapping.monthFieldIndex].fieldName,
+        yearField: fields[mapping.yearFieldIndex].fieldName,
+      } : undefined,
     };
 
     // Xóa các field đã chọn và thêm field mới
@@ -167,58 +215,59 @@ const TemplateConfigPage: React.FC = () => {
 
     setFields(newFields);
     setSelectedFields(new Set());
-    showSuccess(`Đã nhóm ${selectedFields.size} fields thành DATE_PARTS`);
+    setShowDateMappingDialog(false);
+    setDateMappingFields({ dayFieldIndex: null, monthFieldIndex: null, yearFieldIndex: null });
+    showSuccess(`Đã nhóm ${selectedFields.size} fields thành DATE`);
   };
 
-  const ungroupDatePartsField = (index: number) => {
+  const unmergeField = (index: number) => {
     const field = fields[index];
     
-    if (field.fieldType !== 'date_parts') {
-      showError('Chỉ có thể tách field DATE_PARTS');
+    // Kiểm tra xem field có phải DATE với mapping không
+    if (field.fieldType !== FieldType.DATE || !field.datePartsMapping) {
+      showError('Trường này không phải là DATE đã được gộp');
       return;
     }
 
-    // Tách thành 3 fields: day, month, year
-    const baseName = field.fieldName;
+    const { dayField, monthField, yearField } = field.datePartsMapping;
+
+    // Tạo lại 3 trường riêng biệt
     const newFields: ConfigureFieldDto[] = [
       {
-        fieldName: `${baseName}_day`,
-        displayName: `${field.displayName} - Ngày`,
-        fieldType: 'number' as FieldType,
+        fieldName: dayField,
+        displayName: `${dayField} (Ngày)`,
+        fieldType: FieldType.TEXT,
         position: field.position,
-        validationRules: { required: true, min: 1, max: 31 },
+        validationRules: { required: field.validationRules?.required || false },
         options: [],
-        placeholder: 'DD',
         isVisible: true,
       },
       {
-        fieldName: `${baseName}_month`,
-        displayName: `${field.displayName} - Tháng`,
-        fieldType: 'number' as FieldType,
+        fieldName: monthField,
+        displayName: `${monthField} (Tháng)`,
+        fieldType: FieldType.TEXT,
         position: field.position + 1,
-        validationRules: { required: true, min: 1, max: 12 },
+        validationRules: { required: field.validationRules?.required || false },
         options: [],
-        placeholder: 'MM',
         isVisible: true,
       },
       {
-        fieldName: `${baseName}_year`,
-        displayName: `${field.displayName} - Năm`,
-        fieldType: 'number' as FieldType,
+        fieldName: yearField,
+        displayName: `${yearField} (Năm)`,
+        fieldType: FieldType.TEXT,
         position: field.position + 2,
-        validationRules: { required: true, min: 1900, max: 2100 },
+        validationRules: { required: field.validationRules?.required || false },
         options: [],
-        placeholder: 'YYYY',
         isVisible: true,
       },
     ];
 
-    // Xóa field DATE_PARTS và thêm 3 fields mới
+    // Xóa field DATE và thêm 3 field mới vào vị trí đó
     const updatedFields = [...fields];
     updatedFields.splice(index, 1, ...newFields);
 
     setFields(updatedFields);
-    showSuccess('Đã tách DATE_PARTS thành 3 fields riêng');
+    showSuccess('Đã tách DATE thành 3 trường riêng biệt');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -354,45 +403,27 @@ const TemplateConfigPage: React.FC = () => {
 
         {/* Hướng dẫn các loại dữ liệu */}
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-4 flex items-center">
-            <span className="mr-2">📖</span>
+          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-4">
             Hướng dẫn các loại dữ liệu
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">Loại dữ liệu cơ bản:</p>
-              <ul className="space-y-1.5 text-blue-700 dark:text-blue-300">
-                <li><strong>Text:</strong> Văn bản ngắn (họ tên, địa chỉ...)</li>
-                <li><strong>Textarea:</strong> Văn bản dài nhiều dòng</li>
-                <li><strong>Number:</strong> Số (tuổi, điểm số...)</li>
-                <li><strong>Email:</strong> Địa chỉ email (có validation)</li>
-                <li><strong>Date:</strong> Ngày tháng (date picker)</li>
-                <li><strong>Checkbox:</strong> Tick chọn (đồng ý/không)</li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">Loại dữ liệu nâng cao:</p>
-              <ul className="space-y-1.5 text-blue-700 dark:text-blue-300">
-                <li><strong>Select:</strong> Dropdown chọn 1 (cần cấu hình options)</li>
-                <li><strong>Radio:</strong> Chọn 1 trong nhiều (cần cấu hình options)</li>
-                <li>
-                  <strong>Date Parts:</strong> Ngày/Tháng/Năm riêng biệt
-                  <br />
-                  <span className="text-xs">
-                    • Template: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">{'{{birth_date_day}}'}</code> / 
-                    <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded mx-1">{'{{birth_date_month}}'}</code> / 
-                    <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">{'{{birth_date_year}}'}</code>
-                    <br />
-                    • User chỉ điền 1 lần, tự động fill cả 3 vị trí
-                  </span>
-                </li>
-              </ul>
-            </div>
+            {Object.entries(FIELD_TYPE_GROUPS).map(([key, group]) => (
+              <div key={key}>
+                <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">{group.label}:</p>
+                <ul className="space-y-1.5 text-blue-700 dark:text-blue-300">
+                  {group.types.map((fieldType: any) => (
+                    <li key={fieldType.value} className="whitespace-pre-line">
+                      <strong>{fieldType.label}:</strong> {fieldType.description}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
           <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
             <p className="text-sm text-yellow-800 dark:text-yellow-300">
-              <strong>💡 Mẹo:</strong> Nếu template có 3 fields riêng (day, month, year), 
-              tick chọn cả 3 và nhấn <strong>"Nhóm thành Date Parts"</strong> để gộp lại!
+              <strong>Mẹo:</strong> Nếu template có 3 fields riêng (day, month, year), 
+              tick chọn cả 3 và nhấn <strong>"Nhóm thành Date"</strong> để gộp lại!
             </p>
           </div>
         </div>
@@ -446,11 +477,11 @@ const TemplateConfigPage: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={mergeFieldsToDateParts}
+                    onClick={mergeFieldsToDate}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
                   >
                     <Link2 className="h-4 w-4 mr-2" />
-                    Nhóm thành Date Parts
+                    Nhóm thành Date
                   </button>
                   <button
                     type="button"
@@ -481,17 +512,39 @@ const TemplateConfigPage: React.FC = () => {
                   }`}
                 >
                   <div className="space-y-4">
-                    {/* Checkbox for selection */}
-                    <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={selectedFields.has(index)}
-                        onChange={() => toggleFieldSelection(index)}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Chọn để nhóm
-                      </label>
+                    {/* Checkbox for selection and Unmerge button */}
+                    <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedFields.has(index)}
+                          onChange={() => toggleFieldSelection(index)}
+                          disabled={isFieldMapped(field.fieldName)}
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                        <label className={`block text-sm font-medium ${
+                          isFieldMapped(field.fieldName) 
+                            ? 'text-gray-400 dark:text-gray-600' 
+                            : 'text-gray-700 dark:text-gray-300'
+                        }`}>
+                          {isFieldMapped(field.fieldName) 
+                            ? 'Đã được gộp vào DATE' 
+                            : 'Chọn để nhóm'
+                          }
+                        </label>
+                      </div>
+                      
+                      {/* Unmerge button - only show for DATE fields with mapping */}
+                      {field.fieldType === FieldType.DATE && field.datePartsMapping && (
+                        <button
+                          type="button"
+                          onClick={() => unmergeField(index)}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg text-orange-700 bg-orange-50 border border-orange-200 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800 dark:hover:bg-orange-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+                        >
+                          <Unlink className="h-3 w-3 mr-1.5" />
+                          Tách nhóm
+                        </button>
+                      )}
                     </div>
 
                     {/* Field Name (Read-only) */}
@@ -505,6 +558,18 @@ const TemplateConfigPage: React.FC = () => {
                         disabled
                         className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 rounded-lg shadow-sm bg-gray-100 text-gray-600 sm:text-sm cursor-not-allowed"
                       />
+                      
+                      {/* Show mapping info for DATE fields with mapping */}
+                      {field.fieldType === FieldType.DATE && field.datePartsMapping && (
+                        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded text-xs">
+                          <p className="text-blue-800 dark:text-blue-300 font-medium mb-1">Mapping:</p>
+                          <ul className="text-blue-700 dark:text-blue-400 space-y-0.5">
+                            <li>• Ngày: <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{field.datePartsMapping.dayField}</code></li>
+                            <li>• Tháng: <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{field.datePartsMapping.monthField}</code></li>
+                            <li>• Năm: <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{field.datePartsMapping.yearField}</code></li>
+                          </ul>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -534,30 +599,23 @@ const TemplateConfigPage: React.FC = () => {
                             onChange={(e) =>
                               updateField(index, { fieldType: e.target.value as FieldType })
                             }
-                            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
+                            disabled={field.fieldType === FieldType.DATE && !!field.datePartsMapping}
+                            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                           >
-                            <option value="text">Text</option>
-                            <option value="textarea">Textarea</option>
-                            <option value="email">Email</option>
-                            <option value="number">Number</option>
-                            <option value="date">Date</option>
-                            <option value="date_parts">Date Parts (Ngày/Tháng/Năm)</option>
-                            <option value="select">Select</option>
-                            <option value="radio">Radio</option>
-                            <option value="checkbox">Checkbox</option>
+                            {getAllFieldTypes().map((ft: any) => (
+                              <option key={ft.value} value={ft.value}>
+                                {ft.label}
+                                {ft.needsOptions ? ' (cần options)' : ''}
+                              </option>
+                            ))}
                           </select>
-                          {field.fieldType === 'date_parts' && (
-                            <button
-                              type="button"
-                              onClick={() => ungroupDatePartsField(index)}
-                              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors shadow-sm"
-                            title="Tách thành 3 fields riêng"
-                          >
-                            <Unlink className="h-4 w-4" />
-                          </button>
+                        </div>
+                        {field.fieldType === FieldType.DATE && field.datePartsMapping && (
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Không thể thay đổi loại - trường này đã được gộp từ ngày/tháng/năm
+                          </p>
                         )}
                       </div>
-                    </div>
                     </div>
 
                     {/* Help Text */}
@@ -598,28 +656,64 @@ const TemplateConfigPage: React.FC = () => {
                       </label>
                     </div>
 
-                    {/* Options for select/radio */}
-                    {(field.fieldType === 'select' || field.fieldType === 'radio') && (
-                      <div className="col-span-full">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Các tùy chọn (mỗi dòng 1 option: value|label)
-                        </label>
-                        <textarea
-                          rows={4}
-                          value={(field.options || []).map(o => `${o.value}|${o.label}`).join('\n')}
-                          onChange={(e) => {
-                            const lines = e.target.value.split('\n').filter(l => l.trim());
-                            const options = lines.map(line => {
-                              const [value, label] = line.split('|');
-                              return { value: value?.trim() || '', label: label?.trim() || value?.trim() || '' };
-                            });
-                            updateField(index, { options });
-                          }}
-                          placeholder="nam|Nam&#10;nu|Nữ&#10;khac|Khác"
-                          className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm font-mono text-xs"
-                        />
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          Ví dụ: "nam|Nam" hoặc chỉ "Nam" (dùng làm cả value và label)
+                    {/* Options for radio and checkbox */}
+                    {(field.fieldType === 'radio' || field.fieldType === 'checkbox') && (
+                      <div className="col-span-full space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Các tùy chọn
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newOptions = [...(field.options || []), { value: '', label: '' }];
+                              updateField(index, { options: newOptions });
+                            }}
+                            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                          >
+                            + Thêm tùy chọn
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {(field.options || [{ value: '', label: '' }]).map((option, optIndex) => (
+                            <div key={optIndex} className="flex items-center gap-2">
+                              <span className="text-sm text-gray-500 dark:text-gray-400 w-8">
+                                {optIndex + 1}.
+                              </span>
+                              <input
+                                type="text"
+                                value={option.label}
+                                onChange={(e) => {
+                                  const newOptions = [...(field.options || [])];
+                                  const newValue = e.target.value;
+                                  newOptions[optIndex] = { value: newValue, label: newValue };
+                                  updateField(index, { options: newOptions });
+                                }}
+                                placeholder={`Tùy chọn ${optIndex + 1}`}
+                                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
+                              />
+                              {(field.options?.length || 0) > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newOptions = (field.options || []).filter((_, i) => i !== optIndex);
+                                    updateField(index, { options: newOptions });
+                                  }}
+                                  className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                  title="Xóa tùy chọn"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Ví dụ: "Thấp", "Trung Bình", "Cao"
                         </p>
                       </div>
                     )}
@@ -658,9 +752,173 @@ const TemplateConfigPage: React.FC = () => {
             </button>
           </div>
         </form>
+
+        {/* Date Parts Mapping Dialog */}
+        {showDateMappingDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                Chọn trường Ngày/Tháng/Năm
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Vui lòng chỉ định trường nào đại diện cho Ngày, Tháng và Năm trong biểu mẫu Word.
+              </p>
+              
+              <div className="space-y-4">
+                {/* Day Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Trường Ngày
+                  </label>
+                  <select
+                    value={dateMappingFields.dayFieldIndex ?? ''}
+                    onChange={(e) => setDateMappingFields(prev => ({
+                      ...prev,
+                      dayFieldIndex: e.target.value ? Number(e.target.value) : null
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                  >
+                    <option value="">-- Chọn trường --</option>
+                    {Array.from(selectedFields).map((fieldIndex) => {
+                      const field = fields[fieldIndex];
+                      return (
+                        <option key={fieldIndex} value={fieldIndex}>
+                          {field.fieldName} ({field.displayName || 'Chưa có nhãn'})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {/* Month Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Trường Tháng
+                  </label>
+                  <select
+                    value={dateMappingFields.monthFieldIndex ?? ''}
+                    onChange={(e) => setDateMappingFields(prev => ({
+                      ...prev,
+                      monthFieldIndex: e.target.value ? Number(e.target.value) : null
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                  >
+                    <option value="">-- Chọn trường --</option>
+                    {Array.from(selectedFields).map((fieldIndex) => {
+                      const field = fields[fieldIndex];
+                      return (
+                        <option key={fieldIndex} value={fieldIndex}>
+                          {field.fieldName} ({field.displayName || 'Chưa có nhãn'})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {/* Year Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Trường Năm
+                  </label>
+                  <select
+                    value={dateMappingFields.yearFieldIndex ?? ''}
+                    onChange={(e) => setDateMappingFields(prev => ({
+                      ...prev,
+                      yearFieldIndex: e.target.value ? Number(e.target.value) : null
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                  >
+                    <option value="">-- Chọn trường --</option>
+                    {Array.from(selectedFields).map((fieldIndex) => {
+                      const field = fields[fieldIndex];
+                      return (
+                        <option key={fieldIndex} value={fieldIndex}>
+                          {field.fieldName} ({field.displayName || 'Chưa có nhãn'})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              {/* Validation Error */}
+              {dateMappingFields.dayFieldIndex !== null &&
+               dateMappingFields.monthFieldIndex !== null &&
+               dateMappingFields.yearFieldIndex !== null &&
+               (dateMappingFields.dayFieldIndex === dateMappingFields.monthFieldIndex ||
+                dateMappingFields.dayFieldIndex === dateMappingFields.yearFieldIndex ||
+                dateMappingFields.monthFieldIndex === dateMappingFields.yearFieldIndex) && (
+                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    Các trường phải khác nhau
+                  </p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDateMappingDialog(false);
+                    setDateMappingFields({
+                      dayFieldIndex: null,
+                      monthFieldIndex: null,
+                      yearFieldIndex: null,
+                    });
+                  }}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const { dayFieldIndex, monthFieldIndex, yearFieldIndex } = dateMappingFields;
+                    
+                    // Validate all fields selected
+                    if (dayFieldIndex === null || monthFieldIndex === null || yearFieldIndex === null) {
+                      showError('Vui lòng chọn đầy đủ 3 trường');
+                      return;
+                    }
+
+                    // Validate all fields are different
+                    if (dayFieldIndex === monthFieldIndex || dayFieldIndex === yearFieldIndex || monthFieldIndex === yearFieldIndex) {
+                      showError('Các trường phải khác nhau');
+                      return;
+                    }
+
+                    // Perform merge with indices
+                    performMerge({ dayFieldIndex, monthFieldIndex, yearFieldIndex });
+                    
+                    // Close dialog and reset state
+                    setShowDateMappingDialog(false);
+                    setDateMappingFields({
+                      dayFieldIndex: null,
+                      monthFieldIndex: null,
+                      yearFieldIndex: null,
+                    });
+                  }}
+                  disabled={
+                    dateMappingFields.dayFieldIndex === null ||
+                    dateMappingFields.monthFieldIndex === null ||
+                    dateMappingFields.yearFieldIndex === null ||
+                    dateMappingFields.dayFieldIndex === dateMappingFields.monthFieldIndex ||
+                    dateMappingFields.dayFieldIndex === dateMappingFields.yearFieldIndex ||
+                    dateMappingFields.monthFieldIndex === dateMappingFields.yearFieldIndex
+                  }
+                  className="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Xác nhận
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default TemplateConfigPage;
+

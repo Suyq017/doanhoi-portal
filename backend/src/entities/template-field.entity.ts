@@ -12,13 +12,17 @@ import { Template } from './template.entity';
 export enum FieldType {
   TEXT = 'text',
   TEXTAREA = 'textarea',
-  DATE = 'date',
-  DATE_PARTS = 'date_parts', // Ngày/Tháng/Năm riêng biệt
-  SELECT = 'select',
-  CHECKBOX = 'checkbox',
-  RADIO = 'radio',
   NUMBER = 'number',
-  EMAIL = 'email'
+  EMAIL = 'email',
+  PHONE = 'phone',
+  DATE = 'date',
+  TIME = 'time',
+  DATETIME = 'datetime',
+  RADIO = 'radio',
+  CHECKBOX = 'checkbox',
+  DAY = 'day',
+  MONTH = 'month',
+  YEAR = 'year',
 }
 
 @Entity('template_fields')
@@ -77,6 +81,18 @@ export class TemplateField {
     label: string;
     value: string;
   }>;
+
+  @Column({ 
+    name: 'date_parts_mapping', 
+    type: 'jsonb', 
+    nullable: true,
+    comment: 'Mapping for DATE fields created from 3 separate fields: {dayField, monthField, yearField}'
+  })
+  datePartsMapping?: {
+    dayField: string;    // Tên field gốc cho ngày (ví dụ: "1", "day", "ngay")
+    monthField: string;  // Tên field gốc cho tháng (ví dụ: "2", "month", "thang")
+    yearField: string;   // Tên field gốc cho năm (ví dụ: "3", "year", "nam")
+  };
 
   @Column({ type: 'integer', default: 0 })
   position: number; // Thứ tự hiển thị trong form (0, 1, 2...)

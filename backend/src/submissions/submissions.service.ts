@@ -129,7 +129,7 @@ export class SubmissionsService {
   async generateDocument(submissionId: string): Promise<void> {
     const submission = await this.submissionRepository.findOne({
       where: { id: submissionId },
-      relations: ['template'],
+      relations: ['template', 'template.fields'],
     });
 
     if (!submission) {
@@ -298,7 +298,7 @@ export class SubmissionsService {
   }
 
   /**
-   * Delete submission
+   * Delete submission (user can delete any of their submissions)
    */
   async delete(id: string, userId: string): Promise<void> {
     const submission = await this.submissionRepository.findOne({
@@ -309,10 +309,7 @@ export class SubmissionsService {
       throw new NotFoundException('Submission not found');
     }
 
-    if (submission.status !== SubmissionStatus.DRAFT) {
-      throw new BadRequestException('Can only delete draft submissions');
-    }
-
+    // User có thể xóa bất kỳ submission nào của họ
     await this.submissionRepository.remove(submission);
   }
 
@@ -329,6 +326,7 @@ export class SubmissionsService {
     fields.forEach((field) => {
       const value = formData[field.fieldName];
       
+      // Handle date_parts: {day, month, year} -> "DD/MM/YYYY"
       if (field.fieldType === 'date_parts' && value && typeof value === 'object') {
         const { day, month, year } = value;
         
@@ -342,6 +340,35 @@ export class SubmissionsService {
           transformed[`${field.fieldName}_day`] = dayStr;
           transformed[`${field.fieldName}_month`] = monthStr;
           transformed[`${field.fieldName}_year`] = year;
+        }
+      }
+      
+      // Handle date: "YYYY-MM-DD" -> "DD/MM/YYYY"
+      if (field.fieldType === 'date' && value && typeof value === 'string') {
+        // Parse "YYYY-MM-DD" hoặc "YYYY/MM/DD"
+        const dateMatch = value.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        if (dateMatch) {
+          const [, year, month, day] = dateMatch;
+          const dayStr = String(day).padStart(2, '0');
+          const monthStr = String(month).padStart(2, '0');
+          
+          // Tạo chuỗi format DD/MM/YYYY cho field chính
+          transformed[field.fieldName] = `${dayStr}/${monthStr}/${year}`;
+          
+          // Tạo các biến phụ: {fieldName}_day, {fieldName}_month, {fieldName}_year
+          // Ví dụ: date -> date_day, date_month, date_year
+          transformed[`${field.fieldName}_day`] = dayStr;
+          transformed[`${field.fieldName}_month`] = monthStr;
+          transformed[`${field.fieldName}_year`] = year;
+          
+          // Nếu có datePartsMapping, tạo thêm các biến theo tên gốc
+          // Ví dụ: mapping {dayField: "1", monthField: "2", yearField: "3"}
+          // -> tạo thêm {{1}} = dayStr, {{2}} = monthStr, {{3}} = year
+          if (field.datePartsMapping) {
+            transformed[field.datePartsMapping.dayField] = dayStr;
+            transformed[field.datePartsMapping.monthField] = monthStr;
+            transformed[field.datePartsMapping.yearField] = year;
+          }
         }
       }
     });

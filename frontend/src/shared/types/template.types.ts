@@ -10,13 +10,17 @@ export enum TemplateStatus {
 export enum FieldType {
   TEXT = 'text',
   TEXTAREA = 'textarea',
-  DATE = 'date',
-  DATE_PARTS = 'date_parts', // Ngày/Tháng/Năm riêng biệt
-  SELECT = 'select',
-  CHECKBOX = 'checkbox',
-  RADIO = 'radio',
   NUMBER = 'number',
   EMAIL = 'email',
+  PHONE = 'phone',
+  DATE = 'date',
+  TIME = 'time',
+  DATETIME = 'datetime',
+  RADIO = 'radio',
+  CHECKBOX = 'checkbox',
+  DAY = 'day',
+  MONTH = 'month',
+  YEAR = 'year',
 }
 
 export enum SubmissionStatus {
@@ -47,6 +51,11 @@ export interface TemplateField {
   helpText?: string;
   defaultValue?: string;
   isVisible: boolean;
+  datePartsMapping?: {
+    dayField: string;
+    monthField: string;
+    yearField: string;
+  };
   createdAt: string;
 }
 
@@ -118,6 +127,11 @@ export interface ConfigureFieldDto {
     message?: string;
   };
   options?: Array<{ label: string; value: string }>;
+  datePartsMapping?: {
+    dayField: string;
+    monthField: string;
+    yearField: string;
+  };
   placeholder?: string;
   helpText?: string;
   defaultValue?: string;

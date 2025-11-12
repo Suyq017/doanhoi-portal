@@ -13,12 +13,23 @@ const TemplateListPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { toasts, confirmDialog, showSuccess, showError, showConfirm, hideToast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchInput, setSearchInput] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const toastShownRef = useRef(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setCurrentPage(1); // Reset to first page on new search
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -34,14 +45,22 @@ const TemplateListPage: React.FC = () => {
     };
   }, []);
 
-  // Show toast from navigation state (after upload success) - only once
+  // Show toast from navigation state (after upload success or config save) - only once
   useEffect(() => {
     const state = location.state as any;
-    if (state?.showSuccessToast && state?.message && !toastShownRef.current) {
-      toastShownRef.current = true;
-      showSuccess(state.message);
-      // Clear the state to prevent showing toast again on refresh
-      window.history.replaceState({}, document.title);
+    if (state && !toastShownRef.current) {
+      // Handle upload success toast
+      if (state.showSuccessToast && state.message) {
+        toastShownRef.current = true;
+        showSuccess(state.message);
+        window.history.replaceState({}, document.title);
+      }
+      // Handle config save success toast
+      else if (state.successMessage) {
+        toastShownRef.current = true;
+        showSuccess(state.successMessage);
+        window.history.replaceState({}, document.title);
+      }
     }
   }, [location.state, showSuccess]);
 
@@ -61,11 +80,19 @@ const TemplateListPage: React.FC = () => {
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
     setStatusDropdownOpen(false);
+    setCurrentPage(1); // Reset to first page
   };
 
-  const { data: templates, isLoading, error } = useQuery({
-    queryKey: ['templates', statusFilter === 'all' ? undefined : statusFilter],
-    queryFn: () => getAllTemplates(statusFilter === 'all' ? undefined : statusFilter),
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['templates', statusFilter, debouncedSearch, currentPage, limit],
+    queryFn: () => getAllTemplates({ 
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      search: debouncedSearch || undefined,
+      page: currentPage,
+      limit 
+    }),
+    placeholderData: (previousData) => previousData,
+    staleTime: 5 * 60 * 1000, // 5 minutes - cache templates list
   });
 
   const deleteMutation = useMutation({
@@ -168,14 +195,14 @@ const TemplateListPage: React.FC = () => {
       <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           {/* Search */}
-          <div className="relative">
+          <div className="relative md:col-span-3">
             <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
             <input
               type="text"
-              placeholder="Tìm kiếm biểu mẫu..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              placeholder="Tìm kiếm theo tên hoặc mô tả..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
 
@@ -199,7 +226,7 @@ const TemplateListPage: React.FC = () => {
                     onClick={() => handleStatusChange(option.value)}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none ${
                       statusFilter === option.value
-                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium'
+                        ? 'bg-doan-50 text-doan-700 dark:bg-doan-900 dark:text-doan-300 font-medium'
                         : 'text-gray-900 dark:text-white'
                     }`}
                   >
@@ -235,14 +262,14 @@ const TemplateListPage: React.FC = () => {
           </div>
         )}
 
-        {!isLoading && !error && (!templates || templates.length === 0) && (
+        {!isLoading && !error && (!data?.data || data.data.length === 0) && (
           <div className="py-12 text-center">
             <FileText className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-              Chưa có biểu mẫu nào
+              Không tìm thấy biểu mẫu
             </h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Bắt đầu bằng cách tạo biểu mẫu mới
+              Thử thay đổi bộ lọc hoặc tìm kiếm khác
             </p>
             <div className="mt-6">
               <button
@@ -256,7 +283,7 @@ const TemplateListPage: React.FC = () => {
           </div>
         )}
 
-        {!isLoading && !error && templates && templates.length > 0 && (
+        {!isLoading && !error && data?.data && data.data.length > 0 && (
           <>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -298,14 +325,7 @@ const TemplateListPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {templates
-                    .filter((template: Template) => {
-                      if (!searchTerm) return true;
-                      return template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             template.description?.toLowerCase().includes(searchTerm.toLowerCase());
-                    })
-                    .slice((currentPage - 1) * limit, currentPage * limit)
-                    .map((template: Template) => (
+                  {data.data.map((template: Template) => (
                     <tr key={template.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4">
                         <div className="flex items-center">
@@ -367,18 +387,8 @@ const TemplateListPage: React.FC = () => {
             {/* Pagination */}
             <Pagination
               currentPage={currentPage}
-              totalPages={Math.ceil(
-                templates.filter((t: Template) => {
-                  if (!searchTerm) return true;
-                  return t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         t.description?.toLowerCase().includes(searchTerm.toLowerCase());
-                }).length / limit
-              )}
-              total={templates.filter((t: Template) => {
-                if (!searchTerm) return true;
-                return t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       t.description?.toLowerCase().includes(searchTerm.toLowerCase());
-              }).length}
+              totalPages={data.totalPages}
+              total={data.total}
               limit={limit}
               onPageChange={setCurrentPage}
               showLimitSelector={true}

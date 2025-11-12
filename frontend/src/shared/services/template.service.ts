@@ -17,11 +17,28 @@ const SUBMISSIONS_BASE = '/submissions';
 // ============================================
 
 /**
- * Get all templates (shared for all users)
+ * Get all templates with pagination and filtering
  */
-export const getAllTemplates = async (status?: string): Promise<Template[]> => {
-  const query = status ? `?status=${status}` : '';
-  return apiClient.get<Template[]>(`${TEMPLATES_BASE}${query}`);
+export const getAllTemplates = async (params?: {
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  data: Template[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}> => {
+  const queryParams = new URLSearchParams();
+  if (params?.status) queryParams.append('status', params.status);
+  if (params?.search) queryParams.append('search', params.search);
+  if (params?.page) queryParams.append('page', params.page.toString());
+  if (params?.limit) queryParams.append('limit', params.limit.toString());
+  
+  const query = queryParams.toString();
+  return apiClient.get(`${TEMPLATES_BASE}${query ? `?${query}` : ''}`);
 };
 
 /**
@@ -50,11 +67,17 @@ export const uploadTemplate = async (
 /**
  * Parse template file to extract fields (without saving)
  */
-export const parseTemplateFile = async (file: File): Promise<{ placeholders: string[] }> => {
+export const parseTemplateFile = async (file: File): Promise<{ 
+  placeholders: string[];
+  placeholderCounts: Record<string, number>;
+}> => {
   const formData = new FormData();
   formData.append('file', file);
 
-  return apiClient.uploadFile<{ placeholders: string[] }>(
+  return apiClient.uploadFile<{ 
+    placeholders: string[];
+    placeholderCounts: Record<string, number>;
+  }>(
     `${TEMPLATES_BASE}/parse`,
     formData
   );

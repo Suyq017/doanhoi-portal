@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Download, FileText, AlertCircle, Trash2, Clock, CheckCircle, XCircle, Loader } from 'lucide-react';
+import { Download, FileText, AlertCircle, Trash2, Clock, CheckCircle, XCircle, Loader, Edit, Search } from 'lucide-react';
 import {
   getMySubmissions,
   downloadSubmissionFile,
@@ -9,21 +9,67 @@ import {
 } from '@/shared/services/template.service';
 import type { TemplateSubmission, SubmissionStatus } from '@/shared/types/template.types';
 import { useToast } from '@/shared/hooks/useToast';
-import { Toast } from '@/shared/components';
+import { Toast, ConfirmDialog, Pagination } from '@/shared/components';
 
-const MySubmissionsTab: React.FC = () => {
+interface MySubmissionsTabProps {
+  onEdit?: (submission: TemplateSubmission) => void;
+}
+
+const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit }) => {
   const queryClient = useQueryClient();
-  const { toasts, showSuccess, showError, hideToast } = useToast();
+  const { toasts, confirmDialog, showSuccess, showError, hideToast, showConfirm } = useToast();
+  
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-  const { data: submissions, isLoading, error } = useQuery({
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setPage(1); // Reset to page 1 when search changes
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Reset to page 1 when limit changes
+  useEffect(() => {
+    setPage(1);
+  }, [limit]);
+
+  const { data: allSubmissions, isLoading, error } = useQuery({
     queryKey: ['mySubmissions'],
     queryFn: () => getMySubmissions(),
+    staleTime: 5 * 60 * 1000, // 5 minutes - cache data
   });
+
+  // Client-side filtering and pagination
+  const { filteredData, totalPages, total } = useMemo(() => {
+    if (!allSubmissions) return { filteredData: [], totalPages: 0, total: 0 };
+    
+    // Filter by search
+    const filtered = debouncedSearch
+      ? allSubmissions.filter((submission) =>
+          submission.template?.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+        )
+      : allSubmissions;
+    
+    // Pagination
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedData = filtered.slice(startIndex, endIndex);
+    
+    return { filteredData: paginatedData, totalPages, total };
+  }, [allSubmissions, debouncedSearch, page, limit]);
 
   const downloadMutation = useMutation({
     mutationFn: downloadSubmissionFile,
     onSuccess: (blob, submissionId) => {
-      const submission = submissions?.find((s) => s.id === submissionId);
+      const submission = allSubmissions?.find((s: TemplateSubmission) => s.id === submissionId);
       const filename = submission?.outputFileName || 'document.docx';
       downloadFile(blob, filename);
       showSuccess('Tải xuống thành công');
@@ -37,7 +83,7 @@ const MySubmissionsTab: React.FC = () => {
     mutationFn: deleteSubmission,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mySubmissions'] });
-      showSuccess('Xóa nháp thành công');
+      showSuccess('Xóa biểu mẫu thành công');
     },
     onError: (error: any) => {
       showError(error?.response?.data?.message || 'Xóa thất bại');
@@ -48,12 +94,12 @@ const MySubmissionsTab: React.FC = () => {
     downloadMutation.mutate(submissionId);
   };
 
-  const handleDelete = (submissionId: string, status: SubmissionStatus) => {
-    if (status !== 'draft') {
-      showError('Chỉ có thể xóa bản nháp');
-      return;
-    }
-    if (window.confirm('Bạn có chắc chắn muốn xóa bản nháp này?')) {
+  const handleDelete = async (submissionId: string, templateName: string) => {
+    const confirmed = await showConfirm(
+      'Xóa biểu mẫu',
+      `Bạn có chắc chắn muốn xóa biểu mẫu "${templateName}"? Hành động này không thể hoàn tác.`
+    );
+    if (confirmed) {
       deleteMutation.mutate(submissionId);
     }
   };
@@ -120,7 +166,7 @@ const MySubmissionsTab: React.FC = () => {
     );
   }
 
-  if (!submissions || submissions.length === 0) {
+  if (!allSubmissions || allSubmissions.length === 0) {
     return (
       <div className="text-center py-12">
         <FileText className="mx-auto h-12 w-12 text-gray-400" />
@@ -135,9 +181,21 @@ const MySubmissionsTab: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        cancelText={confirmDialog.cancelText}
+        variant={confirmDialog.variant}
+        onConfirm={confirmDialog.onConfirm || (() => {})}
+        onCancel={confirmDialog.onCancel || (() => {})}
+      />
+
       {/* Toasts - Fixed position at top-right */}
-      <div className="fixed top-4 right-4 z-[9999] space-y-2">
+      <div className="fixed top-4 right-4 z-[99999] space-y-2">
         {toasts.map((toast) => (
           <Toast
             key={toast.id}
@@ -148,41 +206,68 @@ const MySubmissionsTab: React.FC = () => {
         ))}
       </div>
 
+      {/* Search Filter */}
+      <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div className="relative">
+          <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Tìm kiếm theo tên biểu mẫu..."
+            className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+      </div>
+
+      {/* Table */}
+      {filteredData.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <FileText className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+            Không tìm thấy biểu mẫu
+          </h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Thử tìm kiếm với từ khóa khác
+          </p>
+        </div>
+      ) : (
       <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-900">
-            <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-              >
-                Biểu mẫu
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-              >
-                Trạng thái
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-              >
-                Ngày tạo
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-              >
-                Ngày gửi
-              </th>
-              <th scope="col" className="relative px-6 py-3">
-                <span className="sr-only">Thao tác</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {submissions.map((submission: TemplateSubmission) => (
+        <div className="overflow-x-auto max-w-full">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900">
+              <tr>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Biểu mẫu
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Trạng thái
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Ngày tạo
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Ngày gửi
+                </th>
+                <th scope="col" className="relative px-6 py-3">
+                  <span className="sr-only">Thao tác</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {filteredData.map((submission: TemplateSubmission) => (
               <tr key={submission.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -210,31 +295,55 @@ const MySubmissionsTab: React.FC = () => {
                     ? new Date(submission.submittedAt).toLocaleDateString('vi-VN')
                     : '-'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                  {submission.status === 'completed' && (
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div className="flex items-center justify-end space-x-2">
+                    {submission.status === 'completed' && (
+                      <button
+                        onClick={() => handleDownload(submission.id)}
+                        disabled={downloadMutation.isPending}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 disabled:opacity-50"
+                        title="Tải xuống"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    )}
+                    {submission.status === 'completed' && (
+                      <button
+                        onClick={() => onEdit?.(submission)}
+                        className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 p-1"
+                        title="Chỉnh sửa"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleDownload(submission.id)}
-                      disabled={downloadMutation.isPending}
-                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50"
-                    >
-                      <Download className="h-5 w-5 inline" />
-                    </button>
-                  )}
-                  {submission.status === 'draft' && (
-                    <button
-                      onClick={() => handleDelete(submission.id, submission.status)}
+                      onClick={() => handleDelete(submission.id, submission.template?.name || 'biểu mẫu này')}
                       disabled={deleteMutation.isPending}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
+                      className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400 p-1 disabled:opacity-50"
+                      title="Xóa"
                     >
-                      <Trash2 className="h-5 w-5 inline" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
-                  )}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
+        
+        {/* Pagination */}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+          showLimitSelector={true}
+        />
       </div>
+      )}
     </div>
   );
 };
