@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Save, Loader, AlertCircle, Link2, ChevronDown, Unlink } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getTemplateById, configureFields, updateTemplate } from '@/shared/services/template.service';
 import { FieldType, type ConfigureFieldDto, type TemplateStatus } from '@/shared/types/template.types';
 import { useToast } from '@/shared/hooks/useToast';
@@ -9,6 +10,7 @@ import { Toast } from '@/shared/components';
 import { getAllFieldTypes, FIELD_TYPE_GROUPS } from '@/shared/constants/field-types';
 
 const TemplateConfigPage: React.FC = () => {
+  const { t } = useTranslation(['templates', 'common']);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -81,10 +83,10 @@ const TemplateConfigPage: React.FC = () => {
 
   // Status options
   const statusOptions = [
-    { value: 'active', label: 'Hoạt động' },
-    { value: 'inactive', label: 'Không hoạt động' },
-    { value: 'processing', label: 'Đang xử lý' },
-    { value: 'error', label: 'Lỗi' },
+    { value: 'active', label: t('templates:status.active') },
+    { value: 'inactive', label: t('templates:status.inactive') },
+    { value: 'processing', label: t('templates:status.processing') },
+    { value: 'error', label: t('templates:status.error') },
   ];
 
   const getStatusLabel = (value: string) => {
@@ -98,6 +100,10 @@ const TemplateConfigPage: React.FC = () => {
 
   const saveMutation = useMutation({
     mutationFn: async (data: { fields: ConfigureFieldDto[] }) => {
+      if (!id) {
+        throw new Error('Template ID is missing');
+      }
+      
       // Determine final status: 
       // - If user selected a status in dropdown, use that
       // - Otherwise, if template is currently processing, auto-change to active when saving
@@ -113,26 +119,27 @@ const TemplateConfigPage: React.FC = () => {
       }
       
       // Update template info first
-      await updateTemplate(id!, {
+      await updateTemplate(id, {
         name: templateName,
         description: templateDescription,
         status: finalStatus,
       });
       // Then update fields
-      return configureFields(id!, data);
+      return configureFields(id, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['template', id] });
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
+      queryClient.invalidateQueries({ queryKey: ['template', id] }); // Specific template detail
+      queryClient.invalidateQueries({ queryKey: ['templates'] }); // Admin list
+      queryClient.invalidateQueries({ queryKey: ['templates-active'] }); // User list
       // Navigate với state để hiển thị toast ở trang đích
       navigate('/admin/templates', { 
         state: { 
-          successMessage: 'Cấu hình đã được lưu thành công!' 
+          successMessage: t('templates:messages.configSaved')
         } 
       });
     },
     onError: (error: any) => {
-      showError(error?.response?.data?.message || 'Lưu cấu hình thất bại');
+      showError(error?.response?.data?.message || t('common:messages.error.save'));
     },
   });
 
@@ -172,7 +179,7 @@ const TemplateConfigPage: React.FC = () => {
 
   const mergeFieldsToDate = () => {
     if (selectedFields.size < 2) {
-      showError('Vui lòng chọn ít nhất 2 fields để nhóm');
+      showError(t('templates:messages.selectAtLeastTwo'));
       return;
     }
 
@@ -196,7 +203,7 @@ const TemplateConfigPage: React.FC = () => {
 
     const newField: ConfigureFieldDto = {
       fieldName: baseName,
-      displayName: `${baseName} (Nhóm)`,
+      displayName: `${baseName} (${t('templates:config.merged')})`,
       fieldType: FieldType.DATE,
       position: fields[selectedIndices[0]].position,
       validationRules: { required: true },
@@ -217,7 +224,7 @@ const TemplateConfigPage: React.FC = () => {
     setSelectedFields(new Set());
     setShowDateMappingDialog(false);
     setDateMappingFields({ dayFieldIndex: null, monthFieldIndex: null, yearFieldIndex: null });
-    showSuccess(`Đã nhóm ${selectedFields.size} fields thành DATE`);
+    showSuccess(t('templates:messages.fieldsMerged', { count: selectedFields.size }));
   };
 
   const unmergeField = (index: number) => {
@@ -225,7 +232,7 @@ const TemplateConfigPage: React.FC = () => {
     
     // Kiểm tra xem field có phải DATE với mapping không
     if (field.fieldType !== FieldType.DATE || !field.datePartsMapping) {
-      showError('Trường này không phải là DATE đã được gộp');
+      showError(t('templates:messages.notMergedDate'));
       return;
     }
 
@@ -235,7 +242,7 @@ const TemplateConfigPage: React.FC = () => {
     const newFields: ConfigureFieldDto[] = [
       {
         fieldName: dayField,
-        displayName: `${dayField} (Ngày)`,
+        displayName: `${dayField} (${t('templates:config.day')})`,
         fieldType: FieldType.TEXT,
         position: field.position,
         validationRules: { required: field.validationRules?.required || false },
@@ -244,7 +251,7 @@ const TemplateConfigPage: React.FC = () => {
       },
       {
         fieldName: monthField,
-        displayName: `${monthField} (Tháng)`,
+        displayName: `${monthField} (${t('templates:config.month')})`,
         fieldType: FieldType.TEXT,
         position: field.position + 1,
         validationRules: { required: field.validationRules?.required || false },
@@ -253,7 +260,7 @@ const TemplateConfigPage: React.FC = () => {
       },
       {
         fieldName: yearField,
-        displayName: `${yearField} (Năm)`,
+        displayName: `${yearField} (${t('templates:config.year')})`,
         fieldType: FieldType.TEXT,
         position: field.position + 2,
         validationRules: { required: field.validationRules?.required || false },
@@ -267,13 +274,25 @@ const TemplateConfigPage: React.FC = () => {
     updatedFields.splice(index, 1, ...newFields);
 
     setFields(updatedFields);
-    showSuccess('Đã tách DATE thành 3 trường riêng biệt');
+    showSuccess(t('templates:messages.dateUnmerged'));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     saveMutation.mutate({ fields });
   };
+
+  // Early return if no ID in URL
+  if (!id) {
+    return (
+      <div className="p-4">
+        <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-4">
+          <AlertCircle className="h-5 w-5 text-red-400 inline mr-2" />
+          <span className="text-red-800 dark:text-red-300">{t('templates:errors.invalidTemplateId')}</span>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -288,7 +307,7 @@ const TemplateConfigPage: React.FC = () => {
       <div className="p-4">
         <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-4">
           <AlertCircle className="h-5 w-5 text-red-400 inline mr-2" />
-          <span className="text-red-800 dark:text-red-300">Không tìm thấy biểu mẫu</span>
+          <span className="text-red-800 dark:text-red-300">{t('templates:errors.templateNotFound')}</span>
         </div>
       </div>
     );
@@ -317,22 +336,22 @@ const TemplateConfigPage: React.FC = () => {
             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-3 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Quay lại danh sách
+            {t('templates:actions.backToList')}
           </button>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Cấu hình biểu mẫu
+                {t('templates:config.title')}
               </h1>
               <p className="mt-2 text-gray-600 dark:text-gray-400">
-                Cấu hình các trường dữ liệu cho biểu mẫu "{template.name}"
+                {t('templates:config.subtitle', { name: template.name })}
               </p>
             </div>
             
             {/* Status Selector */}
             <div className="flex items-center gap-3">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Trạng thái:
+                {t('templates:fields.status')}:
               </label>
               <div className="relative" ref={statusDropdownRef}>
                 <button
@@ -373,11 +392,10 @@ const TemplateConfigPage: React.FC = () => {
               <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-3 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
-                  Biểu mẫu đang ở trạng thái "Đang xử lý"
+                  {t('templates:messages.processingTitle')}
                 </h3>
                 <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                  Biểu mẫu này chưa được kích hoạt và người dùng chưa thể sử dụng. 
-                  Để kích hoạt, vui lòng chọn trạng thái <strong>"Hoạt động"</strong> ở góc trên và nhấn <strong>"Lưu cấu hình"</strong>.
+                  {t('templates:messages.processingDesc')}
                 </p>
               </div>
             </div>
@@ -391,10 +409,10 @@ const TemplateConfigPage: React.FC = () => {
               <AlertCircle className="h-5 w-5 text-gray-600 dark:text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-300 mb-1">
-                  Biểu mẫu đang tạm ngưng
+                  {t('templates:messages.inactiveTitle')}
                 </h3>
                 <p className="text-sm text-gray-700 dark:text-gray-400">
-                  Biểu mẫu này không khả dụng với người dùng. Chuyển sang <strong>"Hoạt động"</strong> để kích hoạt lại.
+                  {t('templates:messages.inactiveDesc')}
                 </p>
               </div>
             </div>
@@ -404,16 +422,16 @@ const TemplateConfigPage: React.FC = () => {
         {/* Hướng dẫn các loại dữ liệu */}
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-6 mb-6">
           <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-4">
-            Hướng dẫn các loại dữ liệu
+            {t('templates:config.fieldTypeGuide')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             {Object.entries(FIELD_TYPE_GROUPS).map(([key, group]) => (
               <div key={key}>
-                <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">{group.label}:</p>
+                <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">{t(group.labelKey)}:</p>
                 <ul className="space-y-1.5 text-blue-700 dark:text-blue-300">
                   {group.types.map((fieldType: any) => (
                     <li key={fieldType.value} className="whitespace-pre-line">
-                      <strong>{fieldType.label}:</strong> {fieldType.description}
+                      <strong>{fieldType.label}:</strong> {t(fieldType.descriptionKey)}
                     </li>
                   ))}
                 </ul>
@@ -422,8 +440,7 @@ const TemplateConfigPage: React.FC = () => {
           </div>
           <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
             <p className="text-sm text-yellow-800 dark:text-yellow-300">
-              <strong>Mẹo:</strong> Nếu template có 3 fields riêng (day, month, year), 
-              tick chọn cả 3 và nhấn <strong>"Nhóm thành Date"</strong> để gộp lại!
+              <strong>{t('common:labels.tip')}:</strong> {t('templates:config.dateMergeTip')}
             </p>
           </div>
         </div>
@@ -433,13 +450,13 @@ const TemplateConfigPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
             <div className="px-6 py-5">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Thông tin biểu mẫu
+                {t('templates:config.templateInfo')}
               </h3>
               <div className="grid grid-cols-1 gap-5">
                 {/* Template Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Tên biểu mẫu
+                    {t('templates:fields.name')}
                   </label>
                   <input
                     type="text"
@@ -452,7 +469,7 @@ const TemplateConfigPage: React.FC = () => {
                 {/* Template Description */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Mô tả
+                    {t('templates:fields.description')}
                   </label>
                   <textarea
                     rows={3}
@@ -471,7 +488,7 @@ const TemplateConfigPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                    Đã chọn {selectedFields.size} trường
+                    {t('templates:config.fieldsSelected', { count: selectedFields.size })}
                   </span>
                 </div>
                 <div className="flex gap-2">
@@ -481,14 +498,14 @@ const TemplateConfigPage: React.FC = () => {
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
                   >
                     <Link2 className="h-4 w-4 mr-2" />
-                    Nhóm thành Date
+                    {t('templates:config.mergeToDate')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedFields(new Set())}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors shadow-sm"
                   >
-                    Hủy
+                    {t('common:actions.cancel')}
                   </button>
                 </div>
               </div>
@@ -499,7 +516,7 @@ const TemplateConfigPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
             <div className="px-6 py-5">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Cấu hình các trường dữ liệu
+                {t('templates:config.fieldsConfig')}
               </h3>
               <div className="space-y-6">
               {fields.map((field, index) => (
@@ -528,8 +545,8 @@ const TemplateConfigPage: React.FC = () => {
                             : 'text-gray-700 dark:text-gray-300'
                         }`}>
                           {isFieldMapped(field.fieldName) 
-                            ? 'Đã được gộp vào DATE' 
-                            : 'Chọn để nhóm'
+                            ? t('templates:config.alreadyMerged')
+                            : t('templates:config.selectToMerge')
                           }
                         </label>
                       </div>
@@ -542,7 +559,7 @@ const TemplateConfigPage: React.FC = () => {
                           className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg text-orange-700 bg-orange-50 border border-orange-200 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800 dark:hover:bg-orange-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
                         >
                           <Unlink className="h-3 w-3 mr-1.5" />
-                          Tách nhóm
+                          {t('templates:config.unmerge')}
                         </button>
                       )}
                     </div>
@@ -550,7 +567,7 @@ const TemplateConfigPage: React.FC = () => {
                     {/* Field Name (Read-only) */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Tên trường (Field Name)
+                        {t('templates:config.fieldName')}
                       </label>
                       <input
                         type="text"
@@ -562,11 +579,11 @@ const TemplateConfigPage: React.FC = () => {
                       {/* Show mapping info for DATE fields with mapping */}
                       {field.fieldType === FieldType.DATE && field.datePartsMapping && (
                         <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded text-xs">
-                          <p className="text-blue-800 dark:text-blue-300 font-medium mb-1">Mapping:</p>
+                          <p className="text-blue-800 dark:text-blue-300 font-medium mb-1">{t('templates:config.mapping')}:</p>
                           <ul className="text-blue-700 dark:text-blue-400 space-y-0.5">
-                            <li>• Ngày: <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{field.datePartsMapping.dayField}</code></li>
-                            <li>• Tháng: <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{field.datePartsMapping.monthField}</code></li>
-                            <li>• Năm: <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{field.datePartsMapping.yearField}</code></li>
+                            <li>• {t('templates:config.day')}: <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{field.datePartsMapping.dayField}</code></li>
+                            <li>• {t('templates:config.month')}: <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{field.datePartsMapping.monthField}</code></li>
+                            <li>• {t('templates:config.year')}: <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{field.datePartsMapping.yearField}</code></li>
                           </ul>
                         </div>
                       )}
@@ -576,7 +593,7 @@ const TemplateConfigPage: React.FC = () => {
                       {/* Display Name */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Tên hiển thị
+                          {t('templates:config.displayName')}
                         </label>
                         <input
                           type="text"
@@ -591,7 +608,7 @@ const TemplateConfigPage: React.FC = () => {
                       {/* Field Type */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Loại trường
+                          {t('templates:config.fieldType')}
                         </label>
                         <div className="flex gap-2">
                           <select
@@ -605,14 +622,14 @@ const TemplateConfigPage: React.FC = () => {
                             {getAllFieldTypes().map((ft: any) => (
                               <option key={ft.value} value={ft.value}>
                                 {ft.label}
-                                {ft.needsOptions ? ' (cần options)' : ''}
+                                {ft.needsOptions ? ` (${t('templates:config.needsOptions')})` : ''}
                               </option>
                             ))}
                           </select>
                         </div>
                         {field.fieldType === FieldType.DATE && field.datePartsMapping && (
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Không thể thay đổi loại - trường này đã được gộp từ ngày/tháng/năm
+                            {t('templates:config.cannotChangeType')}
                           </p>
                         )}
                       </div>
@@ -621,7 +638,7 @@ const TemplateConfigPage: React.FC = () => {
                     {/* Help Text */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Văn bản hướng dẫn
+                        {t('templates:config.helpText')}
                       </label>
                       <input
                         type="text"
@@ -629,7 +646,7 @@ const TemplateConfigPage: React.FC = () => {
                         onChange={(e) =>
                           updateField(index, { helpText: e.target.value })
                         }
-                        placeholder="Hướng dẫn điền trường này"
+                        placeholder={t('templates:config.helpTextPlaceholder')}
                         className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
                       />
                     </div>
@@ -651,7 +668,7 @@ const TemplateConfigPage: React.FC = () => {
                           className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
                         />
                         <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Bắt buộc nhập
+                          {t('templates:validation.required')}
                         </span>
                       </label>
                     </div>
@@ -661,7 +678,7 @@ const TemplateConfigPage: React.FC = () => {
                       <div className="col-span-full space-y-3">
                         <div className="flex items-center justify-between">
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Các tùy chọn
+                            {t('templates:config.options')}
                           </label>
                           <button
                             type="button"
@@ -671,7 +688,7 @@ const TemplateConfigPage: React.FC = () => {
                             }}
                             className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
                           >
-                            + Thêm tùy chọn
+                            + {t('templates:config.addOption')}
                           </button>
                         </div>
                         
@@ -690,7 +707,7 @@ const TemplateConfigPage: React.FC = () => {
                                   newOptions[optIndex] = { value: newValue, label: newValue };
                                   updateField(index, { options: newOptions });
                                 }}
-                                placeholder={`Tùy chọn ${optIndex + 1}`}
+                                placeholder={t('templates:config.optionPlaceholder', { index: optIndex + 1 })}
                                 className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
                               />
                               {(field.options?.length || 0) > 1 && (
@@ -701,7 +718,7 @@ const TemplateConfigPage: React.FC = () => {
                                     updateField(index, { options: newOptions });
                                   }}
                                   className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                  title="Xóa tùy chọn"
+                                  title={t('templates:config.deleteOption')}
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -713,7 +730,7 @@ const TemplateConfigPage: React.FC = () => {
                         </div>
                         
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Ví dụ: "Thấp", "Trung Bình", "Cao"
+                          {t('templates:config.optionsExample')}
                         </p>
                       </div>
                     )}
@@ -731,7 +748,7 @@ const TemplateConfigPage: React.FC = () => {
               onClick={() => navigate('/admin/templates')}
               className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors shadow-sm"
             >
-              Hủy
+              {t('common:actions.cancel')}
             </button>
             <button
               type="submit"
@@ -741,12 +758,12 @@ const TemplateConfigPage: React.FC = () => {
               {saveMutation.isPending ? (
                 <>
                   <Loader className="h-4 w-4 mr-2 animate-spin" />
-                  Đang lưu...
+                  {t('templates:messages.saving')}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Lưu cấu hình
+                  {t('templates:actions.saveConfig')}
                 </>
               )}
             </button>
@@ -758,17 +775,17 @@ const TemplateConfigPage: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Chọn trường Ngày/Tháng/Năm
+                {t('templates:config.selectDateFields')}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Vui lòng chỉ định trường nào đại diện cho Ngày, Tháng và Năm trong biểu mẫu Word.
+                {t('templates:config.selectDateFieldsDesc')}
               </p>
               
               <div className="space-y-4">
                 {/* Day Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Trường Ngày
+                    {t('templates:config.dayField')}
                   </label>
                   <select
                     value={dateMappingFields.dayFieldIndex ?? ''}
@@ -778,12 +795,12 @@ const TemplateConfigPage: React.FC = () => {
                     }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   >
-                    <option value="">-- Chọn trường --</option>
+                    <option value="">-- {t('templates:config.selectField')} --</option>
                     {Array.from(selectedFields).map((fieldIndex) => {
                       const field = fields[fieldIndex];
                       return (
                         <option key={fieldIndex} value={fieldIndex}>
-                          {field.fieldName} ({field.displayName || 'Chưa có nhãn'})
+                          {field.fieldName} ({field.displayName || t('templates:config.noLabel')})
                         </option>
                       );
                     })}
@@ -793,7 +810,7 @@ const TemplateConfigPage: React.FC = () => {
                 {/* Month Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Trường Tháng
+                    {t('templates:config.monthField')}
                   </label>
                   <select
                     value={dateMappingFields.monthFieldIndex ?? ''}
@@ -803,12 +820,12 @@ const TemplateConfigPage: React.FC = () => {
                     }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   >
-                    <option value="">-- Chọn trường --</option>
+                    <option value="">-- {t('templates:config.selectField')} --</option>
                     {Array.from(selectedFields).map((fieldIndex) => {
                       const field = fields[fieldIndex];
                       return (
                         <option key={fieldIndex} value={fieldIndex}>
-                          {field.fieldName} ({field.displayName || 'Chưa có nhãn'})
+                          {field.fieldName} ({field.displayName || t('templates:config.noLabel')})
                         </option>
                       );
                     })}
@@ -818,7 +835,7 @@ const TemplateConfigPage: React.FC = () => {
                 {/* Year Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Trường Năm
+                    {t('templates:config.yearField')}
                   </label>
                   <select
                     value={dateMappingFields.yearFieldIndex ?? ''}
@@ -828,12 +845,12 @@ const TemplateConfigPage: React.FC = () => {
                     }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   >
-                    <option value="">-- Chọn trường --</option>
+                    <option value="">-- {t('templates:config.selectField')} --</option>
                     {Array.from(selectedFields).map((fieldIndex) => {
                       const field = fields[fieldIndex];
                       return (
                         <option key={fieldIndex} value={fieldIndex}>
-                          {field.fieldName} ({field.displayName || 'Chưa có nhãn'})
+                          {field.fieldName} ({field.displayName || t('templates:config.noLabel')})
                         </option>
                       );
                     })}
@@ -850,7 +867,7 @@ const TemplateConfigPage: React.FC = () => {
                 dateMappingFields.monthFieldIndex === dateMappingFields.yearFieldIndex) && (
                 <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                   <p className="text-sm text-red-600 dark:text-red-400">
-                    Các trường phải khác nhau
+                    {t('templates:config.fieldsMustBeDifferent')}
                   </p>
                 </div>
               )}
@@ -869,7 +886,7 @@ const TemplateConfigPage: React.FC = () => {
                   }}
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                 >
-                  Hủy
+                  {t('common:actions.cancel')}
                 </button>
                 <button
                   type="button"
@@ -878,13 +895,13 @@ const TemplateConfigPage: React.FC = () => {
                     
                     // Validate all fields selected
                     if (dayFieldIndex === null || monthFieldIndex === null || yearFieldIndex === null) {
-                      showError('Vui lòng chọn đầy đủ 3 trường');
+                      showError(t('templates:config.selectAllThreeFields'));
                       return;
                     }
 
                     // Validate all fields are different
                     if (dayFieldIndex === monthFieldIndex || dayFieldIndex === yearFieldIndex || monthFieldIndex === yearFieldIndex) {
-                      showError('Các trường phải khác nhau');
+                      showError(t('templates:config.fieldsMustBeDifferent'));
                       return;
                     }
 
@@ -909,7 +926,7 @@ const TemplateConfigPage: React.FC = () => {
                   }
                   className="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Xác nhận
+                  {t('common:actions.confirm')}
                 </button>
               </div>
             </div>

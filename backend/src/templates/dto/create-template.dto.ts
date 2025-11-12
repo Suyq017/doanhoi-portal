@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsString, IsUUID, IsOptional, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { ErrorMessages } from '../../common/constants/error-messages';
 
 export class CreateTemplateDto {
   @ApiProperty({
@@ -7,7 +8,7 @@ export class CreateTemplateDto {
     example: 'Sơ yếu lý lịch sinh viên',
     maxLength: 255
   })
-  @IsNotEmpty({ message: 'Tên template không được để trống' })
+  @IsNotEmpty({ message: ErrorMessages.TEMPLATE_NAME_REQUIRED })
   @IsString()
   @MaxLength(255)
   name: string;

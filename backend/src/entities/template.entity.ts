@@ -6,7 +6,8 @@ import {
   OneToMany,
   CreateDateColumn, 
   UpdateDateColumn, 
-  JoinColumn 
+  JoinColumn,
+  Index
 } from 'typeorm';
 import { User } from './user.entity';
 import { Organization } from './organization.entity';
@@ -21,6 +22,9 @@ export enum TemplateStatus {
 }
 
 @Entity('templates')
+@Index(['status', 'createdAt']) // ✅ Composite index for filtering and sorting
+@Index(['organizationId', 'status']) // ✅ Index for organization filtering
+@Index(['createdBy']) // ✅ Index for creator queries
 export class Template {
   @PrimaryGeneratedColumn('uuid')
   id: string;

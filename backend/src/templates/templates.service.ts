@@ -8,6 +8,7 @@ import { Template, TemplateStatus } from '../entities/template.entity';
 import { TemplateField, FieldType } from '../entities/template-field.entity';
 import { AwsS3ConfigService } from '../aws-config/aws-s3-config.service';
 import { CreateTemplateDto, UpdateTemplateDto, ConfigureFieldsDto } from './dto';
+import { ErrorMessages } from '../common/constants/error-messages';
 
 @Injectable()
 export class TemplatesService {
@@ -64,7 +65,7 @@ export class TemplatesService {
 
     // Validate file type
     if (!file.originalname.endsWith('.docx')) {
-      throw new BadRequestException('Only .docx files are allowed');
+      throw new BadRequestException(ErrorMessages.TEMPLATE_ONLY_DOCX);
     }
 
     try {
@@ -205,16 +206,10 @@ export class TemplatesService {
    * Configure fields for a template
    */
   async configureFields(templateId: string, dto: ConfigureFieldsDto): Promise<Template> {
-    const template = await this.templateRepository.findOne({
-      where: { id: templateId },
-      relations: ['fields'],
-    });
+    // ✅ OPTIMIZATION: Use findOne (already has error handling) instead of duplicate code
+    const template = await this.findOne(templateId);
 
-    if (!template) {
-      throw new NotFoundException('Template not found');
-    }
-
-    // Delete existing fields
+    // Delete existing fields - use DELETE query instead of loading then deleting
     await this.templateFieldRepository.delete({ templateId });
 
     // Create new fields
@@ -227,6 +222,7 @@ export class TemplatesService {
 
     await this.templateFieldRepository.save(fields);
 
+    // Load fresh data with new fields
     return this.findOne(templateId);
   }
 
@@ -245,19 +241,27 @@ export class TemplatesService {
     limit: number;
     totalPages: number;
   }> {
-    const where: any = {};
-    
-    // Filter by status if provided
-    if (status && status !== 'all') {
-      where.status = status;
-    }
-
-    // Search by name or description
+    // ✅ OPTIMIZATION 1: Select only needed fields to reduce data transfer
     const queryBuilder = this.templateRepository
       .createQueryBuilder('template')
-      .leftJoinAndSelect('template.fields', 'fields')
-      .leftJoinAndSelect('template.creator', 'creator')
-      .leftJoinAndSelect('template.organization', 'organization')
+      .select([
+        'template.id',
+        'template.name',
+        'template.description',
+        'template.status',
+        'template.originalFileName',
+        'template.fileSize',
+        'template.createdAt',
+        'template.updatedAt',
+      ])
+      // ✅ OPTIMIZATION 2: Only load fields count, not full field data (reduce payload)
+      .loadRelationCountAndMap('template.fieldsCount', 'template.fields')
+      // ✅ OPTIMIZATION 3: Select minimal creator info
+      .leftJoin('template.creator', 'creator')
+      .addSelect(['creator.id', 'creator.familyName', 'creator.givenName', 'creator.email'])
+      // ✅ OPTIMIZATION 4: Select minimal organization info
+      .leftJoin('template.organization', 'organization')
+      .addSelect(['organization.id', 'organization.name'])
       .orderBy('template.createdAt', 'DESC');
 
     // Apply status filter
@@ -273,16 +277,15 @@ export class TemplatesService {
       );
     }
 
-    // Count total
-    const total = await queryBuilder.getCount();
-
-    // Apply pagination - ensure numbers not strings
+    // ✅ OPTIMIZATION 5: Use getManyAndCount() to get data and count in one operation
     const pageNum = Number(page);
     const limitNum = Number(limit);
     const skip = (pageNum - 1) * limitNum;
-    queryBuilder.skip(skip).take(limitNum);
-
-    const data = await queryBuilder.getMany();
+    
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limitNum)
+      .getManyAndCount();
 
     return {
       data,
@@ -303,7 +306,7 @@ export class TemplatesService {
     });
 
     if (!template) {
-      throw new NotFoundException('Template not found');
+      throw new NotFoundException(ErrorMessages.TEMPLATE_NOT_FOUND);
     }
 
     return template;
@@ -313,13 +316,17 @@ export class TemplatesService {
    * Update template
    */
   async update(id: string, dto: UpdateTemplateDto): Promise<Template> {
+    // ❌ BEFORE: 3 queries (findOne → save → findOne again)
+    // ✅ AFTER: 2 queries (findOne → save and return)
     const template = await this.findOne(id);
 
     Object.assign(template, dto);
 
-    await this.templateRepository.save(template);
+    const updated = await this.templateRepository.save(template);
 
-    return this.findOne(id);
+    // Return the updated entity directly instead of querying again
+    // Relations are already loaded from findOne()
+    return updated;
   }
 
   /**
@@ -332,14 +339,12 @@ export class TemplatesService {
     });
 
     if (!template) {
-      throw new NotFoundException('Template not found');
+      throw new NotFoundException(ErrorMessages.TEMPLATE_NOT_FOUND);
     }
 
     // Check if template has submissions
     if (template.submissions && template.submissions.length > 0) {
-      throw new BadRequestException(
-        `Không thể xóa biểu mẫu đã được sử dụng. Vui lòng xóa tất cả bản ghi của người dùng hoặc đặt trạng thái biểu mẫu thành "Không hoạt động".`
-      );
+      throw new BadRequestException(ErrorMessages.TEMPLATE_HAS_SUBMISSIONS);
     }
 
     // Delete from S3

@@ -18,6 +18,7 @@ import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiBearerAuth } from '@nes
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TemplatesService } from './templates.service';
 import { CreateTemplateDto, UpdateTemplateDto, ConfigureFieldsDto } from './dto';
+import { ErrorMessages, SuccessMessages } from '../common/constants/error-messages';
 
 @ApiTags('Templates')
 @ApiBearerAuth()
@@ -47,7 +48,7 @@ export class TemplatesController {
     @Request() req: any,
   ) {
     if (!file) {
-      throw new BadRequestException('File is required');
+      throw new BadRequestException(ErrorMessages.TEMPLATE_FILE_REQUIRED);
     }
 
     return this.templatesService.uploadTemplate(file, dto, req.user.id);
@@ -67,11 +68,11 @@ export class TemplatesController {
   @UseInterceptors(FileInterceptor('file'))
   async parseTemplate(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new BadRequestException('File is required');
+      throw new BadRequestException(ErrorMessages.TEMPLATE_FILE_REQUIRED);
     }
 
     if (!file.originalname.endsWith('.docx')) {
-      throw new BadRequestException('Only .docx files are allowed');
+      throw new BadRequestException(ErrorMessages.TEMPLATE_ONLY_DOCX);
     }
 
     return this.templatesService.parseTemplate(file.buffer);
@@ -116,6 +117,6 @@ export class TemplatesController {
   @ApiOperation({ summary: 'Delete template' })
   async delete(@Param('id') id: string) {
     await this.templatesService.delete(id);
-    return { message: 'Template deleted successfully' };
+    return { message: SuccessMessages.TEMPLATE_DELETED };
   }
 }

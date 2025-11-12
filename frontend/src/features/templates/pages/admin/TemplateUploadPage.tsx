@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Upload, FileText, ArrowLeft, AlertCircle, Loader } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { uploadTemplate, parseTemplateFile } from '@/shared/services/template.service';
 import { useToast } from '@/shared/hooks/useToast';
 import { Toast } from '@/shared/components';
 
 const TemplateUploadPage: React.FC = () => {
+  const { t } = useTranslation(['templates', 'common']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toasts, showError, hideToast } = useToast();
@@ -24,20 +26,21 @@ const TemplateUploadPage: React.FC = () => {
       uploadTemplate(data.file, { name: data.name, description: data.description }),
     onSuccess: () => {
       // Invalidate queries to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
+      queryClient.invalidateQueries({ queryKey: ['templates'] }); // Admin list
+      queryClient.invalidateQueries({ queryKey: ['templates-active'] }); // User list
       
       // Navigate back immediately with success message
       navigate('/admin/templates', { 
         state: { 
           showSuccessToast: true, 
-          message: 'Tải lên biểu mẫu thành công! Vui lòng cấu hình để kích hoạt.' 
+          message: t('templates:messages.uploadSuccess')
         },
         replace: true // Use replace to avoid back button showing upload page
       });
     },
     onError: (error: any) => {
       // Show error toast on current page
-      showError(error?.response?.data?.message || 'Tải lên thất bại');
+      showError(error?.response?.data?.message || t('common:messages.error.upload'));
     },
   });
 
@@ -64,7 +67,7 @@ const TemplateUploadPage: React.FC = () => {
 
   const handleFileChange = (selectedFile: File) => {
     if (!selectedFile.name.endsWith('.docx')) {
-      showError('Chỉ chấp nhận file .docx');
+      showError(t('templates:upload.onlyDocx'));
       return;
     }
     setFile(selectedFile);
@@ -101,12 +104,12 @@ const TemplateUploadPage: React.FC = () => {
     e.preventDefault();
 
     if (!file) {
-      showError('Vui lòng chọn file');
+      showError(t('templates:upload.selectFile'));
       return;
     }
 
     if (!name.trim()) {
-      showError('Vui lòng nhập tên biểu mẫu');
+      showError(t('templates:upload.enterName'));
       return;
     }
 
@@ -138,16 +141,16 @@ const TemplateUploadPage: React.FC = () => {
             <button
               onClick={() => navigate('/admin/templates')}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              title="Quay lại"
+              title={t('templates:actions.backToList')}
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Tạo biểu mẫu mới
+                {t('templates:upload.title')}
               </h1>
               <p className="mt-2 text-gray-600 dark:text-gray-400">
-                Tải lên file Word (.docx) - định dạng Word 2007 trở lên
+                {t('templates:upload.subtitle')}
               </p>
             </div>
           </div>
@@ -160,7 +163,7 @@ const TemplateUploadPage: React.FC = () => {
         {step === 'upload' && (
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Bước 1: Chọn file biểu mẫu Word
+              {t('templates:upload.step1')}
             </h2>
 
             <div
@@ -191,12 +194,12 @@ const TemplateUploadPage: React.FC = () => {
                   htmlFor="file-upload"
                   className="cursor-pointer text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold"
                 >
-                  Nhấn để chọn file
+                  {t('templates:upload.clickToSelect')}
                 </label>
-                <span className="text-gray-600 dark:text-gray-400"> hoặc kéo thả vào đây</span>
+                <span className="text-gray-600 dark:text-gray-400"> {t('templates:upload.orDragDrop')}</span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Chỉ chấp nhận file Word (.docx)
+                {t('templates:upload.onlyDocx')}
               </p>
             </div>
 
@@ -205,21 +208,21 @@ const TemplateUploadPage: React.FC = () => {
               <div className="flex">
                 <AlertCircle className="h-5 w-5 text-blue-500 dark:text-blue-400 mr-3 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-blue-700 dark:text-blue-300">
-                  <p className="font-semibold mb-2">Hướng dẫn tạo biểu mẫu Word:</p>
+                  <p className="font-semibold mb-2">{t('templates:upload.instructionTitle')}:</p>
                   <ul className="list-disc list-inside space-y-1 ml-1">
-                    <li>Sử dụng cú pháp <code className="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/40 rounded">{`{{fieldName}}`}</code> để đánh dấu các trường dữ liệu</li>
-                    <li>Ví dụ: <code className="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/40 rounded">{`{{hoTen}}`}</code>, <code className="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/40 rounded">{`{{ngaySinh}}`}</code>, <code className="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/40 rounded">{`{{lop}}`}</code></li>
-                    <li>Tên trường không được chứa khoảng trắng hoặc ký tự đặc biệt</li>
-                    <li>Hệ thống sẽ tự động phát hiện và trích xuất các trường khi tải lên</li>
+                    <li>{t('templates:upload.instructionFieldSyntax')}</li>
+                    <li>{t('templates:upload.instructionExample')}</li>
+                    <li>{t('templates:upload.instructionFieldName')}</li>
+                    <li>{t('templates:upload.instructionAutoDetect')}</li>
                   </ul>
                   
                   <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
-                    <p className="font-semibold mb-1">Chuyển đổi file .doc sang .docx:</p>
+                    <p className="font-semibold mb-1">{t('templates:upload.convertTitle')}:</p>
                     <ol className="list-decimal list-inside space-y-1 ml-1">
-                      <li>Mở file .doc trong Microsoft Word</li>
-                      <li>Chọn <strong>File</strong> → <strong>Save As</strong></li>
-                      <li>Chọn định dạng <strong>Word Document (*.docx)</strong></li>
-                      <li>Lưu file và kiểm tra lại file sau khi chuyển đổi</li>
+                      <li>{t('templates:upload.convertStep1')}</li>
+                      <li>{t('templates:upload.convertStep2')}</li>
+                      <li>{t('templates:upload.convertStep3')}</li>
+                      <li>{t('templates:upload.convertStep4')}</li>
                     </ol>
                   </div>
                 </div>
@@ -235,14 +238,14 @@ const TemplateUploadPage: React.FC = () => {
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  File đã chọn
+                  {t('templates:upload.selectedFile')}
                 </h2>
                 <button
                   type="button"
                   onClick={handleCancelFile}
                   className="text-sm text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline"
                 >
-                  Chọn file khác
+                  {t('templates:upload.chooseAnother')}
                 </button>
               </div>
               <div className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -253,9 +256,9 @@ const TemplateUploadPage: React.FC = () => {
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {(file.size / 1024).toFixed(2)} KB
-                    {isParsing && <span className="ml-2">• Đang phân tích...</span>}
+                    {isParsing && <span className="ml-2">• {t('templates:upload.analyzing')}</span>}
                     {!isParsing && detectedFields.length > 0 && (
-                      <span className="ml-2">• Phát hiện {detectedFields.length} trường</span>
+                      <span className="ml-2">• {t('templates:upload.detected', { count: detectedFields.length })}</span>
                     )}
                   </p>
                 </div>
@@ -267,7 +270,7 @@ const TemplateUploadPage: React.FC = () => {
                   <div className="flex items-start">
                     <AlertCircle className="h-5 w-5 text-blue-500 dark:text-blue-400 mr-2 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-blue-700 dark:text-blue-300 flex-1">
-                      <p className="font-semibold mb-2">Đã phát hiện {detectedFields.length} trường dữ liệu:</p>
+                      <p className="font-semibold mb-2">{t('templates:upload.detectedFields', { count: detectedFields.length })}:</p>
                       <div className="flex flex-wrap gap-2">
                         {detectedFields.map((field, idx) => (
                           <code 
@@ -294,14 +297,14 @@ const TemplateUploadPage: React.FC = () => {
                       <div className="flex items-start">
                         <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mr-2 flex-shrink-0 mt-0.5" />
                         <div className="text-sm text-yellow-800 dark:text-yellow-300 flex-1">
-                          <p className="font-semibold mb-2">⚠️ Cảnh báo: Phát hiện trường dữ liệu trùng lặp</p>
+                          <p className="font-semibold mb-2">⚠️ {t('templates:upload.duplicateWarning')}</p>
                           <ul className="space-y-1 list-disc list-inside">
                             {duplicates.map(([field, count]) => (
                               <li key={field}>
                                 <code className="px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/40 rounded text-xs font-mono">
                                   {`{{${field}}}`}
                                 </code>
-                                {' '}xuất hiện <strong>{count} lần</strong> - Hệ thống sẽ dùng chung giá trị khi người dùng nhập thông tin
+                                {' '}{t('templates:upload.duplicateDesc', { count })}
                               </li>
                             ))}
                           </ul>
@@ -316,7 +319,7 @@ const TemplateUploadPage: React.FC = () => {
             {/* Template Info Form */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Bước 2: Thông tin biểu mẫu
+                {t('templates:upload.step2')}
               </h2>
 
               <div className="space-y-4">
@@ -325,7 +328,7 @@ const TemplateUploadPage: React.FC = () => {
                     htmlFor="name"
                     className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                   >
-                    Tên biểu mẫu <span className="text-red-500">*</span>
+                    {t('templates:fields.name')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -334,7 +337,7 @@ const TemplateUploadPage: React.FC = () => {
                     onChange={(e) => setName(e.target.value)}
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Ví dụ: Đơn xin nghỉ học"
+                    placeholder={t('templates:placeholders.templateNameExample')}
                   />
                 </div>
 
@@ -343,7 +346,7 @@ const TemplateUploadPage: React.FC = () => {
                     htmlFor="description"
                     className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                   >
-                    Mô tả
+                    {t('templates:fields.description')}
                   </label>
                   <textarea
                     id="description"
@@ -351,7 +354,7 @@ const TemplateUploadPage: React.FC = () => {
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Mô tả ngắn gọn về biểu mẫu này..."
+                    placeholder={t('templates:upload.descriptionPlaceholder')}
                   />
                 </div>
               </div>
@@ -367,7 +370,7 @@ const TemplateUploadPage: React.FC = () => {
             disabled={uploadMutation.isPending}
             className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Hủy
+            {t('common:actions.cancel')}
           </button>
           {step === 'info' && (
             <button
@@ -378,10 +381,10 @@ const TemplateUploadPage: React.FC = () => {
               {uploadMutation.isPending ? (
                 <>
                   <Loader className="h-4 w-4 mr-2 animate-spin" />
-                  Đang tải lên...
+                  {t('templates:upload.uploading')}
                 </>
               ) : (
-                'Tạo biểu mẫu'
+                t('templates:upload.createTemplate')
               )}
             </button>
           )}

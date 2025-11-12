@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Shield, ChevronDown, ChevronRight, Users, Building, LayoutDashboard, Building2, GraduationCap, Check, Minus, CreditCard, Heart, BarChart } from 'lucide-react';
+import { X, Shield, ChevronDown, ChevronRight, Users, Building, LayoutDashboard, Building2, GraduationCap, Check, Minus, CreditCard, Heart, BarChart, FileText } from 'lucide-react';
 import { roleService, type UpdateRoleRequest, type Permission, type Role } from '../services/roleService';
 
 interface EditRoleModalProps {
@@ -69,6 +69,13 @@ const usePermissionGroups = () => {
             icon: Heart,
             color: 'teal',
             description: t('permissions.categories.ctxh')
+        },
+        {
+            id: 'templates',
+            name: t('permissions.categories.templates'),
+            icon: FileText,
+            color: 'blue',
+            description: t('permissions.categories.templates')
         },
         {
             id: 'reports',

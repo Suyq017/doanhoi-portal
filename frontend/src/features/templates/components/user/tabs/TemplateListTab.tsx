@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { FileText, AlertCircle, Search } from 'lucide-react';
 import { getAllTemplates } from '@/shared/services/template.service';
 import { Pagination } from '@/shared/components';
@@ -10,6 +11,7 @@ interface TemplateListTabProps {
 }
 
 const TemplateListTab: React.FC<TemplateListTabProps> = ({ onSelectTemplate }) => {
+  const { t } = useTranslation(['templates', 'common']);
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -49,10 +51,10 @@ const TemplateListTab: React.FC<TemplateListTabProps> = ({ onSelectTemplate }) =
           <AlertCircle className="h-5 w-5 text-red-400" />
           <div className="ml-3">
             <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
-              Lỗi khi tải danh sách biểu mẫu
+              {t('common:messages.error.load')}
             </h3>
             <p className="mt-2 text-sm text-red-700 dark:text-red-400">
-              {error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định'}
+              {error instanceof Error ? error.message : t('common:messages.error.unknown')}
             </p>
           </div>
         </div>
@@ -70,7 +72,7 @@ const TemplateListTab: React.FC<TemplateListTabProps> = ({ onSelectTemplate }) =
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Tìm kiếm theo tên hoặc mô tả..."
+            placeholder={t('templates:placeholders.search')}
             className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
           />
         </div>
@@ -82,7 +84,7 @@ const TemplateListTab: React.FC<TemplateListTabProps> = ({ onSelectTemplate }) =
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
-              <p className="mt-4 text-gray-600 dark:text-gray-400">Đang tải biểu mẫu...</p>
+              <p className="mt-4 text-gray-600 dark:text-gray-400">{t('templates:messages.loadingTemplates')}</p>
             </div>
           </div>
         ) : !data?.data || data.data.length === 0 ? (
@@ -90,10 +92,10 @@ const TemplateListTab: React.FC<TemplateListTabProps> = ({ onSelectTemplate }) =
             <div className="text-center">
               <FileText className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                Không tìm thấy biểu mẫu
+                {t('templates:messages.noTemplates')}
               </h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Thử tìm kiếm với từ khóa khác
+                {t('templates:messages.noTemplatesDesc')}
               </p>
             </div>
           </div>
@@ -104,16 +106,16 @@ const TemplateListTab: React.FC<TemplateListTabProps> = ({ onSelectTemplate }) =
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
                     <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                      Tên biểu mẫu
+                      {t('templates:fields.name')}
                     </th>
                     <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                      Mô tả
+                      {t('templates:fields.description')}
                     </th>
                     <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                      Cập nhật
+                      {t('templates:fields.updatedAt')}
                     </th>
                     <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
-                      Thao tác
+                      {t('common:fields.actions')}
                     </th>
                   </tr>
                 </thead>
@@ -148,7 +150,7 @@ const TemplateListTab: React.FC<TemplateListTabProps> = ({ onSelectTemplate }) =
                           }}
                           className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
                         >
-                          Điền biểu mẫu
+                          {t('templates:fillForm')}
                         </button>
                       </td>
                     </tr>

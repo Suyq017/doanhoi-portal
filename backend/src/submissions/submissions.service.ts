@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { TemplateSubmission, SubmissionStatus } from '../entities/template-submission.entity';
 import { Template } from '../entities/template.entity';
 import { AwsS3ConfigService } from '../aws-config/aws-s3-config.service';
 import { CreateSubmissionDto, UpdateSubmissionDto } from './dto';
+import { ErrorMessages } from '../common/constants/error-messages';
 
 @Injectable()
 export class SubmissionsService {
@@ -57,7 +58,7 @@ export class SubmissionsService {
     });
 
     if (!template) {
-      throw new NotFoundException('Template not found');
+      throw new NotFoundException(ErrorMessages.TEMPLATE_NOT_FOUND);
     }
 
     const submission = this.submissionRepository.create({
@@ -79,11 +80,11 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException('Submission not found');
+      throw new NotFoundException(ErrorMessages.SUBMISSION_NOT_FOUND);
     }
 
     if (submission.status !== SubmissionStatus.DRAFT) {
-      throw new BadRequestException('Can only update draft submissions');
+      throw new BadRequestException(ErrorMessages.SUBMISSION_ONLY_UPDATE_DRAFT);
     }
 
     if (dto.formData) {
@@ -103,11 +104,11 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException('Submission not found');
+      throw new NotFoundException(ErrorMessages.SUBMISSION_NOT_FOUND);
     }
 
     if (submission.status === SubmissionStatus.COMPLETED) {
-      throw new BadRequestException('Submission already completed');
+      throw new BadRequestException(ErrorMessages.SUBMISSION_ALREADY_COMPLETED);
     }
 
     // Update status to SUBMITTED
@@ -133,7 +134,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException('Submission not found');
+      throw new NotFoundException(ErrorMessages.SUBMISSION_NOT_FOUND);
     }
 
     try {
@@ -173,7 +174,15 @@ export class SubmissionsService {
       }
 
       const timestamp = Date.now();
-      const outputFileName = `${submission.template.originalFileName.replace('.docx', '')}_${timestamp}.docx`;
+      
+      // Format: template_name_YYYYMMDD_HHMMSS.docx
+      // More readable than pure timestamp
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+      const timeStr = now.toISOString().slice(11, 19).replace(/:/g, ''); // HHMMSS
+      const readableTimestamp = `${dateStr}_${timeStr}`;
+      
+      const outputFileName = `${submission.template.originalFileName.replace('.docx', '')}_${readableTimestamp}.docx`;
       const outputKey = `submissions/${submission.userId}/${timestamp}_${outputFileName}`;
 
       const uploadCommand = new PutObjectCommand({
@@ -245,34 +254,59 @@ export class SubmissionsService {
    * Get user's submissions
    */
   async getUserSubmissions(userId: string, templateId?: string): Promise<TemplateSubmission[]> {
-    const query: any = { userId };
+    // ✅ OPTIMIZATION: Use query builder for better control
+    const queryBuilder = this.submissionRepository
+      .createQueryBuilder('submission')
+      .select([
+        'submission.id',
+        'submission.status',
+        'submission.formData',
+        'submission.outputFileName',
+        'submission.outputFileSize',
+        'submission.submittedAt',
+        'submission.completedAt',
+        'submission.createdAt',
+        'submission.updatedAt',
+      ])
+      .leftJoin('submission.template', 'template')
+      .addSelect(['template.id', 'template.name', 'template.description'])
+      .where('submission.userId = :userId', { userId })
+      .orderBy('submission.createdAt', 'DESC');
     
     if (templateId) {
-      query.templateId = templateId;
+      queryBuilder.andWhere('submission.templateId = :templateId', { templateId });
     }
 
-    return this.submissionRepository.find({
-      where: query,
-      relations: ['template'],
-      order: { createdAt: 'DESC' },
-    });
+    return queryBuilder.getMany();
   }
 
   /**
    * Get all submissions (admin)
    */
   async getAllSubmissions(templateId?: string): Promise<TemplateSubmission[]> {
-    const query: any = {};
+    // ✅ OPTIMIZATION: Use query builder with selective loading
+    const queryBuilder = this.submissionRepository
+      .createQueryBuilder('submission')
+      .select([
+        'submission.id',
+        'submission.status',
+        'submission.outputFileName',
+        'submission.outputFileSize',
+        'submission.submittedAt',
+        'submission.completedAt',
+        'submission.createdAt',
+      ])
+      .leftJoin('submission.template', 'template')
+      .addSelect(['template.id', 'template.name'])
+      .leftJoin('submission.user', 'user')
+      .addSelect(['user.id', 'user.familyName', 'user.givenName', 'user.email'])
+      .orderBy('submission.createdAt', 'DESC');
     
     if (templateId) {
-      query.templateId = templateId;
+      queryBuilder.where('submission.templateId = :templateId', { templateId });
     }
 
-    return this.submissionRepository.find({
-      where: query,
-      relations: ['template', 'user'],
-      order: { createdAt: 'DESC' },
-    });
+    return queryBuilder.getMany();
   }
 
   /**
@@ -291,7 +325,7 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException('Submission not found');
+      throw new NotFoundException(ErrorMessages.SUBMISSION_NOT_FOUND);
     }
 
     return submission;
@@ -306,10 +340,30 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException('Submission not found');
+      throw new NotFoundException(ErrorMessages.SUBMISSION_NOT_FOUND);
     }
 
-    // User có thể xóa bất kỳ submission nào của họ
+    // Delete output file from S3 if exists
+    if (submission.outputFileUrl && this.s3Client && this.s3Config) {
+      try {
+        const fileKey = submission.outputFileUrl.replace(
+          `${this.s3Config.s3Endpoint}/${this.s3Config.s3Bucket}/`,
+          '',
+        );
+
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: this.s3Config.s3Bucket,
+          Key: fileKey,
+        });
+
+        await this.s3Client.send(deleteCommand);
+      } catch (error) {
+        console.error('Failed to delete output file from S3:', error);
+        // Continue to delete from DB even if S3 deletion fails
+      }
+    }
+
+    // Delete from database
     await this.submissionRepository.remove(submission);
   }
 
@@ -385,15 +439,15 @@ export class SubmissionsService {
     });
 
     if (!submission) {
-      throw new NotFoundException('Submission not found');
+      throw new NotFoundException(ErrorMessages.SUBMISSION_NOT_FOUND);
     }
 
     if (submission.status !== SubmissionStatus.COMPLETED) {
-      throw new BadRequestException('Submission is not completed yet');
+      throw new BadRequestException(ErrorMessages.SUBMISSION_NOT_COMPLETED);
     }
 
     if (!submission.outputFileUrl) {
-      throw new NotFoundException('Output file not found');
+      throw new NotFoundException(ErrorMessages.SUBMISSION_OUTPUT_NOT_FOUND);
     }
 
     // Download from S3

@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import { seedPermissions } from '../seeds/permissions.seed';
 import { addCtxhImportPermissions } from './add-ctxh-import-permissions';
+import { addTemplatePermissions } from './add-template-permissions';
 
 // Load environment variables
 dotenv.config();
@@ -81,6 +82,10 @@ async function updatePermissions() {
         // Add CTXH Import permissions
         console.log('\n🔄 Adding CTXH Import permissions...\n');
         await addCtxhImportPermissions(AppDataSource);
+
+        // Add Template permissions
+        console.log('\n🔄 Adding Template permissions...\n');
+        await addTemplatePermissions(AppDataSource);
 
         console.log('\n✅ Permissions update completed successfully!');
         console.log('📊 All permissions are now up to date.\n');

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FileText, ListChecks } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { TemplateSubmission } from '@/shared/types/template.types';
 import { useToast } from '@/shared/hooks/useToast';
 import Toast from '@/shared/components/Toast';
@@ -11,6 +12,7 @@ import FormFillTab from '../components/user/tabs/FormFillTab';
 import MySubmissionsTab from '../components/user/tabs/MySubmissionsTab';
 
 const FormsPage: React.FC = () => {
+  const { t } = useTranslation(['templates', 'common']);
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [editingSubmission, setEditingSubmission] = useState<TemplateSubmission | null>(null);
@@ -64,12 +66,12 @@ const FormsPage: React.FC = () => {
   const tabs = [
     {
       id: 'templates',
-      label: 'Danh sách biểu mẫu',
+      label: t('templates:tabs.templateList'),
       icon: FileText,
     },
     {
       id: 'submissions',
-      label: 'Biểu mẫu của tôi',
+      label: t('templates:tabs.mySubmissions'),
       icon: ListChecks,
     },
   ];
@@ -90,17 +92,17 @@ const FormsPage: React.FC = () => {
 
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Biểu Mẫu
+        <div className="px-4 sm:px-6 lg:px-8 py-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            {t('templates:title')}
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Điền và quản lý các biểu mẫu của bạn
+            {t('templates:subtitle')}
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <nav className="flex px-6 -mb-px space-x-8" aria-label="Tabs">
+        <nav className="flex px-4 sm:px-6 lg:px-8 -mb-px space-x-8" aria-label="Tabs">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -132,7 +134,7 @@ const FormsPage: React.FC = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
         {(activeTab === 'templates' && !selectedTemplateId) && (
           <TemplateListTab onSelectTemplate={handleSelectTemplate} />
         )}

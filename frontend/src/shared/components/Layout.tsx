@@ -141,15 +141,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         // requiredPermission: 'ctxh.reports.view'
       },
       {
-        name: 'Biểu mẫu',
+        name: t('navigation.templates'),
         href: '/forms',
         icon: FileText,
+        requiredPermission: 'templates.access'
       },
       {
-        name: 'Quản lý biểu mẫu',
+        name: t('navigation.templatesAdmin'),
         href: '/admin/templates',
         icon: Settings,
-        // requiredPermission: 'templates.manage' // Tạm thời bỏ để test
+        requiredPermission: 'templates.admin.access'
       },
       {
         name: t('navigation.paymentAdmin'),

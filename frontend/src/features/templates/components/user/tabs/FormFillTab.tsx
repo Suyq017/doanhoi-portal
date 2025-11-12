@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, AlertCircle, Loader } from 'lucide-react';
 import {
   getTemplateById,
@@ -26,17 +27,77 @@ interface FormFillTabProps {
 }
 
 const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitSuccess, editingSubmission }) => {
+  const { i18n } = useTranslation();
+  
+  // Force re-mount when language changes to rebuild form with new translations
+  return <FormFillTabInner key={i18n.language} templateId={templateId} onBack={onBack} onSubmitSuccess={onSubmitSuccess} editingSubmission={editingSubmission} />;
+};
+
+const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitSuccess, editingSubmission }) => {
+  const { t } = useTranslation(['templates', 'common']);
   const queryClient = useQueryClient();
   const { toasts, showSuccess, showError, hideToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Determine the actual template ID to use
+  // If editing a submission, use the template ID from the submission
+  // Otherwise, use the provided templateId prop
+  const actualTemplateId = editingSubmission?.template?.id || templateId;
+
   // Fetch template
   const { data: template, isLoading: templateLoading } = useQuery({
-    queryKey: ['template', templateId],
-    queryFn: () => getTemplateById(templateId!),
-    enabled: !!templateId,
+    queryKey: ['template', actualTemplateId],
+    queryFn: () => {
+      if (!actualTemplateId) {
+        throw new Error('Template ID is required');
+      }
+      return getTemplateById(actualTemplateId);
+    },
+    enabled: !!actualTemplateId,
     staleTime: 5 * 60 * 1000, // 5 minutes - cache template data
   });
+
+  // Helper function: Reverse transform data from DB back to original values
+  const reverseTransformFormData = (formData: Record<string, any>, fields: TemplateField[]): Record<string, any> => {
+    const reversedData: Record<string, any> = { ...formData };
+    
+    fields.forEach((field) => {
+      const value = formData[field.fieldName];
+      if (!value) return;
+      
+      // Radio: "☐ Thấp ☒ Trung Bình ☐ Cao" → "Trung Bình"
+      if (field.fieldType === 'radio' && typeof value === 'string' && value.includes('☒')) {
+        // Try to match against each option's formatted string
+        if (field.options) {
+          for (const option of field.options) {
+            const pattern = `☒ ${option.label}`;
+            if (value.includes(pattern)) {
+              reversedData[field.fieldName] = option.value;
+              break;
+            }
+          }
+        }
+      }
+      
+      // Checkbox: "☒ Option A ☐ Option B ☒ Option C" → ["Option A", "Option C"]
+      if (field.fieldType === 'checkbox' && typeof value === 'string' && (value.includes('☒') || value.includes('☐'))) {
+        const selectedValues: string[] = [];
+        
+        if (field.options) {
+          for (const option of field.options) {
+            const pattern = `☒ ${option.label}`;
+            if (value.includes(pattern)) {
+              selectedValues.push(option.value);
+            }
+          }
+        }
+        
+        reversedData[field.fieldName] = selectedValues;
+      }
+    });
+    
+    return reversedData;
+  };
 
   // Build dynamic Zod schema from template fields
   const buildSchema = (fields: TemplateField[]) => {
@@ -60,15 +121,15 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
             }
             // Giới hạn tối đa 255 ký tự cho text nếu không có maxLength
             if (field.fieldType === 'text' && !field.validationRules?.maxLength) {
-              stringSchema = stringSchema.max(255, 'Tối đa 255 ký tự');
+              stringSchema = stringSchema.max(255, t('templates:validation.maxTextLength'));
             }
             if (field.fieldType === 'email') {
-              stringSchema = stringSchema.email('Email không hợp lệ');
+              stringSchema = stringSchema.email(t('templates:validation.email'));
             }
             if (field.validationRules?.pattern) {
               stringSchema = stringSchema.regex(
                 new RegExp(field.validationRules.pattern),
-                'Định dạng không hợp lệ'
+                t('templates:validation.pattern')
               );
             }
             fieldSchema = stringSchema;
@@ -78,38 +139,38 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
             let numberSchema = z.coerce.number({
               errorMap: (issue, ctx) => {
                 if (issue.code === 'invalid_type') {
-                  return { message: 'Vui lòng nhập kiểu dữ liệu dạng số' };
+                  return { message: t('templates:validation.number') };
                 }
                 return { message: ctx.defaultError };
               }
             });
             if (field.validationRules?.min !== undefined) {
-              numberSchema = numberSchema.min(field.validationRules.min, `Giá trị tối thiểu là ${field.validationRules.min}`);
+              numberSchema = numberSchema.min(field.validationRules.min, t('templates:validation.min', { min: field.validationRules.min }));
             }
             if (field.validationRules?.max !== undefined) {
-              numberSchema = numberSchema.max(field.validationRules.max, `Giá trị tối đa là ${field.validationRules.max}`);
+              numberSchema = numberSchema.max(field.validationRules.max, t('templates:validation.max', { max: field.validationRules.max }));
             }
             fieldSchema = numberSchema;
             break;
 
           case 'day':
             let daySchema = z.union([
-              z.string().regex(/^(0[1-9]|[12][0-9]|3[01])$/, 'Ngày phải theo định dạng DD (01-31)'),
+              z.string().regex(/^(0[1-9]|[12][0-9]|3[01])$/, t('templates:validation.dayFormat')),
               z.number().int().min(1).max(31)
             ])
               .transform((val) => typeof val === 'string' ? parseInt(val, 10) : val)
-              .refine((val) => val >= 1 && val <= 31, 'Ngày phải từ 01-31');
+              .refine((val) => val >= 1 && val <= 31, t('templates:validation.day'));
             
             if (field.validationRules?.min !== undefined) {
               daySchema = daySchema.refine(
                 (val) => val >= field.validationRules!.min!,
-                `Ngày tối thiểu là ${String(field.validationRules.min).padStart(2, '0')}`
+                t('templates:validation.minDay', { min: String(field.validationRules.min).padStart(2, '0') })
               ) as any;
             }
             if (field.validationRules?.max !== undefined) {
               daySchema = daySchema.refine(
                 (val) => val <= field.validationRules!.max!,
-                `Ngày tối đa là ${String(field.validationRules.max).padStart(2, '0')}`
+                t('templates:validation.maxDay', { max: String(field.validationRules.max).padStart(2, '0') })
               ) as any;
             }
             fieldSchema = daySchema;
@@ -117,22 +178,22 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
 
           case 'month':
             let monthSchema = z.union([
-              z.string().regex(/^(0[1-9]|1[0-2])$/, 'Tháng phải theo định dạng MM (01-12)'),
+              z.string().regex(/^(0[1-9]|1[0-2])$/, t('templates:validation.monthFormat')),
               z.number().int().min(1).max(12)
             ])
               .transform((val) => typeof val === 'string' ? parseInt(val, 10) : val)
-              .refine((val) => val >= 1 && val <= 12, 'Tháng phải từ 01-12');
+              .refine((val) => val >= 1 && val <= 12, t('templates:validation.month'));
             
             if (field.validationRules?.min !== undefined) {
               monthSchema = monthSchema.refine(
                 (val) => val >= field.validationRules!.min!,
-                `Tháng tối thiểu là ${String(field.validationRules.min).padStart(2, '0')}`
+                t('templates:validation.minMonth', { min: String(field.validationRules.min).padStart(2, '0') })
               ) as any;
             }
             if (field.validationRules?.max !== undefined) {
               monthSchema = monthSchema.refine(
                 (val) => val <= field.validationRules!.max!,
-                `Tháng tối đa là ${String(field.validationRules.max).padStart(2, '0')}`
+                t('templates:validation.maxMonth', { max: String(field.validationRules.max).padStart(2, '0') })
               ) as any;
             }
             fieldSchema = monthSchema;
@@ -140,22 +201,22 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
 
           case 'year':
             let yearSchema = z.union([
-              z.string().regex(/^(19|20)\d{2}$/, 'Năm phải theo định dạng YYYY (1900-2099)'),
+              z.string().regex(/^(19|20)\d{2}$/, t('templates:validation.yearFormat')),
               z.number().int().min(1900).max(2100)
             ])
               .transform((val) => typeof val === 'string' ? parseInt(val, 10) : val)
-              .refine((val) => val >= 1900 && val <= 2100, 'Năm phải từ 1900-2100');
+              .refine((val) => val >= 1900 && val <= 2100, t('templates:validation.year'));
             
             if (field.validationRules?.min !== undefined) {
               yearSchema = yearSchema.refine(
                 (val) => val >= field.validationRules!.min!,
-                `Năm tối thiểu là ${field.validationRules.min}`
+                t('templates:validation.minYear', { min: field.validationRules.min })
               ) as any;
             }
             if (field.validationRules?.max !== undefined) {
               yearSchema = yearSchema.refine(
                 (val) => val <= field.validationRules!.max!,
-                `Năm tối đa là ${field.validationRules.max}`
+                t('templates:validation.maxYear', { max: field.validationRules.max })
               ) as any;
             }
             fieldSchema = yearSchema;
@@ -164,12 +225,12 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
           case 'phone':
             // Số điện thoại Việt Nam: 10-11 số, bắt đầu bằng 0
             let phoneSchema = z.string()
-              .regex(/^0\d{9}$/, 'Số điện thoại phải có 10 chữ số và bắt đầu bằng 0');
+              .regex(/^0\d{9}$/, t('templates:validation.phone'));
             
             if (field.validationRules?.pattern) {
               phoneSchema = z.string().regex(
                 new RegExp(field.validationRules.pattern),
-                field.validationRules.message || 'Số điện thoại không hợp lệ'
+                field.validationRules.message || t('templates:validation.phone')
               );
             }
             fieldSchema = phoneSchema;
@@ -178,7 +239,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
           case 'time':
             // Time format HH:MM (24-hour)
             fieldSchema = z.string()
-              .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Thời gian phải theo định dạng HH:MM (00:00-23:59)');
+              .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, t('templates:validation.timeFormat'));
             break;
 
           case 'datetime':
@@ -190,65 +251,29 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                 if (!datetimeRegex.test(val)) return false;
                 const date = new Date(val);
                 return !isNaN(date.getTime());
-              }, 'Ngày giờ không hợp lệ');
+              }, t('templates:validation.invalidDateTime'));
             break;
 
           case 'checkbox':
-            // Checkbox: Chọn nhiều options → "☒ Option1 ☐ Option2 ☒ Option3"
-            // Khi edit: accept cả array (mới) và string (từ DB)
-            fieldSchema = z.union([
-              z.array(z.string()), // Array of selected values (mới)
-              z.string() // String từ DB
-            ]).transform((val) => {
-              // Nếu là string từ DB, giữ nguyên
-              if (typeof val === 'string') {
-                return val;
-              }
-              // Nếu là array (mới), transform sang format với checkbox icons
-              if (Array.isArray(val) && field.options && field.options.length > 0) {
-                return field.options
-                  .map(opt => {
-                    const isSelected = val.includes(opt.value);
-                    const checkbox = isSelected ? '☒' : '☐';
-                    return `${checkbox} ${opt.label}`;
-                  })
-                  .join(' ');
-              }
-              return String.fromCharCode(168); // Default unchecked
-            }).default([]);
+            // Checkbox: Validate array of selected values
+            // Transformation to checkbox format happens on submit
+            fieldSchema = z.array(z.string()).default([]);
             break;
 
           case 'date':
             fieldSchema = z.string().refine((val) => !isNaN(Date.parse(val)), {
-              message: 'Ngày không hợp lệ',
+              message: t('templates:validation.invalidDate'),
             });
             break;
 
           case 'radio':
-            // Radio: Transform selected value to format "☐ Option1 ☒ Selected ☐ Option3"
-            fieldSchema = z.string().transform((selectedValue) => {
-              if (!field.options || field.options.length === 0) return selectedValue;
-              
-              return field.options
-                .map(opt => {
-                  const isSelected = opt.value === selectedValue;
-                  const checkbox = isSelected ? '☒' : '☐';
-                  return `${checkbox} ${opt.label}`;
-                })
-                .join(' ');
-            });
-            
+            // Radio: Just validate the enum value, don't transform
+            // Transformation to checkbox format happens on submit
             if (field.options && field.options.length > 0) {
               const enumValues = field.options.map(opt => opt.value) as [string, ...string[]];
-              fieldSchema = z.enum(enumValues).transform((selectedValue) => {
-                return field.options!
-                  .map(opt => {
-                    const isSelected = opt.value === selectedValue;
-                    const checkbox = isSelected ? '☒' : '☐';
-                    return `${checkbox} ${opt.label}`;
-                  })
-                  .join(' ');
-              });
+              fieldSchema = z.enum(enumValues);
+            } else {
+              fieldSchema = z.string();
             }
             break;
 
@@ -267,7 +292,8 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
     return z.object(schemaFields);
   };
 
-  // Initialize form
+  // Initialize form - rebuild schema on every render to get latest translations
+  // This is fast and ensures validation messages are always in current language
   const formSchema = template && template.fields
     ? buildSchema(template.fields.sort((a, b) => a.position - b.position))
     : z.object({});
@@ -280,7 +306,9 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
     formState: { errors },
   } = useForm({
     resolver: zodResolver(formSchema),
-    defaultValues: editingSubmission?.formData || {},
+    defaultValues: editingSubmission && template && template.fields
+      ? reverseTransformFormData(editingSubmission.formData, template.fields)
+      : {},
     mode: 'onChange', // Validate on every change for real-time feedback
   });
 
@@ -289,16 +317,21 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
 
   // Reset form when editing submission changes
   useEffect(() => {
-    if (editingSubmission) {
-      reset(editingSubmission.formData);
+    if (editingSubmission && template && template.fields) {
+      const reversedData = reverseTransformFormData(editingSubmission.formData, template.fields);
+      reset(reversedData);
     }
-  }, [editingSubmission, reset]);
+  }, [editingSubmission, template, reset]);
 
   // Submit mutation - Tạo mới và xóa cũ nếu đang edit
   const submitMutation = useMutation({
     mutationFn: async (formData: Record<string, any>) => {
+      if (!actualTemplateId) {
+        throw new Error('Template ID is required');
+      }
+      
       // Tạo submission mới
-      const newSubmission = await createSubmission({ templateId: templateId!, formData });
+      const newSubmission = await createSubmission({ templateId: actualTemplateId, formData });
       
       // Submit ngay
       const result = await submitSubmission(newSubmission.id);
@@ -311,10 +344,6 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
       return result;
     },
     onSuccess: async (submission) => {
-      const baseMessage = editingSubmission 
-        ? 'Chỉnh sửa thành công!' 
-        : 'Gửi biểu mẫu thành công!';
-      
       // Polling để đợi file tạo xong
       const checkStatus = async (): Promise<'completed' | 'failed' | 'pending'> => {
         try {
@@ -347,12 +376,12 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
       let message: string;
       if (finalStatus === 'completed') {
         message = editingSubmission 
-          ? 'Chỉnh sửa thành công! Tài liệu đã được cập nhật.'
-          : 'Gửi biểu mẫu thành công! Tài liệu đã được tạo.';
+          ? t('templates:messages.formCompleted')
+          : t('templates:messages.formCompleted');
       } else if (finalStatus === 'failed') {
-        message = `${baseMessage} Tuy nhiên có lỗi khi tạo tài liệu.`;
+        message = t('templates:messages.formError');
       } else {
-        message = `${baseMessage} Tài liệu đang được xử lý...`;
+        message = t('templates:messages.formProcessing');
       }
       
       // Nếu có callback onSubmitSuccess thì dùng và truyền message
@@ -368,31 +397,62 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
     },
     onError: (error: any) => {
       setIsSubmitting(false);
-      showError(error?.response?.data?.message || 'Gửi biểu mẫu thất bại');
+      showError(error?.response?.data?.message || t('templates:messages.submitError'));
     },
   });
 
   const onSubmit = handleSubmit((data) => {
+    // Transform radio and checkbox data to checkbox format before submitting
+    const transformedData = { ...data };
+    
+    if (template && template.fields) {
+      template.fields.forEach(field => {
+        const value = transformedData[field.fieldName];
+        
+        // Radio: Transform "Trung Bình" -> "☐ Thấp ☒ Trung Bình ☐ Cao"
+        if (field.fieldType === 'radio' && value && field.options) {
+          transformedData[field.fieldName] = field.options
+            .map(opt => {
+              const isSelected = opt.value === value;
+              const checkbox = isSelected ? '☒' : '☐';
+              return `${checkbox} ${opt.label}`;
+            })
+            .join(' ');
+        }
+        
+        // Checkbox: Transform ["A", "C"] -> "☒ A ☐ B ☒ C"
+        if (field.fieldType === 'checkbox' && Array.isArray(value) && field.options) {
+          transformedData[field.fieldName] = field.options
+            .map(opt => {
+              const isSelected = value.includes(opt.value);
+              const checkbox = isSelected ? '☒' : '☐';
+              return `${checkbox} ${opt.label}`;
+            })
+            .join(' ');
+        }
+      });
+    }
+    
     setIsSubmitting(true);
-    submitMutation.mutate(data);
+    submitMutation.mutate(transformedData);
   });
 
-  if (!templateId) {
+  if (!actualTemplateId) {
     return (
       <div className="text-center py-12">
         <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-          Chưa chọn biểu mẫu
+          {t('common:messages.error.notSelected')}
         </h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Vui lòng chọn biểu mẫu từ danh sách
+          {t('common:messages.info.pleaseSelect')}
         </p>
         <button
           onClick={onBack}
           className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Quay lại danh sách
+          {t('templates:actions.back')}
         </button>
       </div>
     );
@@ -413,7 +473,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
           <AlertCircle className="h-5 w-5 text-red-400" />
           <div className="ml-3">
             <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
-              Không tìm thấy biểu mẫu
+              {t('templates:messages.noTemplates')}
             </h3>
           </div>
         </div>
@@ -465,7 +525,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
           className="group inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4 transition-colors"
         >
           <ArrowLeft className="h-4 w-4 mr-2 transition-transform group-hover:-translate-x-1" />
-          Quay lại
+          {t('templates:actions.back')}
         </button>
         
         <div className="bg-[#030391] rounded-lg shadow-lg p-6 text-white">
@@ -481,7 +541,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
               )}
               {editingSubmission && (
                 <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-sm">
-                  Đang chỉnh sửa
+                  {t('common:actions.editing')}
                 </div>
               )}
             </div>
@@ -500,15 +560,32 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
             >
               <label
                 htmlFor={field.fieldName}
-                className="block text-base font-semibold text-gray-900 dark:text-white mb-1"
+                className="block text-base font-semibold text-gray-900 dark:text-white mb-2"
               >
-                {field.displayName}
-                {field.validationRules?.required && (
-                  <span className="text-red-500 ml-1" title="Trường bắt buộc">*</span>
-                )}
+                <span className="flex items-center gap-2">
+                  {field.displayName}
+                  {field.validationRules?.required ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                      {t('templates:validation.required')}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                      {t('templates:validation.optional')}
+                    </span>
+                  )}
+                </span>
               </label>
+              {!field.validationRules?.required && (
+                <p className="mt-1 mb-3 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800 flex items-start gap-2">
+                  <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <span>{t('templates:validation.optionalWarning')}</span>
+                </p>
+              )}
               {field.helpText && (
-                <p className="mt-1 mb-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                <p className="mt-2 mb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed bg-blue-50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <span className="font-medium text-blue-800 dark:text-blue-300"> </span>
                   {field.helpText}
                 </p>
               )}
@@ -522,23 +599,29 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                         return (
                           <textarea
                             id={field.fieldName}
-                            rows={4}
+                            rows={5}
                             value={value || ''}
                             onChange={onChange}
-                            placeholder={field.placeholder || `Nhập ${field.displayName.toLowerCase()}...`}
-                            className="block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors"
+                            placeholder={field.placeholder || t('templates:placeholders.defaultValue')}
+                            className="block w-full px-4 py-3 text-base rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/50 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                           />
                         );
 
                       case 'radio':
                         return (
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             {field.options?.map((option) => {
                               const isSelected = value === option.value;
                               return (
                                 <label
                                   key={option.value}
-                                  className="flex items-center cursor-pointer group"
+                                  className={`
+                                    flex items-center cursor-pointer group px-4 py-3 rounded-lg border-2 transition-all duration-200
+                                    ${isSelected 
+                                      ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/20 dark:border-blue-500' 
+                                      : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600'
+                                    }
+                                  `}
                                 >
                                   <input
                                     type="radio"
@@ -548,27 +631,22 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                                     className="sr-only peer"
                                   />
                                   <div className={`
-                                    w-5 h-5 border-2 rounded flex items-center justify-center transition-all duration-200
+                                    w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200
                                     ${isSelected 
                                       ? 'bg-blue-600 border-blue-600 dark:bg-blue-500 dark:border-blue-500' 
                                       : 'border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700'
                                     }
-                                    group-hover:border-blue-400 dark:group-hover:border-blue-400
-                                    peer-focus:ring-2 peer-focus:ring-blue-500 peer-focus:ring-offset-2 dark:peer-focus:ring-offset-gray-800
+                                    peer-focus:ring-4 peer-focus:ring-blue-100 dark:peer-focus:ring-blue-900/50
                                   `}>
                                     {isSelected && (
-                                      <svg 
-                                        className="w-3.5 h-3.5 text-white pointer-events-none" 
-                                        fill="none" 
-                                        strokeWidth="3" 
-                                        stroke="currentColor" 
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path d="M6 6L18 18M18 6L6 18" strokeLinecap="round" strokeLinejoin="round"/>
-                                      </svg>
+                                      <div className="w-2 h-2 bg-white rounded-full"></div>
                                     )}
                                   </div>
-                                  <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors select-none">
+                                  <span className={`ml-3 text-base font-medium transition-colors select-none ${
+                                    isSelected 
+                                      ? 'text-blue-900 dark:text-blue-100' 
+                                      : 'text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                                  }`}>
                                     {option.label}
                                   </span>
                                 </label>
@@ -584,7 +662,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                             type="date"
                             value={value || ''}
                             onChange={onChange}
-                            className="block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors"
+                            className="block w-full px-4 py-3 text-base rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/50 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                           />
                         );
 
@@ -595,7 +673,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                             type="time"
                             value={value || ''}
                             onChange={onChange}
-                            className="block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors"
+                            className="block w-full px-4 py-3 text-base rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/50 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                           />
                         );
 
@@ -606,7 +684,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                             type="datetime-local"
                             value={value || ''}
                             onChange={onChange}
-                            className="block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors"
+                            className="block w-full px-4 py-3 text-base rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/50 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                           />
                         );
 
@@ -618,7 +696,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                             value={value || ''}
                             onChange={onChange}
                             placeholder={field.placeholder}
-                            className="block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors"
+                            className="block w-full px-4 py-3 text-base rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/50 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                           />
                         );
 
@@ -631,7 +709,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                             onChange={onChange}
                             placeholder="DD (01-31)"
                             maxLength={2}
-                            className="block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors"
+                            className="block w-full px-4 py-3 text-base rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/50 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                           />
                         );
 
@@ -644,7 +722,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                             onChange={onChange}
                             placeholder="MM (01-12)"
                             maxLength={2}
-                            className="block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors"
+                            className="block w-full px-4 py-3 text-base rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/50 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                           />
                         );
 
@@ -657,7 +735,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                             onChange={onChange}
                             placeholder="YYYY (1900-2100)"
                             maxLength={4}
-                            className="block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors"
+                            className="block w-full px-4 py-3 text-base rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/50 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                           />
                         );
 
@@ -670,7 +748,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                             onChange={onChange}
                             placeholder={field.placeholder || "0xxxxxxxxx"}
                             maxLength={11}
-                            className="block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors"
+                            className="block w-full px-4 py-3 text-base rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/50 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                           />
                         );
 
@@ -678,13 +756,19 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                         // Checkbox với multiple options
                         const selectedValues = Array.isArray(value) ? value : [];
                         return (
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             {field.options?.map((option) => {
                               const isSelected = selectedValues.includes(option.value);
                               return (
                                 <label
                                   key={option.value}
-                                  className="flex items-center cursor-pointer group"
+                                  className={`
+                                    flex items-center cursor-pointer group px-4 py-3 rounded-lg border-2 transition-all duration-200
+                                    ${isSelected 
+                                      ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/20 dark:border-blue-500' 
+                                      : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600'
+                                    }
+                                  `}
                                 >
                                   <input
                                     type="checkbox"
@@ -704,8 +788,7 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                                       ? 'bg-blue-600 border-blue-600 dark:bg-blue-500 dark:border-blue-500' 
                                       : 'border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700'
                                     }
-                                    group-hover:border-blue-400 dark:group-hover:border-blue-400
-                                    peer-focus:ring-2 peer-focus:ring-blue-500 peer-focus:ring-offset-2 dark:peer-focus:ring-offset-gray-800
+                                    peer-focus:ring-4 peer-focus:ring-blue-100 dark:peer-focus:ring-blue-900/50
                                   `}>
                                     {isSelected && (
                                       <svg 
@@ -715,11 +798,15 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                                         stroke="currentColor" 
                                         viewBox="0 0 24 24"
                                       >
-                                        <path d="M6 6L18 18M18 6L6 18" strokeLinecap="round" strokeLinejoin="round"/>
+                                        <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round"/>
                                       </svg>
                                     )}
                                   </div>
-                                  <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors select-none">
+                                  <span className={`ml-3 text-base font-medium transition-colors select-none ${
+                                    isSelected 
+                                      ? 'text-blue-900 dark:text-blue-100' 
+                                      : 'text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                                  }`}>
                                     {option.label}
                                   </span>
                                 </label>
@@ -735,17 +822,17 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
                             type={field.fieldType === 'email' ? 'email' : 'text'}
                             value={value || ''}
                             onChange={onChange}
-                            placeholder={field.placeholder || `Nhập ${field.displayName.toLowerCase()}...`}
-                            className="block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm transition-colors"
+                            placeholder={field.placeholder || t('templates:placeholders.enterField', { field: field.displayName.toLowerCase() })}
+                            className="block w-full px-4 py-3 text-base rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/50 dark:bg-gray-700 dark:text-white transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                           />
                         );
                     }
                   }}
                 />
                 {errors[field.fieldName] && (
-                  <div className="mt-2 flex items-start">
-                    <AlertCircle className="h-4 w-4 text-red-500 mr-1.5 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-red-600 dark:text-red-400">
+                  <div className="mt-3 flex items-start p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-red-500 dark:text-red-400 mr-2 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm font-medium text-red-700 dark:text-red-300">
                       {errors[field.fieldName]?.message as string}
                     </p>
                   </div>
@@ -761,15 +848,15 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-600 dark:text-gray-400 space-x-4">
               <span>
-                Tổng số trường: <span className="font-semibold text-gray-900 dark:text-white">{totalFields}</span>
+                {t('common:fields.total')}: <span className="font-semibold text-gray-900 dark:text-white">{totalFields}</span>
               </span>
               <span>•</span>
               <span>
-                Trường bắt buộc: <span className="font-semibold text-gray-900 dark:text-white">{requiredFields}</span>
+                {t('common:fields.required')}: <span className="font-semibold text-gray-900 dark:text-white">{requiredFields}</span>
               </span>
               <span>•</span>
               <span>
-                Đã điền: <span className="font-semibold text-gray-900 dark:text-white">{filledFields}</span>
+                {t('common:fields.filled')}: <span className="font-semibold text-gray-900 dark:text-white">{filledFields}</span>
               </span>
             </div>
             <button
@@ -780,10 +867,10 @@ const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitS
               {isSubmitting || submitMutation.isPending ? (
                 <>
                   <Loader className="h-5 w-5 mr-2 animate-spin" />
-                  Đang xử lý...
+                  {t('templates:messages.processing')}
                 </>
               ) : (
-                editingSubmission ? 'Lưu chỉnh sửa' : 'Gửi biểu mẫu'
+                editingSubmission ? t('templates:actions.saveChanges') : t('templates:actions.submit')
               )}
             </button>
           </div>

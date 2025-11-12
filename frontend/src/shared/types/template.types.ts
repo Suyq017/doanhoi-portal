@@ -78,6 +78,7 @@ export interface Template {
   createdBy: string;
   organizationId: string;
   fields?: TemplateField[];
+  fieldsCount?: number; // Count of fields (when not loading full fields relation)
   createdAt: string;
   updatedAt: string;
 }

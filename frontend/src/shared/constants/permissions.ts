@@ -62,6 +62,13 @@ export const SYSTEM_PERMISSIONS = {
     VIEW_LOGS: 'system.view_logs',
 } as const;
 
+// Template permissions
+export const TEMPLATE_PERMISSIONS = {
+    ACCESS: 'templates.access',
+    ADMIN_ACCESS: 'templates.admin.access',
+    MANAGE: 'templates.manage',
+} as const;
+
 // Export all permissions for convenience
 export const ALL_PERMISSIONS = {
     USER: USER_PERMISSIONS,
@@ -70,6 +77,7 @@ export const ALL_PERMISSIONS = {
     ORGANIZATION: ORGANIZATION_PERMISSIONS,
     ROLE: ROLE_PERMISSIONS,
     SYSTEM: SYSTEM_PERMISSIONS,
+    TEMPLATE: TEMPLATE_PERMISSIONS,
 } as const;
 
 // Type definitions
@@ -79,6 +87,7 @@ export type ClassPermission = typeof CLASS_PERMISSIONS[keyof typeof CLASS_PERMIS
 export type OrganizationPermission = typeof ORGANIZATION_PERMISSIONS[keyof typeof ORGANIZATION_PERMISSIONS];
 export type RolePermission = typeof ROLE_PERMISSIONS[keyof typeof ROLE_PERMISSIONS];
 export type SystemPermission = typeof SYSTEM_PERMISSIONS[keyof typeof SYSTEM_PERMISSIONS];
+export type TemplatePermission = typeof TEMPLATE_PERMISSIONS[keyof typeof TEMPLATE_PERMISSIONS];
 
 export type Permission =
     | UserPermission
@@ -86,7 +95,8 @@ export type Permission =
     | ClassPermission
     | OrganizationPermission
     | RolePermission
-    | SystemPermission;
+    | SystemPermission
+    | TemplatePermission;
 
 // Alternative export with different name to avoid conflicts
 export type PermissionCode = Permission;

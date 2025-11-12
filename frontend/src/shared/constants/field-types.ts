@@ -3,7 +3,7 @@ import { FieldType } from '@/shared/types/template.types';
 export interface FieldTypeConfig {
   value: FieldType;
   label: string;
-  description: string;
+  descriptionKey: string; // Translation key for description
   category: 'basic' | 'advanced';
   needsOptions?: boolean; // Có cần cấu hình options không (radio)
   supportsValidation?: {
@@ -20,7 +20,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.TEXT]: {
     value: FieldType.TEXT,
     label: 'Text',
-    description: 'Văn bản ngắn (Dưới 255 ký tự)',
+    descriptionKey: 'templates:fieldTypeDescriptions.text',
     category: 'basic',
     supportsValidation: {
       required: true,
@@ -32,7 +32,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.TEXTAREA]: {
     value: FieldType.TEXTAREA,
     label: 'Textarea',
-    description: 'Văn bản không giới hạn ký tự, nhiều dòng',
+    descriptionKey: 'templates:fieldTypeDescriptions.textarea',
     category: 'basic',
     supportsValidation: {
       required: true,
@@ -43,7 +43,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.NUMBER]: {
     value: FieldType.NUMBER,
     label: 'Number',
-    description: 'Kiểu dữ liệu số',
+    descriptionKey: 'templates:fieldTypeDescriptions.number',
     category: 'basic',
     supportsValidation: {
       required: true,
@@ -54,7 +54,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.EMAIL]: {
     value: FieldType.EMAIL,
     label: 'Email',
-    description: 'Địa chỉ email',
+    descriptionKey: 'templates:fieldTypeDescriptions.email',
     category: 'basic',
     supportsValidation: {
       required: true,
@@ -64,7 +64,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.PHONE]: {
     value: FieldType.PHONE,
     label: 'Phone Number',
-    description: 'Số điện thoại (10 chữ số)',
+    descriptionKey: 'templates:fieldTypeDescriptions.phone',
     category: 'basic',
     supportsValidation: {
       required: true,
@@ -76,7 +76,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.DATE]: {
     value: FieldType.DATE,
     label: 'Date',
-    description: 'Ngày/tháng/năm (DD/MM/YYYY)',
+    descriptionKey: 'templates:fieldTypeDescriptions.date',
     category: 'basic',
     supportsValidation: {
       required: true,
@@ -87,7 +87,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.TIME]: {
     value: FieldType.TIME,
     label: 'Time',
-    description: 'Thời gian (HH:MM)',
+    descriptionKey: 'templates:fieldTypeDescriptions.time',
     category: 'basic',
     supportsValidation: {
       required: true,
@@ -96,7 +96,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.DATETIME]: {
     value: FieldType.DATETIME,
     label: 'DateTime',
-    description: 'Ngày và giờ (DD/MM/YYYYTHH:MM)',
+    descriptionKey: 'templates:fieldTypeDescriptions.datetime',
     category: 'basic',
     supportsValidation: {
       required: true,
@@ -107,7 +107,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.RADIO]: {
     value: FieldType.RADIO,
     label: 'Radio',
-    description: 'Chọn một trong nhiều lựa chọn (cần cấu hình options).\nVí dụ: \nGói dịch Vụ: ☒ Thấp ☐ Trung bình ☐ Cao',
+    descriptionKey: 'templates:fieldTypeDescriptions.radio',
     category: 'advanced',
     needsOptions: true,
     supportsValidation: {
@@ -117,7 +117,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.CHECKBOX]: {
     value: FieldType.CHECKBOX,
     label: 'Checkbox',
-    description: 'Chọn nhiều lựa chọn (cần cấu hình options).\nVí dụ:\nDịch vụ bổ sung: ☒ Gửi email hàng loạt ☒ Thông báo SMS ☐ Hỗ trợ kỹ thuật',
+    descriptionKey: 'templates:fieldTypeDescriptions.checkbox',
     category: 'advanced',
     needsOptions: true,
     supportsValidation: {
@@ -127,7 +127,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.DAY]: {
     value: FieldType.DAY,
     label: 'Day',
-    description: 'Ngày (DD)',
+    descriptionKey: 'templates:fieldTypeDescriptions.day',
     category: 'basic',
     supportsValidation: {
       required: true,
@@ -138,7 +138,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.MONTH]: {
     value: FieldType.MONTH,
     label: 'Month',
-    description: 'Tháng (MM)',
+    descriptionKey: 'templates:fieldTypeDescriptions.month',
     category: 'basic',
     supportsValidation: {
       required: true,
@@ -149,7 +149,7 @@ export const FIELD_TYPES: Record<FieldType, FieldTypeConfig> = {
   [FieldType.YEAR]: {
     value: FieldType.YEAR,
     label: 'Year',
-    description: 'Năm (YYYY)',
+    descriptionKey: 'templates:fieldTypeDescriptions.year',
     category: 'basic',
     supportsValidation: {
       required: true,
@@ -172,18 +172,18 @@ export const getAllFieldTypes = (): FieldTypeConfig[] => {
   return Object.values(FIELD_TYPES);
 };
 
-// Grouped field types for UI display
+// Grouped field types for UI display - now with translation keys
 export const FIELD_TYPE_GROUPS = {
   basic: {
-    label: 'Loại dữ liệu cơ bản',
+    labelKey: 'templates:fieldTypeGroups.basic',
     types: getFieldTypesByCategory('basic'),
   },
   advanced: {
-    label: 'Loại dữ liệu nâng cao',
+    labelKey: 'templates:fieldTypeGroups.advanced',
     types: getFieldTypesByCategory('advanced'),
   },
   special: {
-    label: 'Loại dữ liệu đặc biệt',
+    labelKey: 'templates:fieldTypeGroups.special',
     types: getFieldTypesByCategory('special'),
   },
 };
