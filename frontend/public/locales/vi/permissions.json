@@ -150,6 +150,7 @@
             "payments": "Quản lý đóng phí",
             "myPayments": "Đóng phí của tôi",
             "ctxh": "Quản lý Công tác xã hội",
+            "templates": "Quản lý Biểu mẫu",
             "reports": "Báo cáo cá nhân",
             "dashboardShort": "Dashboard",
             "usersShort": "Người dùng",
@@ -161,6 +162,7 @@
             "paymentsShort": "Đóng phí",
             "myPaymentsShort": "Đóng phí của tôi",
             "ctxhShort": "CTXH",
+            "templatesShort": "Biểu mẫu",
             "reportsShort": "Báo cáo"
         },
         "definitions": {
@@ -203,7 +205,10 @@
             "permissions.create": "Tạo vai trò mới",
             "permissions.view_details": "Xem chi tiết vai trò",
             "permissions.update": "Chỉnh sửa vai trò",
-            "permissions.delete": "Xóa vai trò"
+            "permissions.delete": "Xóa vai trò",
+            "templates.access": "Xem trang Biểu mẫu",
+            "templates.admin.access": "Xem trang Quản lý biểu mẫu",
+            "templates.manage": "Quản lý biểu mẫu (tạo, sửa, xóa)"
         }
     }
 }

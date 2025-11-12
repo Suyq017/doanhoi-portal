@@ -36,7 +36,11 @@
     "ctxhImportOldSystem": "Import from Old System",
     "ctxhImportOldSystemPhonetic": "Import Old Data",
     "ctxhStudentReport": "Personal Report",
-    "ctxhStudentReportPhonetic": "Personal Report"
+    "ctxhStudentReportPhonetic": "Personal Report",
+    "templates": "Forms",
+    "templatesPhonetic": "Forms",
+    "templatesAdmin": "Manage Forms",
+    "templatesAdminPhonetic": "Manage Forms"
   },
   "actions": {
     "create": "Create",
@@ -220,7 +224,8 @@
     "optional": "optional",
     "required": "required",
     "none": "None",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "tip": "Tip"
   },
   "import": {
     "downloadTemplate": "Download Template",

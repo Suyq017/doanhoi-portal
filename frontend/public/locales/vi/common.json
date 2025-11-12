@@ -40,7 +40,11 @@
     "createFeeBatch": "Tạo đợt đóng phí",
     "createFeeBatchPhonetic": "Tạo đợt đóng phí",
     "myPayments": "Đóng phí của tôi",
-    "myPaymentsPhonetic": "Đóng phí của tôi"
+    "myPaymentsPhonetic": "Đóng phí của tôi",
+    "templates": "Biểu mẫu",
+    "templatesPhonetic": "Biểu mẫu",
+    "templatesAdmin": "Quản lý biểu mẫu",
+    "templatesAdminPhonetic": "Quản lý biểu mẫu"
   },
   "actions": {
     "create": "Tạo mới",
@@ -49,6 +53,7 @@
     "addPhonetic": "Thêm",
     "edit": "Chỉnh sửa",
     "editPhonetic": "Chỉnh sửa",
+    "editing": "Đang chỉnh sửa",
     "update": "Cập nhật",
     "updatePhonetic": "Cập nhật",
     "delete": "Xóa",
@@ -125,6 +130,9 @@
       "delete": "Có lỗi xảy ra khi xóa",
       "bulkDelete": "Có lỗi xảy ra khi xóa nhiều mục",
       "load": "Có lỗi xảy ra khi tải dữ liệu",
+      "save": "Lưu cấu hình thất bại",
+      "upload": "Tải lên thất bại",
+      "notSelected": "Chưa chọn biểu mẫu",
       "network": "Lỗi kết nối mạng",
       "unknown": "Đã có lỗi xảy ra",
       "noPermission": "Không có quyền truy cập!",
@@ -141,6 +149,9 @@
     "empty": {
       "noData": "Không có dữ liệu",
       "noResults": "Không tìm thấy kết quả nào"
+    },
+    "info": {
+      "pleaseSelect": "Vui lòng chọn biểu mẫu từ danh sách"
     },
     "more": "thêm"
   },
@@ -163,9 +174,13 @@
     "maxLength": "{{field}} không được vượt quá {{max}} ký tự",
     "email": "Email không hợp lệ",
     "phone": "Số điện thoại không hợp lệ",
-    "duplicate": "{{field}} đã tồn tại"
+    "duplicate": "{{field}} đã tồn tại",
+    "invalidFormat": "Định dạng không hợp lệ"
   },
   "fields": {
+    "total": "Tổng số trường",
+    "required": "Trường bắt buộc",
+    "filled": "Đã điền",
     "status": "Trạng thái",
     "statusPhonetic": "Trạng thái",
     "validationStatus": "Trạng thái xác thực",
@@ -220,6 +235,7 @@
     "allPhonetic": "Tất cả"
   },
   "labels": {
+    "tip": "Mẹo",
     "optional": "tùy chọn",
     "required": "bắt buộc",
     "none": "Không chọn",

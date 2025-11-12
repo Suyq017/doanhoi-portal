@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard, Heart, Calendar, BarChart, Settings, Upload } from 'lucide-react';
+import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard, Heart, Calendar, BarChart, Settings, Upload, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -139,6 +139,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         href: '/student-reports',
         icon: BarChart,
         // requiredPermission: 'ctxh.reports.view'
+      },
+      {
+        name: t('navigation.templates'),
+        href: '/forms',
+        icon: FileText,
+        requiredPermission: 'templates.access'
+      },
+      {
+        name: t('navigation.templatesAdmin'),
+        href: '/admin/templates',
+        icon: Settings,
+        requiredPermission: 'templates.admin.access'
       },
       {
         name: t('navigation.paymentAdmin'),

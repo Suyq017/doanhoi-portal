@@ -93,7 +93,14 @@ export const usePermissions = () => {
             // For now, return empty array and let the component fetch from API
             // The API call will handle proper organization filtering based on user permissions
             return [];
-        },        // Check if user is super admin (system-wide access)
+        },
+
+        // Template permissions
+        canAccessTemplates: () => hasPermission('templates.access', currentOrganizationId),
+        canAccessTemplatesAdmin: () => hasPermission('templates.admin.access', currentOrganizationId),
+        canManageTemplates: () => hasPermission('templates.manage', currentOrganizationId),
+
+        // Check if user is super admin (system-wide access)
         isSuperAdmin: () => {
             const hasSystemAccess = hasPermission('system.access_admin');
             const hasSuperAdminRole = auth.userRoles && auth.userRoles.some(userRole => userRole.name === 'super_admin');

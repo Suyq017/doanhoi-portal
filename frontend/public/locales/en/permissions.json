@@ -149,6 +149,7 @@
             "payments": "Fee Collection Management",
             "myPayments": "My Payments",
             "ctxh": "Community Service Management",
+            "templates": "Template Management",
             "reports": "Personal Reports",
             "dashboardShort": "Dashboard",
             "usersShort": "Users",
@@ -159,6 +160,7 @@
             "paymentsShort": "Payments",
             "myPaymentsShort": "My Payments",
             "ctxhShort": "CTXH",
+            "templatesShort": "Templates",
             "reportsShort": "Reports"
         },
         "definitions": {
@@ -201,7 +203,10 @@
             "permissions.create": "Create new role",
             "permissions.view_details": "View role details",
             "permissions.update": "Edit role",
-            "permissions.delete": "Delete role"
+            "permissions.delete": "Delete role",
+            "templates.access": "View Forms Page",
+            "templates.admin.access": "View Forms Management Page",
+            "templates.manage": "Manage Templates (create, edit, delete)"
         }
     }
 }
