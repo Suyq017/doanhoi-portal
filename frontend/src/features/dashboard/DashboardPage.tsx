@@ -28,7 +28,7 @@ const Dashboard: React.FC = () => {
 
     if (!hasDashboardAccess) {
       console.log('User does not have dashboard.access permission, redirecting to student-reports');
-      navigate('/student-reports', { replace: true });
+      navigate('/portal/student-reports', { replace: true });
     } else {
       setIsCheckingPermission(false);
     }

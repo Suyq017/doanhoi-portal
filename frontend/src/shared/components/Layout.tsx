@@ -56,19 +56,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const baseNavigation = [
       {
         name: t('navigation.dashboard'),
-        href: '/',
+        href: '/portal',
         icon: Home,
         requiredPermission: 'dashboard.access'
       },
       {
         name: t('navigation.users'),
-        href: '/users',
+        href: '/portal/users',
         icon: Users,
         requiredPermission: 'users.access'
       },
       {
         name: t('navigation.organizations'),
-        href: '/organizations',
+        href: '/portal/organizations',
         icon: Building,
         requiredPermission: 'organizations.access'
       },
@@ -79,26 +79,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         children: [
           {
             name: t('navigation.departments'),
-            href: '/departments',
+            href: '/portal/departments',
             icon: Building2,
             requiredPermission: 'departments.access'
           },
           {
             name: t('navigation.classes'),
-            href: '/classes',
+            href: '/portal/classes',
             icon: GraduationCap,
             requiredPermission: 'classes.access'
           },
         ]
       }, {
         name: t('navigation.permissions'),
-        href: '/permissions',
+        href: '/portal/permissions',
         icon: Shield,
         requiredPermission: 'permissions.access'
       },
       {
         name: t('navigation.systemConfig'),
-        href: '/system-config',
+        href: '/portal/system-config',
         icon: Settings,
         requiredPermission: 'system-config.access'
       },
@@ -110,25 +110,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         children: [
           {
             name: t('navigation.ctxhCategories'),
-            href: '/ctxh/categories',
+            href: '/portal/ctxh/categories',
             icon: Database,
             requiredPermission: 'ctxh.categories.view'
           },
           {
             name: t('navigation.ctxhActivities'),
-            href: '/ctxh/activities',
+            href: '/portal/ctxh/activities',
             icon: Calendar,
             requiredPermission: 'ctxh.activities.view'
           },
           {
             name: t('navigation.ctxhLimitConfig'),
-            href: '/ctxh/limit-config',
+            href: '/portal/ctxh/limit-config',
             icon: Settings,
             requiredPermission: 'ctxh.config.manage'
           },
           {
             name: t('navigation.ctxhImportOldSystem'),
-            href: '/ctxh/import-old-system',
+            href: '/portal/ctxh/import-old-system',
             icon: Upload,
             requiredPermission: 'ctxh.import.old_system'
           }
@@ -136,31 +136,31 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       },
       {
         name: t('navigation.ctxhStudentReport'),
-        href: '/student-reports',
+        href: '/portal/student-reports',
         icon: BarChart,
         // requiredPermission: 'ctxh.reports.view'
       },
       {
         name: t('navigation.templates'),
-        href: '/forms',
+        href: '/portal/forms',
         icon: FileText,
         requiredPermission: 'templates.access'
       },
       {
         name: t('navigation.templatesAdmin'),
-        href: '/admin/templates',
+        href: '/portal/admin/templates',
         icon: Settings,
         requiredPermission: 'templates.admin.access'
       },
       {
         name: t('navigation.paymentAdmin'),
-        href: '/admin/payment-campaigns',
+        href: '/portal/admin/payment-campaigns',
         icon: CreditCard,
         requiredPermission: 'payment-campaigns.access'
       },
       {
         name: t('navigation.myPayments'),
-        href: '/payment/my-campaigns',
+        href: '/portal/payment/my-campaigns',
         icon: CreditCard,
       }
     ];

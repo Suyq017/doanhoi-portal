@@ -196,7 +196,7 @@ const TemplateListPage: React.FC = () => {
         {canManageTemplates() && (
           <div className="mt-4 sm:mt-0">
             <button
-              onClick={() => navigate('/admin/templates/upload')}
+              onClick={() => navigate('/portal/admin/templates/upload')}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-doan-500 hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500"
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -289,7 +289,7 @@ const TemplateListPage: React.FC = () => {
             {canManageTemplates() && (
               <div className="mt-6">
                 <button
-                  onClick={() => navigate('/admin/templates/upload')}
+                  onClick={() => navigate('/portal/admin/templates/upload')}
                   className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-doan-500 hover:bg-doan-600"
                 >
                   <Plus className="h-4 w-4 mr-2" />

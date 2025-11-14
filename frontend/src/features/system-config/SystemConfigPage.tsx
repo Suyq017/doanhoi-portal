@@ -24,11 +24,11 @@ const SystemConfigPage: React.FC = () => {
 
                 const hasAccess = hasPermission('system-config.access');
                 if (!hasAccess) {
-                    navigate('/');
+                    navigate('/portal');
                 }
             } catch (error) {
                 console.error('Permission check failed:', error);
-                navigate('/');
+                navigate('/portal');
             } finally {
                 setIsCheckingPermission(false);
             }

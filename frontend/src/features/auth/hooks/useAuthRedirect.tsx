@@ -15,7 +15,7 @@ export const useAuthRedirect = () => {
         if (!auth.isLoading) {
             // If user is on login page and is authenticated, redirect to intended page
             if (auth.isAuthenticated && (location.pathname === '/login')) {
-                const from = location.state?.from?.pathname || '/';
+                const from = location.state?.from?.pathname || '/portal';
                 navigate(from, { replace: true });
             }
 

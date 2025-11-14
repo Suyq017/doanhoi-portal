@@ -47,7 +47,7 @@ const AuthCallback: React.FC = () => {
             
             // Delay navigation to ensure state updates
             setTimeout(() => {
-              navigate('/');
+              navigate('/portal');
             }, 100);
           } else {
             throw new Error('Failed to get user profile');
