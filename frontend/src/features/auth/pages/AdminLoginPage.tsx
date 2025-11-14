@@ -14,7 +14,7 @@ const AdminLoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Get the return URL from location state
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || '/portal';
 
   // Redirect if already authenticated
   React.useEffect(() => {

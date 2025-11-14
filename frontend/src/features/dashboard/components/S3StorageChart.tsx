@@ -11,10 +11,10 @@ export const S3StorageChart: React.FC<S3StorageChartProps> = ({ organizationId }
 
     if (isLoading) {
         return (
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:border dark:border-gray-700">
                 <div className="animate-pulse">
-                    <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
-                    <div className="h-64 bg-gray-200 rounded"></div>
+                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4"></div>
+                    <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
                 </div>
             </div>
         );
@@ -23,10 +23,10 @@ export const S3StorageChart: React.FC<S3StorageChartProps> = ({ organizationId }
     // Check if data has error flag (from backend when no S3 config)
     if (error || !data || (data as any).error) {
         return (
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:border dark:border-gray-700">
                 <div className="text-center py-8">
                     <div className="text-yellow-500 mb-2">⚠️ Chưa cấu hình S3</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                         {(data as any)?.message || (error instanceof Error ? error.message : 'Vui lòng cấu hình S3 trong hệ thống')}
                     </div>
                 </div>
@@ -61,16 +61,22 @@ export const S3StorageChart: React.FC<S3StorageChartProps> = ({ organizationId }
         ],
     };
 
+    const isDarkMode = document.documentElement.classList.contains('dark');
+
     const options = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
             legend: {
                 position: 'bottom' as const,
+                labels: {
+                    color: isDarkMode ? '#e5e7eb' : '#374151',
+                },
             },
             title: {
                 display: true,
                 text: `S3 Storage Distribution - ${data.bucketName}`,
+                color: isDarkMode ? '#f3f4f6' : '#111827',
             },
             tooltip: {
                 callbacks: {
@@ -81,18 +87,23 @@ export const S3StorageChart: React.FC<S3StorageChartProps> = ({ organizationId }
                         return `${label}: ${formatted}`;
                     },
                 },
+                backgroundColor: isDarkMode ? '#374151' : '#ffffff',
+                titleColor: isDarkMode ? '#f3f4f6' : '#111827',
+                bodyColor: isDarkMode ? '#e5e7eb' : '#374151',
+                borderColor: isDarkMode ? '#4b5563' : '#e5e7eb',
+                borderWidth: 1,
             },
         },
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:border dark:border-gray-700">
             <div className="mb-4">
-                <h3 className="text-lg font-semibold">Phân bổ dung lượng S3</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Phân bổ dung lượng S3</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                     Tổng: {data.totalSizeFormatted} ({data.totalFiles} files)
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                     Region: {data.region}
                 </p>
             </div>
@@ -103,26 +114,26 @@ export const S3StorageChart: React.FC<S3StorageChartProps> = ({ organizationId }
             {/* Detail stats */}
             <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
                 <div className="border-l-4 border-blue-500 pl-2">
-                    <div className="font-medium">Avatars</div>
-                    <div className="text-gray-600">
+                    <div className="font-medium text-gray-900 dark:text-white">Avatars</div>
+                    <div className="text-gray-600 dark:text-gray-400">
                         {data.folderStats.avatars.count} files • {data.folderStats.avatars.sizeFormatted}
                     </div>
                 </div>
                 <div className="border-l-4 border-green-500 pl-2">
-                    <div className="font-medium">Documents</div>
-                    <div className="text-gray-600">
+                    <div className="font-medium text-gray-900 dark:text-white">Documents</div>
+                    <div className="text-gray-600 dark:text-gray-400">
                         {data.folderStats.documents.count} files • {data.folderStats.documents.sizeFormatted}
                     </div>
                 </div>
                 <div className="border-l-4 border-yellow-500 pl-2">
-                    <div className="font-medium">Images</div>
-                    <div className="text-gray-600">
+                    <div className="font-medium text-gray-900 dark:text-white">Images</div>
+                    <div className="text-gray-600 dark:text-gray-400">
                         {data.folderStats.images.count} files • {data.folderStats.images.sizeFormatted}
                     </div>
                 </div>
                 <div className="border-l-4 border-gray-500 pl-2">
-                    <div className="font-medium">Others</div>
-                    <div className="text-gray-600">
+                    <div className="font-medium text-gray-900 dark:text-white">Others</div>
+                    <div className="text-gray-600 dark:text-gray-400">
                         {data.folderStats.others.count} files • {data.folderStats.others.sizeFormatted}
                     </div>
                 </div>

@@ -180,9 +180,8 @@ export const TagInput: React.FC<TagInputProps> = ({
             {isOpen && !disabled && (
                 <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
                     {loading ? (
-                        <div className="p-3 text-center text-gray-500">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-doan-500 mx-auto mb-2"></div>
-                            Đang tải...
+                        <div className="p-3 flex justify-center">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-doan-500"></div>
                         </div>
                     ) : filteredOptions.length === 0 ? (
                         <div className="p-3 text-center text-gray-500 dark:text-gray-400">

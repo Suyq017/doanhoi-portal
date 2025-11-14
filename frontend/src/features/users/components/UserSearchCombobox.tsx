@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Search, X, User } from 'lucide-react';
+import { ChevronDown, X, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export interface User {
@@ -244,9 +244,8 @@ const UserSearchCombobox: React.FC<UserSearchComboboxProps> = ({
                         }}
                     >
                         {loading ? (
-                            <div className="px-4 py-2 text-center text-gray-500 dark:text-gray-400">
-                                <Search className="w-4 h-4 animate-spin mx-auto mb-2" />
-                                Đang tải...
+                            <div className="px-4 py-2 flex justify-center">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-doan-500"></div>
                             </div>) : filteredUsers.length > 0 ? (
                                 <ul ref={listRef} className="py-1">
                                     {filteredUsers.map((user, index) => (<li key={user.id}>

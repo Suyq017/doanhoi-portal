@@ -176,10 +176,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
             <div className="border border-gray-200 rounded-lg dark:border-gray-700">
               {loading ? (
                 <div className="flex items-center justify-center min-h-[300px]">
-                  <div className="text-center">
-                    <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
-                    <p className="mt-4 text-gray-600 dark:text-gray-400">Đang tải hoạt động...</p>
-                  </div>
+                  <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
                 </div>
               ) : activities.length === 0 ? (
                 <div className="flex items-center justify-center min-h-[300px]">

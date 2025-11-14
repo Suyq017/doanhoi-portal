@@ -118,7 +118,6 @@ const StudentReportsPage: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg">
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-2 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
-            <span className="ml-3 text-gray-600 dark:text-gray-400">{t('messages.loading')}</span>
           </div>
         </div>
       )}

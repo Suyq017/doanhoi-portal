@@ -282,7 +282,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return <AppLoadingScreen />;
   }
 
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = (path: string) => {
+    // Exact match for dashboard (root path)
+    if (path === '/portal') {
+      return location.pathname === '/portal';
+    }
+    // For other paths, check exact match or if it starts with the path followed by /
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
   const isParentActive = (children: any[]) => children.some(child => child.href && isActive(child.href));
 
   return (

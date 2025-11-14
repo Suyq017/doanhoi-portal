@@ -665,10 +665,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       </div>        {/* Form */}
       {loadingUserDetail ? (
         <div className="p-6 flex items-center justify-center">
-          <div className="flex items-center space-x-2 text-gray-500">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span>{t('users:messages.loadingUserDetails', { defaultValue: 'Đang tải thông tin người dùng...' })}</span>
-          </div>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="p-6 space-y-4">

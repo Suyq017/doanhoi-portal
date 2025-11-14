@@ -361,9 +361,8 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                     {organizationDropdownOpen && (
                       <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                         {loadingOrganizations ? (
-                          <div className="px-3 py-2 text-sm text-gray-500 flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
-                            Đang tải...
+                          <div className="px-3 py-2 flex justify-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
                           </div>
                         ) : organizations.length > 0 ? (
                           organizations.map((org: { id: string; name: string }) => (

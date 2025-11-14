@@ -536,10 +536,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
       <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
         {isLoading ? (
           <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
-              <p className="mt-4 text-gray-600 dark:text-gray-400">{t('activity.loading')}</p>
-            </div>
+            <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
           </div>
         ) : (
           <>
