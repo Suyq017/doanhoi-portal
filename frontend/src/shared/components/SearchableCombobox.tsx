@@ -182,8 +182,8 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
             role="listbox"
           >
             {loading ? (
-              <li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                Đang tải...
+              <li className="px-3 py-2 flex justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-doan-600"></div>
               </li>
             ) : filteredOptions.length === 0 ? (
               <li className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">

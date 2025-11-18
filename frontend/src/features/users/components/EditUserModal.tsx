@@ -665,10 +665,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       </div>        {/* Form */}
       {loadingUserDetail ? (
         <div className="p-6 flex items-center justify-center">
-          <div className="flex items-center space-x-2 text-gray-500">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span>{t('users:messages.loadingUserDetails', { defaultValue: 'Đang tải thông tin người dùng...' })}</span>
-          </div>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -866,7 +863,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                   }))}
                   value={formData.classId || ''}
                   onChange={(value) => setFormData(prev => ({ ...prev, classId: value }))}
-                  placeholder="Chọn lớp học..."
+                  placeholder={t('users:placeholders.className')}
                   disabled={loading}
                 />
               </div>
@@ -903,7 +900,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                   }))}
                   value={formData.managementDepartmentId || ''}
                   onChange={(value) => setFormData(prev => ({ ...prev, managementDepartmentId: value }))}
-                  placeholder="Chọn đơn vị quản lý..."
+                  placeholder={t('users:placeholders.managementDepartment')}
                   disabled={loading}
                 />
               </div>
@@ -921,7 +918,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                   }))}
                   value={formData.trainingDepartmentId || ''}
                   onChange={(value) => setFormData(prev => ({ ...prev, trainingDepartmentId: value }))}
-                  placeholder="Chọn khoa đào tạo..."
+                  placeholder={t('users:placeholders.trainingDepartment')}
                   disabled={loading}
                 />
               </div>
@@ -956,9 +953,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   disabled={loading}
                 >
-                  <option value="">Chọn giới tính...</option>
-                  <option value="NAM">Nam</option>
-                  <option value="NU">Nữ</option>
+                  <option value="">{t('users:placeholders.gender')}</option>
+                  <option value="NAM">{t('users:gender.male')}</option>
+                  <option value="NU">{t('users:gender.female')}</option>
                 </select>
               </div>
             </div>

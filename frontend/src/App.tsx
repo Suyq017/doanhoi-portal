@@ -22,6 +22,10 @@ import {
 } from './features/fee-collection';
 import { CategoryManagement, ActivityManagement, ActivityDetail, LimitConfigManagement, CtxhOldSystemImportPage } from './features/ctxh/pages';
 import { StudentReportsPage } from './features/student-reports';
+import FormsPage from './features/templates/pages/FormsPage';
+import TemplateListPage from './features/templates/pages/admin/TemplateListPage';
+import TemplateUploadPage from './features/templates/pages/admin/TemplateUploadPage';
+import TemplateConfigPage from './features/templates/pages/admin/TemplateConfigPage';
 import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
 
@@ -39,9 +43,9 @@ function App() {
               <Route path="/admin-doan-hoi/login" element={<AdminLoginPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
 
-              {/* Protected Routes wrapped in AuthGuard */}
+              {/* Protected Routes wrapped in AuthGuard with /portal prefix */}
               <Route
-                path="/*"
+                path="/portal/*"
                 element={
                   <AuthGuard>
                     <Routes>
@@ -58,7 +62,7 @@ function App() {
                         }
                       />
                       <Route
-                        path="/users"
+                        path="users"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['users.access']}>
                             <Layout>
@@ -70,7 +74,7 @@ function App() {
                         }
                       />
                       <Route
-                        path="/organizations"
+                        path="organizations"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['organizations.access']}>
                             <Layout>
@@ -82,7 +86,7 @@ function App() {
                         }
                       />
                       <Route
-                        path="/organizations/:type/:code"
+                        path="organizations/:type/:code"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['organizations.access']}>
                             <Layout>
@@ -97,7 +101,7 @@ function App() {
 
                       />
                       <Route
-                        path="/organizations/:parentType/:parentCode/:type/:code"
+                        path="organizations/:parentType/:parentCode/:type/:code"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['organizations.access']}>
                             <Layout>
@@ -112,7 +116,7 @@ function App() {
 
                       />
                       <Route
-                        path="/departments"
+                        path="departments"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['departments.access']}>
                             <Layout>
@@ -124,7 +128,7 @@ function App() {
                         }
                       />
                       <Route
-                        path="/classes"
+                        path="classes"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['classes.access']}>
                             <Layout>
@@ -136,7 +140,7 @@ function App() {
                         }
                       />
                       <Route
-                        path="/permissions"
+                        path="permissions"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['permissions.access']}>
                             <Layout>
@@ -150,7 +154,7 @@ function App() {
 
                       {/* System Config Route */}
                       <Route
-                        path="/system-config"
+                        path="system-config"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['system-config.access']}>
                             <Layout>
@@ -164,7 +168,7 @@ function App() {
 
                       {/* CTXH Routes */}
                       <Route
-                        path="/ctxh/categories"
+                        path="ctxh/categories"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
                             <Layout>
@@ -176,7 +180,7 @@ function App() {
                         }
                       />
                       <Route
-                        path="/ctxh/activities"
+                        path="ctxh/activities"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
                             <Layout>
@@ -188,7 +192,7 @@ function App() {
                         }
                       />
                       <Route
-                        path="/ctxh/activities/:id"
+                        path="ctxh/activities/:id"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
                             <Layout>
@@ -200,7 +204,7 @@ function App() {
                         }
                       />
                       <Route
-                        path="/ctxh/limit-config"
+                        path="ctxh/limit-config"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
                             <Layout>
@@ -212,7 +216,7 @@ function App() {
                         }
                       />
                       <Route
-                        path="/ctxh/import-old-system"
+                        path="ctxh/import-old-system"
                         element={
                           <EnhancedProtectedRoute requiredPermissions={['ctxh.import.old_system']}>
                             <Layout>
@@ -225,7 +229,7 @@ function App() {
                       />
                       {/* Student Reports */}
                       <Route
-                        path="/student-reports"
+                        path="student-reports"
                         element={
                           <ProtectedRoute>
                             <Layout>
@@ -233,9 +237,55 @@ function App() {
                             </Layout>
                           </ProtectedRoute>
                         }
-                      />                    {/* Admin Payment Routes */}
+                      />
+
+                      {/* Template Routes - User */}
                       <Route
-                        path="/admin/payment-campaigns"
+                        path="forms"
+                        element={
+                          <ProtectedRoute>
+                            <Layout>
+                              <FormsPage />
+                            </Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+
+                      {/* Template Routes - Admin */}
+                      <Route
+                        path="admin/templates"
+                        element={
+                          <ProtectedRoute>
+                            <Layout>
+                              <TemplateListPage />
+                            </Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="admin/templates/upload"
+                        element={
+                          <ProtectedRoute>
+                            <Layout>
+                              <TemplateUploadPage />
+                            </Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="admin/templates/:id/configure"
+                        element={
+                          <ProtectedRoute>
+                            <Layout>
+                              <TemplateConfigPage />
+                            </Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+
+                      {/* Admin Payment Routes */}
+                      <Route
+                        path="admin/payment-campaigns"
                         element={
                           <ProtectedRoute>
                             <Layout>
@@ -248,7 +298,7 @@ function App() {
                       />
                       {/* Removed: /admin/payment-campaigns/create and /admin/payment-campaigns/:id/edit (now using modals) */}
                       <Route
-                        path="/admin/payment-campaigns/:id"
+                        path="admin/payment-campaigns/:id"
                         element={
                           <ProtectedRoute>
                             <Layout>
@@ -262,7 +312,7 @@ function App() {
 
                       {/* Member Payment Routes */}
                       <Route
-                        path="/payment/my-campaigns"
+                        path="payment/my-campaigns"
                         element={
                           <ProtectedRoute>
                             <Layout>
@@ -274,7 +324,7 @@ function App() {
                         }
                       />
                       <Route
-                        path="/payment-result/:orderCode"
+                        path="payment-result/:orderCode"
                         element={
                           <ProtectedRoute>
                             <Layout>

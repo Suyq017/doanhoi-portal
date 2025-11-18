@@ -17,18 +17,11 @@ const ViewClassModal: React.FC<ViewClassModalProps> = ({
 }) => {
   const { t } = useTranslation(['classes', 'common']);
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   if (!isOpen) return null;
 
   return createPortal(
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={handleOverlayClick}
     >
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
@@ -53,7 +46,7 @@ const ViewClassModal: React.FC<ViewClassModalProps> = ({
               <Tag className="w-5 h-5 mr-2" />
               {t('classes:labels.classInfo')}
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Class Name */}
               <div>
@@ -81,11 +74,10 @@ const ViewClassModal: React.FC<ViewClassModalProps> = ({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('common:fields.status')}
                 </label>
-                <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                  classData.isActive 
+                <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${classData.isActive
                     ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
                     : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
-                }`}>
+                  }`}>
                   {classData.isActive ? t('common:status.active') : t('common:status.inactive')}
                 </span>
               </div>
@@ -99,7 +91,7 @@ const ViewClassModal: React.FC<ViewClassModalProps> = ({
                 <Building className="w-5 h-5 mr-2" />
                 {t('classes:fields.department')}
               </h3>
-              
+
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -110,7 +102,7 @@ const ViewClassModal: React.FC<ViewClassModalProps> = ({
                       {classData.department.name}
                     </div>
                   </div>
-                  
+
                   {classData.department.code && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -132,7 +124,7 @@ const ViewClassModal: React.FC<ViewClassModalProps> = ({
               <Users className="w-5 h-5 mr-2" />
               {t('classes:labels.studentList')}
             </h3>
-            
+
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -142,14 +134,14 @@ const ViewClassModal: React.FC<ViewClassModalProps> = ({
                   </span>
                 </div>
               </div>
-              
+
               {classData.students && classData.students.length > 0 ? (
                 <div className="mt-4">
                   <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {t('common:pagination.showing', { 
-                      start: 1, 
-                      end: Math.min(5, classData.students.length), 
-                      total: classData.students.length 
+                    {t('common:pagination.showing', {
+                      start: 1,
+                      end: Math.min(5, classData.students.length),
+                      total: classData.students.length
                     })}
                   </div>
                   <div className="space-y-2">

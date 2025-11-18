@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Shield, ChevronDown, ChevronRight, Users, Building, LayoutDashboard, Building2, GraduationCap, Check, Minus, CreditCard, Heart, BarChart } from 'lucide-react';
+import { X, Shield, ChevronDown, ChevronRight, Users, Building, LayoutDashboard, Building2, GraduationCap, Check, Minus, CreditCard, Heart, BarChart, FileText } from 'lucide-react';
 import { roleService, type UpdateRoleRequest, type Permission, type Role } from '../services/roleService';
 
 interface EditRoleModalProps {
@@ -71,6 +71,13 @@ const usePermissionGroups = () => {
             description: t('permissions.categories.ctxh')
         },
         {
+            id: 'templates',
+            name: t('permissions.categories.templates'),
+            icon: FileText,
+            color: 'blue',
+            description: t('permissions.categories.templates')
+        },
+        {
             id: 'reports',
             name: t('permissions.categories.reports'),
             icon: BarChart,
@@ -83,6 +90,13 @@ const usePermissionGroups = () => {
             icon: Shield,
             color: 'yellow',
             description: t('permissions.categories.permissions')
+        },
+        {
+            id: 'system-config',
+            name: t('permissions.categories.systemConfig', 'Cấu hình hệ thống'),
+            icon: Shield,
+            color: 'indigo',
+            description: t('permissions.categories.systemConfig', 'Cấu hình hệ thống')
         }
     ];
 };
@@ -193,7 +207,11 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
                 { id: '25', code: 'permissions.create', name: 'Tạo vai trò mới', category: 'permissions', context: 'system', isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
                 { id: '26', code: 'permissions.view_details', name: 'Xem chi tiết vai trò', category: 'permissions', context: 'system', isActive: true, sortOrder: 3, createdAt: '', updatedAt: '' },
                 { id: '27', code: 'permissions.update', name: 'Chỉnh sửa vai trò', category: 'permissions', context: 'system', isActive: true, sortOrder: 4, createdAt: '', updatedAt: '' },
-                { id: '28', code: 'permissions.delete', name: 'Xóa vai trò', category: 'permissions', context: 'system', isActive: true, sortOrder: 5, createdAt: '', updatedAt: '' },]);
+                { id: '28', code: 'permissions.delete', name: 'Xóa vai trò', category: 'permissions', context: 'system', isActive: true, sortOrder: 5, createdAt: '', updatedAt: '' },
+
+                // System Config permissions
+                { id: '64', code: 'system-config.access', name: 'Truy cập cấu hình hệ thống', category: 'system-config', context: 'system', isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
+            ]);
         } finally {
             setLoading(false);
         }
@@ -317,6 +335,13 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
                     border: 'border-pink-200 dark:border-pink-800',
                     text: 'text-pink-700 dark:text-pink-300',
                     icon: 'text-pink-500 dark:text-pink-400'
+                };
+            case 'indigo':
+                return {
+                    bg: 'bg-indigo-50 dark:bg-indigo-900/20',
+                    border: 'border-indigo-200 dark:border-indigo-800',
+                    text: 'text-indigo-700 dark:text-indigo-300',
+                    icon: 'text-indigo-500 dark:text-indigo-400'
                 };
             default:
                 return {

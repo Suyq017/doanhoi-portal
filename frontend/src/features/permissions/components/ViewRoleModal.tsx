@@ -35,7 +35,9 @@ const ViewRoleModal: React.FC<ViewRoleModalProps> = ({
         }
         acc[category].push(permission);
         return acc;
-    }, {} as Record<string, any[]>) || {}; const getCategoryName = (category: string) => {
+    }, {} as Record<string, typeof role.permissions>) || {};
+
+    const getCategoryName = (category: string) => {
         const names = {
             dashboard: t('permissions.categories.dashboard'),
             users: t('permissions.categories.users'),
@@ -44,6 +46,7 @@ const ViewRoleModal: React.FC<ViewRoleModalProps> = ({
             classes: t('permissions.categories.classes'),
             permissions: t('permissions.categories.permissions'),
             ctxh: t('permissions.categories.ctxh'),
+            templates: t('permissions.categories.templates'),
             payments: t('permissions.categories.payments'),
             'my-payments': t('permissions.categories.myPayments'),
             reports: t('permissions.categories.reports'),
@@ -60,6 +63,7 @@ const ViewRoleModal: React.FC<ViewRoleModalProps> = ({
             classes: 'text-red-600 bg-red-50 dark:bg-red-900/20',
             permissions: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20',
             ctxh: 'text-teal-600 bg-teal-50 dark:bg-teal-900/20',
+            templates: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20',
             payments: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20',
             'my-payments': 'text-cyan-600 bg-cyan-50 dark:bg-cyan-900/20',
             reports: 'text-pink-600 bg-pink-50 dark:bg-pink-900/20',

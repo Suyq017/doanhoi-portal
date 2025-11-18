@@ -186,17 +186,10 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
     if (!isOpen) return null;
 
-    const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (e.target === e.currentTarget) {
-            handleClose();
-        }
-    };
-
     const modalContent = (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] px-4"
             style={{ margin: 0, top: 0, left: 0, right: 0, bottom: 0 }}
-            onClick={handleOverlayClick}
         >
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg overflow-hidden">
                 {/* Header */}

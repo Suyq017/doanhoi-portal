@@ -168,7 +168,11 @@ const OrganizationsSubDetailPage: React.FC = () => {
         // If forceShowMembers is true but we don't have org data, show loading or error
         if (forceShowMembers && !displayOrganization) {
             if (loading) {
-                return <div className="text-center py-4">{t('common:loading')}</div>;
+                return (
+                    <div className="flex items-center justify-center py-4">
+                        <div className="w-8 h-8 border-b-2 rounded-full animate-spin border-doan-600"></div>
+                    </div>
+                );
             }
             return (
                 <div className="text-center py-4 text-gray-500">

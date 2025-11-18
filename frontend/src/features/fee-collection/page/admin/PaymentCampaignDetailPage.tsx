@@ -264,7 +264,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
       showSuccess(t('messages.deleteSuccess'));
 
       // Navigate back to campaigns list after successful deletion
-      navigate('/admin/payment-campaigns');
+      navigate('/portal/admin/payment-campaigns');
     } catch (err) {
       console.error('Error in handleDelete:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete campaign';

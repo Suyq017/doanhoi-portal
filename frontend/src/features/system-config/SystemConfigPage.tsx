@@ -18,17 +18,17 @@ const SystemConfigPage: React.FC = () => {
         const checkPermission = async () => {
             try {
                 if (!auth.user) {
-                    navigate('/admin-doan-hoi/login');
+                    navigate('/login');
                     return;
                 }
 
                 const hasAccess = hasPermission('system-config.access');
                 if (!hasAccess) {
-                    navigate('/');
+                    navigate('/portal');
                 }
             } catch (error) {
                 console.error('Permission check failed:', error);
-                navigate('/');
+                navigate('/portal');
             } finally {
                 setIsCheckingPermission(false);
             }

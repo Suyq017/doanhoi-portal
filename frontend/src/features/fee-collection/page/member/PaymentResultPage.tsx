@@ -133,7 +133,7 @@ export const PaymentResultPage: React.FC = () => {
                 <span>{t('error.tryAgain')}</span>
               </button>
               <button
-                onClick={() => navigate('/payment/my-campaigns')}
+                onClick={() => navigate('/portal/payment/my-campaigns')}
                 className="w-full px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
               >
                 {t('error.backToHome')}
@@ -154,7 +154,7 @@ export const PaymentResultPage: React.FC = () => {
             <h1 className="mb-2 text-xl font-bold text-gray-900">{t('notFound.title')}</h1>
             <p className="mb-6 text-gray-600">{t('notFound.message')}</p>
             <button
-              onClick={() => navigate('/payment/my-campaigns')}
+              onClick={() => navigate('/portal/payment/my-campaigns')}
               className="w-full px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
             >
               {t('notFound.backToHome')}
@@ -300,7 +300,7 @@ export const PaymentResultPage: React.FC = () => {
             <div className="space-y-3 no-print">
               {paymentStatus.status === 'PAID' && (
                 <button
-                  onClick={() => navigate('/payment/my-campaigns')}
+                  onClick={() => navigate('/portal/payment/my-campaigns')}
                   className="w-full px-4 py-3 font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
                 >
                   {t('actions.backToMyCampaigns')}
@@ -309,7 +309,7 @@ export const PaymentResultPage: React.FC = () => {
 
               {(paymentStatus.status === 'CANCELLED' || paymentStatus.status === 'EXPIRED') && (
                 <button
-                  onClick={() => navigate('/payment/my-campaigns')}
+                  onClick={() => navigate('/portal/payment/my-campaigns')}
                   className="w-full px-4 py-3 font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                 >
                   {t('actions.backToMyCampaigns')}
@@ -317,7 +317,7 @@ export const PaymentResultPage: React.FC = () => {
               )}
 
               {/* <button
-                onClick={() => navigate('/payment/my-campaigns')}
+                onClick={() => navigate('/portal/payment/my-campaigns')}
                 className="w-full px-4 py-3 font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
               >
                 {t('actions.backToMyCampaigns')}

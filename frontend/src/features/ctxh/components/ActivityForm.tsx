@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { CtxhCategory, CtxhActivity, CreateActivityRequest, UpdateActivityRequest, ActivityStatus } from '../types';
-import { categoryService, activityService, limitConfigService } from '../services';
+import { categoryService, limitConfigService } from '../services';
 import { organizationService } from '../../../shared/services/organizationService';
 import { useToast } from '../../../shared/hooks';
 import { useOrganizationList } from '../../../shared/hooks/queries';
@@ -122,7 +122,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   // Validate required fields
   const validateFields = async () => {
     let isValid = true;
-    const errors = [];
+    const errors: string[] = [];
 
     // Set field validation states - validate all fields fresh
     let totalDaysValidation = { isValid: true, message: '' };
@@ -131,6 +131,11 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     if (formData.totalDays) {
       totalDaysValidation = validateTotalDays(formData.totalDays);
     }
+
+    // Preserve existing totalDays validation if it already has an error (from real-time check)
+    const preservedTotalDaysValidation = !fieldValidation.totalDays.isValid && fieldValidation.totalDays.message
+      ? fieldValidation.totalDays
+      : totalDaysValidation;
 
     const newFieldValidation = {
       name: {
@@ -145,7 +150,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         isValid: formData.organizationId !== '',
         message: formData.organizationId === '' ? t('activity.validation.organizationRequired') : ''
       },
-      totalDays: totalDaysValidation,
+      totalDays: preservedTotalDaysValidation,
       startDate: { isValid: true, message: '' },
       endDate: { isValid: true, message: '' },
       location: { isValid: true, message: '' }
@@ -213,29 +218,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
       return { isValid: false, errors: [] };
     }
 
-    // Check for duplicate name + category combination (only if name and category are valid)
-    if (formData.name.trim() && formData.categoryId) {
-      try {
-        const response = await activityService.findAll({
-          search: formData.name.trim(),
-          category_id: formData.categoryId,
-          limit: 100
-        });
-
-        const existingActivity = response.data.find((act: any) =>
-          act.name.toLowerCase() === formData.name.trim().toLowerCase() &&
-          act.category_id === formData.categoryId &&
-          (!activity || act.id !== activity.id) // Exclude current activity when editing
-        );
-
-        if (existingActivity) {
-          errors.push(t('activity.validation.duplicateNameCategory'));
-          isValid = false;
-        }
-      } catch (error) {
-        console.error('Error checking duplicate activity:', error);
-      }
-    }
+    // Note: Duplicate name checking is now handled by backend when submitting
+    // This avoids issues with race conditions and ensures consistency
 
     // Check organization day limit (when totalDays is specified - validate for both new and existing activities)
     if (formData.totalDays && formData.organizationId) {
@@ -252,45 +236,25 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
           const maxDays = activeConfig.maxDays;
 
           if (totalDays > maxDays) {
-            errors.push(t('limitConfig.validation.totalDaysExceedLimit', {
-              totalDays: totalDays,
-              maxDays: formatNumber(maxDays)
-            }));
-
-            // Also update the totalDays field validation
+            // Update only the totalDays field validation, keep other fields intact
             newFieldValidation.totalDays = {
               isValid: false,
               message: t('limitConfig.validation.organizationLimitExceeded', {
                 maxDays: formatNumber(maxDays)
               })
             };
-            setFieldValidation(newFieldValidation);
             isValid = false;
-          } else {
-            // Clear any previous validation error for totalDays
-            newFieldValidation.totalDays = {
-              isValid: true,
-              message: ''
-            };
-            setFieldValidation(newFieldValidation);
           }
-        } else {
-          // Clear any previous validation error for totalDays when no limit config
-          newFieldValidation.totalDays = {
-            isValid: true,
-            message: ''
-          };
-          setFieldValidation(newFieldValidation);
         }
       } catch (error) {
         console.error('Error checking organization day limit:', error);
-        showError(t('activity.checkDayLimitError'));
       }
-    } else {
-      // Skip day limit validation if totalDays or organizationId not provided
     }
 
-    // Return validation result with errors for external handling (only duplicate errors)
+    // Set final field validation state (after all async checks)
+    setFieldValidation(newFieldValidation);
+
+    // Return validation result with errors for external handling
     return { isValid, errors };
   };
 
@@ -491,25 +455,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     const fieldValidationValid = Object.values(fieldValidation).every(field => field.isValid);
 
     if (!validationResult.isValid || !datesValid || !fieldValidationValid) {
-      // Show all validation errors in a single toast
-      const allErrors = [...validationResult.errors];
-      if (!dateValidation.startDate.isValid) {
-        allErrors.push(dateValidation.startDate.message);
-      }
-      if (!dateValidation.endDate.isValid) {
-        allErrors.push(dateValidation.endDate.message);
-      }
-
-      // Add field validation errors
-      Object.values(fieldValidation).forEach(field => {
-        if (!field.isValid) {
-          allErrors.push(field.message);
-        }
-      });
-
-      if (allErrors.length > 0) {
-        showError(allErrors.join(' • '));
-      }
       return;
     }
 
@@ -529,12 +474,26 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
       };
 
       await onSubmit(submitData as any);
-      // Success toast will be shown by parent component
+      // Only close form if submission succeeds (no error thrown)
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to submit form:', error);
-      // Don't show error toast here - let parent handle server errors
-      // Don't close the form on error so user can try again
+      
+      // Check if it's a duplicate name error
+      const errorMessage = error.message || error.response?.data?.message || '';
+      if (errorMessage.includes('đã tồn tại')) {
+        // Show error in form field
+        setFieldValidation(prev => ({
+          ...prev,
+          name: { 
+            isValid: false, 
+            message: errorMessage
+          }
+        }));
+        showError(errorMessage);
+      }
+      // Error is already handled and shown by parent component
+      // Keep form open so user can fix the issue and try again
     } finally {
       setLoading(false);
     }
@@ -632,16 +591,104 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
       }));
     }
 
+    // Always validate totalDays day limit (for all statuses)
+    if (field === 'totalDays' && value && formData.organizationId) {
+      const totalDaysValue = parseFloat(value);
+      
+      if (totalDaysValue >= 0.5) {
+        // Check day limit asynchronously
+        (async () => {
+          try {
+            const limitConfigs = await limitConfigService.findAll({
+              organization_id: formData.organizationId,
+              status: 'ACTIVE' as any,
+              limit: 10
+            });
+
+            if (limitConfigs.data && limitConfigs.data.length > 0) {
+              const activeConfig = limitConfigs.data[0];
+              const maxDays = activeConfig.maxDays;
+
+              if (totalDaysValue > maxDays) {
+                setFieldValidation(prev => ({
+                  ...prev,
+                  totalDays: {
+                    isValid: false,
+                    message: t('limitConfig.validation.organizationLimitExceeded', {
+                      maxDays: formatNumber(maxDays)
+                    })
+                  }
+                }));
+              } else {
+                setFieldValidation(prev => ({
+                  ...prev,
+                  totalDays: {
+                    isValid: true,
+                    message: ''
+                  }
+                }));
+              }
+            }
+          } catch (error) {
+            console.error('Error checking day limit:', error);
+          }
+        })();
+      }
+    }
+
     // Re-validate active fields when they change and status is ACTIVE
     if (formData.status === ActivityStatus.ACTIVE) {
       if (field === 'totalDays') {
-        setFieldValidation(prev => ({
-          ...prev,
-          totalDays: {
-            isValid: !!(value && parseInt(value) >= 1),
-            message: (!value || parseInt(value) < 1) ? t('activity.validation.totalDaysRequired') : ''
-          }
-        }));
+        const totalDaysValue = parseFloat(value);
+        
+        // First check basic validation
+        if (!value || totalDaysValue < 0.5) {
+          setFieldValidation(prev => ({
+            ...prev,
+            totalDays: {
+              isValid: false,
+              message: t('activity.validation.totalDaysRequired')
+            }
+          }));
+        } else {
+          // Then check day limit asynchronously
+          (async () => {
+            try {
+              const limitConfigs = await limitConfigService.findAll({
+                organization_id: formData.organizationId,
+                status: 'ACTIVE' as any,
+                limit: 10
+              });
+
+              if (limitConfigs.data && limitConfigs.data.length > 0) {
+                const activeConfig = limitConfigs.data[0];
+                const maxDays = activeConfig.maxDays;
+
+                if (totalDaysValue > maxDays) {
+                  setFieldValidation(prev => ({
+                    ...prev,
+                    totalDays: {
+                      isValid: false,
+                      message: t('limitConfig.validation.organizationLimitExceeded', {
+                        maxDays: formatNumber(maxDays)
+                      })
+                    }
+                  }));
+                } else {
+                  setFieldValidation(prev => ({
+                    ...prev,
+                    totalDays: {
+                      isValid: true,
+                      message: ''
+                    }
+                  }));
+                }
+              }
+            } catch (error) {
+              console.error('Error checking day limit:', error);
+            }
+          })();
+        }
       }
 
       if (field === 'startDate') {
@@ -981,8 +1028,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                   }`}
                 placeholder={t('activity.form.totalDaysPlaceholder')}
               />
-              {!fieldValidation.totalDays.isValid && (
-                <p className="mt-1 text-sm text-red-600">
+              {!fieldValidation.totalDays.isValid && fieldValidation.totalDays.message && (
+                <p className="mt-1 text-sm text-red-600" style={{ display: 'block', color: 'red', fontSize: '14px', marginTop: '4px' }}>
                   {fieldValidation.totalDays.message}
                 </p>
               )}

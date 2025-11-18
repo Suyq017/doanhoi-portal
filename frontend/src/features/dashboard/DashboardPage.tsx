@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/context/AuthContext';
 import { dashboardService } from './services/dashboardService';
+import { S3StorageChart } from './components/S3StorageChart';
+import { S3TrendChart } from './components/S3TrendChart';
 
 const Dashboard: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'common']);
@@ -26,7 +28,7 @@ const Dashboard: React.FC = () => {
 
     if (!hasDashboardAccess) {
       console.log('User does not have dashboard.access permission, redirecting to student-reports');
-      navigate('/student-reports', { replace: true });
+      navigate('/portal/student-reports', { replace: true });
     } else {
       setIsCheckingPermission(false);
     }
@@ -38,9 +40,6 @@ const Dashboard: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-doan-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            {t('common:loading')}
-          </p>
         </div>
       </div>
     );
@@ -111,6 +110,15 @@ const Dashboard: React.FC = () => {
             </div>
           );
         })}
+      </div>
+
+      {/* S3 Storage Statistics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* S3 Storage Distribution */}
+        <S3StorageChart />
+
+        {/* S3 Trend Chart */}
+        <S3TrendChart />
       </div>
     </div>
   );

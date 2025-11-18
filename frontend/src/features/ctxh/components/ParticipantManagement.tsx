@@ -954,9 +954,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       {/* Participants Table */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden max-w-full">
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Đang tải danh sách sinh viên...</p>
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
           </div>
         ) : filteredParticipants.length === 0 ? (
           <div className="text-center py-12">

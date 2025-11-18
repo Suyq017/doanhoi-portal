@@ -68,7 +68,7 @@ export const AccessDeniedScreen: React.FC<AccessDeniedScreenProps> = ({
 
                         <div>
                             <button
-                                onClick={() => navigate('/')}
+                                onClick={() => navigate('/portal')}
                                 className="text-doan-600 hover:text-doan-700 dark:text-doan-400 dark:hover:text-doan-300 font-medium text-sm transition-colors"
                             >
                                 {t('common:actions.goToHomepage', { defaultValue: 'Về trang chủ' })}

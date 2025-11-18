@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard, Heart, Calendar, BarChart, Settings, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard, Heart, Calendar, BarChart, Settings, Upload, FileText } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
 import { LoginButton } from '../../features/auth';
@@ -13,14 +13,31 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+const EXPANDED_MENUS_KEY = 'expandedMenus';
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['dataManagement']);
+  
+  // Load expanded menus from localStorage, default to ['dataManagement', 'ctxh'] if not found
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(EXPANDED_MENUS_KEY);
+      return saved ? JSON.parse(saved) : ['dataManagement', 'ctxh'];
+    } catch {
+      return ['dataManagement', 'ctxh'];
+    }
+  });
+  
   const location = useLocation();
   const { t } = useTranslation('common');
   const permissions = usePermissions();
   const ctxhPermissions = useCtxhPermissions();
+
+  // Save expanded menus to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(EXPANDED_MENUS_KEY, JSON.stringify(expandedMenus));
+  }, [expandedMenus]);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -39,19 +56,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const baseNavigation = [
       {
         name: t('navigation.dashboard'),
-        href: '/',
+        href: '/portal',
         icon: Home,
         requiredPermission: 'dashboard.access'
       },
       {
         name: t('navigation.users'),
-        href: '/users',
+        href: '/portal/users',
         icon: Users,
         requiredPermission: 'users.access'
       },
       {
         name: t('navigation.organizations'),
-        href: '/organizations',
+        href: '/portal/organizations',
         icon: Building,
         requiredPermission: 'organizations.access'
       },
@@ -62,26 +79,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         children: [
           {
             name: t('navigation.departments'),
-            href: '/departments',
+            href: '/portal/departments',
             icon: Building2,
             requiredPermission: 'departments.access'
           },
           {
             name: t('navigation.classes'),
-            href: '/classes',
+            href: '/portal/classes',
             icon: GraduationCap,
             requiredPermission: 'classes.access'
           },
         ]
       }, {
         name: t('navigation.permissions'),
-        href: '/permissions',
+        href: '/portal/permissions',
         icon: Shield,
         requiredPermission: 'permissions.access'
       },
       {
         name: t('navigation.systemConfig'),
-        href: '/system-config',
+        href: '/portal/system-config',
         icon: Settings,
         requiredPermission: 'system-config.access'
       },
@@ -93,25 +110,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         children: [
           {
             name: t('navigation.ctxhCategories'),
-            href: '/ctxh/categories',
+            href: '/portal/ctxh/categories',
             icon: Database,
             requiredPermission: 'ctxh.categories.view'
           },
           {
             name: t('navigation.ctxhActivities'),
-            href: '/ctxh/activities',
+            href: '/portal/ctxh/activities',
             icon: Calendar,
             requiredPermission: 'ctxh.activities.view'
           },
           {
             name: t('navigation.ctxhLimitConfig'),
-            href: '/ctxh/limit-config',
+            href: '/portal/ctxh/limit-config',
             icon: Settings,
             requiredPermission: 'ctxh.config.manage'
           },
           {
             name: t('navigation.ctxhImportOldSystem'),
-            href: '/ctxh/import-old-system',
+            href: '/portal/ctxh/import-old-system',
             icon: Upload,
             requiredPermission: 'ctxh.import.old_system'
           }
@@ -119,19 +136,31 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       },
       {
         name: t('navigation.ctxhStudentReport'),
-        href: '/student-reports',
+        href: '/portal/student-reports',
         icon: BarChart,
         // requiredPermission: 'ctxh.reports.view'
       },
       {
+        name: t('navigation.templates'),
+        href: '/portal/forms',
+        icon: FileText,
+        requiredPermission: 'templates.access'
+      },
+      {
+        name: t('navigation.templatesAdmin'),
+        href: '/portal/admin/templates',
+        icon: Settings,
+        requiredPermission: 'templates.admin.access'
+      },
+      {
         name: t('navigation.paymentAdmin'),
-        href: '/admin/payment-campaigns',
+        href: '/portal/admin/payment-campaigns',
         icon: CreditCard,
         requiredPermission: 'payment-campaigns.access'
       },
       {
         name: t('navigation.myPayments'),
-        href: '/payment/my-campaigns',
+        href: '/portal/payment/my-campaigns',
         icon: CreditCard,
       }
     ];
@@ -253,19 +282,33 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return <AppLoadingScreen />;
   }
 
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = (path: string) => {
+    // Exact match for dashboard (root path)
+    if (path === '/portal') {
+      return location.pathname === '/portal';
+    }
+    // For other paths, check exact match or if it starts with the path followed by /
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
   const isParentActive = (children: any[]) => children.some(child => child.href && isActive(child.href));
 
   return (
     <div className={`min-h-screen bg-background ${isDarkMode ? 'dark' : ''}`} style={{ overflowX: 'hidden', maxWidth: '100vw' }}>
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-doan-600 shadow-lg transform transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-hsv-500 dark:bg-doan-500 shadow-lg transform transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b-2 border-white">
+          <div className="flex flex-col items-center justify-between p-4 border-b-2 border-white">
             <h1 className="text-lg font-bold text-white">
               {t('appName')}
             </h1>
+            <div className="mt-4">
+              <img
+                src="/assets/logo_doan_hoi_BK_1.png"
+                alt={t('auth:form.logoAlt', { defaultValue: 'Đoàn Hội BK logo' })}
+                className="mx-auto w-52 h-auto object-contain"
+              />
+            </div>
             <button
               onClick={() => setIsSidebarOpen(false)}
               className="p-1 rounded-md lg:hidden hover:bg-white hover:bg-opacity-20 text-white"
@@ -273,9 +316,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Menu className="w-5 h-5" />
             </button>
           </div>
-
+          
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {navigation.map((item) => {
               const Icon = item.icon;
 

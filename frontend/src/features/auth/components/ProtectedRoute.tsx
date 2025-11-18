@@ -20,7 +20,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!auth.isAuthenticated) {
     // Redirect to login page with return url
-    return <Navigate to="/admin-doan-hoi/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;

@@ -445,6 +445,40 @@ export const seedPermissions = async (dataSource: DataSource) => {
             context: PermissionContext.ORGANIZATION,
             sortOrder: 92,
         },
+        {
+            code: 'ctxh.import.old_system',
+            name: 'Nhập ngày CTXH từ hệ thống cũ',
+            description: 'Nhập dữ liệu CTXH từ hệ thống cũ',
+            category: 'ctxh',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 93,
+        },
+
+        // Template permissions
+        {
+            code: 'templates.access',
+            name: 'Xem trang Biểu mẫu',
+            description: 'Cho phép truy cập trang Biểu mẫu để điền và nộp form',
+            category: 'templates',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 100,
+        },
+        {
+            code: 'templates.admin.access',
+            name: 'Xem trang Quản lý biểu mẫu',
+            description: 'Cho phép truy cập trang Quản lý biểu mẫu',
+            category: 'templates',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 101,
+        },
+        {
+            code: 'templates.manage',
+            name: 'Quản lý biểu mẫu',
+            description: 'Cho phép tạo, sửa, xóa biểu mẫu trong trang Quản lý biểu mẫu',
+            category: 'templates',
+            context: PermissionContext.ORGANIZATION,
+            sortOrder: 102,
+        },
     ];
 
     for (const permissionData of permissions) {

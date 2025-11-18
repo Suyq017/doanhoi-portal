@@ -195,7 +195,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
       if (mode === 'edit' && campaign) {
         navigate(`/admin/payment-campaigns/${campaign.id}`);
       } else {
-        navigate('/admin/payment-campaigns');
+        navigate('/portal/admin/payment-campaigns');
       }
     }
   };

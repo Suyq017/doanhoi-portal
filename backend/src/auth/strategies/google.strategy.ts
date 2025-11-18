@@ -36,6 +36,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       return done(null, result);
     } catch (error) {
       console.error('Google OAuth validation error:', error.message);
+      
+      // If user not found, return error object instead of throwing
+      if (error.message.includes('User not found')) {
+        return done(null, { error: 'user_not_found', message: error.message });
+      }
+      
       return done(error, null);
     }
   }

@@ -139,7 +139,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
           {error}
         </div>
         <button
-          onClick={() => navigate('/admin/payment-campaigns')}
+          onClick={() => navigate('/portal/admin/payment-campaigns')}
           className="inline-flex items-center text-blue-600 hover:text-blue-800"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />

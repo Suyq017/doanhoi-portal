@@ -30,7 +30,7 @@ const ActivityDetail: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       if (!id) {
-        navigate('/ctxh/activities');
+        navigate('/portal/ctxh/activities');
         return;
       }
 
@@ -41,7 +41,7 @@ const ActivityDetail: React.FC = () => {
       } catch (error) {
         console.error('Failed to load activity:', error);
         showError('Không thể tải thông tin hoạt động!');
-        navigate('/ctxh/activities');
+        navigate('/portal/ctxh/activities');
       } finally {
         setLoading(false);
       }
@@ -148,7 +148,7 @@ const ActivityDetail: React.FC = () => {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('activity.detail.notFoundMessage')}</p>
           <div className="mt-6">
             <button
-              onClick={() => navigate('/ctxh/activities')}
+              onClick={() => navigate('/portal/ctxh/activities')}
               className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -167,7 +167,7 @@ const ActivityDetail: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
           <div className="flex items-start space-x-4 min-w-0 flex-1">
             <button
-              onClick={() => navigate('/ctxh/activities')}
+              onClick={() => navigate('/portal/ctxh/activities')}
               className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 flex-shrink-0"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />

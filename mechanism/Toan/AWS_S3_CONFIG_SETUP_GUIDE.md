@@ -52,10 +52,10 @@ INSERT INTO aws_s3_configs (
     s3_endpoint,
     is_active
 ) VALUES (
-    'M0PR2NYXN2BH0QM87P0W',
-    'hZDJi8M9wDOGMOBQB1oMDS0kzGpOXGHuyuivXv7e',
+    '<YOUR_AWS_ACCESS_KEY_ID>',
+    '<YOUR_AWS_SECRET_ACCESS_KEY>',
     'ap-southeast-1',
-    '19429970-documents',
+    '<YOUR_S3_BUCKET_NAME>',
     'https://s3-hcm5-r1.longvan.net',
     true
 );
@@ -171,10 +171,10 @@ curl -X POST http://localhost:3000/aws-s3-config \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "accessKeyId": "M0PR2NYXN2BH0QM87P0W",
-    "secretAccessKey": "hZDJi8M9wDOGMOBQB1oMDS0kzGpOXGHuyuivXv7e",
+    "accessKeyId": "<YOUR_AWS_ACCESS_KEY_ID>",
+    "secretAccessKey": "<YOUR_AWS_SECRET_ACCESS_KEY>",
     "region": "ap-southeast-1",
-    "s3Bucket": "19429970-documents",
+    "s3Bucket": "<YOUR_S3_BUCKET_NAME>",
     "s3Endpoint": "https://s3-hcm5-r1.longvan.net"
   }'
 ```

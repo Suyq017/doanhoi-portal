@@ -15,6 +15,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiQuery,
+  ApiParam,
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -98,6 +99,40 @@ export class LimitConfigController {
       status,
       search,
     });
+  }
+
+  @Get('organization/:organizationId/active')
+  @ApiOperation({ summary: 'Lấy cấu hình CTXH active của tổ chức (không cần quyền manage)' })
+  @ApiParam({
+    name: 'organizationId',
+    required: true,
+    description: 'ID của tổ chức'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Lấy cấu hình thành công',
+    schema: {
+      type: 'object',
+      properties: {
+        limitConfig: {
+          type: 'object',
+          nullable: true,
+          description: 'Cấu hình giới hạn ngày CTXH hoặc null nếu không có'
+        }
+      }
+    }
+  })
+  async getOrganizationActiveLimit(@Param('organizationId') organizationId: string) {
+    const result = await this.limitConfigService.findAll({
+      page: 1,
+      limit: 1,
+      organization_id: organizationId,
+      status: 'ACTIVE',
+    });
+    
+    return {
+      limitConfig: result.data && result.data.length > 0 ? result.data[0] : null
+    };
   }
 
   @Get(':id')

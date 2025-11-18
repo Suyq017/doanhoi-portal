@@ -77,12 +77,7 @@ export const PaymentCampaignsPage = () => {
           </div>
         </div>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">
-              {t('loading')}
-            </p>
-          </div>
+          <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
         </div>
       </div>
     );
@@ -102,9 +97,7 @@ export const PaymentCampaignsPage = () => {
             </p>
           </div>
         </div>
-        <div className="px-4 py-3 mt-6 text-red-700 border border-red-200 rounded bg-red-50 dark:bg-red-900 dark:border-red-800 dark:text-red-200">
-          {t('loadingDescription')}
-        </div>
+
       </div>
     );
   }

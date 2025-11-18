@@ -32,12 +32,12 @@ const CreateDepartmentModal: React.FC<CreateDepartmentModalProps> = ({
   ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -63,7 +63,7 @@ const CreateDepartmentModal: React.FC<CreateDepartmentModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -74,9 +74,9 @@ const CreateDepartmentModal: React.FC<CreateDepartmentModalProps> = ({
         // Remove empty code if not provided
         ...(formData.code?.trim() ? {} : { code: undefined })
       };
-      
+
       await onSubmit(submitData);
-      
+
       // Reset form on success
       setFormData({
         name: '',
@@ -101,18 +101,11 @@ const CreateDepartmentModal: React.FC<CreateDepartmentModalProps> = ({
     onClose();
   };
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      handleClose();
-    }
-  };
-
   if (!isOpen) return null;
 
   return createPortal(
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={handleOverlayClick}
     >
       <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
@@ -142,9 +135,8 @@ const CreateDepartmentModal: React.FC<CreateDepartmentModalProps> = ({
               value={formData.name}
               onChange={handleInputChange}
               placeholder={t('departments:placeholders.name')}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? 'border-red-500' : 'border-gray-300'
+                }`}
               disabled={loading}
             />
             {errors.name && (
@@ -163,9 +155,8 @@ const CreateDepartmentModal: React.FC<CreateDepartmentModalProps> = ({
               value={formData.code}
               onChange={handleInputChange}
               placeholder={t('departments:placeholders.code')}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.code ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.code ? 'border-red-500' : 'border-gray-300'
+                }`}
               disabled={loading}
             />
             {errors.code && (

@@ -15,6 +15,7 @@ import { PayosModule } from './payos/payos.module';
 import { CtxhModule } from './ctxh/ctxh.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { AwsS3ConfigModule } from './aws-config/aws-s3-config.module';
+import { TemplatesModule } from './templates/templates.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { AwsS3ConfigModule } from './aws-config/aws-s3-config.module';
     CtxhModule,
     MetricsModule,
     AwsS3ConfigModule,
+    TemplatesModule,
   ],
 })
 export class AppModule implements NestModule {
