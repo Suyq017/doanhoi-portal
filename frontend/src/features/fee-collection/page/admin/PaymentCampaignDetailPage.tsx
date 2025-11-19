@@ -337,7 +337,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
             <div className="mb-4 text-xl text-red-500">⚠️</div>
             <p className="text-red-600 dark:text-red-400">{error || t('detail.notFound')}</p>
             <Link
-              to="/admin/payment-campaigns"
+              to="/portal/admin/payment-campaigns"
               className="inline-flex items-center px-4 py-2 mt-4 text-white rounded-lg bg-doan-600 hover:bg-doan-700"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
@@ -355,7 +355,7 @@ const PaymentCampaignDetailPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Link
-            to="/admin/payment-campaigns"
+            to="/portal/admin/payment-campaigns"
             className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
           >
             <ArrowLeft className="w-5 h-5" />
