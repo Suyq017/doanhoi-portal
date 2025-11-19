@@ -26,9 +26,6 @@ npm install @langchain/core @langchain/community langchain
 # OpenAI integration (nếu sử dụng OpenAI)
 npm install @langchain/openai openai
 
-# Anthropic integration (nếu sử dụng Claude)
-npm install @langchain/anthropic @anthropic-ai/sdk
-
 # Google AI integration (nếu sử dụng Gemini)
 npm install @langchain/google-genai @google/generative-ai
 ```
@@ -56,10 +53,7 @@ npm install ioredis @types/ioredis  # Alternative Redis client (recommended)
 npm install @langchain/textsplitters
 
 # Crypto utilities cho hashing
-npm install crypto-js @types/crypto-js
-
-# Environment variables
-npm install dotenv
+# sử dụng bcrypt đã cài đặt sẵn trong dự án
 
 # Validation
 npm install class-validator class-transformer
