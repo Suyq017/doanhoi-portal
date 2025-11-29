@@ -527,7 +527,7 @@ Ngày CTXH được cấp: [total_days] ngày
 #### 10.1. Service: ChatAgentService
 
 **LangChain Agent setup:**
-- Khởi tạo LLM (GPT-4, Claude, v.v.)
+- Khởi tạo LLM (GPT-4, Gemini)
 - Tạo retriever từ VectorStore
 - Setup RetrievalQA chain hoặc ConversationalRetrievalChain
 
