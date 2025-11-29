@@ -112,7 +112,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
         await paymentFeeLevelService.updateFeeLevel(campaignId, id, updateData);
       }
 
-      navigate(`/admin/payment-campaigns/${campaignId}`);
+      navigate(`/portal/admin/payment-campaigns/${campaignId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save fee level');
     } finally {
@@ -121,7 +121,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
   };
 
   const handleCancel = () => {
-    navigate(`/admin/payment-campaigns/${campaignId}`);
+    navigate(`/portal/admin/payment-campaigns/${campaignId}`);
   };
 
   if (loading) {
@@ -155,7 +155,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => navigate(`/admin/payment-campaigns/${campaignId}`)}
+            onClick={() => navigate(`/portal/admin/payment-campaigns/${campaignId}`)}
             className="inline-flex items-center text-gray-600 hover:text-gray-800"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
