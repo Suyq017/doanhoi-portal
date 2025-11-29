@@ -70,6 +70,32 @@ export class SubmissionsController {
     return this.submissionsService.getAllSubmissions(templateId);
   }
 
+  @Get(':id/download')
+  @ApiOperation({ summary: 'Download generated document' })
+  async downloadFile(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const fileData = await this.submissionsService.downloadSubmissionFile(id, req.user.id);
+    
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(fileData.fileName)}"`,
+    });
+
+    return new StreamableFile(fileData.buffer);
+  }
+
+  @Get(':id/public-url')
+  @ApiOperation({ summary: 'Get public URL for Office Online Viewer' })
+  async getPublicUrl(
+    @Param('id') id: string,
+    @Request() req: any,
+  ) {
+    return this.submissionsService.getPublicUrl(id, req.user.id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get submission by ID' })
   async findOne(
@@ -87,22 +113,5 @@ export class SubmissionsController {
   ) {
     await this.submissionsService.delete(id, req.user.id);
     return { message: 'Submission deleted successfully' };
-  }
-
-  @Get(':id/download')
-  @ApiOperation({ summary: 'Download generated document' })
-  async downloadFile(
-    @Param('id') id: string,
-    @Request() req: any,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const fileData = await this.submissionsService.downloadSubmissionFile(id, req.user.id);
-    
-    res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'Content-Disposition': `attachment; filename="${encodeURIComponent(fileData.fileName)}"`,
-    });
-
-    return new StreamableFile(fileData.buffer);
   }
 }

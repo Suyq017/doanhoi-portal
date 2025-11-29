@@ -25,7 +25,7 @@ FROM node:20.17-alpine3.20 AS production
 
 WORKDIR /app
 
-# Update packages và install minimal dependencies
+# Update packages and install minimal dependencies
 RUN apk update && apk upgrade && \
     apk add --no-cache dumb-init curl && \
     rm -rf /var/cache/apk/*
