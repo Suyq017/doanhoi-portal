@@ -68,9 +68,12 @@
     "@vitejs/plugin-react": "^4.1.1",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.53.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
     "postcss": "^8.4.32",
+    "prettier": "^3.7.3",
     "tailwindcss": "^3.3.6",
     "typescript": "^5.2.2",
     "vite": "^5.0.0"

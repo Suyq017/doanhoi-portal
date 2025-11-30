@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { X, FileText, Loader, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getSubmissionById } from '@/shared/services/template.service';
-import type { TemplateSubmission } from '@/shared/types/template.types';
 
 interface SubmissionPreviewModalProps {
   isOpen: boolean;
