@@ -43,7 +43,11 @@ services:
     networks:
       - doanhoi-network
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: [
+      "redis-server", 
+      "--appendonly", "yes",
+      "--requirepass", "mat_khau_redis"
+      ]
 
   prometheus:
     image: prom/prometheus:latest

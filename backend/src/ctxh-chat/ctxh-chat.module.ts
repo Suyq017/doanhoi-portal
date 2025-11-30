@@ -10,6 +10,8 @@ import { VectorStoreService } from '@/ctxh-chat/services/vector-store.service';
 import { CtxhDataPreparationService } from '@/ctxh-chat/services/ctxh-data-preparation.service';
 import { CtxhRetrievalService } from '@/ctxh-chat/services/ctxh-retrieval.service';
 import { ConversationService } from '@/ctxh-chat/services/conversation.service';
+import { CtxhChunkingService } from '@/ctxh-chat/services/ctxh-chunking.service';
+import { CtxhIngestionPipelineService } from '@/ctxh-chat/services/ctxh-ingestion-pipeline.service';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { ConversationService } from '@/ctxh-chat/services/conversation.service';
     EmbeddingService,
     VectorStoreService,
     CtxhDataPreparationService,
+    CtxhChunkingService,
+    CtxhIngestionPipelineService,
     CtxhRetrievalService,
     ConversationService,
   ],
@@ -29,6 +33,9 @@ import { ConversationService } from '@/ctxh-chat/services/conversation.service';
     CtxhChatService,
     EmbeddingService,
     VectorStoreService,
+    CtxhDataPreparationService,
+    CtxhChunkingService,
+    CtxhIngestionPipelineService,
   ],
 })
 export class CtxhChatModule {}
