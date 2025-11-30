@@ -38,11 +38,24 @@ const ActivityManagement: React.FC = () => {
   const {
     canCreateCtxhActivity,
     canUpdateCtxhActivity,
-    canDeleteCtxhActivity
+    canDeleteCtxhActivity,
+    isSuperAdmin
   } = usePermissions();
 
-  // User can create if they have a primary organization
-  const canCreateActivity = primaryOrgData?.organization !== null && canCreateCtxhActivity();
+  // Super admin luôn được phép tạo hoạt động, không cần tổ chức
+  const canCreateActivity = isSuperAdmin() ? canCreateCtxhActivity() : (primaryOrgData?.organization !== null && canCreateCtxhActivity());
+
+  // ✅ DEBUG LOG: Kiểm tra điều kiện hiển thị nút create
+  console.log('[ActivityManagement] ========== CREATE BUTTON DEBUG ==========');
+  console.log('[ActivityManagement] isSuperAdmin:', isSuperAdmin());
+  console.log('[ActivityManagement] canCreateCtxhActivity:', canCreateCtxhActivity());
+  console.log('[ActivityManagement] checkingPermissions:', checkingPermissions);
+  console.log('[ActivityManagement] primaryOrgData:', primaryOrgData);
+  console.log('[ActivityManagement] primaryOrgData?.organization:', primaryOrgData?.organization);
+  console.log('[ActivityManagement] canCreateActivity (final):', canCreateActivity);
+  console.log('[ActivityManagement] Button will show:', !checkingPermissions && canCreateActivity);
+  console.log('[ActivityManagement] =================================================');
+
 
   const handleCreateActivity = () => {
     setEditingActivity(null);
@@ -98,7 +111,8 @@ const ActivityManagement: React.FC = () => {
   };
 
   const handleViewActivity = (activity: CtxhActivity) => {
-    navigate(`/ctxh/activities/${activity.id}`);
+      // Always navigate to the activity detail page, default tab is 'overview'.
+      navigate(`/portal/ctxh/activities/${activity.id}`);
   };
 
   const handleActivitySaved = () => {

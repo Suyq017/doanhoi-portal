@@ -22,7 +22,11 @@
     "accumulatedDays": "Accumulated Days",
     "status": "Status",
     "achieved": "Achieved",
-    "notAchieved": "Not Achieved"
+    "notAchieved": "Not Achieved",
+    "days": "days",
+    "newSystemDays": "Completed Activity Days",
+    "oldSystemDays": "Days from Old System",
+    "totalCTXHDays": "Total Community Service Days"
   },
   "activities": {
     "title": "Activity List",

@@ -1,0 +1,55 @@
+/* Docx Preview Styling */
+.docx-wrapper {
+  background: #fff;
+  padding: 40px;
+}
+
+.docx-wrapper section.docx {
+  background: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  padding: 96px 96px; /* Standard Word margins */
+  min-height: 1056px; /* A4 height in pixels at 96 DPI */
+  width: 816px; /* A4 width in pixels at 96 DPI */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Dark mode support */
+.dark .docx-wrapper {
+  background: #1f2937;
+}
+
+.dark .docx-wrapper section.docx {
+  background: #374151;
+  color: #f3f4f6;
+}
+
+/* Preserve Word formatting */
+.docx-wrapper p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.docx-wrapper table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.docx-wrapper table td,
+.docx-wrapper table th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+/* Headers and footers */
+.docx-wrapper header,
+.docx-wrapper footer {
+  font-size: 0.9em;
+  color: #666;
+}
+
+.dark .docx-wrapper header,
+.dark .docx-wrapper footer {
+  color: #9ca3af;
+}

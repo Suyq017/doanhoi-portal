@@ -186,19 +186,19 @@ const StudentReportsPage: React.FC = () => {
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {formatDays(report?.ctxh_days_new_system)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Ngày hoạt động đã hoàn thành</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{t('summary.newSystemDays')}</div>
                   </div>
                   <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
                     <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                       {formatDays(report?.ctxh_days_old_system)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Ngày hoạt động trên hệ thống cũ</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{t('summary.oldSystemDays')}</div>
                   </div>
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
                     <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                       {formatDays(report?.total_days_completed)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Tổng số ngày hoạt động CTXH</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{t('summary.totalCTXHDays')}</div>
                   </div>
                   <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
                     <div className={`text-2xl font-bold ${(report?.total_days_completed || 0) >= 15 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>

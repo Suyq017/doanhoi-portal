@@ -382,7 +382,7 @@ const TemplateListPage: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center justify-end space-x-2">
                             <button
-                              onClick={() => navigate(`/admin/templates/${template.id}/configure`)}
+                              onClick={() => navigate(`/portal/admin/templates/${template.id}/configure`)}
                               className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 hover:bg-yellow-100 dark:hover:bg-yellow-900/20 rounded"
                               title={t('templates:actions.configure')}
                             >

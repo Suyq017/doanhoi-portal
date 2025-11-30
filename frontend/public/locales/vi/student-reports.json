@@ -22,7 +22,10 @@
     "accumulatedDays": "Ngày tích lũy",
     "status": "Trạng thái",
     "achieved": "Đạt",
-    "notAchieved": "Chưa đạt"
+    "notAchieved": "Chưa đạt",
+    "newSystemDays": "Ngày hoạt động đã hoàn thành",
+    "oldSystemDays": "Ngày hoạt động trên hệ thống cũ",
+    "totalCTXHDays": "Tổng số ngày hoạt động CTXH"
   },
   "activities": {
     "title": "Danh sách hoạt động",

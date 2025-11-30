@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
-import { CtxhCategory, CtxhActivity, CreateActivityRequest, UpdateActivityRequest, ActivityStatus } from '../types';
-import { categoryService, limitConfigService } from '../services';
-import { organizationService } from '../../../shared/services/organizationService';
-import { useToast } from '../../../shared/hooks';
-import { useOrganizationList } from '../../../shared/hooks/queries';
+  import React, { useState, useEffect, useRef } from 'react';
+  import { useTranslation } from 'react-i18next';
+  import { X } from 'lucide-react';
+  import { CtxhCategory, CtxhActivity, CreateActivityRequest, UpdateActivityRequest, ActivityStatus } from '../types';
+  import { categoryService, limitConfigService } from '../services';
+  import { organizationService } from '../../../shared/services/organizationService';
+  import { useToast } from '../../../shared/hooks';
+  import { usePermissions } from '../../../shared/hooks/usePermissions';
+  import { useOrganizationList } from '../../../shared/hooks/queries';
 
 interface ActivityFormProps {
   isOpen: boolean;
@@ -22,10 +23,15 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   activity,
   title
 }) => {
+  const [dateValidation, setDateValidation] = useState({
+    startDate: { isValid: true, message: '' },
+    endDate: { isValid: true, message: '' }
+  });
+  const [organizationLoading, setOrganizationLoading] = useState(false);
   const { t } = useTranslation('ctxh');
   
   // Prefetch organizations using React Query (for caching)
-  useOrganizationList();
+  const { data: cachedOrganizations, isLoading: orgListLoading } = useOrganizationList();
 
   // Prevent body scroll when modal is open  
   useEffect(() => {
@@ -43,24 +49,60 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     name: '',
     description: '',
     categoryId: '',
-    organizationId: '', // Will be auto-set from user's accessible organization
+    organizationId: '',
     status: ActivityStatus.DRAFT,
     startDate: '', // Now stores datetime (YYYY-MM-DDTHH:mm)
     endDate: '', // Now stores datetime (YYYY-MM-DDTHH:mm)
     totalDays: '',
     location: ''
   });
+  // State cho custom dropdown tổ chức
+  const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
+  const [orgSearch, setOrgSearch] = useState('');
+  const orgInputRef = useRef(null);
 
   const [categories, setCategories] = useState<CtxhCategory[]>([]);
   const [userOrganization, setUserOrganization] = useState<any | null>(null); // Single org for user
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
-  const [organizationLoading, setOrganizationLoading] = useState(false);
-  const [dateValidation, setDateValidation] = useState({
-    startDate: { isValid: true, message: '' },
-    endDate: { isValid: true, message: '' }
-  });
+  const [organizationList, setOrganizationList] = useState<any[]>([]);
+  const { isSuperAdmin } = usePermissions();
+  // Debug log for create button visibility (must be after all hooks and state declarations)
+  useEffect(() => {
+    console.log('[ActivityForm] ========== FORM LOAD DEBUG ==========');
+    console.log('[ActivityForm] isOpen:', isOpen);
+    console.log('[ActivityForm] activity (editing?):', activity);
+    console.log('[ActivityForm] isSuperAdmin:', isSuperAdmin());
+    console.log('[ActivityForm] userOrganization:', userOrganization);
+    console.log('[ActivityForm] organizationList:', organizationList);
+    console.log('[ActivityForm] organizationLoading:', organizationLoading);
+    console.log('[ActivityForm] formData.organizationId:', formData.organizationId);
+    
+    if (!isSuperAdmin()) {
+      console.log('[ActivityForm] ⚠️ Not super admin');
+      if (!userOrganization) {
+        console.log('[ActivityForm] ❌ No organization found for user - CREATE WILL BE DISABLED');
+      } else {
+        console.log('[ActivityForm] ✅ User organization found:', userOrganization.name);
+      }
+    } else {
+      console.log('[ActivityForm] ✅ Super admin - can select organization');
+    }
+    console.log('[ActivityForm] =======================================');
+  }, [isOpen, userOrganization, organizationList, organizationLoading, formData.organizationId]);
 
+  useEffect(() => {
+    // Nếu là super admin thì lấy danh sách tổ chức từ cache và lọc bỏ cấp 3 (chi đoàn/chi hội)
+    if (isSuperAdmin() && cachedOrganizations) {
+      // Giả sử cấp 3 có type là 'CHI_DOAN' hoặc 'CHI_HOI' hoặc cấp = 3
+      // Chỉ hiển thị tổ chức cấp 1-2: exclude chi_doan, chi_hoi (type lowercase)
+      const filteredOrgs = cachedOrganizations.filter(org => {
+        // type: 'doan_truong', 'doan_co_so', 'hoi_sinh_vien_truong', 'lien_chi_hoi', ...
+        return org.type !== 'chi_doan' && org.type !== 'chi_hoi';
+      });
+      setOrganizationList(filteredOrgs);
+    }
+  }, [isSuperAdmin, cachedOrganizations]);
   const [fieldValidation, setFieldValidation] = useState({
     name: { isValid: true, message: '' },
     categoryId: { isValid: true, message: '' },
@@ -306,11 +348,16 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
 
   // Load user organization when modal opens (only for create mode)
   useEffect(() => {
+    console.log('[ActivityForm] useEffect for loading organization triggered');
+    console.log('[ActivityForm] isOpen:', isOpen, 'activity:', activity, 'isSuperAdmin:', isSuperAdmin());
+    
     if (isOpen && !activity) {
+      console.log('[ActivityForm] Loading user organization for CREATE mode...');
       loadUserOrganization();
     } else if (isOpen && activity) {
       // Edit mode: set organization from activity data
       const activityOrg = (activity as any).organization;
+      console.log('[ActivityForm] EDIT mode - setting organization from activity:', activityOrg);
       if (activityOrg) {
         setUserOrganization(activityOrg);
       }
@@ -383,18 +430,12 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         categoryId: '',
         organizationId: '', // Will be auto-set from loadUserOrganization
         status: ActivityStatus.DRAFT,
-        startDate: '',
-        endDate: '',
+        startDate: '', // Now stores datetime (YYYY-MM-DDTHH:mm)
+        endDate: '', // Now stores datetime (YYYY-MM-DDTHH:mm)
         totalDays: '',
         location: ''
       };
       setFormData(newFormData);
-
-      // Reset validation state
-      setDateValidation({
-        startDate: { isValid: true, message: '' },
-        endDate: { isValid: true, message: '' }
-      });
     }
   }, [activity, isOpen]);
 
@@ -418,12 +459,16 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   // Load user's organization for CTXH activity creation
   const loadUserOrganization = async () => {
     // This function is only called in CREATE mode (from useEffect)
+    console.log('[ActivityForm] loadUserOrganization() called');
     try {
       setOrganizationLoading(true);
+      console.log('[ActivityForm] Calling organizationService.getUserPrimaryOrganization()...');
       const response = await organizationService.getUserPrimaryOrganization();
+      console.log('[ActivityForm] getUserPrimaryOrganization response:', response);
       
       if (response.organization) {
         // User has an active organization
+        console.log('[ActivityForm] ✅ Organization found:', response.organization.name);
         setUserOrganization(response.organization);
         setFormData(prev => ({
           ...prev,
@@ -431,16 +476,17 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         }));
       } else {
         // No organization found in user_organizations
-        console.warn('[ActivityForm] No organization found for user in user_organizations table');
+        console.warn('[ActivityForm] ❌ No organization found for user in user_organizations table');
         setUserOrganization(null);
         showError(t('activity.form.noAccessibleOrganization'));
       }
     } catch (error) {
-      console.error('Failed to load user organization:', error);
+      console.error('[ActivityForm] ❌ Failed to load user organization:', error);
       setUserOrganization(null);
       showError(t('activity.form.loadOrganizationError'));
     } finally {
       setOrganizationLoading(false);
+      console.log('[ActivityForm] Organization loading finished');
     }
   };
 
@@ -866,7 +912,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                       {categoriesLoading ? (
                         <div className="px-3 py-2 text-sm text-gray-500">{t('activity.form.loading')}</div>
                       ) : categories.length > 0 ? (
-                        categories.map((category) => (
+                        categories.slice(0, 10).map((category) => (
                           <button
                             key={category.id}
                             type="button"
@@ -896,34 +942,99 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 )}
               </div>
 
-              {/* Organization - Auto-set from user, read-only */}
+              {/* Organization - Auto-set from user, hoặc combobox cho admin */}
               <div className="relative">
                 <label htmlFor="organizationId" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('activity.organization')} <span className="text-red-500">*</span>
                 </label>
-                
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={
-                      organizationLoading 
+                {isSuperAdmin() ? (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="w-full py-2 px-3 border border-gray-300 rounded-md bg-white text-gray-700 text-left"
+                      onClick={() => setOrgDropdownOpen((open) => !open)}
+                      ref={orgInputRef}
+                      aria-haspopup="listbox"
+                      aria-expanded={orgDropdownOpen}
+                      disabled={orgListLoading}
+                    >
+                      {orgListLoading
                         ? t('activity.form.loading')
-                        : userOrganization?.name || (activity as any)?.organization?.name || t('activity.form.noOrganization')
-                    }
-                    disabled
-                    className="w-full py-2 px-3 pr-10 border border-gray-300 rounded-md 
-                             bg-gray-100 text-gray-700 cursor-not-allowed"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
+                        : formData.organizationId
+                          ? organizationList.find(org => org.id === formData.organizationId)?.name || 'Chọn tổ chức'
+                          : 'Chọn tổ chức'}
+                    </button>
+                    {orgDropdownOpen && (
+                      <div
+                        className="absolute left-0 top-full z-50 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-64 overflow-y-auto"
+                        style={{ minWidth: '200px' }}
+                      >
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 border-b border-gray-200"
+                          placeholder="Tìm tổ chức..."
+                          value={orgSearch}
+                          onChange={e => setOrgSearch(e.target.value)}
+                          autoFocus
+                        />
+                        {organizationList
+                          .filter(org =>
+                            org.name.toLowerCase().includes(orgSearch.toLowerCase()) ||
+                            org.code?.toLowerCase().includes(orgSearch.toLowerCase())
+                          )
+                          .slice(0, 10)
+                          .map(org => (
+                            <div
+                              key={org.id}
+                              className={`px-3 py-2 cursor-pointer hover:bg-blue-50 ${formData.organizationId === org.id ? 'bg-blue-100 font-semibold' : ''}`}
+                              onClick={() => {
+                                setFormData({ ...formData, organizationId: org.id });
+                                setOrgDropdownOpen(false);
+                                setOrgSearch('');
+                              }}
+                              role="option"
+                              aria-selected={formData.organizationId === org.id}
+                            >
+                              {org.name}
+                            </div>
+                          ))}
+                        {organizationList
+                          .filter(org =>
+                            org.name.toLowerCase().includes(orgSearch.toLowerCase()) ||
+                            org.code?.toLowerCase().includes(orgSearch.toLowerCase())
+                          )
+                          .slice(0, 10)
+                          .length === 0 && (
+                          <div className="px-3 py-2 text-gray-500">Không tìm thấy tổ chức</div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  {t('activity.form.organizationAutoSetHint')}
-                </p>
-                
+                ) : (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={
+                        organizationLoading 
+                          ? t('activity.form.loading')
+                          : userOrganization?.name || (activity as any)?.organization?.name || t('activity.form.noOrganization')
+                      }
+                      disabled
+                      className="w-full py-2 px-3 pr-10 border border-gray-300 rounded-md 
+                               bg-gray-100 text-gray-700 cursor-not-allowed"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+                {!isSuperAdmin() && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    {t('activity.form.organizationAutoSetHint')}
+                  </p>
+                )}
                 {!fieldValidation.organizationId.isValid && (
                   <p className="mt-1 text-sm text-red-600">
                     {fieldValidation.organizationId.message}
