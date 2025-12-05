@@ -1,0 +1,138 @@
+<mxfile host="app.diagrams.net" modified="2025-12-05T00:00:00Z" agent="Mozilla/5.0" version="25.0.0" type="device">
+  <diagram id="rag-usecase" name="RAG Use Case">
+    <mxGraphModel>
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Actors -->
+        <mxCell id="actor_student" value="Sinh viên" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="60" width="40" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_manager" value="Cán bộ quản lý" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="200" width="40" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_system" value="Hệ thống (Backend)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="340" width="40" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- External systems as actors (stereotype) -->
+        <mxCell id="actor_llm" value="&laquo;external&raquo; OpenAI/LLM" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="900" y="80" width="60" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_redis" value="&laquo;external&raquo; Redis Cache" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="900" y="220" width="60" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_vector" value="&laquo;external&raquo; Vector Store" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="900" y="360" width="60" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- System boundary -->
+        <mxCell id="boundary" value="Chatbot RAG" style="shape=rectangle;rounded=1;glass=0;strokeColor=#666;fillColor=#f7f7f7;labelBackgroundColor=none;" vertex="1" parent="1">
+          <mxGeometry x="200" y="40" width="650" height="460" as="geometry"/>
+        </mxCell>
+
+        <!-- Use cases (inside boundary) -->
+        <mxCell id="uc_ask" value="Đặt câu hỏi" style="shape=ellipse;perimeter=ellipsePerimeter;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="boundary">
+          <mxGeometry x="40" y="40" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_generate_query_embedding" value="Tạo embedding truy vấn" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="260" y="40" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_check_cache" value="Kiểm tra cache" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="500" y="40" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_search_similarity" value="Tìm kiếm tương tự" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="260" y="140" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_build_prompt" value="Xây dựng prompt" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="260" y="240" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_generate_answer" value="Sinh câu trả lời" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="260" y="340" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_return_response" value="Trả về kết quả" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="40" y="340" width="160" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Ingestion related use cases -->
+        <mxCell id="uc_prepare_data" value="Chuẩn hóa dữ liệu" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="500" y="140" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_chunk_data" value="Chia nhỏ văn bản" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="500" y="240" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_generate_embeddings" value="Tạo embedding nội dung" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="500" y="340" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_store_vectors" value="Lưu vector vào kho" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="500" y="420" width="200" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Manager use cases -->
+        <mxCell id="uc_monitor" value="Theo dõi hiệu năng" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="40" y="200" width="170" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Associations actor -> use cases -->
+        <mxCell id="edge_student_ask" edge="1" parent="1" source="actor_student" target="uc_ask">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_student_return" edge="1" parent="1" source="uc_return_response" target="actor_student">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_manager_monitor" edge="1" parent="1" source="actor_manager" target="uc_monitor">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- include relationships -->
+        <mxCell id="inc_ask_to_queryemb" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_ask" target="uc_generate_query_embedding">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_queryemb_to_cache" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_generate_query_embedding" target="uc_check_cache">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_search_to_buildprompt" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_search_similarity" target="uc_build_prompt">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_buildprompt_to_generate" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_build_prompt" target="uc_generate_answer">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_generate_to_return" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_generate_answer" target="uc_return_response">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- extend relationships -->
+        <mxCell id="ext_ask_to_search" value="&laquo;extend&raquo;" style="endArrow=block;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_ask" target="uc_search_similarity">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_generate_to_fallback" value="&laquo;extend&raquo;" style="endArrow=block;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_generate_answer" target="uc_build_prompt">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- External associations -->
+        <mxCell id="edge_llm_generate" value="gọi API" style="endArrow=classic;strokeColor=#000000;" edge="1" parent="1" source="uc_generate_answer" target="actor_llm">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_cache_check" value="kiểm tra/ghi cache" style="endArrow=classic;strokeColor=#000000;" edge="1" parent="1" source="uc_check_cache" target="actor_redis">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_vector_search" value="truy vấn vector" style="endArrow=classic;strokeColor=#000000;" edge="1" parent="1" source="uc_search_similarity" target="actor_vector">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Ingestion includes -->
+        <mxCell id="inc_prepare_to_chunk" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_prepare_data" target="uc_chunk_data">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_chunk_to_embed" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_chunk_data" target="uc_generate_embeddings">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_embed_to_store" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_generate_embeddings" target="uc_store_vectors">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
