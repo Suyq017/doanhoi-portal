@@ -18,6 +18,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:phase2": "jest --testPathPattern=ctxh-chat",
+    "test:phase2:unit": "jest --testPathPattern=ctxh-chat.*spec\\.ts$",
+    "test:phase2:e2e": "jest --testPathPattern=ctxh-chat-e2e",
+    "test:phase2:perf": "ts-node test/performance-benchmark.ts",
+    "test:phase2:all": "npm run test:phase2:unit && npm run test:phase2:e2e && npm run test:phase2:perf",
     "typeorm": "typeorm-ts-node-commonjs",
     "db:create-schema": "ts-node src/database/create-schema.ts",
     "db:reset": "ts-node src/database/reset-database.ts && npm run seed",
@@ -31,7 +36,7 @@
     "verify:super-admin": "ts-node src/database/scripts/verify-super-admin-permissions.ts",
     "migrate:aws-s3": "ts-node src/database/migrations/create-aws-s3-configs-table.ts",
     "migrate:ctxh-updates": "ts-node src/database/migrations/add-ctxh-columns-and-update-activity-dates.ts",
-    "rag:install": "npm install @langchain/core @langchain/community langchain @langchain/openai pgvector redis uuid",
+    "rag:install": "npm install @langchain/core @langchain/community langchain @google/genai pgvector redis uuid",
     "rag:setup": "docker cp scripts/setup-pgvector.sql doanhoi-postgres:/tmp/setup-pgvector.sql && docker exec doanhoi-postgres psql -U postgres -d doanhoi -f /tmp/setup-pgvector.sql",
     "rag:test-connections": "node scripts/test-rag-connections.js",
     "rag:seed": "echo 'RAG seeding not implemented yet'",
@@ -39,9 +44,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.927.0",
+    "@google/genai": "^1.33.0",
     "@langchain/community": "^1.0.4",
     "@langchain/core": "^1.0.6",
-    "@langchain/openai": "^1.1.2",
     "@langchain/textsplitters": "^1.0.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.1.1",
@@ -129,6 +134,9 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/$1"
+    }
   }
 }

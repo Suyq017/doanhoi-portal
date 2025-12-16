@@ -47,7 +47,7 @@ Phase 1 của RAG chatbot đã được implement hoàn chỉnh, bao gồm toàn
 **File:** `services/embedding.service.ts`
 
 **Functionality:**
-- OpenAI text-embedding-3-small integration (1536 dimensions)
+- Google Gemini text-embedding-004 integration (768 dimensions)
 - Redis caching với 30-day TTL
 - Batch processing với rate limiting
 - Exponential backoff retry logic
@@ -64,7 +64,7 @@ Phase 1 của RAG chatbot đã được implement hoàn chỉnh, bao gồm toàn
 - Batch size: 20 texts
 - Max retries: 3
 - Cache TTL: 30 days
-- Model: text-embedding-3-small
+- Model: text-embedding-004
 
 ### 4. ✅ VectorStoreService
 **File:** `services/vector-store.service.ts`
@@ -157,7 +157,7 @@ CREATE TABLE ctxh_embeddings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   activity_id UUID NOT NULL,
   content_text TEXT NOT NULL,
-  embedding VECTOR(1536) NOT NULL,
+  embedding VECTOR(768) NOT NULL,
   chunk_index INTEGER DEFAULT 0,
   metadata JSONB,
   created_at TIMESTAMP DEFAULT NOW(),
@@ -255,16 +255,17 @@ LIMIT 5;
 
 ### Storage Estimates
 - **Per Activity:** ~10KB (text + metadata)
-- **Per Embedding:** ~6KB (1536 dimensions × 4 bytes)
-- **Total per Activity:** ~16KB
-- **1000 Activities:** ~16MB
+- **Per Embedding:** ~3KB (768 dimensions × 4 bytes)
+- **Total per Activity:** ~13KB
+- **1000 Activities:** ~13MB
 
 ## 🔧 Configuration
 
 ### Environment Variables Required
 ```env
-# OpenAI
-OPENAI_API_KEY=sk-...
+# Google Gemini
+GEMINI_API_KEY=your-gemini-api-key
+# Or use GOOGLE_API_KEY
 
 # Redis (for caching)
 REDIS_HOST=localhost
@@ -302,9 +303,9 @@ DATABASE_PASSWORD=...
 **Embedding:**
 ```typescript
 {
-  provider: 'openai',
-  model: 'text-embedding-3-small',
-  dimensions: 1536,
+  provider: 'gemini',
+  model: 'text-embedding-004',
+  dimensions: 768,
   batchSize: 20,
   maxRetries: 3,
   cacheEnabled: true,
@@ -324,11 +325,11 @@ DATABASE_PASSWORD=...
 
 ## 🐛 Troubleshooting
 
-### Issue: OpenAI API Key Error
+### Issue: Gemini API Key Error
 **Symptom:** Embedding service health check fails
 **Solution:** 
-- Verify `OPENAI_API_KEY` in `.env`
-- Check OpenAI account has credits
+- Verify `GEMINI_API_KEY` or `GOOGLE_API_KEY` in `.env`
+- Check Google Cloud account has API access enabled
 - Test with: `GET /api/ctxh-chat/health/embeddings`
 
 ### Issue: Redis Connection Failed
@@ -368,7 +369,7 @@ psql -U postgres -d doanhoi -c "CREATE EXTENSION IF NOT EXISTS vector;"
 2. **Cache Hit Rate:** percentage
 3. **Error Rate:** percentage
 4. **Storage Growth:** MB/day
-5. **API Latency:** OpenAI embedding generation time
+5. **API Latency:** Google Gemini embedding generation time
 
 ### Health Checks Schedule
 - **Every 5 minutes:** Component health checks
@@ -413,7 +414,8 @@ psql -U postgres -d doanhoi -c "CREATE EXTENSION IF NOT EXISTS vector;"
 ## 📚 Additional Resources
 
 - **LangChain.js Docs:** https://js.langchain.com/
-- **OpenAI Embeddings:** https://platform.openai.com/docs/guides/embeddings
+- **Google Gemini API:** https://ai.google.dev/gemini-api/docs
+- **Google GenAI SDK:** https://github.com/googleapis/js-genai
 - **pgVector:** https://github.com/pgvector/pgvector
 - **Tiktoken:** https://github.com/dqbd/tiktoken
 

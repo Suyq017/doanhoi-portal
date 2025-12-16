@@ -1,0 +1,192 @@
+<mxfile host="app.diagrams.net" modified="2025-12-05T00:00:00Z" agent="Mozilla/5.0" version="25.0.0" type="device">
+  <diagram id="payment-usecase" name="Payment Use Case">
+    <mxGraphModel>
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Actors -->
+        <mxCell id="actor_admin" value="Quản trị viên (Admin)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="80" width="60" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_member" value="Thành viên" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="300" width="60" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_payos" value="&laquo;external&raquo; PayOS" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="980" y="220" width="80" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_email" value="&laquo;external&raquo; Email Service" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="980" y="60" width="80" height="120" as="geometry"/>
+        </mxCell>
+
+        <!-- System boundary -->
+        <mxCell id="boundary" value="Chức năng Đóng phí" style="shape=rectangle;rounded=1;glass=0;strokeColor=#666;fillColor=#f7f7f7;labelBackgroundColor=none;" vertex="1" parent="1">
+          <mxGeometry x="220" y="40" width="730" height="520" as="geometry"/>
+        </mxCell>
+
+        <!-- Admin use cases -->
+        <mxCell id="uc_create_campaign" value="Tạo đợt thu" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="40" y="40" width="170" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_fill_info" value="Điền thông tin đợt thu" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="240" y="40" width="220" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_setup_fee" value="Thiết lập mức phí" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="40" y="120" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_add_fee" value="Thêm mức phí" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="240" y="120" width="170" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_config_payos" value="Cấu hình PayOS" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="40" y="200" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_assign_fees" value="Gán phí cho thành viên" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="40" y="280" width="220" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_filter_members" value="Lọc thành viên" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="280" y="280" width="170" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_unassign_fee" value="Xóa gán phí" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="480" y="280" width="150" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_track_progress" value="Theo dõi tiến độ thu phí" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="40" y="360" width="240" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_view_history" value="Xem lịch sử thanh toán" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="40" y="440" width="220" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_export_excel" value="Xuất Excel" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="280" y="440" width="150" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_remind_unpaid" value="Nhắc nhở người chưa thanh toán" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="320" y="360" width="260" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_edit_campaign" value="Chỉnh sửa đợt thu" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="520" y="40" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_change_status" value="Thay đổi trạng thái đợt thu" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="520" y="120" width="240" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Member use cases -->
+        <mxCell id="uc_view_my_fees" value="Xem khoản phí của tôi" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="520" y="200" width="230" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_filter_search" value="Lọc và tìm kiếm" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="520" y="260" width="190" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_pay_now" value="Thanh toán ngay" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="520" y="320" width="190" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_create_payment_link" value="Tạo link thanh toán" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="720" y="320" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_redirect_payos" value="Chuyển hướng PayOS" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="720" y="380" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_pay_qr" value="Quét QR để thanh toán" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="520" y="380" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_view_result" value="Xem kết quả thanh toán" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="520" y="440" width="230" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- System internal use cases related to PayOS -->
+        <mxCell id="uc_receive_webhook" value="Nhận webhook thanh toán" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="720" y="200" width="220" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc_update_status" value="Cập nhật trạng thái giao dịch" style="shape=ellipse;perimeter=ellipsePerimeter;" vertex="1" parent="boundary">
+          <mxGeometry x="720" y="260" width="240" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Associations actor -> use cases -->
+        <mxCell id="edge_admin_create" edge="1" parent="1" source="actor_admin" target="uc_create_campaign">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_admin_setup_fee" edge="1" parent="1" source="actor_admin" target="uc_setup_fee">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_admin_config" edge="1" parent="1" source="actor_admin" target="uc_config_payos">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_admin_assign" edge="1" parent="1" source="actor_admin" target="uc_assign_fees">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_admin_track" edge="1" parent="1" source="actor_admin" target="uc_track_progress">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_admin_history" edge="1" parent="1" source="actor_admin" target="uc_view_history">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_admin_remind" edge="1" parent="1" source="actor_admin" target="uc_remind_unpaid">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_admin_edit" edge="1" parent="1" source="actor_admin" target="uc_edit_campaign">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_admin_status" edge="1" parent="1" source="actor_admin" target="uc_change_status">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="edge_member_view" edge="1" parent="1" source="actor_member" target="uc_view_my_fees">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_member_pay" edge="1" parent="1" source="actor_member" target="uc_pay_now">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_member_result" edge="1" parent="1" source="actor_member" target="uc_view_result">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- include relationships -->
+        <mxCell id="inc_create_to_fill" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_create_campaign" target="uc_fill_info">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_setup_to_addfee" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_setup_fee" target="uc_add_fee">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_assign_to_filtermembers" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_assign_fees" target="uc_filter_members">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_viewfees_to_filter" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_view_my_fees" target="uc_filter_search">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_pay_to_link" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_pay_now" target="uc_create_payment_link">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_pay_to_redirect" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_pay_now" target="uc_redirect_payos">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="inc_webhook_to_update" value="&laquo;include&raquo;" style="endArrow=classic;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_receive_webhook" target="uc_update_status">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- extend relationships -->
+        <mxCell id="ext_assign_to_unassign" value="&laquo;extend&raquo;" style="endArrow=block;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_assign_fees" target="uc_unassign_fee">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_history_to_export" value="&laquo;extend&raquo;" style="endArrow=block;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_view_history" target="uc_export_excel">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_pay_to_qr" value="&laquo;extend&raquo;" style="endArrow=block;dashed=1;strokeColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="boundary" source="uc_pay_now" target="uc_pay_qr">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- External associations -->
+        <mxCell id="edge_link_to_payos" value="gọi API" style="endArrow=classic;strokeColor=#000000;" edge="1" parent="1" source="uc_create_payment_link" target="actor_payos">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_redirect_to_payos" value="chuyển hướng" style="endArrow=classic;strokeColor=#000000;" edge="1" parent="1" source="uc_redirect_payos" target="actor_payos">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_payos_to_webhook" value="gửi webhook" style="endArrow=classic;strokeColor=#000000;" edge="1" parent="1" source="actor_payos" target="uc_receive_webhook">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge_email_remind" value="gửi email" style="endArrow=classic;strokeColor=#000000;" edge="1" parent="1" source="uc_remind_unpaid" target="actor_email">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

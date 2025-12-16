@@ -37,7 +37,7 @@
 - **Location:** `backend/src/ctxh-chat/services/embedding.service.ts`
 - **Lines of Code:** ~400 lines
 - **Features:**
-  - OpenAI text-embedding-3-small integration
+  - Google Gemini text-embedding-004 integration
   - Redis caching with 30-day TTL
   - Batch processing (20 texts/batch)
   - Exponential backoff retry logic
@@ -127,12 +127,11 @@
 ### 4. Dependencies Installed ✅
 ```json
 {
-  "@langchain/openai": "^1.1.2",
+  "@google/genai": "^1.0.0",
   "@langchain/core": "^1.0.6",
   "@langchain/community": "^1.0.4",
   "@langchain/textsplitters": "^1.0.0",
   "langchain": "^1.0.6",
-  "openai": "^4.104.0",
   "tiktoken": "^1.0.x",
   "ioredis": "^5.8.2",
   "pgvector": "^0.2.1"
@@ -193,7 +192,7 @@ backend/src/ctxh-chat/
 - [ ] Integration tests (pending - marked as next step)
 
 ### Data Requirements
-- [x] Embedding dimensions: 1536 (OpenAI compatible)
+- [x] Embedding dimensions: 768 (Google Gemini compatible)
 - [x] Metadata structure defined
 - [x] Vector indexes configured (HNSW)
 - [x] Foreign key constraints with CASCADE
@@ -232,7 +231,7 @@ backend/src/ctxh-chat/
 
 ### Environment Variables Required
 ```env
-OPENAI_API_KEY=sk-...           # Required for embeddings
+GEMINI_API_KEY=your-key...      # Required for embeddings (or GOOGLE_API_KEY)
 REDIS_HOST=localhost            # Required for caching
 REDIS_PORT=6379
 DATABASE_HOST=localhost
@@ -270,17 +269,17 @@ CREATE EXTENSION IF NOT EXISTS vector;
 - **Error Rate:** <1% expected
 
 ### Storage Estimates
-- **Per Activity:** ~16KB total
+- **Per Activity:** ~13KB total
   - Text + metadata: ~10KB
-  - Embedding vector: ~6KB (1536 × 4 bytes)
-- **1000 Activities:** ~16MB
-- **10000 Activities:** ~160MB
+  - Embedding vector: ~3KB (768 × 4 bytes)
+- **1000 Activities:** ~13MB
+- **10000 Activities:** ~130MB
 
 ### API Response Times (Expected)
 - Health checks: <100ms
 - Statistics: <200ms
-- Single activity processing: 2-5s
-- Full ingestion (1000 activities): 10-20 minutes
+- Single activity processing: 1-3s (Gemini is faster)
+- Full ingestion (1000 activities): 8-15 minutes
 
 ---
 

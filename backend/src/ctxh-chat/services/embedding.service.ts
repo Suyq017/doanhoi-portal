@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { OpenAIEmbeddings } from '@langchain/openai';
+import { GoogleGenAI } from '@google/genai';
 import Redis from 'ioredis';
 import * as crypto from 'crypto';
 
@@ -8,7 +8,7 @@ import * as crypto from 'crypto';
  * Embedding configuration
  */
 export interface EmbeddingConfig {
-  provider: 'openai' | 'local';
+  provider: 'gemini';
   model: string;
   dimensions: number;
   batchSize: number;
@@ -41,13 +41,13 @@ export interface BatchEmbeddingResult {
 @Injectable()
 export class EmbeddingService {
   private readonly logger = new Logger(EmbeddingService.name);
-  private openaiEmbeddings: OpenAIEmbeddings;
+  private geminiAI: GoogleGenAI;
   private redis: Redis;
 
   private readonly config: EmbeddingConfig = {
-    provider: 'openai',
-    model: 'text-embedding-3-small',
-    dimensions: 1536,
+    provider: 'gemini',
+    model: 'text-embedding-004',
+    dimensions: 768,
     batchSize: 20,
     maxRetries: 3,
     cacheEnabled: true,
@@ -59,35 +59,37 @@ export class EmbeddingService {
   }
 
   /**
-   * Initialize OpenAI and Redis connections
+   * Initialize Google Gemini and Redis connections
    */
   private async initialize() {
     try {
-      // Initialize OpenAI Embeddings
-      const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+      // Initialize Google Gemini
+      const GEMINI_API_KEY = this.configService.get<string>('GEMINI_API_KEY');
       
-      if (!apiKey) {
-        throw new Error('OPENAI_API_KEY not found in environment variables');
+      //this.logger.log(`API Key from config: ${GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 10) + '...' + GEMINI_API_KEY.substring(GEMINI_API_KEY.length - 4) : 'NOT FOUND'}`);
+      
+      if (!GEMINI_API_KEY) {
+        throw new Error('GEMINI_API_KEY not found in environment variables');
       }
 
-      this.openaiEmbeddings = new OpenAIEmbeddings({
-        model: this.config.model,
-        dimensions: this.config.dimensions,
-        apiKey: apiKey,
+      this.geminiAI = new GoogleGenAI({
+        apiKey: GEMINI_API_KEY,
       });
 
       this.logger.log(
-        `OpenAI Embeddings initialized: model=${this.config.model}, dimensions=${this.config.dimensions}`
+        `Google Gemini Embeddings initialized: model=${this.config.model}, dimensions=${this.config.dimensions}`
       );
 
       // Initialize Redis for caching
       if (this.config.cacheEnabled) {
-        const redisHost = this.configService.get<string>('REDIS_HOST', 'localhost');
-        const redisPort = this.configService.get<number>('REDIS_PORT', 6379);
-
+        const redisHost = this.configService.get<string>('REDIS_HOST');
+        const redisPort = this.configService.get<number>('REDIS_PORT');
+        const redisPassword = this.configService.get<string>('REDIS_PASSWORD');
+        
         this.redis = new Redis({
           host: redisHost,
           port: redisPort,
+          password: redisPassword,
           retryStrategy: (times) => {
             const delay = Math.min(times * 50, 2000);
             return delay;
@@ -95,7 +97,7 @@ export class EmbeddingService {
         });
 
         this.redis.on('connect', () => {
-          this.logger.log(`Redis connected for embedding cache: ${redisHost}:${redisPort}`);
+          this.logger.log(`Redis connected for embedding cache: ${this.configService.get('REDIS_HOST')}:${this.configService.get('REDIS_PORT', 6379)}`);
         });
 
         this.redis.on('error', (err) => {
@@ -234,12 +236,21 @@ export class EmbeddingService {
     // Generate embeddings for uncached texts
     if (uncachedTexts.length > 0) {
       try {
-        const embeddings = await this.openaiEmbeddings.embedDocuments(uncachedTexts);
+        // Google Gemini supports batch embedding
+        const response = await this.geminiAI.models.embedContent({
+          model: this.config.model,
+          contents: uncachedTexts,
+          config: {
+            outputDimensionality: this.config.dimensions,
+          },
+        });
+
+        const embeddings = response.embeddings || [];
 
         // Store in cache and results
         for (let i = 0; i < uncachedTexts.length; i++) {
           const text = uncachedTexts[i];
-          const embedding = embeddings[i];
+          const embedding = embeddings[i]?.values || [];
           const originalIndex = uncachedIndices[i];
 
           results[originalIndex] = {
@@ -254,7 +265,7 @@ export class EmbeddingService {
           }
         }
       } catch (error) {
-        this.logger.error('Failed to generate embeddings from OpenAI:', error);
+        this.logger.error('Failed to generate embeddings from Google Gemini:', error);
         throw error;
       }
     }
@@ -271,8 +282,15 @@ export class EmbeddingService {
    */
   private async embedWithRetry(text: string, attempt: number = 1): Promise<number[]> {
     try {
-      const embedding = await this.openaiEmbeddings.embedQuery(text);
-      return embedding;
+      const response = await this.geminiAI.models.embedContent({
+        model: this.config.model,
+        contents: text,
+        config: {
+          outputDimensionality: this.config.dimensions,
+        },
+      });
+
+      return response.embeddings?.[0]?.values || [];
     } catch (error) {
       if (attempt >= this.config.maxRetries) {
         this.logger.error(`Failed to generate embedding after ${attempt} attempts`);
@@ -428,7 +446,15 @@ export class EmbeddingService {
   async healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; details: any }> {
     try {
       // Test embedding generation
-      const testEmbedding = await this.openaiEmbeddings.embedQuery('test');
+      const response = await this.geminiAI.models.embedContent({
+        model: this.config.model,
+        contents: 'test',
+        config: {
+          outputDimensionality: this.config.dimensions,
+        },
+      });
+
+      const testEmbedding = response.embeddings?.[0]?.values || [];
       
       // Check Redis connection
       let redisHealthy = false;
@@ -440,7 +466,7 @@ export class EmbeddingService {
       return {
         status: 'healthy',
         details: {
-          openai: {
+          gemini: {
             available: true,
             model: this.config.model,
             dimensions: testEmbedding.length,
@@ -452,10 +478,12 @@ export class EmbeddingService {
         },
       };
     } catch (error) {
+      this.logger.error('Health check failed:', error);
       return {
         status: 'unhealthy',
         details: {
           error: error.message,
+          stack: error.stack,
         },
       };
     }

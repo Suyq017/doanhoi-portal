@@ -1,7 +1,8 @@
 # PHẦN 2: XỬ LÝ TRUY VẤN & SINH VĂN BẢN (INFERENCE) - KẾ HOẠCH CHI TIẾT
 
 *Ngày lập: 26/11/2025*
-*Dựa trên nghiên cứu Context7 về LangChain.js và best practices*
+*Cập nhật: 14/12/2025 - Chuyển đổi sang Google Gemini AI*
+*Dựa trên nghiên cứu Context7 về Google Gemini API và best practices*
 
 ## 📋 TỔNG QUAN PHASE 2
 
@@ -45,16 +46,14 @@
 ### 📝 Module Architecture
 **File:** `backend/src/ctxh-chat/ctxh-chat.module.ts`
 
-**Enhanced Dependencies từ Context7 Research:**
+**Enhanced Dependencies với Google Gemini (từ Context7 Research):**
 ```typescript
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 
-// LangChain Core
-import { ChatOpenAI } from '@langchain/openai';
-import { OpenAIEmbeddings } from '@langchain/openai';
-import { createRetrieverTool } from '@langchain/classic/tools/retriever';
+// Google Gemini AI
+import { GoogleGenAI } from '@google/genai';
 
 // Entities & Services
 import { CtxhEmbedding } from '../entities/ctxh-embedding.entity';
@@ -76,24 +75,25 @@ import { CtxhActivity } from '../entities/ctxh-activity.entity';
     // Utilities
     EmbeddingService, // Reused from Phase 1
     
-    // LangChain Configuration
+    // Google Gemini AI Configuration
     {
-      provide: 'CHAT_MODEL',
-      useFactory: (configService: ConfigService) => new ChatOpenAI({
-        apiKey: configService.get('OPENAI_API_KEY'),
-        model: configService.get('RAG_CHAT_MODEL', 'gpt-3.5-turbo'),
-        temperature: 0.1,
+      provide: 'GEMINI_CLIENT',
+      useFactory: (configService: ConfigService) => new GoogleGenAI({
+        apiKey: configService.get('GEMINI_API_KEY'),
       }),
       inject: [ConfigService],
     },
     {
+      provide: 'CHAT_MODEL',
+      useFactory: () => 'gemini-2.5-flash',
+    },
+    {
       provide: 'EMBEDDING_MODEL',
-      useFactory: (configService: ConfigService) => new OpenAIEmbeddings({
-        apiKey: configService.get('OPENAI_API_KEY'),
-        model: configService.get('RAG_EMBEDDING_MODEL', 'text-embedding-3-small'),
-        dimensions: 1536,
-      }),
-      inject: [ConfigService],
+      useFactory: () => 'text-embedding-004',
+    },
+    {
+      provide: 'EMBEDDING_DIMENSIONS',
+      useFactory: () => 768,
     },
   ],
   exports: [CtxhChatService, CtxhRetrievalService],
@@ -162,7 +162,7 @@ export class SourceDto {
 ### 📝 Service Overview
 **File:** `backend/src/ctxh-chat/services/ctxh-retrieval.service.ts`
 
-**Dựa trên Context7 LangChain.js patterns:**
+**Dựa trên Context7 Google Gemini API patterns:**
 
 ### 🎯 Implementation Details
 
@@ -174,9 +174,16 @@ export class CtxhRetrievalService {
     @InjectRepository(CtxhEmbedding)
     private embeddingRepository: Repository<CtxhEmbedding>,
     
-    @Inject('EMBEDDING_MODEL')
-    private embeddingModel: OpenAIEmbeddings,
+    @Inject('GEMINI_CLIENT')
+    private geminiAI: GoogleGenAI,
     
+    @Inject('EMBEDDING_MODEL')
+    private embeddingModel: string,
+    
+    @Inject('EMBEDDING_DIMENSIONS')
+    private embeddingDimensions: number,
+    
+    private embeddingService: EmbeddingService,
     private configService: ConfigService,
   ) {}
 
@@ -186,8 +193,8 @@ export class CtxhRetrievalService {
   ): Promise<RetrievalResult> {
     const startTime = Date.now();
     
-    // Step 1: Generate query embedding
-    const queryEmbedding = await this.embeddingModel.embedQuery(query);
+    // Step 1: Generate query embedding using EmbeddingService
+    const queryEmbedding = await this.embeddingService.embedText(query);
     
     // Step 2: Perform similarity search
     const {
@@ -489,7 +496,7 @@ private async summarizeAndTruncate(
   const messagesToSummarize = session.messages.slice(0, -messagesToKeep);
   
   if (messagesToSummarize.length > 0) {
-    // Use OpenAI to summarize old messages
+    // Use Gemini to summarize old messages
     const summaryPrompt = this.buildSummaryPrompt(messagesToSummarize);
     const summary = await this.generateSummary(summaryPrompt);
     
@@ -572,51 +579,28 @@ interface SessionContext {
 ### 📝 Service Overview  
 **File:** `backend/src/ctxh-chat/services/ctxh-chat.service.ts`
 
-**Based on Context7 LangChain.js Agent patterns:**
+**Based on Context7 Google Gemini API patterns:**
 
 ### 🎯 Implementation Details
 
-#### 10.1. Retrieval-Augmented Chat Agent
+#### 10.1. Retrieval-Augmented Chat Agent với Gemini
 ```typescript
 @Injectable()
 export class CtxhChatService {
-  private retrieverTool: any;
+  private readonly generationModel = 'gemini-2.5-flash';
   
   constructor(
+    @Inject('GEMINI_CLIENT')
+    private geminiAI: GoogleGenAI,
+    
     @Inject('CHAT_MODEL')
-    private chatModel: ChatOpenAI,
+    private chatModel: string,
     
     private retrievalService: CtxhRetrievalService,
     private conversationService: ConversationService,
     private responseFormatter: ResponseFormatterService,
     private configService: ConfigService,
-  ) {
-    this.initializeRetrieverTool();
-  }
-
-  private initializeRetrieverTool() {
-    // Create retriever tool following Context7 patterns
-    this.retrieverTool = createRetrieverTool(
-      {
-        invoke: async (query: string) => {
-          const results = await this.retrievalService.retrieveRelevantDocuments(query);
-          return results.documents;
-        }
-      },
-      {
-        name: 'ctxh_retriever',
-        description: `
-Công cụ tìm kiếm thông tin về các hoạt động Công tác xã hội (CTXH).
-Sử dụng công cụ này để trả lời câu hỏi về:
-- Thông tin hoạt động CTXH cụ thể
-- Lịch trình và thời gian các hoạt động  
-- Địa điểm tổ chức hoạt động
-- Số ngày CTXH được cấp
-- Danh mục và tổ chức thực hiện
-        `.trim(),
-      }
-    );
-  }
+  ) {}
 
   async processMessage(
     message: string,
@@ -740,27 +724,36 @@ Mô tả: ${doc.content}
 ---`)
     .join('\n');
 
-  // Build conversation messages for LLM
-  const messages = [
-    { role: 'system', content: this.buildSystemPrompt() },
-    ...conversationHistory.slice(-6), // Keep recent context
-    {
-      role: 'user',
-      content: `
+  // Build conversation history context
+  const conversationContext = conversationHistory
+    .slice(-6)
+    .map(msg => `${msg.role === 'user' ? 'Sinh viên' : 'Trợ lý'}: ${msg.content}`)
+    .join('\n');
+
+  // Build final prompt for Gemini
+  const prompt = `
+${this.buildSystemPrompt()}
+
+${conversationContext ? 'Lịch sử trò chuyện:\n' + conversationContext + '\n\n' : ''}
 Câu hỏi: ${userMessage}
 
 Thông tin CTXH liên quan:
 ${contextDocs}
 
-Hãy trả lời dựa trên thông tin được cung cấp ở trên.`
-    }
-  ];
+Hãy trả lời dựa trên thông tin được cung cấp ở trên.`;
 
-  // Generate response using OpenAI
-  const response = await this.chatModel.invoke(messages);
+  // Generate response using Gemini
+  const response = await this.geminiAI.models.generateContent({
+    model: this.chatModel,
+    contents: prompt,
+    config: {
+      temperature: 0.7,
+      maxOutputTokens: 1024,
+    }
+  });
 
   return {
-    content: response.content,
+    content: response.text || 'Xin lỗi, tôi không thể tạo phản hồi lúc này.',
     sources: retrievalResults.documents,
     retrievalTime: retrievalResults.retrievalTime,
   };
@@ -1270,19 +1263,21 @@ export class RateLimitInterceptor implements NestInterceptor {
 - [ ] Memory usage <2GB cho average load
 - [ ] Database query optimization với proper indexes
 - [ ] Redis session storage với TTL management
-- [ ] OpenAI API rate limiting compliance
+- [ ] Google Gemini API rate limiting compliance (15 RPM free tier)
 - [ ] Graceful degradation under high load
+- [ ] Vector dimensions: 768 (reduced from 1536, faster search)
 
 ---
 
 ## 🚨 RISKS & MITIGATION
 
-### Risk 1: OpenAI API Rate Limits & Costs
+### Risk 1: Google Gemini API Rate Limits & Costs
 **Mitigation:**
 - Implement request queuing và batching
-- Use cheaper models for non-critical operations
+- Use Gemini models efficiently (75% cheaper than OpenAI)
 - Cache common responses trong Redis
 - Monitor API usage với alerts
+- Leverage free tier: 15 requests/minute, 1500 requests/day
 
 ### Risk 2: Response Quality & Hallucination
 **Mitigation:**
@@ -1326,4 +1321,4 @@ export class RateLimitInterceptor implements NestInterceptor {
 
 ---
 
-*📌 Kế hoạch này được thiết kế dựa trên best practices từ LangChain.js ecosystem và production RAG implementations, đảm bảo scalability, reliability và user experience tốt nhất cho CTXH chatbot system.*
+*📌 Kế hoạch này được thiết kế dựa trên best practices từ Google Gemini API ecosystem và production RAG implementations, tận dụng hiệu suất cao và chi phí thấp của Gemini (75% rẻ hơn OpenAI), đảm bảo scalability, reliability và user experience tốt nhất cho CTXH chatbot system.*
