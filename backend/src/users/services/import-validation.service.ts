@@ -1,17 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../../entities/user.entity';
-import { Class } from '../../entities/class.entity';
-import { Department } from '../../entities/department.entity';
-import { Organization } from '../../entities/organization.entity';
-import { UserImportData } from './excel-parser.service';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { User } from "../../entities/user.entity";
+import { Class } from "../../entities/class.entity";
+import { Department } from "../../entities/department.entity";
+import { Organization } from "../../entities/organization.entity";
+import { UserImportData } from "./excel-parser.service";
 
 export interface ValidationError {
   row: number;
   column: string;
   message: string;
-  severity: 'error' | 'warning';
+  severity: "error" | "warning";
 }
 
 export interface ValidationResult {
@@ -50,40 +50,52 @@ export class ImportValidationService {
     private readonly organizationRepository: Repository<Organization>,
   ) {}
 
-  async validateImportData(data: UserImportData[]): Promise<UserValidationResult[]> {
+  async validateImportData(
+    data: UserImportData[],
+  ): Promise<UserValidationResult[]> {
     const results: UserValidationResult[] = [];
-    
+
     // Get existing data for validation
     const existingUsers = await this.userRepository.find({
-      select: ['code']
+      select: ["code"],
     });
-    const existingCodes = new Set(existingUsers.map(u => u.code.toLowerCase()));
-    
-    const classes = await this.classRepository.find({ select: ['id', 'name'] });
-    const classMap = new Map(classes.map(c => [c.name.toLowerCase(), c.id]));
-    
-    const departments = await this.departmentRepository.find({ select: ['id', 'code'] });
-    const departmentMap = new Map(departments.map(d => [d.code.toLowerCase(), d.id]));
-    
-    const organizations = await this.organizationRepository.find({ select: ['id', 'code'] });
-    const organizationMap = new Map(organizations.map(o => [o.code.toLowerCase(), o.id]));
+    const existingCodes = new Set(
+      existingUsers.map((u) => u.code.toLowerCase()),
+    );
+
+    const classes = await this.classRepository.find({ select: ["id", "name"] });
+    const classMap = new Map(classes.map((c) => [c.name.toLowerCase(), c.id]));
+
+    const departments = await this.departmentRepository.find({
+      select: ["id", "code"],
+    });
+    const departmentMap = new Map(
+      departments.map((d) => [d.code.toLowerCase(), d.id]),
+    );
+
+    const organizations = await this.organizationRepository.find({
+      select: ["id", "code"],
+    });
+    const organizationMap = new Map(
+      organizations.map((o) => [o.code.toLowerCase(), o.id]),
+    );
 
     // Track duplicates within the import data
     const importCodes = new Set<string>();
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
-      const resolvedData: ResolvedUserData = { 
+      const resolvedData: ResolvedUserData = {
         ...row,
         // Set default values for optional fields
-        userType: row.userType || 'student',
-        membershipStatus: row.membershipStatus || 'none',
-        isActive: row.isActive !== undefined ? row.isActive : true
+        userType: row.userType || "student",
+        membershipStatus: row.membershipStatus || "none",
+        isActive: row.isActive !== undefined ? row.isActive : true,
       };
       const validation: ValidationResult = {
         isValid: true,
         errors: [],
-        warnings: []
+        warnings: [],
       };
 
       // For UI display
@@ -93,75 +105,75 @@ export class ImportValidationService {
 
       // Validate required fields
       if (!row.familyName?.trim()) {
-        validation.errors.push('Family Name is required');
+        validation.errors.push("Family Name is required");
         validation.isValid = false;
         _errors.push({
           row: rowNumber,
-          column: 'familyName',
-          message: 'Family Name is required',
-          severity: 'error'
+          column: "familyName",
+          message: "Family Name is required",
+          severity: "error",
         });
       }
 
       if (!row.givenName?.trim()) {
-        validation.errors.push('Given Name is required');
+        validation.errors.push("Given Name is required");
         validation.isValid = false;
         _errors.push({
           row: rowNumber,
-          column: 'givenName',
-          message: 'Given Name is required',
-          severity: 'error'
+          column: "givenName",
+          message: "Given Name is required",
+          severity: "error",
         });
       }
 
       // Validate email format only if email is provided and not "*"
-      if (row.email && row.email.trim() && row.email.trim() !== '*') {
+      if (row.email && row.email.trim() && row.email.trim() !== "*") {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(row.email)) {
-          validation.errors.push('Invalid email format');
+          validation.errors.push("Invalid email format");
           validation.isValid = false;
           _errors.push({
             row: rowNumber,
-            column: 'email',
-            message: 'Invalid email format',
-            severity: 'error'
+            column: "email",
+            message: "Invalid email format",
+            severity: "error",
           });
         }
       }
 
       if (!row.code?.trim()) {
-        validation.errors.push('Code is required');
+        validation.errors.push("Code is required");
         validation.isValid = false;
         _errors.push({
           row: rowNumber,
-          column: 'code',
-          message: 'Code is required',
-          severity: 'error'
+          column: "code",
+          message: "Code is required",
+          severity: "error",
         });
       } else {
         const normalizedCode = row.code.toLowerCase();
-        
+
         // Check for duplicates in existing data
         if (existingCodes.has(normalizedCode)) {
-          validation.errors.push('Code already exists in database');
+          validation.errors.push("Code already exists in database");
           validation.isValid = false;
           _errors.push({
             row: rowNumber,
-            column: 'code',
-            message: 'Code already exists in database',
-            severity: 'error'
+            column: "code",
+            message: "Code already exists in database",
+            severity: "error",
           });
         }
-        
+
         // Check for duplicates within import data
         if (importCodes.has(normalizedCode)) {
-          validation.errors.push('Duplicate code in import data');
+          validation.errors.push("Duplicate code in import data");
           validation.isValid = false;
           _errors.push({
             row: rowNumber,
-            column: 'code',
-            message: 'Duplicate code in import data',
-            severity: 'error'
+            column: "code",
+            message: "Duplicate code in import data",
+            severity: "error",
           });
         } else {
           importCodes.add(normalizedCode);
@@ -172,12 +184,12 @@ export class ImportValidationService {
       if (row.phone && row.phone.trim()) {
         const phoneRegex = /^[\d\s\-\+\(\)]+$/;
         if (!phoneRegex.test(row.phone)) {
-          validation.warnings.push('Invalid phone number format');
+          validation.warnings.push("Invalid phone number format");
           _warnings.push({
             row: rowNumber,
-            column: 'phone',
-            message: 'Invalid phone number format',
-            severity: 'warning'
+            column: "phone",
+            message: "Invalid phone number format",
+            severity: "warning",
           });
         }
       }
@@ -188,12 +200,14 @@ export class ImportValidationService {
         if (classMap.has(normalizedClassName)) {
           resolvedData.classId = classMap.get(normalizedClassName);
         } else {
-          validation.warnings.push(`Class with name '${row.className}' not found - will be skipped`);
+          validation.warnings.push(
+            `Class with name '${row.className}' not found - will be skipped`,
+          );
           _warnings.push({
             row: rowNumber,
-            column: 'className',
+            column: "className",
             message: `Class with name '${row.className}' not found - will be skipped`,
-            severity: 'warning'
+            severity: "warning",
           });
         }
       }
@@ -202,14 +216,17 @@ export class ImportValidationService {
       if (row.managementDepartmentCode && row.managementDepartmentCode.trim()) {
         const normalizedCode = row.managementDepartmentCode.toLowerCase();
         if (departmentMap.has(normalizedCode)) {
-          resolvedData.managementDepartmentId = departmentMap.get(normalizedCode);
+          resolvedData.managementDepartmentId =
+            departmentMap.get(normalizedCode);
         } else {
-          validation.warnings.push(`Management Department with code '${row.managementDepartmentCode}' not found - will be skipped`);
+          validation.warnings.push(
+            `Management Department with code '${row.managementDepartmentCode}' not found - will be skipped`,
+          );
           _warnings.push({
             row: rowNumber,
-            column: 'managementDepartmentCode',
+            column: "managementDepartmentCode",
             message: `Management Department with code '${row.managementDepartmentCode}' not found - will be skipped`,
-            severity: 'warning'
+            severity: "warning",
           });
         }
       }
@@ -220,25 +237,28 @@ export class ImportValidationService {
         if (departmentMap.has(normalizedCode)) {
           resolvedData.trainingDepartmentId = departmentMap.get(normalizedCode);
         } else {
-          validation.warnings.push(`Training Department with code '${row.trainingDepartmentCode}' not found - will be skipped`);
+          validation.warnings.push(
+            `Training Department with code '${row.trainingDepartmentCode}' not found - will be skipped`,
+          );
           _warnings.push({
             row: rowNumber,
-            column: 'trainingDepartmentCode',
+            column: "trainingDepartmentCode",
             message: `Training Department with code '${row.trainingDepartmentCode}' not found - will be skipped`,
-            severity: 'warning'
+            severity: "warning",
           });
         }
       }
 
       // Validate and resolve organization references (optional - only warn if not found)
       if (row.organizationCodes && row.organizationCodes.trim()) {
-        const orgCodes = row.organizationCodes.split(';')
-          .map(code => code.trim())
-          .filter(code => code.length > 0);
-        
+        const orgCodes = row.organizationCodes
+          .split(";")
+          .map((code) => code.trim())
+          .filter((code) => code.length > 0);
+
         const resolvedOrgIds: string[] = [];
         const invalidOrgCodes: string[] = [];
-        
+
         for (const orgCode of orgCodes) {
           const normalizedOrgCode = orgCode.toLowerCase();
           if (organizationMap.has(normalizedOrgCode)) {
@@ -247,64 +267,80 @@ export class ImportValidationService {
             invalidOrgCodes.push(orgCode);
           }
         }
-        
+
         if (invalidOrgCodes.length > 0) {
-          validation.warnings.push(`Organizations not found: ${invalidOrgCodes.join(', ')} - will be skipped`);
+          validation.warnings.push(
+            `Organizations not found: ${invalidOrgCodes.join(", ")} - will be skipped`,
+          );
           _warnings.push({
             row: rowNumber,
-            column: 'organizationCodes',
-            message: `Organizations not found: ${invalidOrgCodes.join(', ')} - will be skipped`,
-            severity: 'warning'
+            column: "organizationCodes",
+            message: `Organizations not found: ${invalidOrgCodes.join(", ")} - will be skipped`,
+            severity: "warning",
           });
         }
-        
+
         if (resolvedOrgIds.length > 0) {
           resolvedData.organizationIds = resolvedOrgIds;
         }
       }
 
       // Validate user type (optional - use default if invalid)
-      if (row.userType && !['student', 'staff'].includes(row.userType)) {
-        validation.warnings.push(`Invalid user type '${row.userType}'. Will default to 'student'`);
-        resolvedData.userType = 'student'; // Default value
+      if (row.userType && !["student", "staff"].includes(row.userType)) {
+        validation.warnings.push(
+          `Invalid user type '${row.userType}'. Will default to 'student'`,
+        );
+        resolvedData.userType = "student"; // Default value
         _warnings.push({
           row: rowNumber,
-          column: 'userType',
+          column: "userType",
           message: `Invalid user type '${row.userType}'. Will default to 'student'`,
-          severity: 'warning'
+          severity: "warning",
         });
       }
 
       // Validate membership status (optional - use default if invalid)
-      if (row.membershipStatus && !['doan_vien', 'hoi_vien', 'both', 'none'].includes(row.membershipStatus)) {
-        validation.warnings.push(`Invalid membership status '${row.membershipStatus}'. Will default to 'none'`);
-        resolvedData.membershipStatus = 'none'; // Default value
+      if (
+        row.membershipStatus &&
+        !["doan_vien", "hoi_vien", "both", "none"].includes(
+          row.membershipStatus,
+        )
+      ) {
+        validation.warnings.push(
+          `Invalid membership status '${row.membershipStatus}'. Will default to 'none'`,
+        );
+        resolvedData.membershipStatus = "none"; // Default value
         _warnings.push({
           row: rowNumber,
-          column: 'membershipStatus',
+          column: "membershipStatus",
           message: `Invalid membership status '${row.membershipStatus}'. Will default to 'none'`,
-          severity: 'warning'
+          severity: "warning",
         });
       }
 
       // Business logic validations (only warnings)
-      if (resolvedData.userType === 'student' && !row.className) {
-        validation.warnings.push('Students typically should have a class assigned');
+      if (resolvedData.userType === "student" && !row.className) {
+        validation.warnings.push(
+          "Students typically should have a class assigned",
+        );
         _warnings.push({
           row: rowNumber,
-          column: 'className',
-          message: 'Students typically should have a class assigned',
-          severity: 'warning'
+          column: "className",
+          message: "Students typically should have a class assigned",
+          severity: "warning",
         });
       }
 
-      if (resolvedData.userType === 'staff' && !row.managementDepartmentCode) {
-        validation.warnings.push('Staff members typically should have a management department assigned');
+      if (resolvedData.userType === "staff" && !row.managementDepartmentCode) {
+        validation.warnings.push(
+          "Staff members typically should have a management department assigned",
+        );
         _warnings.push({
           row: rowNumber,
-          column: 'managementDepartmentCode',
-          message: 'Staff members typically should have a management department assigned',
-          severity: 'warning'
+          column: "managementDepartmentCode",
+          message:
+            "Staff members typically should have a management department assigned",
+          severity: "warning",
         });
       }
 
@@ -318,38 +354,46 @@ export class ImportValidationService {
         _rowIndex: i + 2,
         _hasError: validation.errors.length > 0,
         _errors,
-        _warnings
+        _warnings,
       });
     }
 
     return results;
   }
 
-  async validateEmailUniqueness(email: string | null, excludeId?: string): Promise<boolean> {
+  async validateEmailUniqueness(
+    email: string | null,
+    excludeId?: string,
+  ): Promise<boolean> {
     // Null email is always valid (no uniqueness constraint)
     if (!email) {
       return true;
     }
-    
-    const query = this.userRepository.createQueryBuilder('user')
-      .where('LOWER(user.email) = LOWER(:email)', { email });
-    
+
+    const query = this.userRepository
+      .createQueryBuilder("user")
+      .where("LOWER(user.email) = LOWER(:email)", { email });
+
     if (excludeId) {
-      query.andWhere('user.id != :excludeId', { excludeId });
+      query.andWhere("user.id != :excludeId", { excludeId });
     }
-    
+
     const existing = await query.getOne();
     return !existing;
   }
 
-  async validateCodeUniqueness(code: string, excludeId?: string): Promise<boolean> {
-    const query = this.userRepository.createQueryBuilder('user')
-      .where('LOWER(user.code) = LOWER(:code)', { code });
-    
+  async validateCodeUniqueness(
+    code: string,
+    excludeId?: string,
+  ): Promise<boolean> {
+    const query = this.userRepository
+      .createQueryBuilder("user")
+      .where("LOWER(user.code) = LOWER(:code)", { code });
+
     if (excludeId) {
-      query.andWhere('user.id != :excludeId', { excludeId });
+      query.andWhere("user.id != :excludeId", { excludeId });
     }
-    
+
     const existing = await query.getOne();
     return !existing;
   }

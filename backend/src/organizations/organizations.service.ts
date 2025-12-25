@@ -1,10 +1,20 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, TreeRepository, Like, In } from 'typeorm';
-import { Organization, OrganizationType } from '../entities/organization.entity';
-import { UserOrganization, UserOrgRole } from '../entities/user-organization.entity';
-import { CreateOrganizationDto } from './dto/create-organization.dto';
-import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, TreeRepository, In } from "typeorm";
+import {
+  Organization,
+  OrganizationType,
+} from "../entities/organization.entity";
+import {
+  UserOrganization,
+  UserOrgRole,
+} from "../entities/user-organization.entity";
+import { CreateOrganizationDto } from "./dto/create-organization.dto";
+import { UpdateOrganizationDto } from "./dto/update-organization.dto";
 
 // Interface cho Organization có thêm memberCount và hasChildren
 type OrganizationWithExtras = Organization & {
@@ -19,16 +29,20 @@ export class OrganizationsService {
     private organizationsRepository: TreeRepository<Organization>,
     @InjectRepository(UserOrganization)
     private userOrganizationsRepository: Repository<UserOrganization>,
-  ) { }
+  ) {}
 
-  async create(createOrganizationDto: CreateOrganizationDto): Promise<Organization> {
+  async create(
+    createOrganizationDto: CreateOrganizationDto,
+  ): Promise<Organization> {
     const { parentId, ...orgData } = createOrganizationDto;
 
     let parent = null;
     if (parentId) {
-      parent = await this.organizationsRepository.findOne({ where: { id: parentId } });
+      parent = await this.organizationsRepository.findOne({
+        where: { id: parentId },
+      });
       if (!parent) {
-        throw new NotFoundException('Parent organization not found');
+        throw new NotFoundException("Parent organization not found");
       }
     }
 
@@ -42,10 +56,11 @@ export class OrganizationsService {
 
   async findAll(): Promise<Organization[]> {
     return this.organizationsRepository.find({
-      relations: ['parent', 'children'],
-      order: { name: 'ASC' }
+      relations: ["parent", "children"],
+      order: { name: "ASC" },
     });
-  } async findTree(): Promise<OrganizationWithExtras[]> {
+  }
+  async findTree(): Promise<OrganizationWithExtras[]> {
     // 1. Lấy cấu trúc cây tổ chức
     const organizations = await this.organizationsRepository.findTrees();
 
@@ -62,17 +77,19 @@ export class OrganizationsService {
    * @param maxDepth - Maximum depth to load (default: 2)
    * @returns Organization tree limited to maxDepth levels
    */
-  async findTreeWithDepth(maxDepth: number = 2): Promise<OrganizationWithExtras[]> {
+  async findTreeWithDepth(
+    maxDepth: number = 2,
+  ): Promise<OrganizationWithExtras[]> {
     // 1. Get root organizations (parent = null) using query builder
     const roots = await this.organizationsRepository
-      .createQueryBuilder('org')
-      .where('org.parentId IS NULL')
-      .orderBy('org.name', 'ASC')
+      .createQueryBuilder("org")
+      .where("org.parentId IS NULL")
+      .orderBy("org.name", "ASC")
       .getMany();
 
     // 2. Build tree with depth limit for each root
     const trees = await Promise.all(
-      roots.map(root => this.buildTreeWithDepth(root, maxDepth, 1))
+      roots.map((root) => this.buildTreeWithDepth(root, maxDepth, 1)),
     );
 
     // 3. Add member counts
@@ -92,15 +109,17 @@ export class OrganizationsService {
   async findTreeByTypeCode(
     type: string,
     code: string,
-    maxDepth: number = 2
+    maxDepth: number = 2,
   ): Promise<OrganizationWithExtras> {
     // 1. Find the organization
     const org = await this.organizationsRepository.findOne({
-      where: { type: type as OrganizationType, code }
+      where: { type: type as OrganizationType, code },
     });
 
     if (!org) {
-      throw new NotFoundException(`Organization with type '${type}' and code '${code}' not found`);
+      throw new NotFoundException(
+        `Organization with type '${type}' and code '${code}' not found`,
+      );
     }
 
     // 2. Build tree from this org with depth limit
@@ -126,28 +145,30 @@ export class OrganizationsService {
     type: string,
     code: string,
     includeChildren: boolean = true,
-    maxDepth: number = 1
+    maxDepth: number = 1,
   ): Promise<OrganizationWithExtras> {
     // 1. Find the organization
     const org = await this.organizationsRepository.findOne({
-      where: { type: type as OrganizationType, code }
+      where: { type: type as OrganizationType, code },
     });
 
     if (!org) {
-      throw new NotFoundException(`Organization with type '${type}' and code '${code}' not found`);
+      throw new NotFoundException(
+        `Organization with type '${type}' and code '${code}' not found`,
+      );
     }
 
     // 2. If not including children, return org with member count only
     if (!includeChildren) {
       const memberCount = await this.userOrganizationsRepository.count({
-        where: { organizationId: org.id }
+        where: { organizationId: org.id },
       });
 
       return {
         ...org,
         memberCount,
         hasChildren: false,
-        children: []
+        children: [],
       } as OrganizationWithExtras;
     }
 
@@ -172,19 +193,19 @@ export class OrganizationsService {
   private async buildTreeWithDepth(
     org: Organization,
     maxDepth: number,
-    currentDepth: number
+    currentDepth: number,
   ): Promise<Organization> {
     // Base case: Reached max depth, don't load children
     if (currentDepth >= maxDepth) {
       // Check if this org has children (for hasChildren flag)
       const childrenCount = await this.organizationsRepository.count({
-        where: { parent: { id: org.id } }
+        where: { parent: { id: org.id } },
       });
 
       // Assign properties to preserve getters like 'slug'
       const result = Object.assign(org, {
         children: [],
-        hasChildren: childrenCount > 0
+        hasChildren: childrenCount > 0,
       });
       return result;
     }
@@ -192,29 +213,29 @@ export class OrganizationsService {
     // Recursive case: Load children and continue (if not at max depth yet)
     const children = await this.organizationsRepository.find({
       where: { parent: { id: org.id } },
-      order: { name: 'ASC' }
+      order: { name: "ASC" },
     });
 
     // If no children, return org as-is
     if (children.length === 0) {
       const result = Object.assign(org, {
         children: [],
-        hasChildren: false
+        hasChildren: false,
       });
       return result;
     }
 
     // Recursively build subtrees for each child
     const childrenWithSubtrees = await Promise.all(
-      children.map(child =>
-        this.buildTreeWithDepth(child, maxDepth, currentDepth + 1)
-      )
+      children.map((child) =>
+        this.buildTreeWithDepth(child, maxDepth, currentDepth + 1),
+      ),
     );
 
     // Assign properties to preserve getters like 'slug'
     const result = Object.assign(org, {
       children: childrenWithSubtrees,
-      hasChildren: childrenWithSubtrees.length > 0
+      hasChildren: childrenWithSubtrees.length > 0,
     });
     return result;
   }
@@ -237,16 +258,18 @@ export class OrganizationsService {
   }
 
   // Lấy map chứa số lượng thành viên cho mỗi tổ chức
-  private async getMemberCountsMap(organizationIds: string[]): Promise<Map<string, number>> {
+  private async getMemberCountsMap(
+    organizationIds: string[],
+  ): Promise<Map<string, number>> {
     if (organizationIds.length === 0) return new Map();
 
     // Query để đếm số lượng thành viên cho mỗi tổ chức
     const results = await this.userOrganizationsRepository
-      .createQueryBuilder('uo')
-      .select('uo.organizationId', 'orgId')
-      .addSelect('COUNT(DISTINCT uo.userId)', 'count')
-      .where('uo.organizationId IN (:...ids)', { ids: organizationIds })
-      .groupBy('uo.organizationId')
+      .createQueryBuilder("uo")
+      .select("uo.organizationId", "orgId")
+      .addSelect("COUNT(DISTINCT uo.userId)", "count")
+      .where("uo.organizationId IN (:...ids)", { ids: organizationIds })
+      .groupBy("uo.organizationId")
       .getRawMany();
 
     // Tạo map từ kết quả
@@ -256,44 +279,48 @@ export class OrganizationsService {
     }
 
     return memberCountsMap;
-  }  // Thêm memberCount vào cây tổ chức
+  } // Thêm memberCount vào cây tổ chức
   private addMemberCountsToTree(
     organizations: Organization[],
-    memberCountsMap: Map<string, number>
+    memberCountsMap: Map<string, number>,
   ): OrganizationWithExtras[] {
-    return organizations.map(org => {
+    return organizations.map((org) => {
       const memberCount = memberCountsMap.get(org.id) || 0;
 
       // Đệ quy cho children
-      const children = org.children && org.children.length > 0
-        ? this.addMemberCountsToTree(org.children, memberCountsMap)
-        : []; const result = {
-          ...org,
-          memberCount,
-          children: children as any,
-          hasChildren: children.length > 0 // Thêm flag hasChildren
-        } as OrganizationWithExtras;
+      const children =
+        org.children && org.children.length > 0
+          ? this.addMemberCountsToTree(org.children, memberCountsMap)
+          : [];
+      const result = {
+        ...org,
+        memberCount,
+        children: children as any,
+        hasChildren: children.length > 0, // Thêm flag hasChildren
+      } as OrganizationWithExtras;
 
       return result;
     });
   }
 
-
   async findByType(type: OrganizationType): Promise<Organization[]> {
     return this.organizationsRepository.find({
       where: { type },
-      relations: ['parent', 'children'],
-      order: { name: 'ASC' }
+      relations: ["parent", "children"],
+      order: { name: "ASC" },
     });
-  } async getAccessibleOrganizations(userId: string): Promise<Organization[]> {
+  }
+  async getAccessibleOrganizations(userId: string): Promise<Organization[]> {
     try {
-      console.log(`[OrganizationsService] Getting organizations with payment-campaigns.create permission for user: ${userId}`);
+      console.log(
+        `[OrganizationsService] Getting organizations with payment-campaigns.create permission for user: ${userId}`,
+      );
 
       // Validate userId
       if (!userId) {
-        console.error('[OrganizationsService] Invalid userId provided');
-        throw new BadRequestException('Invalid user ID');
-      }      // Check if user is super admin (has global system.access_admin permission)
+        console.error("[OrganizationsService] Invalid userId provided");
+        throw new BadRequestException("Invalid user ID");
+      } // Check if user is super admin (has global system.access_admin permission)
       const superAdminQuery = `
         SELECT ur.id
         FROM user_roles ur
@@ -308,15 +335,20 @@ export class OrganizationsService {
         LIMIT 1
       `;
 
-      const superAdminResult = await this.organizationsRepository.query(superAdminQuery, [userId]);
+      const superAdminResult = await this.organizationsRepository.query(
+        superAdminQuery,
+        [userId],
+      );
 
       if (superAdminResult.length > 0) {
-        console.log(`[OrganizationsService] User ${userId} is super admin, returning all organizations`);        // Super admin can see all organizations
+        console.log(
+          `[OrganizationsService] User ${userId} is super admin, returning all organizations`,
+        ); // Super admin can see all organizations
         return this.organizationsRepository.find({
           where: { isActive: true },
-          order: { name: 'ASC' }
+          order: { name: "ASC" },
         });
-      }      // Query for organizations where user has payment-campaigns.create permission
+      } // Query for organizations where user has payment-campaigns.create permission
       const accessibleOrgsQuery = `
         SELECT DISTINCT o.id, o.name, o.code, o.type, o."parentId", o."createdAt", o."updatedAt", o."isActive"
         FROM user_roles ur
@@ -332,23 +364,31 @@ export class OrganizationsService {
         ORDER BY o.name ASC
       `;
 
-      const accessibleOrganizations = await this.organizationsRepository.query(accessibleOrgsQuery, [userId]);
+      const accessibleOrganizations = await this.organizationsRepository.query(
+        accessibleOrgsQuery,
+        [userId],
+      );
 
-      console.log(`[OrganizationsService] Found ${accessibleOrganizations.length} organizations with payment-campaigns.create permission for user ${userId}`);      // Convert query results to Organization entities
-      const organizationIds = accessibleOrganizations.map(row => row.id);
+      console.log(
+        `[OrganizationsService] Found ${accessibleOrganizations.length} organizations with payment-campaigns.create permission for user ${userId}`,
+      ); // Convert query results to Organization entities
+      const organizationIds = accessibleOrganizations.map((row) => row.id);
 
       if (organizationIds.length === 0) {
         return [];
-      }      // Fetch full Organization entities with relations
+      } // Fetch full Organization entities with relations
       const organizations = await this.organizationsRepository.find({
         where: { id: In(organizationIds) },
-        relations: ['parent'],
-        order: { name: 'ASC' }
+        relations: ["parent"],
+        order: { name: "ASC" },
       });
 
       return organizations;
     } catch (error) {
-      console.error('[OrganizationsService] Error getting accessible organizations:', error);
+      console.error(
+        "[OrganizationsService] Error getting accessible organizations:",
+        error,
+      );
       throw error;
     }
   }
@@ -356,11 +396,11 @@ export class OrganizationsService {
   async findOne(id: string): Promise<Organization> {
     const organization = await this.organizationsRepository.findOne({
       where: { id },
-      relations: ['parent', 'children', 'members', 'members.user']
+      relations: ["parent", "children", "members", "members.user"],
     });
 
     if (!organization) {
-      throw new NotFoundException('Organization not found');
+      throw new NotFoundException("Organization not found");
     }
 
     return organization;
@@ -370,32 +410,37 @@ export class OrganizationsService {
    * Update organization - OPTIMIZED ⚡
    * Uses direct UPDATE query instead of load + save
    * Performance: 500+ queries → 3 queries, 4000ms → 20-30ms
-   * 
+   *
    * @param id - Organization ID
    * @param updateOrganizationDto - Fields to update
    * @returns Updated organization (lightweight, no relations)
    */
-  async update(id: string, updateOrganizationDto: UpdateOrganizationDto): Promise<Organization> {
+  async update(
+    id: string,
+    updateOrganizationDto: UpdateOrganizationDto,
+  ): Promise<Organization> {
     const { parentId, ...updateData } = updateOrganizationDto;
 
     // ✅ Validate existence (1 query, ~5ms)
     const exists = await this.organizationsRepository.existsBy({ id });
     if (!exists) {
-      throw new NotFoundException('Organization not found');
+      throw new NotFoundException("Organization not found");
     }
 
     // ✅ Validate parent if provided (1 query if parentId set, ~5ms)
     if (parentId !== undefined && parentId !== null) {
-      const parentExists = await this.organizationsRepository.existsBy({ id: parentId });
+      const parentExists = await this.organizationsRepository.existsBy({
+        id: parentId,
+      });
       if (!parentExists) {
-        throw new NotFoundException('Parent organization not found');
+        throw new NotFoundException("Parent organization not found");
       }
     }
 
     // ✅ Direct UPDATE - Single query, no loading (1 query, ~10ms)
     await this.organizationsRepository.update(id, {
       ...updateData,
-      ...(parentId !== undefined && { parentId })
+      ...(parentId !== undefined && { parentId }),
     });
 
     // ✅ Return updated entity (lightweight, no relations) (1 query, ~5ms)
@@ -407,19 +452,27 @@ export class OrganizationsService {
 
     // Check if organization has children
     if (organization.children && organization.children.length > 0) {
-      throw new BadRequestException('Cannot delete organization with child organizations');
+      throw new BadRequestException(
+        "Cannot delete organization with child organizations",
+      );
     }
 
     await this.organizationsRepository.remove(organization);
   }
-  async addMember(organizationId: string, userId: string, role: UserOrgRole = UserOrgRole.MEMBER): Promise<UserOrganization> {
+  async addMember(
+    organizationId: string,
+    userId: string,
+    role: UserOrgRole = UserOrgRole.MEMBER,
+  ): Promise<UserOrganization> {
     // Check if user is already a member
     const existingMembership = await this.userOrganizationsRepository.findOne({
-      where: { organizationId, userId }
+      where: { organizationId, userId },
     });
 
     if (existingMembership) {
-      throw new BadRequestException('User is already a member of this organization');
+      throw new BadRequestException(
+        "User is already a member of this organization",
+      );
     }
 
     const membership = this.userOrganizationsRepository.create({
@@ -431,15 +484,19 @@ export class OrganizationsService {
     return this.userOrganizationsRepository.save(membership);
   }
 
-  async addMemberWithParents(organizationId: string, userId: string, role: UserOrgRole = UserOrgRole.MEMBER): Promise<UserOrganization[]> {
+  async addMemberWithParents(
+    organizationId: string,
+    userId: string,
+    role: UserOrgRole = UserOrgRole.MEMBER,
+  ): Promise<UserOrganization[]> {
     // Get the organization with all its ancestors
     const organization = await this.organizationsRepository.findOne({
       where: { id: organizationId },
-      relations: ['parent']
+      relations: ["parent"],
     });
 
     if (!organization) {
-      throw new NotFoundException('Organization not found');
+      throw new NotFoundException("Organization not found");
     }
 
     // Get all ancestor organizations (including the target organization)
@@ -455,8 +512,10 @@ export class OrganizationsService {
         memberships.push(membership);
       } catch (error) {
         // If user is already a member, skip this organization
-        if (error.message.includes('already a member')) {
-          console.log(`User ${userId} is already a member of organization ${ancestorId}`);
+        if (error.message.includes("already a member")) {
+          console.log(
+            `User ${userId} is already a member of organization ${ancestorId}`,
+          );
           continue;
         }
         throw error;
@@ -473,7 +532,7 @@ export class OrganizationsService {
     while (currentId) {
       const org = await this.organizationsRepository.findOne({
         where: { id: currentId },
-        relations: ['parent']
+        relations: ["parent"],
       });
 
       if (!org) break;
@@ -487,9 +546,10 @@ export class OrganizationsService {
     }
 
     return ancestorIds;
-  } async removeMember(organizationId: string, userId: string): Promise<void> {
+  }
+  async removeMember(organizationId: string, userId: string): Promise<void> {
     const membership = await this.userOrganizationsRepository.findOne({
-      where: { organizationId, userId }
+      where: { organizationId, userId },
     });
 
     if (membership) {
@@ -497,7 +557,7 @@ export class OrganizationsService {
     }
 
     const children = await this.organizationsRepository.find({
-      where: { parent: { id: organizationId } }
+      where: { parent: { id: organizationId } },
     });
 
     for (const child of children) {
@@ -505,20 +565,23 @@ export class OrganizationsService {
     }
   }
 
-  async removeMemberSafely(organizationId: string, userId: string): Promise<void> {
+  async removeMemberSafely(
+    organizationId: string,
+    userId: string,
+  ): Promise<void> {
     // Get the organization being removed from
     const organization = await this.organizationsRepository.findOne({
       where: { id: organizationId },
-      relations: ['parent']
+      relations: ["parent"],
     });
 
     if (!organization) {
-      throw new NotFoundException('Organization not found');
+      throw new NotFoundException("Organization not found");
     }
 
     // Remove user from this specific organization
     const membership = await this.userOrganizationsRepository.findOne({
-      where: { organizationId, userId }
+      where: { organizationId, userId },
     });
 
     if (membership) {
@@ -527,7 +590,7 @@ export class OrganizationsService {
 
     // Remove user from all child organizations (they shouldn't be in child orgs if not in parent)
     const children = await this.organizationsRepository.find({
-      where: { parent: { id: organizationId } }
+      where: { parent: { id: organizationId } },
     });
 
     for (const child of children) {
@@ -541,24 +604,27 @@ export class OrganizationsService {
     }
   }
 
-  private async checkAndRemoveFromParent(parentOrgId: string, userId: string): Promise<void> {
+  private async checkAndRemoveFromParent(
+    parentOrgId: string,
+    userId: string,
+  ): Promise<void> {
     // Get all child organizations of the parent
     const childOrganizations = await this.organizationsRepository.find({
-      where: { parent: { id: parentOrgId } }
+      where: { parent: { id: parentOrgId } },
     });
 
     // Check if user is still a member of any child organization
     const remainingMemberships = await this.userOrganizationsRepository.find({
       where: {
         userId,
-        organizationId: In(childOrganizations.map(child => child.id))
-      }
+        organizationId: In(childOrganizations.map((child) => child.id)),
+      },
     });
 
     // If user is not a member of any child organization, remove from parent
     if (remainingMemberships.length === 0) {
       const parentMembership = await this.userOrganizationsRepository.findOne({
-        where: { organizationId: parentOrgId, userId }
+        where: { organizationId: parentOrgId, userId },
       });
 
       if (parentMembership) {
@@ -567,7 +633,7 @@ export class OrganizationsService {
         // Recursively check grandparent
         const parentOrg = await this.organizationsRepository.findOne({
           where: { id: parentOrgId },
-          relations: ['parent']
+          relations: ["parent"],
         });
 
         if (parentOrg && parentOrg.parent) {
@@ -575,17 +641,21 @@ export class OrganizationsService {
         }
       }
     }
-  } async bulkRemoveMembers(organizationId: string, userIds: string[]): Promise<void> {
-    console.log('Starting bulkRemoveMembers:', { organizationId, userIds });
+  }
+  async bulkRemoveMembers(
+    organizationId: string,
+    userIds: string[],
+  ): Promise<void> {
+    console.log("Starting bulkRemoveMembers:", { organizationId, userIds });
 
     if (!userIds || userIds.length === 0) {
-      throw new BadRequestException('No user IDs provided');
+      throw new BadRequestException("No user IDs provided");
     }
 
     // Check if organization exists
     const organization = await this.findOne(organizationId);
     if (!organization) {
-      throw new NotFoundException('Organization not found');
+      throw new NotFoundException("Organization not found");
     }
 
     // Remove each user from the organization and all its children
@@ -593,31 +663,42 @@ export class OrganizationsService {
       await this.removeMember(organizationId, userId);
     }
 
-    console.log('Completed bulkRemoveMembers for organization:', organizationId);
+    console.log(
+      "Completed bulkRemoveMembers for organization:",
+      organizationId,
+    );
   }
 
   async getMembers(
     organizationId: string,
     page: number = 1,
-    limit: number = 10
-  ): Promise<{ members: UserOrganization[], total: number, page: number, limit: number, totalPages: number }> {
+    limit: number = 10,
+  ): Promise<{
+    members: UserOrganization[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     const offset = (page - 1) * limit;
 
-    const [members, total] = await this.userOrganizationsRepository.findAndCount({
-      where: { organizationId },
-      relations: ['user'],
-      order: { joinedAt: 'DESC' },
-      take: limit,
-      skip: offset
-    });
+    const [members, total] =
+      await this.userOrganizationsRepository.findAndCount({
+        where: { organizationId },
+        relations: ["user"],
+        order: { joinedAt: "DESC" },
+        take: limit,
+        skip: offset,
+      });
 
     const totalPages = Math.ceil(total / limit);
 
     return {
       members,
       total,
-      page, limit,
-      totalPages
+      page,
+      limit,
+      totalPages,
     };
   }
 
@@ -628,13 +709,13 @@ export class OrganizationsService {
     });
 
     if (!organization) {
-      throw new NotFoundException('Organization not found');
+      throw new NotFoundException("Organization not found");
     }
 
     // Chỉ lấy direct children (con trực tiếp), không lấy cấu trúc cây sâu hơn
     const children = await this.organizationsRepository.find({
       where: { parent: { id } },
-      order: { name: 'ASC' }
+      order: { name: "ASC" },
     });
 
     // Nếu không có children, trả về mảng rỗng
@@ -643,7 +724,7 @@ export class OrganizationsService {
     }
 
     // Lấy tất cả ID của các tổ chức con
-    const childrenIds = children.map(child => child.id);
+    const childrenIds = children.map((child) => child.id);
 
     // Lấy số lượng thành viên cho mỗi tổ chức con
     const memberCountsMap = await this.getMemberCountsMap(childrenIds);
@@ -653,16 +734,17 @@ export class OrganizationsService {
       children.map(async (child) => {
         // Đếm số lượng con của child này
         const childrenCount = await this.organizationsRepository.count({
-          where: { parent: { id: child.id } }
-        }); const result = {
+          where: { parent: { id: child.id } },
+        });
+        const result = {
           ...child,
           memberCount: memberCountsMap.get(child.id) || 0,
-          children: childrenCount > 0 ? [] as any : undefined, // Nếu có children thì set mảng rỗng, không thì undefined
-          hasChildren: childrenCount > 0 // Thêm flag hasChildren
+          children: childrenCount > 0 ? ([] as any) : undefined, // Nếu có children thì set mảng rỗng, không thì undefined
+          hasChildren: childrenCount > 0, // Thêm flag hasChildren
         } as OrganizationWithExtras;
 
         return result;
-      })
+      }),
     );
 
     return childrenWithHasChildren;
@@ -670,30 +752,40 @@ export class OrganizationsService {
 
   async getStats(): Promise<{
     doanStats: {
-      total: number,
-      doanTruong: number,
-      doanCoSo: number,
-      chiDoan: number,
-      members: { total: number, doanTruong: number, doanCoSo: number, chiDoan: number }
+      total: number;
+      doanTruong: number;
+      doanCoSo: number;
+      chiDoan: number;
+      members: {
+        total: number;
+        doanTruong: number;
+        doanCoSo: number;
+        chiDoan: number;
+      };
     };
     hoiStats: {
-      total: number,
-      hoiSinhVienTruong: number,
-      lienChiHoi: number,
-      chiHoi: number,
-      members: { total: number, hoiSinhVienTruong: number, lienChiHoi: number, chiHoi: number }
+      total: number;
+      hoiSinhVienTruong: number;
+      lienChiHoi: number;
+      chiHoi: number;
+      members: {
+        total: number;
+        hoiSinhVienTruong: number;
+        lienChiHoi: number;
+        chiHoi: number;
+      };
     };
     clbStats: {
-      total: number,
-      clbTruong: number,
-      clbKhoa: number,
-      members: { total: number, clbTruong: number, clbKhoa: number }
+      total: number;
+      clbTruong: number;
+      clbKhoa: number;
+      members: { total: number; clbTruong: number; clbKhoa: number };
     };
     totalMembers: number;
   }> {
     // Đếm số lượng tổ chức theo loại (phần bên ngoài)
     const orgCountsResult = await this.organizationsRepository
-      .createQueryBuilder('org')
+      .createQueryBuilder("org")
       .select([
         'COUNT(CASE WHEN org.type = :doanTruong THEN 1 END) as "doanTruong"',
         'COUNT(CASE WHEN org.type = :doanCoSo THEN 1 END) as "doanCoSo"',
@@ -702,7 +794,7 @@ export class OrganizationsService {
         'COUNT(CASE WHEN org.type = :lienChiHoi THEN 1 END) as "lienChiHoi"',
         'COUNT(CASE WHEN org.type = :chiHoi THEN 1 END) as "chiHoi"',
         'COUNT(CASE WHEN org.type = :clbTruong THEN 1 END) as "clbTruong"',
-        'COUNT(CASE WHEN org.type = :clbKhoa THEN 1 END) as "clbKhoa"'
+        'COUNT(CASE WHEN org.type = :clbKhoa THEN 1 END) as "clbKhoa"',
       ])
       .setParameters({
         doanTruong: OrganizationType.DOAN_TRUONG,
@@ -712,14 +804,14 @@ export class OrganizationsService {
         lienChiHoi: OrganizationType.LIEN_CHI_HOI,
         chiHoi: OrganizationType.CHI_HOI,
         clbTruong: OrganizationType.CLB_TRUONG,
-        clbKhoa: OrganizationType.CLB_KHOA
+        clbKhoa: OrganizationType.CLB_KHOA,
       })
       .getRawOne();
 
     // Đếm số lượng thành viên trong từng loại tổ chức (phần members)
     const memberCountsResult = await this.userOrganizationsRepository
-      .createQueryBuilder('uo')
-      .innerJoin('uo.organization', 'org')
+      .createQueryBuilder("uo")
+      .innerJoin("uo.organization", "org")
       .select([
         'COUNT(DISTINCT uo.userId) as "totalMembers"',
         'COUNT(DISTINCT CASE WHEN org.type = :doanTruong THEN uo.userId END) as "doanTruongMembers"',
@@ -734,7 +826,7 @@ export class OrganizationsService {
 
         'COUNT(DISTINCT CASE WHEN org.type = :clbTruong THEN uo.userId END) as "clbTruongMembers"',
         'COUNT(DISTINCT CASE WHEN org.type = :clbKhoa THEN uo.userId END) as "clbKhoaMembers"',
-        'COUNT(DISTINCT CASE WHEN org.type IN (:clbTruong, :clbKhoa) THEN uo.userId END) as "totalClbMembers"'
+        'COUNT(DISTINCT CASE WHEN org.type IN (:clbTruong, :clbKhoa) THEN uo.userId END) as "totalClbMembers"',
       ])
       .setParameters({
         doanTruong: OrganizationType.DOAN_TRUONG,
@@ -744,7 +836,7 @@ export class OrganizationsService {
         lienChiHoi: OrganizationType.LIEN_CHI_HOI,
         chiHoi: OrganizationType.CHI_HOI,
         clbTruong: OrganizationType.CLB_TRUONG,
-        clbKhoa: OrganizationType.CLB_KHOA
+        clbKhoa: OrganizationType.CLB_KHOA,
       })
       .getRawOne();
 
@@ -752,26 +844,35 @@ export class OrganizationsService {
     const doanTruong = parseInt(orgCountsResult.doanTruong, 10) || 0;
     const doanCoSo = parseInt(orgCountsResult.doanCoSo, 10) || 0;
     const chiDoan = parseInt(orgCountsResult.chiDoan, 10) || 0;
-    const hoiSinhVienTruong = parseInt(orgCountsResult.hoiSinhVienTruong, 10) || 0;
+    const hoiSinhVienTruong =
+      parseInt(orgCountsResult.hoiSinhVienTruong, 10) || 0;
     const lienChiHoi = parseInt(orgCountsResult.lienChiHoi, 10) || 0;
     const chiHoi = parseInt(orgCountsResult.chiHoi, 10) || 0;
     const clbTruong = parseInt(orgCountsResult.clbTruong, 10) || 0;
     const clbKhoa = parseInt(orgCountsResult.clbKhoa, 10) || 0;
 
     // Chuyển đổi kết quả số lượng thành viên sang số
-    const doanTruongMembers = parseInt(memberCountsResult.doanTruongMembers, 10) || 0;
-    const doanCoSoMembers = parseInt(memberCountsResult.doanCoSoMembers, 10) || 0;
+    const doanTruongMembers =
+      parseInt(memberCountsResult.doanTruongMembers, 10) || 0;
+    const doanCoSoMembers =
+      parseInt(memberCountsResult.doanCoSoMembers, 10) || 0;
     const chiDoanMembers = parseInt(memberCountsResult.chiDoanMembers, 10) || 0;
-    const totalDoanMembers = parseInt(memberCountsResult.totalDoanMembers, 10) || 0;
+    const totalDoanMembers =
+      parseInt(memberCountsResult.totalDoanMembers, 10) || 0;
 
-    const hoiSinhVienTruongMembers = parseInt(memberCountsResult.hoiSinhVienTruongMembers, 10) || 0;
-    const lienChiHoiMembers = parseInt(memberCountsResult.lienChiHoiMembers, 10) || 0;
+    const hoiSinhVienTruongMembers =
+      parseInt(memberCountsResult.hoiSinhVienTruongMembers, 10) || 0;
+    const lienChiHoiMembers =
+      parseInt(memberCountsResult.lienChiHoiMembers, 10) || 0;
     const chiHoiMembers = parseInt(memberCountsResult.chiHoiMembers, 10) || 0;
-    const totalHoiMembers = parseInt(memberCountsResult.totalHoiMembers, 10) || 0;
+    const totalHoiMembers =
+      parseInt(memberCountsResult.totalHoiMembers, 10) || 0;
 
-    const clbTruongMembers = parseInt(memberCountsResult.clbTruongMembers, 10) || 0;
+    const clbTruongMembers =
+      parseInt(memberCountsResult.clbTruongMembers, 10) || 0;
     const clbKhoaMembers = parseInt(memberCountsResult.clbKhoaMembers, 10) || 0;
-    const totalClbMembers = parseInt(memberCountsResult.totalClbMembers, 10) || 0;
+    const totalClbMembers =
+      parseInt(memberCountsResult.totalClbMembers, 10) || 0;
 
     const totalMembers = parseInt(memberCountsResult.totalMembers, 10) || 0;
 
@@ -787,8 +888,8 @@ export class OrganizationsService {
           total: totalDoanMembers,
           doanTruong: doanTruongMembers,
           doanCoSo: doanCoSoMembers,
-          chiDoan: chiDoanMembers
-        }
+          chiDoan: chiDoanMembers,
+        },
       },
       hoiStats: {
         // Số lượng tổ chức
@@ -801,8 +902,8 @@ export class OrganizationsService {
           total: totalHoiMembers,
           hoiSinhVienTruong: hoiSinhVienTruongMembers,
           lienChiHoi: lienChiHoiMembers,
-          chiHoi: chiHoiMembers
-        }
+          chiHoi: chiHoiMembers,
+        },
       },
       clbStats: {
         // Số lượng tổ chức
@@ -813,37 +914,42 @@ export class OrganizationsService {
         members: {
           total: totalClbMembers,
           clbTruong: clbTruongMembers,
-          clbKhoa: clbKhoaMembers
-        }
+          clbKhoa: clbKhoaMembers,
+        },
       },
-      totalMembers
+      totalMembers,
     };
   }
-  async getOrganizationByTypeAndCode(type: string, code: string): Promise<OrganizationWithExtras> {
+  async getOrganizationByTypeAndCode(
+    type: string,
+    code: string,
+  ): Promise<OrganizationWithExtras> {
     const organization = await this.organizationsRepository.findOne({
       where: {
         type: type as OrganizationType,
-        code
+        code,
       },
-      relations: ['parent', 'children']
+      relations: ["parent", "children"],
     });
 
     if (!organization) {
-      throw new NotFoundException(`Organization with type ${type} and code ${code} not found`);
+      throw new NotFoundException(
+        `Organization with type ${type} and code ${code} not found`,
+      );
     }
 
     // Lấy tất cả ID cần tính memberCount (tổ chức hiện tại và các children)
     const orgIds = [organization.id];
     if (organization.children && organization.children.length > 0) {
-      organization.children.forEach(child => orgIds.push(child.id));
+      organization.children.forEach((child) => orgIds.push(child.id));
     }
 
     // Lấy số lượng thành viên cho tổ chức hiện tại và các children
-    const memberCountMap = await this.getMemberCountsMap(orgIds);    // Thêm memberCount và hasChildren vào organization và các children
+    const memberCountMap = await this.getMemberCountsMap(orgIds); // Thêm memberCount và hasChildren vào organization và các children
     const result = {
       ...organization,
       memberCount: memberCountMap.get(organization.id) || 0,
-      hasChildren: organization.children && organization.children.length > 0
+      hasChildren: organization.children && organization.children.length > 0,
     } as OrganizationWithExtras;
 
     // Thêm memberCount và hasChildren cho children nếu có
@@ -852,15 +958,16 @@ export class OrganizationsService {
       const childrenWithHasChildren = await Promise.all(
         result.children.map(async (child) => {
           const childrenCount = await this.organizationsRepository.count({
-            where: { parent: { id: child.id } }
-          }); const childResult = {
+            where: { parent: { id: child.id } },
+          });
+          const childResult = {
             ...child,
             memberCount: memberCountMap.get(child.id) || 0,
-            hasChildren: childrenCount > 0
+            hasChildren: childrenCount > 0,
           } as OrganizationWithExtras;
 
           return childResult;
-        })
+        }),
       );
 
       result.children = childrenWithHasChildren as any;
@@ -871,22 +978,25 @@ export class OrganizationsService {
 
   async addMemberBySimpleCode(
     orgCode: string,
-    userCode: string
-  ): Promise<{ message: string, memberships: UserOrganization[] }> {
+    userCode: string,
+  ): Promise<{ message: string; memberships: UserOrganization[] }> {
     // Tìm tổ chức theo code với quan hệ parent
     const organization = await this.organizationsRepository.findOne({
       where: { code: orgCode },
-      relations: ['parent']
+      relations: ["parent"],
     });
 
     if (!organization) {
-      throw new NotFoundException(`Organization with code ${orgCode} not found`);
+      throw new NotFoundException(
+        `Organization with code ${orgCode} not found`,
+      );
     }
 
     // Tìm user theo code
-    const userRepository = this.organizationsRepository.manager.getRepository('User');
+    const userRepository =
+      this.organizationsRepository.manager.getRepository("User");
     const user = await userRepository.findOne({
-      where: { code: userCode }
+      where: { code: userCode },
     });
 
     if (!user) {
@@ -897,13 +1007,15 @@ export class OrganizationsService {
     const existingMembership = await this.userOrganizationsRepository.findOne({
       where: {
         organizationId: organization.id,
-        userId: user.id
-      }
+        userId: user.id,
+      },
     });
 
     // Nếu đã là thành viên, trả về lỗi BadRequestException
     if (existingMembership) {
-      throw new BadRequestException(`User ${userCode} is already a member of organization ${orgCode}`);
+      throw new BadRequestException(
+        `User ${userCode} is already a member of organization ${orgCode}`,
+      );
     }
 
     // Danh sách tất cả các tổ chức cần thêm thành viên (tổ chức hiện tại + tất cả tổ chức cha)
@@ -916,7 +1028,7 @@ export class OrganizationsService {
       // Lấy tổ chức cha tiếp theo
       parentOrg = await this.organizationsRepository.findOne({
         where: { id: parentOrg.id },
-        relations: ['parent']
+        relations: ["parent"],
       });
       parentOrg = parentOrg?.parent;
     }
@@ -933,8 +1045,8 @@ export class OrganizationsService {
       const membershipExists = await this.userOrganizationsRepository.findOne({
         where: {
           organizationId: org.id,
-          userId: user.id
-        }
+          userId: user.id,
+        },
       });
 
       // Nếu đã là thành viên, thêm vào danh sách tổ chức đã tồn tại
@@ -945,9 +1057,10 @@ export class OrganizationsService {
         const membership = this.userOrganizationsRepository.create({
           organizationId: org.id,
           userId: user.id,
-          role: UserOrgRole.MEMBER
+          role: UserOrgRole.MEMBER,
         });
-        const savedMembership = await this.userOrganizationsRepository.save(membership);
+        const savedMembership =
+          await this.userOrganizationsRepository.save(membership);
         createdMemberships.push(savedMembership);
       }
     }
@@ -961,12 +1074,12 @@ export class OrganizationsService {
 
     // Nếu có tổ chức mà người dùng đã là thành viên
     if (existingOrgs.length > 0) {
-      message += `. Note: User was already a member of: ${existingOrgs.join(', ')}`;
+      message += `. Note: User was already a member of: ${existingOrgs.join(", ")}`;
     }
 
     return {
       message,
-      memberships: createdMemberships
+      memberships: createdMemberships,
     };
   }
 
@@ -976,7 +1089,7 @@ export class OrganizationsService {
    */
   async bulkAddMembersByCode(
     organizationId: string,
-    userCodes: string[]
+    userCodes: string[],
   ): Promise<{
     success: number;
     failed: number;
@@ -985,14 +1098,17 @@ export class OrganizationsService {
     // Validate organization exists
     const organization = await this.organizationsRepository.findOne({
       where: { id: organizationId },
-      relations: ['parent']
+      relations: ["parent"],
     });
 
     if (!organization) {
-      throw new NotFoundException(`Organization with ID ${organizationId} not found`);
+      throw new NotFoundException(
+        `Organization with ID ${organizationId} not found`,
+      );
     }
 
-    const userRepository = this.organizationsRepository.manager.getRepository('User');
+    const userRepository =
+      this.organizationsRepository.manager.getRepository("User");
 
     let successCount = 0;
     let failedCount = 0;
@@ -1006,32 +1122,33 @@ export class OrganizationsService {
       try {
         // Find user by code
         const user = await userRepository.findOne({
-          where: { code: userCode }
+          where: { code: userCode },
         });
 
         if (!user) {
           errors.push({
             row,
             code: userCode,
-            message: `Không tìm thấy người dùng với mã ${userCode}`
+            message: `Không tìm thấy người dùng với mã ${userCode}`,
           });
           failedCount++;
           continue;
         }
 
         // Check if user is already a member
-        const existingMembership = await this.userOrganizationsRepository.findOne({
-          where: {
-            organizationId: organization.id,
-            userId: user.id
-          }
-        });
+        const existingMembership =
+          await this.userOrganizationsRepository.findOne({
+            where: {
+              organizationId: organization.id,
+              userId: user.id,
+            },
+          });
 
         if (existingMembership) {
           errors.push({
             row,
             code: userCode,
-            message: `Người dùng đã là thành viên của tổ chức`
+            message: `Người dùng đã là thành viên của tổ chức`,
           });
           failedCount++;
           continue;
@@ -1045,25 +1162,26 @@ export class OrganizationsService {
           allOrgs.push(parentOrg);
           parentOrg = await this.organizationsRepository.findOne({
             where: { id: parentOrg.id },
-            relations: ['parent']
+            relations: ["parent"],
           });
           parentOrg = parentOrg?.parent;
         }
 
         // Create memberships for all organizations
         for (const org of allOrgs) {
-          const membershipExists = await this.userOrganizationsRepository.findOne({
-            where: {
-              organizationId: org.id,
-              userId: user.id
-            }
-          });
+          const membershipExists =
+            await this.userOrganizationsRepository.findOne({
+              where: {
+                organizationId: org.id,
+                userId: user.id,
+              },
+            });
 
           if (!membershipExists) {
             const membership = this.userOrganizationsRepository.create({
               organizationId: org.id,
               userId: user.id,
-              role: UserOrgRole.MEMBER
+              role: UserOrgRole.MEMBER,
             });
             await this.userOrganizationsRepository.save(membership);
           }
@@ -1075,7 +1193,7 @@ export class OrganizationsService {
         errors.push({
           row,
           code: userCode,
-          message: error.message || 'Lỗi không xác định'
+          message: error.message || "Lỗi không xác định",
         });
         failedCount++;
       }
@@ -1084,7 +1202,7 @@ export class OrganizationsService {
     return {
       success: successCount,
       failed: failedCount,
-      errors
+      errors,
     };
   }
 
@@ -1099,26 +1217,30 @@ export class OrganizationsService {
     if (!codes || codes.length === 0) {
       return {
         validCodes: [],
-        invalidCodes: []
+        invalidCodes: [],
       };
     }
 
     // Remove duplicates and normalize codes
-    const uniqueCodes = [...new Set(codes.map(code => code.trim().toUpperCase()))];
+    const uniqueCodes = [
+      ...new Set(codes.map((code) => code.trim().toUpperCase())),
+    ];
 
     // Find all organizations with these codes
     const organizations = await this.organizationsRepository.find({
       where: {
-        code: In(uniqueCodes)
+        code: In(uniqueCodes),
       },
-      select: ['code']
+      select: ["code"],
     });
 
-    const foundCodes = new Set(organizations.map(org => org.code.toUpperCase()));
+    const foundCodes = new Set(
+      organizations.map((org) => org.code.toUpperCase()),
+    );
     const validCodes: string[] = [];
     const invalidCodes: string[] = [];
 
-    uniqueCodes.forEach(code => {
+    uniqueCodes.forEach((code) => {
       if (foundCodes.has(code)) {
         validCodes.push(code);
       } else {
@@ -1128,7 +1250,7 @@ export class OrganizationsService {
 
     return {
       validCodes,
-      invalidCodes
+      invalidCodes,
     };
   }
 
@@ -1141,7 +1263,7 @@ export class OrganizationsService {
   async getOrganizationLevel(organizationId: string): Promise<number> {
     const org = await this.organizationsRepository.findOne({
       where: { id: organizationId },
-      relations: ['parent']
+      relations: ["parent"],
     });
 
     if (!org) return 0;
@@ -1153,7 +1275,7 @@ export class OrganizationsService {
       level++;
       current = await this.organizationsRepository.findOne({
         where: { id: current.parent.id },
-        relations: ['parent']
+        relations: ["parent"],
       });
       if (!current) break;
     }
@@ -1165,16 +1287,17 @@ export class OrganizationsService {
    * Get all child organizations (recursively)
    */
   async getAllDescendants(organizationId: string): Promise<Organization[]> {
-    const treeRepo = this.organizationsRepository.manager.getTreeRepository(Organization);
+    const treeRepo =
+      this.organizationsRepository.manager.getTreeRepository(Organization);
     const organization = await treeRepo.findOne({
-      where: { id: organizationId }
+      where: { id: organizationId },
     });
 
     if (!organization) return [];
 
     const descendants = await treeRepo.findDescendants(organization);
     // Remove the parent organization itself from the result
-    return descendants.filter(d => d.id !== organizationId);
+    return descendants.filter((d) => d.id !== organizationId);
   }
 
   /**
@@ -1198,8 +1321,10 @@ export class OrganizationsService {
         LIMIT 1
       `;
 
-      let result = await this.organizationsRepository.query(userOrgQuery, [userId]);
-      
+      let result = await this.organizationsRepository.query(userOrgQuery, [
+        userId,
+      ]);
+
       // If not found in user_organizations, try user_roles table
       if (result.length === 0) {
         const userRoleQuery = `
@@ -1212,8 +1337,10 @@ export class OrganizationsService {
           ORDER BY o."createdAt" ASC
           LIMIT 1
         `;
-        
-        result = await this.organizationsRepository.query(userRoleQuery, [userId]);
+
+        result = await this.organizationsRepository.query(userRoleQuery, [
+          userId,
+        ]);
       }
 
       if (result.length === 0) {
@@ -1223,12 +1350,15 @@ export class OrganizationsService {
       // Fetch full Organization entity with relations
       const organization = await this.organizationsRepository.findOne({
         where: { id: result[0].id },
-        relations: ['parent']
+        relations: ["parent"],
       });
 
       return { organization };
     } catch (error) {
-      console.error('[OrganizationsService] Error getting user primary organization:', error);
+      console.error(
+        "[OrganizationsService] Error getting user primary organization:",
+        error,
+      );
       throw error;
     }
   }
@@ -1241,14 +1371,18 @@ export class OrganizationsService {
    * Get organizations user can view CTXH activities for
    * Based on ctxh.activities.view permission
    */
-  async getCtxhActivityViewableOrganizations(userId: string): Promise<Organization[]> {
+  async getCtxhActivityViewableOrganizations(
+    userId: string,
+  ): Promise<Organization[]> {
     try {
-      console.log(`[OrganizationsService] Getting viewable CTXH activity organizations for user: ${userId}`);
+      console.log(
+        `[OrganizationsService] Getting viewable CTXH activity organizations for user: ${userId}`,
+      );
 
       // Validate userId
       if (!userId) {
-        console.error('[OrganizationsService] Invalid userId provided');
-        throw new BadRequestException('Invalid user ID');
+        console.error("[OrganizationsService] Invalid userId provided");
+        throw new BadRequestException("Invalid user ID");
       }
 
       // Check if user is super admin (has global system.access_admin permission)
@@ -1266,14 +1400,19 @@ export class OrganizationsService {
         LIMIT 1
       `;
 
-      const superAdminResult = await this.organizationsRepository.query(superAdminQuery, [userId]);
+      const superAdminResult = await this.organizationsRepository.query(
+        superAdminQuery,
+        [userId],
+      );
 
       if (superAdminResult.length > 0) {
-        console.log(`[OrganizationsService] User ${userId} is super admin, returning all organizations for CTXH view`);
+        console.log(
+          `[OrganizationsService] User ${userId} is super admin, returning all organizations for CTXH view`,
+        );
         // Super admin can see all organizations
         return this.organizationsRepository.find({
           where: { isActive: true },
-          order: { name: 'ASC' }
+          order: { name: "ASC" },
         });
       }
 
@@ -1293,12 +1432,17 @@ export class OrganizationsService {
         ORDER BY o.name ASC
       `;
 
-      const accessibleOrganizations = await this.organizationsRepository.query(accessibleOrgsQuery, [userId]);
+      const accessibleOrganizations = await this.organizationsRepository.query(
+        accessibleOrgsQuery,
+        [userId],
+      );
 
-      console.log(`[OrganizationsService] Found ${accessibleOrganizations.length} organizations with ctxh.activities.view permission for user ${userId}`);
+      console.log(
+        `[OrganizationsService] Found ${accessibleOrganizations.length} organizations with ctxh.activities.view permission for user ${userId}`,
+      );
 
       // Convert query results to Organization entities
-      const organizationIds = accessibleOrganizations.map(row => row.id);
+      const organizationIds = accessibleOrganizations.map((row) => row.id);
 
       if (organizationIds.length === 0) {
         return [];
@@ -1307,13 +1451,16 @@ export class OrganizationsService {
       // Fetch full Organization entities with relations
       const organizations = await this.organizationsRepository.find({
         where: { id: In(organizationIds) },
-        relations: ['parent'],
-        order: { name: 'ASC' }
+        relations: ["parent"],
+        order: { name: "ASC" },
       });
 
       return organizations;
     } catch (error) {
-      console.error('[OrganizationsService] Error getting viewable CTXH organizations:', error);
+      console.error(
+        "[OrganizationsService] Error getting viewable CTXH organizations:",
+        error,
+      );
       throw error;
     }
   }
@@ -1327,7 +1474,7 @@ export class OrganizationsService {
     userId: string,
     search?: string,
     page: number = 1,
-    limit: number = 20
+    limit: number = 20,
   ): Promise<{
     data: Organization[];
     total: number;
@@ -1358,10 +1505,13 @@ export class OrganizationsService {
         LIMIT 1
       `;
 
-      const superAdminResult = await this.organizationsRepository.query(superAdminQuery, [userId]);
+      const superAdminResult = await this.organizationsRepository.query(
+        superAdminQuery,
+        [userId],
+      );
 
       // Level 1: doan_truong, hoi_sinh_vien_truong, clb_truong
-      // Level 2: doan_co_so, lien_chi_hoi, clb_khoa  
+      // Level 2: doan_co_so, lien_chi_hoi, clb_khoa
       // Exclude Level 3: chi_doan, chi_hoi
       const level1And2Types = [
         OrganizationType.DOAN_TRUONG,
@@ -1369,26 +1519,26 @@ export class OrganizationsService {
         OrganizationType.CLB_TRUONG,
         OrganizationType.DOAN_CO_SO,
         OrganizationType.LIEN_CHI_HOI,
-        OrganizationType.CLB_KHOA
+        OrganizationType.CLB_KHOA,
       ];
 
-      let queryBuilder = this.organizationsRepository
-        .createQueryBuilder('o')
-        .where('o.isActive = :isActive', { isActive: true })
-        .andWhere('o.type IN (:...types)', { types: level1And2Types })
-        .orderBy('o.name', 'ASC');
+      const queryBuilder = this.organizationsRepository
+        .createQueryBuilder("o")
+        .where("o.isActive = :isActive", { isActive: true })
+        .andWhere("o.type IN (:...types)", { types: level1And2Types })
+        .orderBy("o.name", "ASC");
 
       if (superAdminResult.length > 0) {
         // Add search filter if provided
         if (search && search.trim()) {
           queryBuilder.andWhere(
-            '(o.name ILIKE :search OR o.code ILIKE :search)',
-            { search: `%${search.trim()}%` }
+            "(o.name ILIKE :search OR o.code ILIKE :search)",
+            { search: `%${search.trim()}%` },
           );
         }
       } else {
         // Query for organizations where user has ctxh.activities.view permission
-        // Filter only Level 1 & 2: 
+        // Filter only Level 1 & 2:
         // Level 1: doan_truong, hoi_sinh_vien_truong, clb_truong
         // Level 2: doan_co_so, lien_chi_hoi, clb_khoa
         // Exclude Level 3: chi_doan, chi_hoi
@@ -1407,8 +1557,11 @@ export class OrganizationsService {
           AND o.type IN ('doan_truong', 'hoi_sinh_vien_truong', 'clb_truong', 'doan_co_so', 'lien_chi_hoi', 'clb_khoa')
         `;
 
-        const accessibleOrganizations = await this.organizationsRepository.query(accessibleOrgsQuery, [userId]);
-        const organizationIds = accessibleOrganizations.map(row => row.id);
+        const accessibleOrganizations =
+          await this.organizationsRepository.query(accessibleOrgsQuery, [
+            userId,
+          ]);
+        const organizationIds = accessibleOrganizations.map((row) => row.id);
 
         if (organizationIds.length === 0) {
           return {
@@ -1418,17 +1571,17 @@ export class OrganizationsService {
             limit,
             totalPages: 0,
             hasNextPage: false,
-            hasPrevPage: false
+            hasPrevPage: false,
           };
         }
 
-        queryBuilder.andWhere('o.id IN (:...ids)', { ids: organizationIds });
+        queryBuilder.andWhere("o.id IN (:...ids)", { ids: organizationIds });
 
         // Add search filter if provided
         if (search && search.trim()) {
           queryBuilder.andWhere(
-            '(o.name ILIKE :search OR o.code ILIKE :search)',
-            { search: `%${search.trim()}%` }
+            "(o.name ILIKE :search OR o.code ILIKE :search)",
+            { search: `%${search.trim()}%` },
           );
         }
       }
@@ -1438,10 +1591,7 @@ export class OrganizationsService {
       const totalPages = Math.ceil(total / limit);
 
       // Apply pagination
-      const data = await queryBuilder
-        .skip(skip)
-        .take(limit)
-        .getMany();
+      const data = await queryBuilder.skip(skip).take(limit).getMany();
 
       return {
         data,
@@ -1450,13 +1600,14 @@ export class OrganizationsService {
         limit,
         totalPages,
         hasNextPage: page < totalPages,
-        hasPrevPage: page > 1
+        hasPrevPage: page > 1,
       };
     } catch (error) {
-      console.error('[OrganizationsService] Error searching viewable CTXH organizations:', error);
+      console.error(
+        "[OrganizationsService] Error searching viewable CTXH organizations:",
+        error,
+      );
       throw error;
     }
   }
-
 }
-

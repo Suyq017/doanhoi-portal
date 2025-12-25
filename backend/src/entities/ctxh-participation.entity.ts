@@ -7,87 +7,87 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-} from 'typeorm';
-import { User } from './user.entity';
-import { CtxhActivity } from './ctxh-activity.entity';
+} from "typeorm";
+import { User } from "./user.entity";
+import { CtxhActivity } from "./ctxh-activity.entity";
 
 export enum ParticipationStatus {
-  REGISTERED = 'REGISTERED',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
+  REGISTERED = "REGISTERED",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
 }
 
-@Entity('ctxh_participation')
+@Entity("ctxh_participation")
 export class CtxhParticipation {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: "uuid" })
   activity_id: string;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: "uuid", nullable: true })
   student_id: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({ type: "varchar", length: 20, nullable: true })
   student_code: string;
 
-  @Column({ type: 'decimal', precision: 5, scale: 1, nullable: true })
+  @Column({ type: "decimal", precision: 5, scale: 1, nullable: true })
   actual_days: number;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: ParticipationStatus,
     default: ParticipationStatus.REGISTERED,
   })
   status: ParticipationStatus;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   note: string;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: "uuid", nullable: true })
   graded_by: string;
 
   // Audit fields
-  @Column({ type: 'uuid' })
+  @Column({ type: "uuid" })
   created_by: string;
 
   @CreateDateColumn()
   created_at: Date;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: "uuid", nullable: true })
   updated_by: string;
 
   @UpdateDateColumn()
   updated_at: Date;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: "uuid", nullable: true })
   deleted_by: string;
 
   @DeleteDateColumn()
   deleted_at: Date;
 
   // Relations
-  @ManyToOne(() => CtxhActivity, 'participations')
-  @JoinColumn({ name: 'activity_id' })
+  @ManyToOne(() => CtxhActivity, "participations")
+  @JoinColumn({ name: "activity_id" })
   activity: CtxhActivity;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'student_id' })
+  @JoinColumn({ name: "student_id" })
   student: User;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'graded_by' })
+  @JoinColumn({ name: "graded_by" })
   grader: User;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
+  @JoinColumn({ name: "created_by" })
   creator: User;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'updated_by' })
+  @JoinColumn({ name: "updated_by" })
   updater: User;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'deleted_by' })
+  @JoinColumn({ name: "deleted_by" })
   deleter: User;
 }

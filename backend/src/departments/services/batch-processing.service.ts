@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from "@nestjs/common";
 
 export interface BatchData {
   batchId: string;
@@ -6,7 +6,7 @@ export interface BatchData {
   data: any[];
   startIndex: number;
   endIndex: number;
-  status: 'pending' | 'processing' | 'success' | 'failed';
+  status: "pending" | "processing" | "success" | "failed";
   retryCount: number;
   error?: string;
   processingTime?: number;
@@ -54,10 +54,13 @@ export class DepartmentBatchProcessingService {
   /**
    * Chia dữ liệu thành các batch với size được tối ưu
    */
-  createBatches(data: any[], config: Partial<BatchProcessingConfig> = {}): BatchData[] {
+  createBatches(
+    data: any[],
+    config: Partial<BatchProcessingConfig> = {},
+  ): BatchData[] {
     const finalConfig = { ...this.DEFAULT_CONFIG, ...config };
     const batchSize = this.getOptimizedBatchSize(data.length, finalConfig);
-    
+
     const batches: BatchData[] = [];
     const totalBatches = Math.ceil(data.length / batchSize);
 
@@ -72,21 +75,26 @@ export class DepartmentBatchProcessingService {
         data: batchData,
         startIndex,
         endIndex,
-        status: 'pending',
+        status: "pending",
         retryCount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
     }
 
-    this.logger.log(`Created ${batches.length} batches with optimized batch size: ${batchSize}`);
+    this.logger.log(
+      `Created ${batches.length} batches with optimized batch size: ${batchSize}`,
+    );
     return batches;
   }
 
   /**
    * Tối ưu batch size dựa trên data size
    */
-  private getOptimizedBatchSize(dataSize: number, config: BatchProcessingConfig): number {
+  private getOptimizedBatchSize(
+    dataSize: number,
+    config: BatchProcessingConfig,
+  ): number {
     if (!config.enableOptimizedBatchSize) {
       return config.batchSize;
     }
@@ -108,25 +116,39 @@ export class DepartmentBatchProcessingService {
    */
   calculateStats(batches: BatchData[]): BatchProcessingStats {
     const totalBatches = batches.length;
-    const processedBatches = batches.filter(b => b.status === 'success' || b.status === 'failed').length;
-    const successBatches = batches.filter(b => b.status === 'success').length;
-    const failedBatches = batches.filter(b => b.status === 'failed').length;
-    const currentBatch = batches.findIndex(b => b.status === 'processing') + 1 || processedBatches + 1;
-    
-    const progressPercent = totalBatches > 0 ? (processedBatches / totalBatches) * 100 : 0;
-    
-    const completedBatches = batches.filter(b => b.status === 'success' && b.processingTime);
-    const averageProcessingTime = completedBatches.length > 0 
-      ? completedBatches.reduce((sum, b) => sum + (b.processingTime || 0), 0) / completedBatches.length 
-      : 0;
-    
+    const processedBatches = batches.filter(
+      (b) => b.status === "success" || b.status === "failed",
+    ).length;
+    const successBatches = batches.filter((b) => b.status === "success").length;
+    const failedBatches = batches.filter((b) => b.status === "failed").length;
+    const currentBatch =
+      batches.findIndex((b) => b.status === "processing") + 1 ||
+      processedBatches + 1;
+
+    const progressPercent =
+      totalBatches > 0 ? (processedBatches / totalBatches) * 100 : 0;
+
+    const completedBatches = batches.filter(
+      (b) => b.status === "success" && b.processingTime,
+    );
+    const averageProcessingTime =
+      completedBatches.length > 0
+        ? completedBatches.reduce(
+            (sum, b) => sum + (b.processingTime || 0),
+            0,
+          ) / completedBatches.length
+        : 0;
+
     const remainingBatches = totalBatches - processedBatches;
     const estimatedTimeRemaining = remainingBatches * averageProcessingTime;
-    
-    const totalProcessingTime = batches.reduce((sum, b) => sum + (b.processingTime || 0), 0);
+
+    const totalProcessingTime = batches.reduce(
+      (sum, b) => sum + (b.processingTime || 0),
+      0,
+    );
     const errorCount = batches.reduce((sum, b) => sum + (b.error ? 1 : 0), 0);
     const retryCount = batches.reduce((sum, b) => sum + b.retryCount, 0);
-    
+
     const startTime = batches.length > 0 ? batches[0].createdAt : new Date();
     const endTime = processedBatches === totalBatches ? new Date() : undefined;
 
@@ -151,27 +173,27 @@ export class DepartmentBatchProcessingService {
    * Lấy batch tiếp theo cần xử lý
    */
   getNextPendingBatch(batches: BatchData[]): BatchData | null {
-    return batches.find(b => b.status === 'pending') || null;
+    return batches.find((b) => b.status === "pending") || null;
   }
 
   /**
    * Lấy batch đang xử lý
    */
   getCurrentProcessingBatch(batches: BatchData[]): BatchData | null {
-    return batches.find(b => b.status === 'processing') || null;
+    return batches.find((b) => b.status === "processing") || null;
   }
 
   /**
    * Cập nhật trạng thái batch
    */
   updateBatchStatus(
-    batches: BatchData[], 
-    batchId: string, 
-    status: BatchData['status'],
+    batches: BatchData[],
+    batchId: string,
+    status: BatchData["status"],
     error?: string,
-    processingTime?: number
+    processingTime?: number,
   ): boolean {
-    const batch = batches.find(b => b.batchId === batchId);
+    const batch = batches.find((b) => b.batchId === batchId);
     if (!batch) {
       this.logger.warn(`Batch not found: ${batchId}`);
       return false;
@@ -179,11 +201,11 @@ export class DepartmentBatchProcessingService {
 
     batch.status = status;
     batch.updatedAt = new Date();
-    
+
     if (error) {
       batch.error = error;
     }
-    
+
     if (processingTime) {
       batch.processingTime = processingTime;
     }
@@ -196,42 +218,55 @@ export class DepartmentBatchProcessingService {
    * Retry logic cho batch thất bại
    */
   canRetryBatch(batch: BatchData, config: BatchProcessingConfig): boolean {
-    return batch.status === 'failed' && batch.retryCount < config.maxRetries;
+    return batch.status === "failed" && batch.retryCount < config.maxRetries;
   }
 
   /**
    * Tạo batch retry
    */
-  createRetryBatch(batch: BatchData, config: BatchProcessingConfig): BatchData {
+  createRetryBatch(
+    batch: BatchData,
+    _config: BatchProcessingConfig,
+  ): BatchData {
     const retryBatch: BatchData = {
       ...batch,
       batchId: `${batch.batchId}_retry_${batch.retryCount + 1}`,
-      status: 'pending',
+      status: "pending",
       retryCount: batch.retryCount + 1,
       error: undefined,
       processingTime: undefined,
       updatedAt: new Date(),
     };
 
-    this.logger.log(`Created retry batch ${retryBatch.batchId} (retry ${retryBatch.retryCount})`);
+    this.logger.log(
+      `Created retry batch ${retryBatch.batchId} (retry ${retryBatch.retryCount})`,
+    );
     return retryBatch;
   }
 
   /**
    * Fallback mechanism - tạo batch nhỏ hơn khi batch lớn thất bại
    */
-  createFallbackBatches(failedBatch: BatchData, config: BatchProcessingConfig): BatchData[] {
+  createFallbackBatches(
+    failedBatch: BatchData,
+    config: BatchProcessingConfig,
+  ): BatchData[] {
     if (!config.enableFallback) {
       return [];
     }
 
     const fallbackBatches: BatchData[] = [];
     const fallbackBatchSize = config.fallbackBatchSize;
-    const totalFallbackBatches = Math.ceil(failedBatch.data.length / fallbackBatchSize);
+    const totalFallbackBatches = Math.ceil(
+      failedBatch.data.length / fallbackBatchSize,
+    );
 
     for (let i = 0; i < totalFallbackBatches; i++) {
       const startIndex = i * fallbackBatchSize;
-      const endIndex = Math.min(startIndex + fallbackBatchSize, failedBatch.data.length);
+      const endIndex = Math.min(
+        startIndex + fallbackBatchSize,
+        failedBatch.data.length,
+      );
       const fallbackData = failedBatch.data.slice(startIndex, endIndex);
 
       fallbackBatches.push({
@@ -240,14 +275,16 @@ export class DepartmentBatchProcessingService {
         data: fallbackData,
         startIndex: failedBatch.startIndex + startIndex,
         endIndex: failedBatch.startIndex + endIndex,
-        status: 'pending',
+        status: "pending",
         retryCount: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
     }
 
-    this.logger.log(`Created ${fallbackBatches.length} fallback batches from failed batch ${failedBatch.batchId}`);
+    this.logger.log(
+      `Created ${fallbackBatches.length} fallback batches from failed batch ${failedBatch.batchId}`,
+    );
     return fallbackBatches;
   }
 
@@ -258,23 +295,23 @@ export class DepartmentBatchProcessingService {
     const errors: string[] = [];
 
     if (!batch.data || !Array.isArray(batch.data)) {
-      errors.push('Batch data is not an array');
+      errors.push("Batch data is not an array");
     }
 
     if (batch.data.length === 0) {
-      errors.push('Batch data is empty');
+      errors.push("Batch data is empty");
     }
 
     if (batch.startIndex < 0) {
-      errors.push('Invalid start index');
+      errors.push("Invalid start index");
     }
 
     if (batch.endIndex <= batch.startIndex) {
-      errors.push('Invalid end index');
+      errors.push("Invalid end index");
     }
 
-    if (batch.data.length !== (batch.endIndex - batch.startIndex)) {
-      errors.push('Data length does not match index range');
+    if (batch.data.length !== batch.endIndex - batch.startIndex) {
+      errors.push("Data length does not match index range");
     }
 
     return {
@@ -303,7 +340,7 @@ export class DepartmentBatchProcessingService {
     const totalRows = batches.reduce((sum, b) => sum + b.data.length, 0);
     const totalBatches = batches.length;
     const averageBatchSize = totalBatches > 0 ? totalRows / totalBatches : 0;
-    const batchSizes = batches.map(b => b.data.length);
+    const batchSizes = batches.map((b) => b.data.length);
     const largestBatchSize = Math.max(...batchSizes);
     const smallestBatchSize = Math.min(...batchSizes);
 

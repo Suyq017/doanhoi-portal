@@ -1,7 +1,9 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddDatePartsMappingToTemplateField1731412800000 implements MigrationInterface {
-  name = 'AddDatePartsMappingToTemplateField1731412800000';
+export class AddDatePartsMappingToTemplateField1731412800000
+  implements MigrationInterface
+{
+  name = "AddDatePartsMappingToTemplateField1731412800000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

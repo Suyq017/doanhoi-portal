@@ -1,36 +1,40 @@
-import { DataSource } from 'typeorm';
-import { Permission, PermissionContext } from '../../entities/permission.entity';
-import { Role } from '../../entities/role.entity';
+import { DataSource } from "typeorm";
+import {
+  Permission,
+  PermissionContext,
+} from "../../entities/permission.entity";
+import { Role } from "../../entities/role.entity";
 
 export async function addTemplatePermissions(dataSource: DataSource) {
   const permissionRepository = dataSource.getRepository(Permission);
   const roleRepository = dataSource.getRepository(Role);
 
-  console.log('🔄 Adding Template permissions...');
+  console.log("🔄 Adding Template permissions...");
 
   // Define new permissions
   const newPermissions = [
     {
-      code: 'templates.access',
-      name: 'Xem trang Biểu mẫu',
-      description: 'Cho phép truy cập trang Biểu mẫu để điền và nộp form',
-      category: 'templates',
+      code: "templates.access",
+      name: "Xem trang Biểu mẫu",
+      description: "Cho phép truy cập trang Biểu mẫu để điền và nộp form",
+      category: "templates",
       context: PermissionContext.ORGANIZATION,
       sortOrder: 100,
     },
     {
-      code: 'templates.admin.access',
-      name: 'Xem trang Quản lý biểu mẫu',
-      description: 'Cho phép truy cập trang Quản lý biểu mẫu (admin)',
-      category: 'templates',
+      code: "templates.admin.access",
+      name: "Xem trang Quản lý biểu mẫu",
+      description: "Cho phép truy cập trang Quản lý biểu mẫu (admin)",
+      category: "templates",
       context: PermissionContext.ORGANIZATION,
       sortOrder: 101,
     },
     {
-      code: 'templates.manage',
-      name: 'Quản lý biểu mẫu',
-      description: 'Cho phép tạo, sửa, xóa biểu mẫu trong trang Quản lý biểu mẫu',
-      category: 'templates',
+      code: "templates.manage",
+      name: "Quản lý biểu mẫu",
+      description:
+        "Cho phép tạo, sửa, xóa biểu mẫu trong trang Quản lý biểu mẫu",
+      category: "templates",
       context: PermissionContext.ORGANIZATION,
       sortOrder: 102,
     },
@@ -56,8 +60,8 @@ export async function addTemplatePermissions(dataSource: DataSource) {
 
   // Assign permissions to Super Admin role
   const superAdminRole = await roleRepository.findOne({
-    where: { name: 'super_admin' },
-    relations: ['permissions'],
+    where: { name: "super_admin" },
+    relations: ["permissions"],
   });
 
   if (superAdminRole) {
@@ -74,13 +78,13 @@ export async function addTemplatePermissions(dataSource: DataSource) {
 
     if (permissionsAdded) {
       await roleRepository.save(superAdminRole);
-      console.log('✅ Assigned new permissions to Super Admin role');
+      console.log("✅ Assigned new permissions to Super Admin role");
     } else {
-      console.log('ℹ️  Super Admin already has all permissions');
+      console.log("ℹ️  Super Admin already has all permissions");
     }
   } else {
-    console.log('⚠️  Super Admin role not found');
+    console.log("⚠️  Super Admin role not found");
   }
 
-  console.log('✅ Template permissions update completed!');
+  console.log("✅ Template permissions update completed!");
 }

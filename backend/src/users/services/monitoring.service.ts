@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from "@nestjs/common";
 
 export interface PerformanceMetrics {
   sessionId: string;
@@ -42,18 +42,23 @@ export class UserImportMonitoringService {
   private collectSystemMetrics(): void {
     const memoryUsage = process.memoryUsage();
     const currentMemoryMB = memoryUsage.heapUsed / (1024 * 1024);
-    
+
     // Update current memory usage for all active sessions
-    for (const [sessionId, metric] of this.metrics.entries()) {
+    for (const [_sessionId, metric] of this.metrics.entries()) {
       if (!metric.endTime) {
         metric.currentMemoryUsage = currentMemoryMB;
-        metric.peakMemoryUsage = Math.max(metric.peakMemoryUsage, currentMemoryMB);
+        metric.peakMemoryUsage = Math.max(
+          metric.peakMemoryUsage,
+          currentMemoryMB,
+        );
       }
     }
 
     // Log warning if memory usage is high
     if (currentMemoryMB > 512) {
-      this.logger.warn(`High memory usage detected: ${currentMemoryMB.toFixed(2)}MB`);
+      this.logger.warn(
+        `High memory usage detected: ${currentMemoryMB.toFixed(2)}MB`,
+      );
     }
   }
 
@@ -74,19 +79,21 @@ export class UserImportMonitoringService {
         failedBatches: 0,
         averageBatchTime: 0,
         slowestBatchTime: 0,
-        fastestBatchTime: Number.MAX_VALUE
-      }
+        fastestBatchTime: Number.MAX_VALUE,
+      },
     };
 
     this.metrics.set(sessionId, metric);
-    this.logger.log(`Started monitoring session ${sessionId} with ${totalRows} rows`);
+    this.logger.log(
+      `Started monitoring session ${sessionId} with ${totalRows} rows`,
+    );
   }
 
   updateProgress(
-    sessionId: string, 
-    processedRows: number, 
-    successfulRows: number, 
-    failedRows: number
+    sessionId: string,
+    processedRows: number,
+    successfulRows: number,
+    failedRows: number,
   ): void {
     const metric = this.metrics.get(sessionId);
     if (!metric) return;
@@ -106,21 +113,34 @@ export class UserImportMonitoringService {
     sessionId: string,
     batchNumber: number,
     batchTime: number,
-    success: boolean
+    success: boolean,
   ): void {
     const metric = this.metrics.get(sessionId);
     if (!metric) return;
 
-    metric.batchStats.totalBatches = Math.max(metric.batchStats.totalBatches, batchNumber);
-    
+    metric.batchStats.totalBatches = Math.max(
+      metric.batchStats.totalBatches,
+      batchNumber,
+    );
+
     if (success) {
       metric.batchStats.completedBatches++;
-      metric.batchStats.fastestBatchTime = Math.min(metric.batchStats.fastestBatchTime, batchTime);
-      metric.batchStats.slowestBatchTime = Math.max(metric.batchStats.slowestBatchTime, batchTime);
-      
+      metric.batchStats.fastestBatchTime = Math.min(
+        metric.batchStats.fastestBatchTime,
+        batchTime,
+      );
+      metric.batchStats.slowestBatchTime = Math.max(
+        metric.batchStats.slowestBatchTime,
+        batchTime,
+      );
+
       // Calculate average batch time
-      const totalCompletedTime = metric.batchStats.averageBatchTime * (metric.batchStats.completedBatches - 1) + batchTime;
-      metric.batchStats.averageBatchTime = totalCompletedTime / metric.batchStats.completedBatches;
+      const totalCompletedTime =
+        metric.batchStats.averageBatchTime *
+          (metric.batchStats.completedBatches - 1) +
+        batchTime;
+      metric.batchStats.averageBatchTime =
+        totalCompletedTime / metric.batchStats.completedBatches;
     } else {
       metric.batchStats.failedBatches++;
     }
@@ -131,14 +151,25 @@ export class UserImportMonitoringService {
     if (!metric) return null;
 
     metric.endTime = new Date();
-    
+
     // Log final statistics
-    const totalTimeSeconds = (metric.endTime.getTime() - metric.startTime.getTime()) / 1000;
-    this.logger.log(`Session ${sessionId} completed in ${totalTimeSeconds.toFixed(2)}s`);
-    this.logger.log(`Processed ${metric.processedRows}/${metric.totalRows} rows`);
-    this.logger.log(`Success rate: ${((metric.successfulRows / metric.processedRows) * 100).toFixed(1)}%`);
-    this.logger.log(`Average speed: ${metric.averageRowsPerSecond.toFixed(2)} rows/second`);
-    this.logger.log(`Peak memory usage: ${metric.peakMemoryUsage.toFixed(2)}MB`);
+    const totalTimeSeconds =
+      (metric.endTime.getTime() - metric.startTime.getTime()) / 1000;
+    this.logger.log(
+      `Session ${sessionId} completed in ${totalTimeSeconds.toFixed(2)}s`,
+    );
+    this.logger.log(
+      `Processed ${metric.processedRows}/${metric.totalRows} rows`,
+    );
+    this.logger.log(
+      `Success rate: ${((metric.successfulRows / metric.processedRows) * 100).toFixed(1)}%`,
+    );
+    this.logger.log(
+      `Average speed: ${metric.averageRowsPerSecond.toFixed(2)} rows/second`,
+    );
+    this.logger.log(
+      `Peak memory usage: ${metric.peakMemoryUsage.toFixed(2)}MB`,
+    );
 
     return metric;
   }
@@ -148,12 +179,14 @@ export class UserImportMonitoringService {
   }
 
   getAllActiveMetrics(): PerformanceMetrics[] {
-    return Array.from(this.metrics.values()).filter(metric => !metric.endTime);
+    return Array.from(this.metrics.values()).filter(
+      (metric) => !metric.endTime,
+    );
   }
 
   cleanupOldMetrics(): void {
-    const cutoffTime = Date.now() - (24 * 60 * 60 * 1000); // 24 hours ago
-    
+    const cutoffTime = Date.now() - 24 * 60 * 60 * 1000; // 24 hours ago
+
     for (const [sessionId, metric] of this.metrics.entries()) {
       if (metric.endTime && metric.endTime.getTime() < cutoffTime) {
         this.metrics.delete(sessionId);
@@ -170,17 +203,24 @@ export class UserImportMonitoringService {
   } {
     const memoryUsage = process.memoryUsage().heapUsed / (1024 * 1024);
     const activeMetrics = this.getAllActiveMetrics();
-    
-    const totalProcessedRows = activeMetrics.reduce((sum, metric) => sum + metric.processedRows, 0);
-    const averageSpeed = activeMetrics.length > 0 
-      ? activeMetrics.reduce((sum, metric) => sum + metric.averageRowsPerSecond, 0) / activeMetrics.length
-      : 0;
+
+    const totalProcessedRows = activeMetrics.reduce(
+      (sum, metric) => sum + metric.processedRows,
+      0,
+    );
+    const averageSpeed =
+      activeMetrics.length > 0
+        ? activeMetrics.reduce(
+            (sum, metric) => sum + metric.averageRowsPerSecond,
+            0,
+          ) / activeMetrics.length
+        : 0;
 
     return {
       memoryUsage: parseFloat(memoryUsage.toFixed(2)),
       activeSessions: activeMetrics.length,
       totalProcessedRows,
-      averageProcessingSpeed: parseFloat(averageSpeed.toFixed(2))
+      averageProcessingSpeed: parseFloat(averageSpeed.toFixed(2)),
     };
   }
 

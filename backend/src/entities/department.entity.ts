@@ -1,9 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { User } from './user.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from "typeorm";
+import { User } from "./user.entity";
 
-@Entity('departments')
+@Entity("departments")
 export class Department {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
@@ -15,10 +22,10 @@ export class Department {
   @Column({ nullable: true })
   description: string;
 
-  @OneToMany(() => User, user => user.managementDepartment)
+  @OneToMany(() => User, (user) => user.managementDepartment)
   managementUsers: User[];
 
-  @OneToMany(() => User, user => user.trainingDepartment)
+  @OneToMany(() => User, (user) => user.trainingDepartment)
   trainingUsers: User[];
 
   @Column({ default: true })

@@ -1,14 +1,14 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { MulterModule } from '@nestjs/platform-express';
-import { Template } from '../entities/template.entity';
-import { TemplateField } from '../entities/template-field.entity';
-import { TemplateSubmission } from '../entities/template-submission.entity';
-import { AwsS3ConfigModule } from '../aws-config/aws-s3-config.module';
-import { TemplatesController } from './templates.controller';
-import { TemplatesService } from './templates.service';
-import { SubmissionsController } from '../submissions/submissions.controller';
-import { SubmissionsService } from '../submissions/submissions.service';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { MulterModule } from "@nestjs/platform-express";
+import { Template } from "../entities/template.entity";
+import { TemplateField } from "../entities/template-field.entity";
+import { TemplateSubmission } from "../entities/template-submission.entity";
+import { AwsS3ConfigModule } from "../aws-config/aws-s3-config.module";
+import { TemplatesController } from "./templates.controller";
+import { TemplatesService } from "./templates.service";
+import { SubmissionsController } from "../submissions/submissions.controller";
+import { SubmissionsService } from "../submissions/submissions.service";
 
 @Module({
   imports: [

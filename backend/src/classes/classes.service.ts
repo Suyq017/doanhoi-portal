@@ -1,11 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { Class } from '../entities/class.entity';
-import { Department } from '../entities/department.entity';
-import { CreateClassDto } from './dto/create-class.dto';
-import { UpdateClassDto } from './dto/update-class.dto';
-import { QueryClassDto } from './dto/query-class.dto';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, In } from "typeorm";
+import { Class } from "../entities/class.entity";
+import { Department } from "../entities/department.entity";
+import { CreateClassDto } from "./dto/create-class.dto";
+import { UpdateClassDto } from "./dto/update-class.dto";
+import { QueryClassDto } from "./dto/query-class.dto";
 
 @Injectable()
 export class ClassesService {
@@ -19,20 +23,20 @@ export class ClassesService {
   async create(createClassDto: CreateClassDto): Promise<Class> {
     // Check if class with same name already exists
     const existingClass = await this.classesRepository.findOne({
-      where: { name: createClassDto.name }
+      where: { name: createClassDto.name },
     });
 
     if (existingClass) {
-      throw new BadRequestException('Class with this name already exists');
+      throw new BadRequestException("Class with this name already exists");
     }
 
     // Validate department if provided
     if (createClassDto.departmentId) {
       const department = await this.departmentsRepository.findOne({
-        where: { id: createClassDto.departmentId }
+        where: { id: createClassDto.departmentId },
       });
       if (!department) {
-        throw new BadRequestException('Department not found');
+        throw new BadRequestException("Department not found");
       }
     }
 
@@ -40,33 +44,45 @@ export class ClassesService {
     return this.classesRepository.save(classEntity);
   }
 
-  async findAll(query: QueryClassDto): Promise<{ classes: Class[], total: number }> {
-    const { page = 1, limit = 10, search, year, departmentId, isActive } = query;
-    
-    const queryBuilder = this.classesRepository.createQueryBuilder('class')
-      .leftJoinAndSelect('class.department', 'department')
-      .leftJoinAndSelect('class.students', 'students');
+  async findAll(
+    query: QueryClassDto,
+  ): Promise<{ classes: Class[]; total: number }> {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      year,
+      departmentId,
+      isActive,
+    } = query;
+
+    const queryBuilder = this.classesRepository
+      .createQueryBuilder("class")
+      .leftJoinAndSelect("class.department", "department")
+      .leftJoinAndSelect("class.students", "students");
 
     // Search functionality
     if (search) {
-      queryBuilder.where('class.name ILIKE :search', {
-        search: `%${search}%`
+      queryBuilder.where("class.name ILIKE :search", {
+        search: `%${search}%`,
       });
     }
 
     // Filter by year
     if (year !== undefined) {
-      queryBuilder.andWhere('class.year = :year', { year });
+      queryBuilder.andWhere("class.year = :year", { year });
     }
 
     // Filter by department
     if (departmentId) {
-      queryBuilder.andWhere('class.departmentId = :departmentId', { departmentId });
+      queryBuilder.andWhere("class.departmentId = :departmentId", {
+        departmentId,
+      });
     }
 
     // Filter by active status
     if (isActive !== undefined) {
-      queryBuilder.andWhere('class.isActive = :isActive', { isActive });
+      queryBuilder.andWhere("class.isActive = :isActive", { isActive });
     }
 
     // Pagination
@@ -74,7 +90,7 @@ export class ClassesService {
     queryBuilder.skip(skip).take(limit);
 
     // Order by created date
-    queryBuilder.orderBy('class.createdAt', 'DESC');
+    queryBuilder.orderBy("class.createdAt", "DESC");
 
     const [classes, total] = await queryBuilder.getManyAndCount();
 
@@ -84,11 +100,11 @@ export class ClassesService {
   async findOne(id: string): Promise<Class> {
     const classEntity = await this.classesRepository.findOne({
       where: { id },
-      relations: ['department', 'students']
+      relations: ["department", "students"],
     });
 
     if (!classEntity) {
-      throw new NotFoundException('Class not found');
+      throw new NotFoundException("Class not found");
     }
 
     return classEntity;
@@ -100,21 +116,21 @@ export class ClassesService {
     // Check for duplicate name if updating
     if (updateClassDto.name) {
       const existingClass = await this.classesRepository.findOne({
-        where: { name: updateClassDto.name }
+        where: { name: updateClassDto.name },
       });
 
       if (existingClass && existingClass.id !== id) {
-        throw new BadRequestException('Class with this name already exists');
+        throw new BadRequestException("Class with this name already exists");
       }
     }
 
     // Validate department if provided
     if (updateClassDto.departmentId) {
       const department = await this.departmentsRepository.findOne({
-        where: { id: updateClassDto.departmentId }
+        where: { id: updateClassDto.departmentId },
       });
       if (!department) {
-        throw new BadRequestException('Department not found');
+        throw new BadRequestException("Department not found");
       }
     }
 
@@ -125,16 +141,18 @@ export class ClassesService {
   async remove(id: string): Promise<void> {
     const classEntity = await this.classesRepository.findOne({
       where: { id },
-      relations: ['students']
+      relations: ["students"],
     });
 
     if (!classEntity) {
-      throw new NotFoundException('Class not found');
+      throw new NotFoundException("Class not found");
     }
 
     // Check if class has students
     if (classEntity.students && classEntity.students.length > 0) {
-      throw new BadRequestException('Cannot delete class with students. Please move students first.');
+      throw new BadRequestException(
+        "Cannot delete class with students. Please move students first.",
+      );
     }
 
     await this.classesRepository.remove(classEntity);
@@ -144,18 +162,20 @@ export class ClassesService {
     // Validate tất cả classes có tồn tại
     const classes = await this.classesRepository.find({
       where: { id: In(ids) },
-      relations: ['students']
+      relations: ["students"],
     });
 
     if (classes.length !== ids.length) {
-      throw new BadRequestException('Some classes not found');
+      throw new BadRequestException("Some classes not found");
     }
 
     // Kiểm tra có class nào có students không
-    const classesWithStudents = classes.filter(c => c.students && c.students.length > 0);
+    const classesWithStudents = classes.filter(
+      (c) => c.students && c.students.length > 0,
+    );
     if (classesWithStudents.length > 0) {
       throw new BadRequestException(
-        `Cannot delete classes with students: ${classesWithStudents.map(c => c.name).join(', ')}`
+        `Cannot delete classes with students: ${classesWithStudents.map((c) => c.name).join(", ")}`,
       );
     }
 

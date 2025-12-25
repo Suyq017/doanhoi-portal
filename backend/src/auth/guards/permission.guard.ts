@@ -1,20 +1,25 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { RolesService } from '../../roles/roles.service';
-import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { RolesService } from "../../roles/roles.service";
+import { PERMISSIONS_KEY } from "../decorators/permissions.decorator";
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private rolesService: RolesService,
-  ) { }
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
+      PERMISSIONS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiredPermissions) {
       return true;
@@ -22,10 +27,11 @@ export class PermissionGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    const organizationId = request.params.organizationId || request.body.organizationId;
+    const organizationId =
+      request.params.organizationId || request.body.organizationId;
 
     if (!user) {
-      throw new ForbiddenException('User not authenticated');
+      throw new ForbiddenException("User not authenticated");
     }
 
     // Check if user has ANY of the required permissions (OR logic)
@@ -37,7 +43,7 @@ export class PermissionGuard implements CanActivate {
       const hasPermission = await this.rolesService.hasPermission(
         user.id,
         permission,
-        organizationId
+        organizationId,
       );
 
       if (hasPermission) {
@@ -50,7 +56,7 @@ export class PermissionGuard implements CanActivate {
 
     if (!hasAnyPermission) {
       throw new ForbiddenException(
-        `Permission denied. Requires one of: ${requiredPermissions.join(' OR ')}`
+        `Permission denied. Requires one of: ${requiredPermissions.join(" OR ")}`,
       );
     }
 

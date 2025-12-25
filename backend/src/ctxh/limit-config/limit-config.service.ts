@@ -1,12 +1,19 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
-import { CtxhLimitConfig, LimitConfigStatus } from '../../entities/ctxh-limit-config.entity';
-import { Organization } from '../../entities/organization.entity';
-import { CreateLimitConfigDto } from './dto/create-limit-config.dto';
-import { UpdateLimitConfigDto } from './dto/update-limit-config.dto';
-import { LimitConfigResponseDto } from './dto/limit-config-response.dto';
-import { plainToClass } from 'class-transformer';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, IsNull } from "typeorm";
+import {
+  CtxhLimitConfig,
+  LimitConfigStatus,
+} from "../../entities/ctxh-limit-config.entity";
+import { Organization } from "../../entities/organization.entity";
+import { CreateLimitConfigDto } from "./dto/create-limit-config.dto";
+import { UpdateLimitConfigDto } from "./dto/update-limit-config.dto";
+import { LimitConfigResponseDto } from "./dto/limit-config-response.dto";
+import { plainToClass } from "class-transformer";
 
 interface FindAllOptions {
   page: number;
@@ -29,7 +36,9 @@ export class LimitConfigService {
    * Get all descendant organizations (children, grandchildren, etc.) of a given organization
    * Excludes level 3 organizations (chi_doan, chi_hoi)
    */
-  private async getDescendantOrganizations(organizationId: string): Promise<Organization[]> {
+  private async getDescendantOrganizations(
+    organizationId: string,
+  ): Promise<Organization[]> {
     const organization = await this.organizationRepository.findOne({
       where: { id: organizationId },
     });
@@ -39,16 +48,18 @@ export class LimitConfigService {
     }
 
     // Get all descendants using TypeORM tree repository methods
-    const treeRepository = this.organizationRepository.manager.getTreeRepository(Organization);
+    const treeRepository =
+      this.organizationRepository.manager.getTreeRepository(Organization);
     const descendants = await treeRepository.findDescendants(organization);
-    
+
     // Level 3 organization types to exclude
-    const level3Types = ['chi_doan', 'chi_hoi'];
-    
+    const level3Types = ["chi_doan", "chi_hoi"];
+
     // Remove the parent organization itself and level 3 organizations
-    return descendants.filter(descendant => 
-      descendant.id !== organizationId && 
-      !level3Types.includes(descendant.type)
+    return descendants.filter(
+      (descendant) =>
+        descendant.id !== organizationId &&
+        !level3Types.includes(descendant.type),
     );
   }
 
@@ -57,11 +68,12 @@ export class LimitConfigService {
    * Only affects organizations that don't have DRAFT or INACTIVE configs
    */
   private async applyConfigToDescendants(
-    parentOrganizationId: string, 
-    configData: CreateLimitConfigDto, 
-    createdBy: string
+    parentOrganizationId: string,
+    configData: CreateLimitConfigDto,
+    createdBy: string,
   ): Promise<void> {
-    const descendants = await this.getDescendantOrganizations(parentOrganizationId);
+    const descendants =
+      await this.getDescendantOrganizations(parentOrganizationId);
 
     if (descendants.length === 0) {
       return;
@@ -111,9 +123,10 @@ export class LimitConfigService {
   private async updateDescendantsConfig(
     parentOrganizationId: string,
     updateData: UpdateLimitConfigDto,
-    updatedBy: string
+    updatedBy: string,
   ): Promise<void> {
-    const descendants = await this.getDescendantOrganizations(parentOrganizationId);
+    const descendants =
+      await this.getDescendantOrganizations(parentOrganizationId);
 
     if (descendants.length === 0) {
       return;
@@ -128,7 +141,10 @@ export class LimitConfigService {
         },
       });
 
-      if (existingConfig && existingConfig.status === LimitConfigStatus.ACTIVE) {
+      if (
+        existingConfig &&
+        existingConfig.status === LimitConfigStatus.ACTIVE
+      ) {
         // Update existing ACTIVE config with parent's values
         const updatePayload: any = {
           updated_by: updatedBy,
@@ -139,7 +155,10 @@ export class LimitConfigService {
           updatePayload.max_days = updateData.max_days;
         }
 
-        await this.limitConfigRepository.update(existingConfig.id, updatePayload);
+        await this.limitConfigRepository.update(
+          existingConfig.id,
+          updatePayload,
+        );
       } else if (!existingConfig && updateData.max_days !== undefined) {
         // Create new config for descendant if no config exists
         await this.limitConfigRepository.save({
@@ -153,14 +172,19 @@ export class LimitConfigService {
     }
   }
 
-  async create(createLimitConfigDto: CreateLimitConfigDto, createdBy: string): Promise<LimitConfigResponseDto> {
+  async create(
+    createLimitConfigDto: CreateLimitConfigDto,
+    createdBy: string,
+  ): Promise<LimitConfigResponseDto> {
     // Validate organization exists
     const organization = await this.organizationRepository.findOne({
       where: { id: createLimitConfigDto.organization_id },
     });
 
     if (!organization) {
-      throw new NotFoundException(`Tổ chức với ID ${createLimitConfigDto.organization_id} không tồn tại`);
+      throw new NotFoundException(
+        `Tổ chức với ID ${createLimitConfigDto.organization_id} không tồn tại`,
+      );
     }
 
     // Check for existing config for that organization
@@ -172,9 +196,7 @@ export class LimitConfigService {
     });
 
     if (existingConfig) {
-      throw new ConflictException(
-        'Đã tồn tại cấu hình cho tổ chức này'
-      );
+      throw new ConflictException("Đã tồn tại cấu hình cho tổ chức này");
     }
 
     // Create config for parent organization
@@ -187,49 +209,59 @@ export class LimitConfigService {
 
     // Apply same config to all descendant organizations
     if (createLimitConfigDto.status === LimitConfigStatus.ACTIVE) {
-      await this.applyConfigToDescendants(createLimitConfigDto.organization_id, createLimitConfigDto, createdBy);
+      await this.applyConfigToDescendants(
+        createLimitConfigDto.organization_id,
+        createLimitConfigDto,
+        createdBy,
+      );
     }
-    
+
     return this.findOne(savedConfig.id);
   }
 
   async findAll(options: FindAllOptions) {
     const { page, limit, organization_id, status, search } = options;
-    console.log('Service findAll called with:', options);
-    
+    console.log("Service findAll called with:", options);
+
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.limitConfigRepository
-      .createQueryBuilder('config')
-      .leftJoinAndSelect('config.organization', 'organization')
-      .leftJoinAndSelect('config.creator', 'creator')
-      .where('config.deleted_at IS NULL')
-      .orderBy('config.created_at', 'DESC');
+      .createQueryBuilder("config")
+      .leftJoinAndSelect("config.organization", "organization")
+      .leftJoinAndSelect("config.creator", "creator")
+      .where("config.deleted_at IS NULL")
+      .orderBy("config.created_at", "DESC");
 
     if (organization_id) {
-      queryBuilder.andWhere('config.organization_id = :organization_id', { organization_id });
+      queryBuilder.andWhere("config.organization_id = :organization_id", {
+        organization_id,
+      });
     }
 
     if (status) {
-      queryBuilder.andWhere('config.status = :status', { status });
+      queryBuilder.andWhere("config.status = :status", { status });
     }
 
     if (search) {
-      console.log('Adding search filter:', search);
+      console.log("Adding search filter:", search);
       // Use LIKE for better compatibility with different databases
-      queryBuilder.andWhere('LOWER(organization.name) LIKE LOWER(:search)', { search: `%${search}%` });
+      queryBuilder.andWhere("LOWER(organization.name) LIKE LOWER(:search)", {
+        search: `%${search}%`,
+      });
     }
 
     // Debug: Log the final query
-    console.log('Final query SQL:', queryBuilder.getSql());
-    console.log('Query parameters:', queryBuilder.getParameters());
+    console.log("Final query SQL:", queryBuilder.getSql());
+    console.log("Query parameters:", queryBuilder.getParameters());
 
     const [configs, total] = await queryBuilder
       .skip(skip)
       .take(limit)
       .getManyAndCount();
 
-    const data = configs.map(config => plainToClass(LimitConfigResponseDto, config));
+    const data = configs.map((config) =>
+      plainToClass(LimitConfigResponseDto, config),
+    );
 
     return {
       data,
@@ -242,11 +274,11 @@ export class LimitConfigService {
 
   async findOne(id: string): Promise<LimitConfigResponseDto> {
     const config = await this.limitConfigRepository
-      .createQueryBuilder('config')
-      .leftJoinAndSelect('config.organization', 'organization')
-      .leftJoinAndSelect('config.creator', 'creator')
-      .where('config.id = :id', { id })
-      .andWhere('config.deleted_at IS NULL')
+      .createQueryBuilder("config")
+      .leftJoinAndSelect("config.organization", "organization")
+      .leftJoinAndSelect("config.creator", "creator")
+      .where("config.id = :id", { id })
+      .andWhere("config.deleted_at IS NULL")
       .getOne();
 
     if (!config) {
@@ -281,7 +313,7 @@ export class LimitConfigService {
 
       if (existingActiveConfig && existingActiveConfig.id !== id) {
         throw new ConflictException(
-          'Đã tồn tại cấu hình hoạt động khác cho tổ chức này. Vui lòng vô hiệu hóa cấu hình đó trước.'
+          "Đã tồn tại cấu hình hoạt động khác cho tổ chức này. Vui lòng vô hiệu hóa cấu hình đó trước.",
         );
       }
     }
@@ -295,7 +327,11 @@ export class LimitConfigService {
 
     // Apply updates to descendant organizations (only ACTIVE configs or create new ones)
     if (updateLimitConfigDto.max_days !== undefined) {
-      await this.updateDescendantsConfig(config.organization_id, updateLimitConfigDto, updatedBy);
+      await this.updateDescendantsConfig(
+        config.organization_id,
+        updateLimitConfigDto,
+        updatedBy,
+      );
     }
 
     return this.findOne(id);
@@ -317,7 +353,10 @@ export class LimitConfigService {
     });
   }
 
-  async restore(id: string, updatedBy: string): Promise<LimitConfigResponseDto> {
+  async restore(
+    id: string,
+    updatedBy: string,
+  ): Promise<LimitConfigResponseDto> {
     const config = await this.limitConfigRepository.findOne({
       where: { id },
       withDeleted: true,
@@ -343,7 +382,7 @@ export class LimitConfigService {
 
       if (existingActiveConfig) {
         throw new ConflictException(
-          'Không thể khôi phục vì đã tồn tại cấu hình hoạt động khác cho tổ chức này'
+          "Không thể khôi phục vì đã tồn tại cấu hình hoạt động khác cho tổ chức này",
         );
       }
     }

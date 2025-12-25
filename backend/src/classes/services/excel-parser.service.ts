@@ -1,5 +1,5 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import * as XLSX from 'xlsx';
+import { Injectable, BadRequestException } from "@nestjs/common";
+import * as XLSX from "xlsx";
 
 export interface ClassImportData {
   name: string;
@@ -12,40 +12,48 @@ export interface ClassImportData {
 
 @Injectable()
 export class ExcelParserService {
-  private readonly expectedHeaders = ['tên lớp', 'năm học', 'mã đơn vị'];
-  private readonly requiredHeaders = ['tên lớp'];
+  private readonly expectedHeaders = ["tên lớp", "năm học", "mã đơn vị"];
+  private readonly requiredHeaders = ["tên lớp"];
 
   async parseExcelFile(buffer: Buffer): Promise<ClassImportData[]> {
     try {
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const workbook = XLSX.read(buffer, { type: "buffer" });
       const sheetName = workbook.SheetNames[0];
 
       if (!sheetName) {
-        throw new BadRequestException('Excel file must contain at least one sheet');
+        throw new BadRequestException(
+          "Excel file must contain at least one sheet",
+        );
       }
 
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
       if (jsonData.length === 0) {
-        throw new BadRequestException('Excel file is empty');
+        throw new BadRequestException("Excel file is empty");
       }
 
       const headers = jsonData[0] as string[];
       this.validateHeaders(headers);
 
       const dataRows = jsonData.slice(1);
-      return dataRows.map((row: any, index) => this.mapRowData(row as any[], headers, index));
+      return dataRows.map((row: any, index) =>
+        this.mapRowData(row as any[], headers, index),
+      );
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Failed to parse Excel file: ' + error.message);
+      throw new BadRequestException(
+        "Failed to parse Excel file: " + error.message,
+      );
     }
   }
 
   validateHeaders(headers: string[]): boolean {
-    const normalizedHeaders = headers.map(h => h?.toString().toLowerCase().trim());
+    const normalizedHeaders = headers.map((h) =>
+      h?.toString().toLowerCase().trim(),
+    );
 
     // Check required headers
     for (const required of this.requiredHeaders) {
@@ -57,11 +65,15 @@ export class ExcelParserService {
     return true;
   }
 
-  private mapRowData(row: any[], headers: string[], rowIndex: number): ClassImportData {
+  private mapRowData(
+    row: any[],
+    headers: string[],
+    rowIndex: number,
+  ): ClassImportData {
     const data: Partial<ClassImportData> = {
       _rowIndex: rowIndex,
-      name: '', // Default value
-      isActive: true // Mặc định là active vì không có cột này trong template
+      name: "", // Default value
+      isActive: true, // Mặc định là active vì không có cột này trong template
     };
 
     headers.forEach((header, index) => {
@@ -69,16 +81,16 @@ export class ExcelParserService {
       const cellValue = row[index];
 
       switch (normalizedHeader) {
-        case 'tên lớp':
-          data.name = cellValue?.toString().trim() || '';
+        case "tên lớp":
+          data.name = cellValue?.toString().trim() || "";
           break;
-        case 'năm học':
+        case "năm học":
           data.year = this.parseYear(cellValue);
           break;
-        case 'mã đơn vị':
+        case "mã đơn vị":
           data.departmentCode = cellValue?.toString().trim() || undefined;
           break;
-        case 'isactive':
+        case "isactive":
           data.isActive = this.parseBoolean(cellValue);
           break;
       }
@@ -88,7 +100,7 @@ export class ExcelParserService {
   }
 
   private parseYear(value: any): number | undefined {
-    if (value === undefined || value === null || value === '') {
+    if (value === undefined || value === null || value === "") {
       return undefined;
     }
 
@@ -101,29 +113,34 @@ export class ExcelParserService {
   }
 
   private parseBoolean(value: any): boolean {
-    if (value === undefined || value === null || value === '') {
+    if (value === undefined || value === null || value === "") {
       return true; // Default to active
     }
 
     const strValue = value.toString().toLowerCase().trim();
-    return strValue === 'true' || strValue === '1' || strValue === 'yes' || strValue === 'active';
+    return (
+      strValue === "true" ||
+      strValue === "1" ||
+      strValue === "yes" ||
+      strValue === "active"
+    );
   }
 
   async generateTemplate(): Promise<Buffer> {
     const templateData = [
-      ['Tên lớp', 'Năm học', 'Mã đơn vị'],
-      ['Tin học A', '2024', 'CNTT'],
-      ['Toán học B', '2024', 'TOAN'],
-      ['Vật lý C', '2023', 'VL']
+      ["Tên lớp", "Năm học", "Mã đơn vị"],
+      ["Tin học A", "2024", "CNTT"],
+      ["Toán học B", "2024", "TOAN"],
+      ["Vật lý C", "2023", "VL"],
     ];
 
     const worksheet = XLSX.utils.aoa_to_sheet(templateData);
 
     // Set column widths
-    worksheet['!cols'] = [
+    worksheet["!cols"] = [
       { width: 25 }, // Tên lớp
       { width: 10 }, // Năm học
-      { width: 20 }  // Mã đơn vị
+      { width: 20 }, // Mã đơn vị
     ];
 
     // Set header style (bold)
@@ -135,8 +152,10 @@ export class ExcelParserService {
     }
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Classes');
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Classes");
 
-    return Buffer.from(XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }));
+    return Buffer.from(
+      XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }),
+    );
   }
 }

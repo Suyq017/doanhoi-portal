@@ -1,20 +1,20 @@
-import { DataSource } from 'typeorm';
-import { Permission } from '../../entities/permission.entity';
-import { Role } from '../../entities/role.entity';
+import { DataSource } from "typeorm";
+import { Permission } from "../../entities/permission.entity";
+import { Role } from "../../entities/role.entity";
 
 export async function addCtxhImportPermissions(dataSource: DataSource) {
   const permissionRepository = dataSource.getRepository(Permission);
   const roleRepository = dataSource.getRepository(Role);
 
-  console.log('🔄 Adding CTXH Import permissions...');
+  console.log("🔄 Adding CTXH Import permissions...");
 
   // Define new permissions
   const newPermissions = [
     {
-      code: 'ctxh.import.old_system',
-      name: 'Nhập ngày CTXH từ hệ thống cũ',
-      description: 'Nhập dữ liệu CTXH từ hệ thống cũ',
-      category: 'ctxh',
+      code: "ctxh.import.old_system",
+      name: "Nhập ngày CTXH từ hệ thống cũ",
+      description: "Nhập dữ liệu CTXH từ hệ thống cũ",
+      category: "ctxh",
     },
   ];
 
@@ -38,8 +38,8 @@ export async function addCtxhImportPermissions(dataSource: DataSource) {
 
   // Assign permissions to Super Admin role
   const superAdminRole = await roleRepository.findOne({
-    where: { name: 'super_admin' },
-    relations: ['permissions'],
+    where: { name: "super_admin" },
+    relations: ["permissions"],
   });
 
   if (superAdminRole) {
@@ -56,13 +56,13 @@ export async function addCtxhImportPermissions(dataSource: DataSource) {
 
     if (permissionsAdded) {
       await roleRepository.save(superAdminRole);
-      console.log('✅ Assigned new permissions to Super Admin role');
+      console.log("✅ Assigned new permissions to Super Admin role");
     } else {
-      console.log('ℹ️  Super Admin already has all permissions');
+      console.log("ℹ️  Super Admin already has all permissions");
     }
   } else {
-    console.log('⚠️  Super Admin role not found');
+    console.log("⚠️  Super Admin role not found");
   }
 
-  console.log('✅ CTXH Import permissions update completed!');
+  console.log("✅ CTXH Import permissions update completed!");
 }

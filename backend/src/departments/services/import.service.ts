@@ -1,14 +1,30 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Department } from '../../entities/department.entity';
-import { ExcelParserService, DepartmentImportData } from './excel-parser.service';
-import { ImportValidationService, ValidationResult } from './import-validation.service';
-import { ImportSessionService, ImportSession, ImportResult } from './import-session.service';
-import { DepartmentBatchProcessingService, BatchData, BatchProcessingStats, BatchProcessingConfig } from './batch-processing.service';
-import { DepartmentTransactionService, TransactionConfig } from './transaction.service';
-import { DepartmentBatchImportConfigService } from './batch-import-config.service';
-import { DepartmentBatchImportMonitoringService } from './batch-import-monitoring.service';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Department } from "../../entities/department.entity";
+import { ExcelParserService } from "./excel-parser.service";
+import {
+  ImportValidationService,
+  ValidationResult,
+} from "./import-validation.service";
+import {
+  ImportSessionService,
+  ImportSession,
+  ImportResult,
+} from "./import-session.service";
+import {
+  DepartmentBatchProcessingService,
+  BatchData,
+  BatchProcessingStats,
+  BatchProcessingConfig,
+} from "./batch-processing.service";
+import { DepartmentTransactionService } from "./transaction.service";
+import { DepartmentBatchImportConfigService } from "./batch-import-config.service";
+import { DepartmentBatchImportMonitoringService } from "./batch-import-monitoring.service";
 
 export interface ImportUploadResponse {
   sessionId: string;
@@ -20,9 +36,9 @@ export interface ImportUploadResponse {
 export interface ImportValidationResponse {
   sessionId: string;
   isValid: boolean;
-  summary: ValidationResult['summary'];
-  errors: ValidationResult['errors'];
-  warnings: ValidationResult['warnings'];
+  summary: ValidationResult["summary"];
+  errors: ValidationResult["errors"];
+  warnings: ValidationResult["warnings"];
   previewData: any[];
 }
 
@@ -40,7 +56,7 @@ export interface ImportExecuteResponse {
 
 export interface ImportProgressResponse {
   sessionId: string;
-  status: ImportSession['status'];
+  status: ImportSession["status"];
   progress: {
     currentBatch: number;
     totalBatches: number;
@@ -77,52 +93,60 @@ export class ImportService {
 
   async uploadFile(file: Express.Multer.File): Promise<ImportUploadResponse> {
     if (!file) {
-      throw new BadRequestException('No file uploaded');
+      throw new BadRequestException("No file uploaded");
     }
 
     if (!file.originalname.match(/\.(xlsx|xls)$/)) {
-      throw new BadRequestException('Only Excel files (.xlsx, .xls) are allowed');
+      throw new BadRequestException(
+        "Only Excel files (.xlsx, .xls) are allowed",
+      );
     }
 
     try {
       // Parse Excel file
       const data = await this.excelParserService.parseExcelFile(file.buffer);
-      
+
       if (data.length === 0) {
-        throw new BadRequestException('Excel file contains no data rows');
+        throw new BadRequestException("Excel file contains no data rows");
       }
 
       // Create session
-      const session = this.sessionService.createSession(file.originalname, data);
+      const session = this.sessionService.createSession(
+        file.originalname,
+        data,
+      );
 
       return {
         sessionId: session.id,
         fileName: file.originalname,
         totalRows: data.length,
-        message: `File uploaded successfully. Found ${data.length} rows to import.`
+        message: `File uploaded successfully. Found ${data.length} rows to import.`,
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException(`Failed to parse Excel file: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to parse Excel file: ${error.message}`,
+      );
     }
   }
 
   async validateData(sessionId: string): Promise<ImportValidationResponse> {
     const session = this.sessionService.getSession(sessionId);
     if (!session) {
-      throw new NotFoundException('Import session not found or expired');
+      throw new NotFoundException("Import session not found or expired");
     }
 
     if (!session.data) {
-      throw new BadRequestException('No data found in session');
+      throw new BadRequestException("No data found in session");
     }
 
     try {
       // Validate data
-      const validationResult = await this.validationService.validateDepartmentData(session.data);
-      
+      const validationResult =
+        await this.validationService.validateDepartmentData(session.data);
+
       // Update session with validation result
       this.sessionService.updateSessionValidation(sessionId, validationResult);
 
@@ -135,7 +159,7 @@ export class ImportService {
         hasErrors: item._errors.length > 0,
         hasWarnings: item._warnings.length > 0,
         errors: item._errors,
-        warnings: item._warnings
+        warnings: item._warnings,
       }));
 
       return {
@@ -144,49 +168,64 @@ export class ImportService {
         summary: validationResult.summary,
         errors: validationResult.errors,
         warnings: validationResult.warnings,
-        previewData
+        previewData,
       };
     } catch (error) {
       throw new BadRequestException(`Validation failed: ${error.message}`);
     }
   }
 
-  async executeImport(sessionId: string, options?: ImportOptions): Promise<ImportExecuteResponse> {
+  async executeImport(
+    sessionId: string,
+    options?: ImportOptions,
+  ): Promise<ImportExecuteResponse> {
     const session = this.sessionService.getSession(sessionId);
     if (!session) {
-      throw new NotFoundException('Import session not found or expired');
+      throw new NotFoundException("Import session not found or expired");
     }
 
-    if (session.status !== 'validated') {
-      throw new BadRequestException('Data must be validated before import');
+    if (session.status !== "validated") {
+      throw new BadRequestException("Data must be validated before import");
     }
 
     const validatedData = this.sessionService.getValidatedData(sessionId);
     if (!validatedData) {
-      throw new BadRequestException('No validated data found');
+      throw new BadRequestException("No validated data found");
     }
 
     try {
       // Initialize monitoring
-      this.monitoringService.initializeSessionMonitoring(sessionId, session.fileName, validatedData.length);
-      
+      this.monitoringService.initializeSessionMonitoring(
+        sessionId,
+        session.fileName,
+        validatedData.length,
+      );
+
       // Determine import method based on data size and configuration
-      const shouldUseBatchProcessing = this.configService.shouldUseBatchProcessing(validatedData.length);
-      
+      const shouldUseBatchProcessing =
+        this.configService.shouldUseBatchProcessing(validatedData.length);
+
       let importResult: ImportResult;
       let batchStats: BatchProcessingStats | undefined;
 
       if (shouldUseBatchProcessing) {
-        const result = await this.performBatchImport(sessionId, validatedData, options);
+        const result = await this.performBatchImport(
+          sessionId,
+          validatedData,
+          options,
+        );
         importResult = result.importResult;
         batchStats = result.batchStats;
       } else {
         importResult = await this.performImport(validatedData, options);
       }
-      
+
       // Finalize monitoring
-      this.monitoringService.finalizeSessionMonitoring(sessionId, importResult.success);
-      
+      this.monitoringService.finalizeSessionMonitoring(
+        sessionId,
+        importResult.success,
+      );
+
       // Update session with import result
       this.sessionService.updateSessionImport(sessionId, importResult);
 
@@ -197,11 +236,11 @@ export class ImportService {
         skippedCount: importResult.skippedCount,
         failedCount: importResult.failedCount,
         errors: importResult.errors,
-        message: importResult.success 
+        message: importResult.success
           ? `Import completed successfully. ${importResult.importedCount} departments imported.`
           : `Import completed with errors. ${importResult.importedCount} imported, ${importResult.failedCount} failed.`,
         batchStats,
-        estimatedTimeRemaining: batchStats?.estimatedTimeRemaining
+        estimatedTimeRemaining: batchStats?.estimatedTimeRemaining,
       };
     } catch (error) {
       const importResult: ImportResult = {
@@ -210,7 +249,7 @@ export class ImportService {
         skippedCount: 0,
         failedCount: validatedData.length,
         errors: [error.message],
-        importedIds: []
+        importedIds: [],
       };
 
       this.sessionService.updateSessionImport(sessionId, importResult);
@@ -221,7 +260,7 @@ export class ImportService {
   async getSessionStatus(sessionId: string): Promise<ImportSession> {
     const session = this.sessionService.getSession(sessionId);
     if (!session) {
-      throw new NotFoundException('Import session not found or expired');
+      throw new NotFoundException("Import session not found or expired");
     }
     return session;
   }
@@ -233,16 +272,18 @@ export class ImportService {
   async getImportProgress(sessionId: string): Promise<ImportProgressResponse> {
     const session = this.sessionService.getSession(sessionId);
     if (!session) {
-      throw new NotFoundException('Import session not found or expired');
+      throw new NotFoundException("Import session not found or expired");
     }
 
     const batchProgress = this.sessionService.getBatchProgress(sessionId);
     if (!batchProgress) {
-      throw new NotFoundException('No batch progress found for this session');
+      throw new NotFoundException("No batch progress found for this session");
     }
 
-    const stats = this.batchProcessingService.calculateStats(batchProgress.batches);
-    
+    const stats = this.batchProcessingService.calculateStats(
+      batchProgress.batches,
+    );
+
     return {
       sessionId,
       status: session.status,
@@ -251,7 +292,8 @@ export class ImportService {
         totalBatches: batchProgress.totalBatches,
         processedRows: batchProgress.processedRows,
         totalRows: batchProgress.totalRows,
-        progressPercent: (batchProgress.processedRows / batchProgress.totalRows) * 100,
+        progressPercent:
+          (batchProgress.processedRows / batchProgress.totalRows) * 100,
         estimatedTimeRemaining: stats.estimatedTimeRemaining,
       },
       stats,
@@ -259,35 +301,39 @@ export class ImportService {
     };
   }
 
-  async pauseImport(sessionId: string): Promise<{ success: boolean; message: string }> {
+  async pauseImport(
+    sessionId: string,
+  ): Promise<{ success: boolean; message: string }> {
     const session = this.sessionService.getSession(sessionId);
     if (!session) {
-      throw new NotFoundException('Import session not found or expired');
+      throw new NotFoundException("Import session not found or expired");
     }
 
-    if (session.status !== 'importing') {
-      throw new BadRequestException('Only importing sessions can be paused');
+    if (session.status !== "importing") {
+      throw new BadRequestException("Only importing sessions can be paused");
     }
 
     this.sessionService.pauseImport(sessionId);
     return {
       success: true,
-      message: 'Import paused successfully'
+      message: "Import paused successfully",
     };
   }
 
-  async resumeImport(sessionId: string): Promise<{ success: boolean; message: string }> {
+  async resumeImport(
+    sessionId: string,
+  ): Promise<{ success: boolean; message: string }> {
     const session = this.sessionService.getSession(sessionId);
     if (!session) {
-      throw new NotFoundException('Import session not found or expired');
+      throw new NotFoundException("Import session not found or expired");
     }
 
-    if (session.status !== 'paused') {
-      throw new BadRequestException('Only paused sessions can be resumed');
+    if (session.status !== "paused") {
+      throw new BadRequestException("Only paused sessions can be resumed");
     }
 
     this.sessionService.resumeImport(sessionId);
-    
+
     // Continue batch processing
     const validatedData = this.sessionService.getValidatedData(sessionId);
     if (validatedData) {
@@ -297,32 +343,36 @@ export class ImportService {
 
     return {
       success: true,
-      message: 'Import resumed successfully'
+      message: "Import resumed successfully",
     };
   }
 
-  async cancelImport(sessionId: string): Promise<{ success: boolean; message: string }> {
+  async cancelImport(
+    sessionId: string,
+  ): Promise<{ success: boolean; message: string }> {
     const session = this.sessionService.getSession(sessionId);
     if (!session) {
-      throw new NotFoundException('Import session not found or expired');
+      throw new NotFoundException("Import session not found or expired");
     }
 
-    if (session.status !== 'importing' && session.status !== 'paused') {
-      throw new BadRequestException('Only importing or paused sessions can be cancelled');
+    if (session.status !== "importing" && session.status !== "paused") {
+      throw new BadRequestException(
+        "Only importing or paused sessions can be cancelled",
+      );
     }
 
     // Update session status to cancelled
-    this.sessionService.updateSessionStatus(sessionId, 'cancelled');
-    
+    this.sessionService.updateSessionStatus(sessionId, "cancelled");
+
     return {
       success: true,
-      message: 'Import cancelled successfully'
+      message: "Import cancelled successfully",
     };
   }
 
   private async performImport(
     validatedData: any[],
-    options?: { skipConflicts?: boolean }
+    options?: { skipConflicts?: boolean },
   ): Promise<ImportResult> {
     const importResult: ImportResult = {
       success: true,
@@ -330,31 +380,37 @@ export class ImportService {
       skippedCount: 0,
       failedCount: 0,
       errors: [],
-      importedIds: []
+      importedIds: [],
     };
 
     // Filter out rows with errors
-    const validRows = validatedData.filter(item => item._errors.length === 0);
-    
+    const validRows = validatedData.filter((item) => item._errors.length === 0);
+
     // Handle conflicts if skipConflicts is true
     let rowsToImport = validRows;
     if (options?.skipConflicts) {
-      rowsToImport = validRows.filter(item => item._warnings.length === 0);
+      rowsToImport = validRows.filter((item) => item._warnings.length === 0);
       importResult.skippedCount = validRows.length - rowsToImport.length;
     }
 
     for (const rowData of rowsToImport) {
       try {
         // Check for existing department by name or code
-        const existingByName = rowData.name ? 
-          await this.departmentsRepository.findOne({ where: { name: rowData.name } }) : null;
-        const existingByCode = rowData.code ? 
-          await this.departmentsRepository.findOne({ where: { code: rowData.code } }) : null;
+        const existingByName = rowData.name
+          ? await this.departmentsRepository.findOne({
+              where: { name: rowData.name },
+            })
+          : null;
+        const existingByCode = rowData.code
+          ? await this.departmentsRepository.findOne({
+              where: { code: rowData.code },
+            })
+          : null;
 
         if (existingByName || existingByCode) {
           if (!options?.skipConflicts) {
             importResult.errors.push(
-              `Row with name "${rowData.name}" ${existingByCode ? `or code "${rowData.code}"` : ''} already exists`
+              `Row with name "${rowData.name}" ${existingByCode ? `or code "${rowData.code}"` : ""} already exists`,
             );
             importResult.failedCount++;
             continue;
@@ -368,13 +424,13 @@ export class ImportService {
         const department = this.departmentsRepository.create({
           name: rowData.name,
           code: rowData.code || null,
-          description: rowData.description || null
+          description: rowData.description || null,
         });
 
-        const savedDepartment = await this.departmentsRepository.save(department);
+        const savedDepartment =
+          await this.departmentsRepository.save(department);
         importResult.importedCount++;
         importResult.importedIds.push(savedDepartment.id);
-
       } catch (error) {
         importResult.errors.push(`Failed to import row: ${error.message}`);
         importResult.failedCount++;
@@ -388,7 +444,7 @@ export class ImportService {
   private async performBatchImport(
     sessionId: string,
     validatedData: any[],
-    options?: ImportOptions
+    options?: ImportOptions,
   ): Promise<{ importResult: ImportResult; batchStats: BatchProcessingStats }> {
     const importResult: ImportResult = {
       success: true,
@@ -396,148 +452,191 @@ export class ImportService {
       skippedCount: 0,
       failedCount: 0,
       errors: [],
-      importedIds: []
+      importedIds: [],
     };
 
     // Filter out rows with errors
-    const validRows = validatedData.filter(item => item._errors.length === 0);
-    
+    const validRows = validatedData.filter((item) => item._errors.length === 0);
+
     // Handle conflicts if skipConflicts is true
     let rowsToImport = validRows;
     if (options?.skipConflicts) {
-      rowsToImport = validRows.filter(item => item._warnings.length === 0);
+      rowsToImport = validRows.filter((item) => item._warnings.length === 0);
       importResult.skippedCount = validRows.length - rowsToImport.length;
     }
 
     // Configure batch processing with config service
     const batchConfig: BatchProcessingConfig = {
-      batchSize: options?.batchSize || this.configService.getOptimizedBatchSize(rowsToImport.length),
-      maxRetries: options?.maxRetries || this.configService.getBatchProcessingConfig().maxRetries,
+      batchSize:
+        options?.batchSize ||
+        this.configService.getOptimizedBatchSize(rowsToImport.length),
+      maxRetries:
+        options?.maxRetries ||
+        this.configService.getBatchProcessingConfig().maxRetries,
       retryDelay: this.configService.getBatchProcessingConfig().retryDelay,
-      fallbackBatchSize: this.configService.getBatchProcessingConfig().fallbackBatchSize,
-      enableFallback: options?.enableFallback ?? this.configService.getBatchProcessingConfig().enableFallback,
-      enableOptimizedBatchSize: this.configService.getBatchProcessingConfig().enableOptimizedBatchSize,
+      fallbackBatchSize:
+        this.configService.getBatchProcessingConfig().fallbackBatchSize,
+      enableFallback:
+        options?.enableFallback ??
+        this.configService.getBatchProcessingConfig().enableFallback,
+      enableOptimizedBatchSize:
+        this.configService.getBatchProcessingConfig().enableOptimizedBatchSize,
     };
 
     // Create batches
-    const batches = this.batchProcessingService.createBatches(rowsToImport, batchConfig);
-    
+    const batches = this.batchProcessingService.createBatches(
+      rowsToImport,
+      batchConfig,
+    );
+
     // Initialize batch processing in session
-    this.sessionService.initializeBatchProcessing(sessionId, batches.length, rowsToImport.length);
-    
+    this.sessionService.initializeBatchProcessing(
+      sessionId,
+      batches.length,
+      rowsToImport.length,
+    );
+
     // Update session status to importing
-    this.sessionService.updateSessionStatus(sessionId, 'importing');
+    this.sessionService.updateSessionStatus(sessionId, "importing");
 
     // Process batches sequentially
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
-      
+
       // Check if import was paused or cancelled
       const currentSession = this.sessionService.getSession(sessionId);
-      if (currentSession?.status === 'paused') {
+      if (currentSession?.status === "paused") {
         break; // Exit batch processing loop
       }
-      if (currentSession?.status === 'cancelled') {
+      if (currentSession?.status === "cancelled") {
         importResult.success = false;
-        importResult.errors.push('Import was cancelled');
+        importResult.errors.push("Import was cancelled");
         break;
       }
 
       // Mark batch as processing
-      this.batchProcessingService.updateBatchStatus(batches, batch.batchId, 'processing');
-      
+      this.batchProcessingService.updateBatchStatus(
+        batches,
+        batch.batchId,
+        "processing",
+      );
+
       try {
         const batchResult = await this.processBatch(batch, options);
-        
+
         // Update batch status
         this.batchProcessingService.updateBatchStatus(
-          batches, 
-          batch.batchId, 
-          batchResult.success ? 'success' : 'failed',
+          batches,
+          batch.batchId,
+          batchResult.success ? "success" : "failed",
           batchResult.error,
-          batchResult.processingTime
+          batchResult.processingTime,
         );
-        
+
         // Update import result
         importResult.importedCount += batchResult.importedCount;
         importResult.skippedCount += batchResult.skippedCount;
         importResult.failedCount += batchResult.failedCount;
         importResult.errors.push(...batchResult.errors);
         importResult.importedIds.push(...batchResult.importedIds);
-        
+
         // Update session progress and monitoring
-        this.sessionService.updateBatchProgress(sessionId, i + 1, importResult.importedCount);
+        this.sessionService.updateBatchProgress(
+          sessionId,
+          i + 1,
+          importResult.importedCount,
+        );
         this.monitoringService.updateSessionProgress(
           sessionId,
           importResult.importedCount + importResult.skippedCount,
           importResult.importedCount,
           importResult.failedCount,
           batchResult.processingTime,
-          batchResult.errors.length
+          batchResult.errors.length,
         );
-        
       } catch (error) {
         // Handle batch failure
-        this.batchProcessingService.updateBatchStatus(batches, batch.batchId, 'failed', error.message);
-        
+        this.batchProcessingService.updateBatchStatus(
+          batches,
+          batch.batchId,
+          "failed",
+          error.message,
+        );
+
         // Try fallback if enabled
         if (batchConfig.enableFallback) {
-          const fallbackBatches = this.batchProcessingService.createFallbackBatches(batch, batchConfig);
-          
+          const fallbackBatches =
+            this.batchProcessingService.createFallbackBatches(
+              batch,
+              batchConfig,
+            );
+
           for (const fallbackBatch of fallbackBatches) {
             try {
-              const fallbackResult = await this.processBatch(fallbackBatch, options);
-              
+              const fallbackResult = await this.processBatch(
+                fallbackBatch,
+                options,
+              );
+
               importResult.importedCount += fallbackResult.importedCount;
               importResult.skippedCount += fallbackResult.skippedCount;
               importResult.failedCount += fallbackResult.failedCount;
               importResult.errors.push(...fallbackResult.errors);
               importResult.importedIds.push(...fallbackResult.importedIds);
-              
             } catch (fallbackError) {
-              importResult.errors.push(`Fallback batch failed: ${fallbackError.message}`);
+              importResult.errors.push(
+                `Fallback batch failed: ${fallbackError.message}`,
+              );
               importResult.failedCount += fallbackBatch.data.length;
             }
           }
         } else {
-          importResult.errors.push(`Batch ${batch.batchId} failed: ${error.message}`);
+          importResult.errors.push(
+            `Batch ${batch.batchId} failed: ${error.message}`,
+          );
           importResult.failedCount += batch.data.length;
         }
-        
+
         importResult.success = false;
       }
     }
 
     const batchStats = this.batchProcessingService.calculateStats(batches);
-    
+
     // Finalize batch processing
-    this.sessionService.finalizeBatchProcessing(sessionId, importResult.success);
-    
+    this.sessionService.finalizeBatchProcessing(
+      sessionId,
+      importResult.success,
+    );
+
     return { importResult, batchStats };
   }
 
-  private async continueBatchImport(sessionId: string, validatedData: any[]): Promise<void> {
+  private async continueBatchImport(
+    sessionId: string,
+    _validatedData: any[],
+  ): Promise<void> {
     const batchProgress = this.sessionService.getBatchProgress(sessionId);
     if (!batchProgress) {
-      throw new BadRequestException('No batch progress found');
+      throw new BadRequestException("No batch progress found");
     }
 
     // Find the next pending batch and continue from there
     const nextBatch = this.sessionService.getNextPendingBatch(sessionId);
     if (!nextBatch) {
       // All batches completed
-      this.sessionService.updateSessionStatus(sessionId, 'imported');
+      this.sessionService.updateSessionStatus(sessionId, "imported");
       return;
     }
 
     // Resume batch processing from the next pending batch
     // This is a simplified implementation - in a real scenario, you'd reconstruct the batch processing state
-    this.sessionService.updateSessionStatus(sessionId, 'importing');
+    this.sessionService.updateSessionStatus(sessionId, "importing");
   }
 
   private async processBatch(
     batch: BatchData,
-    options?: ImportOptions
+    options?: ImportOptions,
   ): Promise<{
     success: boolean;
     importedCount: number;
@@ -563,32 +662,38 @@ export class ImportService {
       // Use transaction if enabled
       if (options?.enableTransaction !== false) {
         const transactionConfig = this.configService.getTransactionConfig();
-        const transactionResult = await this.transactionService.executeTransaction(
-          async (queryRunner) => {
-            return await this.processBatchData(batch.data, options, queryRunner);
-          },
-          transactionConfig
-        );
+        const transactionResult =
+          await this.transactionService.executeTransaction(
+            async (queryRunner) => {
+              return await this.processBatchData(
+                batch.data,
+                options,
+                queryRunner,
+              );
+            },
+            transactionConfig,
+          );
 
         // Record transaction metrics
         this.monitoringService.recordDatabaseOperation(
-          'batch_transaction',
+          "batch_transaction",
           transactionResult.executionTime,
           transactionResult.success,
-          transactionResult.executionTime > this.configService.getPerformanceConfig().slowQueryThreshold
+          transactionResult.executionTime >
+            this.configService.getPerformanceConfig().slowQueryThreshold,
         );
 
         if (transactionResult.success && transactionResult.data) {
           Object.assign(result, transactionResult.data);
         } else {
           result.success = false;
-          result.errors.push(transactionResult.error || 'Transaction failed');
+          result.errors.push(transactionResult.error || "Transaction failed");
           result.failedCount = batch.data.length;
-          
+
           // Record error
           this.monitoringService.recordError(
             `Transaction failed for batch ${batch.batchId}: ${transactionResult.error}`,
-            transactionResult.errorType || 'transaction'
+            transactionResult.errorType || "transaction",
           );
         }
       } else {
@@ -598,16 +703,15 @@ export class ImportService {
 
       result.processingTime = Date.now() - startTime;
       return result;
-
     } catch (error) {
       result.success = false;
       result.errors.push(error.message);
       result.failedCount = batch.data.length;
       result.processingTime = Date.now() - startTime;
-      
+
       return {
         ...result,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -615,7 +719,7 @@ export class ImportService {
   private async processBatchData(
     data: any[],
     options?: ImportOptions,
-    queryRunner?: any
+    queryRunner?: any,
   ): Promise<{
     importedCount: number;
     skippedCount: number;
@@ -631,7 +735,7 @@ export class ImportService {
       importedIds: [],
     };
 
-    const repository = queryRunner 
+    const repository = queryRunner
       ? queryRunner.manager.getRepository(Department)
       : this.departmentsRepository;
 
@@ -642,15 +746,17 @@ export class ImportService {
     for (const rowData of data) {
       try {
         // Check for existing department by name or code
-        const existingByName = rowData.name ? 
-          await repository.findOne({ where: { name: rowData.name } }) : null;
-        const existingByCode = rowData.code ? 
-          await repository.findOne({ where: { code: rowData.code } }) : null;
+        const existingByName = rowData.name
+          ? await repository.findOne({ where: { name: rowData.name } })
+          : null;
+        const existingByCode = rowData.code
+          ? await repository.findOne({ where: { code: rowData.code } })
+          : null;
 
         if (existingByName || existingByCode) {
           if (!options?.skipConflicts) {
             result.errors.push(
-              `Row with name "${rowData.name}" ${existingByCode ? `or code "${rowData.code}"` : ''} already exists`
+              `Row with name "${rowData.name}" ${existingByCode ? `or code "${rowData.code}"` : ""} already exists`,
             );
             result.failedCount++;
             continue;
@@ -664,11 +770,10 @@ export class ImportService {
         departmentsToCreate.push({
           name: rowData.name,
           code: rowData.code || null,
-          description: rowData.description || null
+          description: rowData.description || null,
         });
-        
-        processedItems.push(rowData);
 
+        processedItems.push(rowData);
       } catch (error) {
         result.errors.push(`Failed to process row: ${error.message}`);
         result.failedCount++;
@@ -680,7 +785,7 @@ export class ImportService {
       try {
         const insertResult = await repository.insert(departmentsToCreate);
         result.importedCount = insertResult.identifiers.length;
-        result.importedIds = insertResult.identifiers.map(id => id.id);
+        result.importedIds = insertResult.identifiers.map((id) => id.id);
       } catch (error) {
         result.errors.push(`Bulk insert failed: ${error.message}`);
         result.failedCount += departmentsToCreate.length;

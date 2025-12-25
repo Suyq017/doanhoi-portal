@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { EventEmitter } from 'events';
+import { Injectable, Logger } from "@nestjs/common";
+import { EventEmitter } from "events";
 
 export interface BackgroundJob {
   id: string;
   sessionId: string;
-  type: 'import' | 'validation' | 'cleanup';
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  type: "import" | "validation" | "cleanup";
+  status: "pending" | "running" | "completed" | "failed" | "cancelled";
   priority: number; // 1 = high, 2 = normal, 3 = low
   progress: number; // 0-100
   result?: any;
@@ -23,7 +23,7 @@ export class UserBackgroundJobService extends EventEmitter {
   private readonly queues = {
     high: [] as BackgroundJob[],
     normal: [] as BackgroundJob[],
-    low: [] as BackgroundJob[]
+    low: [] as BackgroundJob[],
   };
   private isProcessing = false;
   private maxConcurrentJobs = 3;
@@ -36,29 +36,29 @@ export class UserBackgroundJobService extends EventEmitter {
 
   createJob(
     sessionId: string,
-    type: BackgroundJob['type'],
+    type: BackgroundJob["type"],
     data: any,
-    priority: number = 2
+    priority: number = 2,
   ): string {
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const job: BackgroundJob = {
       id: jobId,
       sessionId,
       type,
-      status: 'pending',
+      status: "pending",
       priority,
       progress: 0,
       createdAt: new Date(),
-      data
+      data,
     };
 
     this.jobs.set(jobId, job);
     this.addToQueue(job);
-    
+
     this.logger.log(`Created ${type} job ${jobId} for session ${sessionId}`);
-    this.emit('jobCreated', job);
-    
+    this.emit("jobCreated", job);
+
     return jobId;
   }
 
@@ -73,9 +73,9 @@ export class UserBackgroundJobService extends EventEmitter {
       default:
         this.queues.low.push(job);
     }
-    
+
     // Sort by creation time
-    Object.values(this.queues).forEach(queue => {
+    Object.values(this.queues).forEach((queue) => {
       queue.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
     });
   }
@@ -93,7 +93,11 @@ export class UserBackgroundJobService extends EventEmitter {
 
   private getNextJob(): BackgroundJob | null {
     // Process high priority first, then normal, then low
-    for (const queue of [this.queues.high, this.queues.normal, this.queues.low]) {
+    for (const queue of [
+      this.queues.high,
+      this.queues.normal,
+      this.queues.low,
+    ]) {
       const job = queue.shift();
       if (job) {
         return job;
@@ -108,39 +112,38 @@ export class UserBackgroundJobService extends EventEmitter {
     }
 
     this.runningJobs.add(job.id);
-    job.status = 'running';
+    job.status = "running";
     job.startedAt = new Date();
-    
+
     this.logger.log(`Starting ${job.type} job ${job.id}`);
-    this.emit('jobStarted', job);
+    this.emit("jobStarted", job);
 
     try {
       switch (job.type) {
-        case 'import':
+        case "import":
           await this.processImportJob(job);
           break;
-        case 'validation':
+        case "validation":
           await this.processValidationJob(job);
           break;
-        case 'cleanup':
+        case "cleanup":
           await this.processCleanupJob(job);
           break;
       }
-      
-      job.status = 'completed';
+
+      job.status = "completed";
       job.progress = 100;
       job.completedAt = new Date();
-      
+
       this.logger.log(`Completed ${job.type} job ${job.id}`);
-      this.emit('jobCompleted', job);
-      
+      this.emit("jobCompleted", job);
     } catch (error) {
-      job.status = 'failed';
+      job.status = "failed";
       job.error = error.message;
       job.completedAt = new Date();
-      
+
       this.logger.error(`Failed ${job.type} job ${job.id}: ${error.message}`);
-      this.emit('jobFailed', job);
+      this.emit("jobFailed", job);
     } finally {
       this.runningJobs.delete(job.id);
     }
@@ -148,50 +151,54 @@ export class UserBackgroundJobService extends EventEmitter {
 
   private async processImportJob(job: BackgroundJob): Promise<void> {
     // This would integrate with the ImportService
-    const { sessionId, batchData, options } = job.data;
-    
+    const {
+      sessionId: _sessionId,
+      batchData: _batchData,
+      options: _options,
+    } = job.data;
+
     // Simulate processing with progress updates
     for (let i = 0; i <= 100; i += 10) {
       job.progress = i;
-      this.emit('jobProgress', job);
-      await new Promise(resolve => setTimeout(resolve, 100)); // Simulate work
+      this.emit("jobProgress", job);
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Simulate work
     }
-    
+
     job.result = {
       importedCount: batchData?.length || 0,
-      message: 'Background import completed successfully'
+      message: "Background import completed successfully",
     };
   }
 
   private async processValidationJob(job: BackgroundJob): Promise<void> {
-    const { sessionId, data } = job.data;
-    
+    const { sessionId: _sessionId, data: _data } = job.data;
+
     // Simulate validation processing
     for (let i = 0; i <= 100; i += 20) {
       job.progress = i;
-      this.emit('jobProgress', job);
-      await new Promise(resolve => setTimeout(resolve, 50));
+      this.emit("jobProgress", job);
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
-    
+
     job.result = {
       validRows: data?.length || 0,
       invalidRows: 0,
-      message: 'Background validation completed successfully'
+      message: "Background validation completed successfully",
     };
   }
 
   private async processCleanupJob(job: BackgroundJob): Promise<void> {
-    const { sessionId, olderThan } = job.data;
-    
+    const { sessionId: _sessionId, olderThan: _olderThan } = job.data;
+
     // Simulate cleanup
     job.progress = 50;
-    this.emit('jobProgress', job);
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    this.emit("jobProgress", job);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     job.progress = 100;
     job.result = {
       cleanedSessions: 1,
-      message: 'Cleanup completed successfully'
+      message: "Cleanup completed successfully",
     };
   }
 
@@ -200,7 +207,9 @@ export class UserBackgroundJobService extends EventEmitter {
   }
 
   getJobsBySession(sessionId: string): BackgroundJob[] {
-    return Array.from(this.jobs.values()).filter(job => job.sessionId === sessionId);
+    return Array.from(this.jobs.values()).filter(
+      (job) => job.sessionId === sessionId,
+    );
   }
 
   getAllJobs(): BackgroundJob[] {
@@ -208,7 +217,9 @@ export class UserBackgroundJobService extends EventEmitter {
   }
 
   getRunningJobs(): BackgroundJob[] {
-    return Array.from(this.jobs.values()).filter(job => job.status === 'running');
+    return Array.from(this.jobs.values()).filter(
+      (job) => job.status === "running",
+    );
   }
 
   getPendingJobs(): BackgroundJob[] {
@@ -221,26 +232,26 @@ export class UserBackgroundJobService extends EventEmitter {
       return false;
     }
 
-    if (job.status === 'pending') {
+    if (job.status === "pending") {
       // Remove from queue
-      Object.values(this.queues).forEach(queue => {
-        const index = queue.findIndex(j => j.id === jobId);
+      Object.values(this.queues).forEach((queue) => {
+        const index = queue.findIndex((j) => j.id === jobId);
         if (index !== -1) {
           queue.splice(index, 1);
         }
       });
     }
 
-    if (job.status === 'running') {
+    if (job.status === "running") {
       this.runningJobs.delete(jobId);
     }
 
-    job.status = 'cancelled';
+    job.status = "cancelled";
     job.completedAt = new Date();
-    
+
     this.logger.log(`Cancelled job ${jobId}`);
-    this.emit('jobCancelled', job);
-    
+    this.emit("jobCancelled", job);
+
     return true;
   }
 
@@ -256,21 +267,21 @@ export class UserBackgroundJobService extends EventEmitter {
       normal: this.queues.normal.length,
       low: this.queues.low.length,
       running: this.runningJobs.size,
-      total: this.jobs.size
+      total: this.jobs.size,
     };
   }
 
   cleanupOldJobs(olderThanHours: number = 24): number {
-    const cutoffTime = Date.now() - (olderThanHours * 60 * 60 * 1000);
+    const cutoffTime = Date.now() - olderThanHours * 60 * 60 * 1000;
     let cleanedCount = 0;
-    
+
     for (const [jobId, job] of this.jobs.entries()) {
       if (job.completedAt && job.completedAt.getTime() < cutoffTime) {
         this.jobs.delete(jobId);
         cleanedCount++;
       }
     }
-    
+
     this.logger.log(`Cleaned up ${cleanedCount} old jobs`);
     return cleanedCount;
   }

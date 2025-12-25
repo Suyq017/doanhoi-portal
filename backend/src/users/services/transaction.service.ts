@@ -1,7 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DataSource, QueryRunner } from 'typeorm';
+import { Injectable, Logger } from "@nestjs/common";
+import { DataSource, QueryRunner } from "typeorm";
 
-export type IsolationLevel = 'READ_UNCOMMITTED' | 'READ_COMMITTED' | 'REPEATABLE_READ' | 'SERIALIZABLE';
+export type IsolationLevel =
+  | "READ_UNCOMMITTED"
+  | "READ_COMMITTED"
+  | "REPEATABLE_READ"
+  | "SERIALIZABLE";
 
 export interface TransactionOptions {
   isolationLevel?: IsolationLevel;
@@ -40,14 +44,14 @@ export class UserTransactionService {
     averageExecutionTime: 0,
     totalExecutionTime: 0,
     deadlockCount: 0,
-    timeoutCount: 0
+    timeoutCount: 0,
   };
 
   private readonly DEFAULT_OPTIONS: TransactionOptions = {
-    isolationLevel: 'READ_COMMITTED',
+    isolationLevel: "READ_COMMITTED",
     timeout: 30000, // 30 seconds
     retryCount: 3,
-    retryDelay: 1000 // 1 second
+    retryDelay: 1000, // 1 second
   };
 
   constructor(private readonly dataSource: DataSource) {}
@@ -57,7 +61,7 @@ export class UserTransactionService {
    */
   async executeWithTransaction<T>(
     operation: (queryRunner: QueryRunner) => Promise<T>,
-    options: TransactionOptions = {}
+    options: TransactionOptions = {},
   ): Promise<TransactionResult<T>> {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
     const startTime = Date.now();
@@ -68,7 +72,7 @@ export class UserTransactionService {
 
     while (retryCount <= opts.retryCount) {
       const queryRunner = this.dataSource.createQueryRunner();
-      
+
       try {
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -76,39 +80,45 @@ export class UserTransactionService {
         // Execute the operation
         const result = await Promise.race([
           operation(queryRunner),
-          this.createTimeoutPromise<T>(opts.timeout)
+          this.createTimeoutPromise<T>(opts.timeout),
         ]);
 
         await queryRunner.commitTransaction();
-        
+
         const executionTime = Date.now() - startTime;
         this.updateStats(true, executionTime, retryCount);
 
-        this.logger.log(`User transaction completed successfully in ${executionTime}ms (retry: ${retryCount})`);
-        
+        this.logger.log(
+          `User transaction completed successfully in ${executionTime}ms (retry: ${retryCount})`,
+        );
+
         return {
           success: true,
           result,
           executionTime,
-          retryCount
+          retryCount,
         };
-
       } catch (error) {
         await queryRunner.rollbackTransaction();
         lastError = error as Error;
-        
-        this.logger.error(`User transaction failed (attempt ${retryCount + 1}): ${error.message}`);
-        
+
+        this.logger.error(
+          `User transaction failed (attempt ${retryCount + 1}): ${error.message}`,
+        );
+
         // Check if error is retryable
-        if (this.isRetryableError(error as Error) && retryCount < opts.retryCount) {
+        if (
+          this.isRetryableError(error as Error) &&
+          retryCount < opts.retryCount
+        ) {
           retryCount++;
           this.stats.retriedTransactions++;
-          
+
           // Wait before retry
-          await new Promise(resolve => setTimeout(resolve, opts.retryDelay));
+          await new Promise((resolve) => setTimeout(resolve, opts.retryDelay));
           continue;
         }
-        
+
         break;
       } finally {
         await queryRunner.release();
@@ -117,12 +127,12 @@ export class UserTransactionService {
 
     const executionTime = Date.now() - startTime;
     this.updateStats(false, executionTime, retryCount);
-    
+
     return {
       success: false,
       error: lastError,
       executionTime,
-      retryCount
+      retryCount,
     };
   }
 
@@ -133,7 +143,7 @@ export class UserTransactionService {
     if (!timeout) {
       return new Promise(() => {}); // Never resolves
     }
-    
+
     return new Promise((_, reject) => {
       setTimeout(() => {
         reject(new Error(`Transaction timeout after ${timeout}ms`));
@@ -146,39 +156,44 @@ export class UserTransactionService {
    */
   private isRetryableError(error: Error): boolean {
     const message = error.message.toLowerCase();
-    
+
     // Deadlock detection
-    if (message.includes('deadlock') || message.includes('lock wait timeout')) {
+    if (message.includes("deadlock") || message.includes("lock wait timeout")) {
       this.stats.deadlockCount++;
       return true;
     }
-    
+
     // Timeout detection
-    if (message.includes('timeout')) {
+    if (message.includes("timeout")) {
       this.stats.timeoutCount++;
       return true;
     }
-    
+
     // Connection issues
-    if (message.includes('connection') || message.includes('network')) {
+    if (message.includes("connection") || message.includes("network")) {
       return true;
     }
-    
+
     // Temporary database issues
-    if (message.includes('temporary') || message.includes('busy')) {
+    if (message.includes("temporary") || message.includes("busy")) {
       return true;
     }
-    
+
     return false;
   }
 
   /**
    * Update transaction statistics
    */
-  private updateStats(success: boolean, executionTime: number, retryCount: number): void {
+  private updateStats(
+    success: boolean,
+    executionTime: number,
+    _retryCount: number,
+  ): void {
     this.stats.totalExecutionTime += executionTime;
-    this.stats.averageExecutionTime = this.stats.totalExecutionTime / this.stats.totalTransactions;
-    
+    this.stats.averageExecutionTime =
+      this.stats.totalExecutionTime / this.stats.totalTransactions;
+
     if (success) {
       this.stats.successfulTransactions++;
     } else {
@@ -205,7 +220,7 @@ export class UserTransactionService {
       averageExecutionTime: 0,
       totalExecutionTime: 0,
       deadlockCount: 0,
-      timeoutCount: 0
+      timeoutCount: 0,
     });
   }
 
@@ -214,16 +229,16 @@ export class UserTransactionService {
    */
   async executeMultipleOperations<T>(
     operations: Array<(queryRunner: QueryRunner) => Promise<T>>,
-    options: TransactionOptions = {}
+    options: TransactionOptions = {},
   ): Promise<TransactionResult<T[]>> {
     return this.executeWithTransaction(async (queryRunner) => {
       const results: T[] = [];
-      
+
       for (const operation of operations) {
         const result = await operation(queryRunner);
         results.push(result);
       }
-      
+
       return results;
     }, options);
   }
@@ -234,7 +249,7 @@ export class UserTransactionService {
   async executeWithSavepoint<T>(
     queryRunner: QueryRunner,
     savepointName: string,
-    operation: (queryRunner: QueryRunner) => Promise<T>
+    operation: (queryRunner: QueryRunner) => Promise<T>,
   ): Promise<T> {
     try {
       await queryRunner.query(`SAVEPOINT ${savepointName}`);

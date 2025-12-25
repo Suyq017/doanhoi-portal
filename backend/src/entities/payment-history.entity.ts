@@ -1,57 +1,65 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { PaymentAssignment } from './payment-assignment.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
+import { PaymentAssignment } from "./payment-assignment.entity";
 
 export enum PaymentHistoryStatus {
-  PENDING = 'PENDING',
-  PAID = 'PAID',
-  CANCELLED = 'CANCELLED',
-  EXPIRED = 'EXPIRED'
+  PENDING = "PENDING",
+  PAID = "PAID",
+  CANCELLED = "CANCELLED",
+  EXPIRED = "EXPIRED",
 }
 
 export enum PaymentMethod {
-  MANUAL = 'MANUAL', // Đóng thủ công
-  ONLINE = 'ONLINE'  // Đóng online
+  MANUAL = "MANUAL", // Đóng thủ công
+  ONLINE = "ONLINE", // Đóng online
 }
 
-@Entity('payment_history')
+@Entity("payment_history")
 export class PaymentHistory {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column('uuid')
+  @Column("uuid")
   assignment_id: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column("decimal", { precision: 10, scale: 2 })
   amount: number;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: PaymentHistoryStatus,
-    default: PaymentHistoryStatus.PENDING
+    default: PaymentHistoryStatus.PENDING,
   })
   status: PaymentHistoryStatus;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: PaymentMethod,
-    default: PaymentMethod.ONLINE
+    default: PaymentMethod.ONLINE,
   })
   payment_method: PaymentMethod;
 
-  @Column('bigint', { unique: true })
+  @Column("bigint", { unique: true })
   order_code: number;
 
-  @Column('timestamp', { nullable: true })
+  @Column("timestamp", { nullable: true })
   paid_at: Date;
 
   // PayOS Configuration fields
-  @Column('varchar', { length: 255, nullable: true })
+  @Column("varchar", { length: 255, nullable: true })
   client_id: string;
 
-  @Column('varchar', { length: 255, nullable: true })
+  @Column("varchar", { length: 255, nullable: true })
   api_key: string;
 
-  @Column('varchar', { length: 255, nullable: true })
+  @Column("varchar", { length: 255, nullable: true })
   checksum_key: string;
 
   @CreateDateColumn()
@@ -62,6 +70,6 @@ export class PaymentHistory {
 
   // Relations
   @ManyToOne(() => PaymentAssignment, { eager: true })
-  @JoinColumn({ name: 'assignment_id' })
+  @JoinColumn({ name: "assignment_id" })
   assignment: PaymentAssignment;
 }

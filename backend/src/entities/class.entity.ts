@@ -1,10 +1,19 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from './user.entity';
-import { Department } from './department.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from "typeorm";
+import { User } from "./user.entity";
+import { Department } from "./department.entity";
 
-@Entity('classes')
+@Entity("classes")
 export class Class {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
@@ -17,10 +26,10 @@ export class Class {
   departmentId: string;
 
   @ManyToOne(() => Department, { nullable: true })
-  @JoinColumn({ name: 'departmentId' })
+  @JoinColumn({ name: "departmentId" })
   department: Department;
 
-  @OneToMany(() => User, user => user.class)
+  @OneToMany(() => User, (user) => user.class)
   students: User[];
 
   @Column({ default: true })

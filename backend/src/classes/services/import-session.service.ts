@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { ClassImportData } from './excel-parser.service';
-import { ValidationResult, ClassImportDataWithValidation } from './import-validation.service';
+import { Injectable } from "@nestjs/common";
+import { ClassImportData } from "./excel-parser.service";
+import {
+  ValidationResult,
+  ClassImportDataWithValidation,
+} from "./import-validation.service";
 
 export interface BatchProcessingStatus {
   currentBatch: number;
@@ -17,7 +20,7 @@ export interface BatchProcessingStatus {
 
 export interface BatchResult {
   batchNumber: number;
-  status: 'pending' | 'processing' | 'success' | 'failed';
+  status: "pending" | "processing" | "success" | "failed";
   startTime?: Date;
   endTime?: Date;
   processedRows: number;
@@ -34,7 +37,13 @@ export interface ImportSession {
   fileName: string;
   uploadedAt: Date;
   expiresAt: Date;
-  status: 'uploaded' | 'validated' | 'importing' | 'paused' | 'imported' | 'failed';
+  status:
+    | "uploaded"
+    | "validated"
+    | "importing"
+    | "paused"
+    | "imported"
+    | "failed";
   data?: ClassImportData[];
   validationResult?: ValidationResult;
   importResult?: ImportResult;
@@ -66,21 +75,21 @@ export class ImportSessionService {
   createSession(fileName: string, data: ClassImportData[]): ImportSession {
     const sessionId = this.generateSessionId();
     const now = new Date();
-    
+
     const session: ImportSession = {
       id: sessionId,
       fileName,
       uploadedAt: now,
       expiresAt: new Date(now.getTime() + this.SESSION_TIMEOUT),
-      status: 'uploaded',
+      status: "uploaded",
       data,
       metadata: {
         totalRows: data.length,
         validRows: 0,
         invalidRows: 0,
         errorCount: 0,
-        warningCount: 0
-      }
+        warningCount: 0,
+      },
     };
 
     this.sessions.set(sessionId, session);
@@ -102,32 +111,38 @@ export class ImportSessionService {
     return session;
   }
 
-  updateSessionValidation(sessionId: string, validationResult: ValidationResult): ImportSession | null {
+  updateSessionValidation(
+    sessionId: string,
+    validationResult: ValidationResult,
+  ): ImportSession | null {
     const session = this.getSession(sessionId);
     if (!session) {
       return null;
     }
 
-    session.status = 'validated';
+    session.status = "validated";
     session.validationResult = validationResult;
     session.metadata = {
       ...session.metadata,
       validRows: validationResult.summary.valid,
       invalidRows: validationResult.summary.invalid,
       errorCount: validationResult.errors.length,
-      warningCount: validationResult.warnings.length
+      warningCount: validationResult.warnings.length,
     };
 
     return session;
   }
 
-  updateSessionImport(sessionId: string, importResult: ImportResult): ImportSession | null {
+  updateSessionImport(
+    sessionId: string,
+    importResult: ImportResult,
+  ): ImportSession | null {
     const session = this.getSession(sessionId);
     if (!session) {
       return null;
     }
 
-    session.status = importResult.success ? 'imported' : 'failed';
+    session.status = importResult.success ? "imported" : "failed";
     session.importResult = importResult;
 
     return session;
@@ -146,7 +161,7 @@ export class ImportSessionService {
     }
   }
 
-  getSessionMetadata(sessionId: string): ImportSession['metadata'] | null {
+  getSessionMetadata(sessionId: string): ImportSession["metadata"] | null {
     const session = this.getSession(sessionId);
     return session ? session.metadata : null;
   }
@@ -156,7 +171,11 @@ export class ImportSessionService {
     return session?.validationResult?.data || null;
   }
 
-  initializeBatchProcessing(sessionId: string, totalRows: number, batchSize: number = this.DEFAULT_BATCH_SIZE): boolean {
+  initializeBatchProcessing(
+    sessionId: string,
+    totalRows: number,
+    batchSize: number = this.DEFAULT_BATCH_SIZE,
+  ): boolean {
     const session = this.getSession(sessionId);
     if (!session) {
       return false;
@@ -164,19 +183,19 @@ export class ImportSessionService {
 
     const totalBatches = Math.ceil(totalRows / batchSize);
     const batchResults: BatchResult[] = [];
-    
+
     // Initialize all batch results
     for (let i = 0; i < totalBatches; i++) {
       batchResults.push({
         batchNumber: i + 1,
-        status: 'pending',
+        status: "pending",
         processedRows: 0,
         successCount: 0,
         failedCount: 0,
         skippedCount: 0,
         errors: [],
         retryCount: 0,
-        maxRetries: 3
+        maxRetries: 3,
       });
     }
 
@@ -189,45 +208,52 @@ export class ImportSessionService {
       startTime: new Date(),
       canPause: true,
       canResume: false,
-      isPaused: false
+      isPaused: false,
     };
 
-    session.status = 'importing';
+    session.status = "importing";
     return true;
   }
 
-  updateBatchProgress(sessionId: string, batchNumber: number, result: Partial<BatchResult>): boolean {
+  updateBatchProgress(
+    sessionId: string,
+    batchNumber: number,
+    result: Partial<BatchResult>,
+  ): boolean {
     const session = this.getSession(sessionId);
     if (!session?.batchProcessing) {
       return false;
     }
 
     const batchIndex = batchNumber - 1;
-    if (batchIndex >= 0 && batchIndex < session.batchProcessing.batchResults.length) {
+    if (
+      batchIndex >= 0 &&
+      batchIndex < session.batchProcessing.batchResults.length
+    ) {
       const batchResult = session.batchProcessing.batchResults[batchIndex];
-      
+
       // Update batch result
       Object.assign(batchResult, result);
-      
+
       // Update overall progress
       session.batchProcessing.currentBatch = batchNumber;
       session.batchProcessing.processedRows += result.processedRows || 0;
-      
+
       // Update session status based on batch status
-      if (result.status === 'success') {
+      if (result.status === "success") {
         batchResult.endTime = new Date();
-      } else if (result.status === 'failed') {
+      } else if (result.status === "failed") {
         batchResult.endTime = new Date();
         // Check if we should retry
         if (batchResult.retryCount < batchResult.maxRetries) {
-          batchResult.status = 'pending';
+          batchResult.status = "pending";
           batchResult.retryCount++;
         }
       }
-      
+
       return true;
     }
-    
+
     return false;
   }
 
@@ -237,11 +263,11 @@ export class ImportSessionService {
       return false;
     }
 
-    session.status = 'paused';
+    session.status = "paused";
     session.batchProcessing.isPaused = true;
     session.batchProcessing.canPause = false;
     session.batchProcessing.canResume = true;
-    
+
     return true;
   }
 
@@ -251,11 +277,11 @@ export class ImportSessionService {
       return false;
     }
 
-    session.status = 'importing';
+    session.status = "importing";
     session.batchProcessing.isPaused = false;
     session.batchProcessing.canPause = true;
     session.batchProcessing.canResume = false;
-    
+
     return true;
   }
 
@@ -268,8 +294,8 @@ export class ImportSessionService {
     session.batchProcessing.endTime = new Date();
     session.batchProcessing.canPause = false;
     session.batchProcessing.canResume = false;
-    session.status = success ? 'imported' : 'failed';
-    
+    session.status = success ? "imported" : "failed";
+
     return true;
   }
 
@@ -284,10 +310,13 @@ export class ImportSessionService {
       return null;
     }
 
-    return session.batchProcessing.batchResults.find(batch => 
-      batch.status === 'pending' || 
-      (batch.status === 'failed' && batch.retryCount < batch.maxRetries)
-    ) || null;
+    return (
+      session.batchProcessing.batchResults.find(
+        (batch) =>
+          batch.status === "pending" ||
+          (batch.status === "failed" && batch.retryCount < batch.maxRetries),
+      ) || null
+    );
   }
 
   private generateSessionId(): string {

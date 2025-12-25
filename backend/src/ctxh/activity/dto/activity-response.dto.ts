@@ -1,38 +1,38 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
-import { ActivityStatus } from '../../../entities/ctxh-activity.entity';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Expose } from "class-transformer";
+import { ActivityStatus } from "../../../entities/ctxh-activity.entity";
 
 export class ActivityResponseDto {
   @ApiProperty({
-    description: 'ID của hoạt động',
-    example: 'uuid-string',
+    description: "ID của hoạt động",
+    example: "uuid-string",
   })
   @Expose()
   id: string;
 
   @ApiProperty({
-    description: 'Tên hoạt động',
-    example: 'Hỗ trợ người già neo đơn',
+    description: "Tên hoạt động",
+    example: "Hỗ trợ người già neo đơn",
   })
   @Expose()
   name: string;
 
   @ApiPropertyOptional({
-    description: 'Mô tả hoạt động',
-    example: 'Hoạt động hỗ trợ người già neo đơn tại phường 1',
+    description: "Mô tả hoạt động",
+    example: "Hoạt động hỗ trợ người già neo đơn tại phường 1",
   })
   @Expose()
   description?: string;
 
   @ApiProperty({
-    description: 'ID danh mục',
-    example: 'uuid-string',
+    description: "ID danh mục",
+    example: "uuid-string",
   })
   @Expose()
   category_id: string;
 
   @ApiProperty({
-    description: 'Thông tin danh mục',
+    description: "Thông tin danh mục",
   })
   @Expose()
   category?: {
@@ -41,14 +41,14 @@ export class ActivityResponseDto {
   };
 
   @ApiProperty({
-    description: 'ID tổ chức',
-    example: 'uuid-string',
+    description: "ID tổ chức",
+    example: "uuid-string",
   })
   @Expose()
   organization_id: string;
 
   @ApiProperty({
-    description: 'Thông tin tổ chức',
+    description: "Thông tin tổ chức",
   })
   @Expose()
   organization?: {
@@ -57,35 +57,35 @@ export class ActivityResponseDto {
   };
 
   @ApiPropertyOptional({
-    description: 'Ngày bắt đầu',
-    example: '2024-01-01',
+    description: "Ngày bắt đầu",
+    example: "2024-01-01",
   })
   @Expose()
   start_date?: Date;
 
   @ApiPropertyOptional({
-    description: 'Ngày kết thúc',
-    example: '2024-01-07',
+    description: "Ngày kết thúc",
+    example: "2024-01-07",
   })
   @Expose()
   end_date?: Date;
 
   @ApiPropertyOptional({
-    description: 'Tổng số ngày tối đa',
+    description: "Tổng số ngày tối đa",
     example: 3,
   })
   @Expose()
   total_days?: number;
 
   @ApiPropertyOptional({
-    description: 'Địa điểm tổ chức hoạt động',
-    example: 'Hội trường A1, Trường ĐH Bách Khoa TPHCM',
+    description: "Địa điểm tổ chức hoạt động",
+    example: "Hội trường A1, Trường ĐH Bách Khoa TPHCM",
   })
   @Expose()
   location?: string;
 
   @ApiProperty({
-    description: 'Trạng thái hoạt động',
+    description: "Trạng thái hoạt động",
     enum: ActivityStatus,
     example: ActivityStatus.ACTIVE,
   })
@@ -93,42 +93,42 @@ export class ActivityResponseDto {
   status: ActivityStatus;
 
   @ApiProperty({
-    description: 'ID người tạo',
-    example: 'uuid-string',
+    description: "ID người tạo",
+    example: "uuid-string",
   })
   @Expose()
   created_by: string;
 
   @ApiProperty({
-    description: 'Thời gian tạo',
-    example: '2024-01-01T00:00:00Z',
+    description: "Thời gian tạo",
+    example: "2024-01-01T00:00:00Z",
   })
   @Expose()
   created_at: Date;
 
   @ApiPropertyOptional({
-    description: 'ID người cập nhật cuối',
-    example: 'uuid-string',
+    description: "ID người cập nhật cuối",
+    example: "uuid-string",
   })
   @Expose()
   updated_by?: string;
 
   @ApiProperty({
-    description: 'Thời gian cập nhật cuối',
-    example: '2024-01-01T00:00:00Z',
+    description: "Thời gian cập nhật cuối",
+    example: "2024-01-01T00:00:00Z",
   })
   @Expose()
   updated_at: Date;
 
   @ApiPropertyOptional({
-    description: 'Số lượng sinh viên tham gia',
+    description: "Số lượng sinh viên tham gia",
     example: 25,
   })
   @Expose()
   participants_count?: number;
 
   @ApiPropertyOptional({
-    description: 'Số lượng sinh viên đã được chấm điểm',
+    description: "Số lượng sinh viên đã được chấm điểm",
     example: 20,
   })
   @Expose()

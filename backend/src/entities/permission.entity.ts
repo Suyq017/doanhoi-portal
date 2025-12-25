@@ -1,13 +1,19 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
 
 export enum PermissionContext {
-  SYSTEM = 'system',      // Quyền toàn hệ thống
-  ORGANIZATION = 'organization', // Quyền theo tổ chức
+  SYSTEM = "system", // Quyền toàn hệ thống
+  ORGANIZATION = "organization", // Quyền theo tổ chức
 }
 
-@Entity('permissions')
+@Entity("permissions")
 export class Permission {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column({ unique: true })
@@ -23,7 +29,7 @@ export class Permission {
   category: string; // 'dashboard', 'users', 'organizations', 'departments', 'classes', 'permissions'
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: PermissionContext,
     default: PermissionContext.ORGANIZATION,
   })

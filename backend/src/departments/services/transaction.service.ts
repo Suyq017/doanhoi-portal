@@ -1,7 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DataSource, QueryRunner } from 'typeorm';
+import { Injectable, Logger } from "@nestjs/common";
+import { DataSource, QueryRunner } from "typeorm";
 
-export type IsolationLevel = 'READ UNCOMMITTED' | 'READ COMMITTED' | 'REPEATABLE READ' | 'SERIALIZABLE';
+export type IsolationLevel =
+  | "READ UNCOMMITTED"
+  | "READ COMMITTED"
+  | "REPEATABLE READ"
+  | "SERIALIZABLE";
 
 export interface TransactionConfig {
   isolationLevel: IsolationLevel;
@@ -30,7 +34,7 @@ export interface TransactionResult {
   transactionId: string;
   executionTime: number;
   error?: string;
-  errorType?: 'deadlock' | 'timeout' | 'connection' | 'constraint' | 'other';
+  errorType?: "deadlock" | "timeout" | "connection" | "constraint" | "other";
   retryCount: number;
   canRetry: boolean;
 }
@@ -51,7 +55,7 @@ export class DepartmentTransactionService {
   };
 
   private readonly DEFAULT_CONFIG: TransactionConfig = {
-    isolationLevel: 'READ COMMITTED',
+    isolationLevel: "READ COMMITTED",
     timeout: 60000, // 60 seconds
     maxRetries: 3,
     retryDelay: 1000,
@@ -66,39 +70,45 @@ export class DepartmentTransactionService {
    */
   async executeTransaction<T>(
     operation: (queryRunner: QueryRunner) => Promise<T>,
-    config: Partial<TransactionConfig> = {}
+    config: Partial<TransactionConfig> = {},
   ): Promise<TransactionResult & { data?: T }> {
     const finalConfig = { ...this.DEFAULT_CONFIG, ...config };
     const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
-    
+
     let retryCount = 0;
     let lastError: Error | null = null;
 
     while (retryCount <= finalConfig.maxRetries) {
       const queryRunner = this.dataSource.createQueryRunner();
-      
+
       try {
         await queryRunner.connect();
         await queryRunner.startTransaction(finalConfig.isolationLevel);
-        
-        this.logger.log(`Starting transaction ${transactionId} (attempt ${retryCount + 1})`);
-        
+
+        this.logger.log(
+          `Starting transaction ${transactionId} (attempt ${retryCount + 1})`,
+        );
+
         // Set transaction timeout
-        await queryRunner.query(`SET SESSION innodb_lock_wait_timeout = ${finalConfig.timeout / 1000}`);
-        
+        await queryRunner.query(
+          `SET SESSION innodb_lock_wait_timeout = ${finalConfig.timeout / 1000}`,
+        );
+
         const result = await Promise.race([
           operation(queryRunner),
-          this.createTimeoutPromise(finalConfig.timeout)
+          this.createTimeoutPromise(finalConfig.timeout),
         ]);
 
         await queryRunner.commitTransaction();
-        
+
         const executionTime = Date.now() - startTime;
         this.updateStats(true, executionTime, null);
-        
-        this.logger.log(`Transaction ${transactionId} completed successfully in ${executionTime}ms`);
-        
+
+        this.logger.log(
+          `Transaction ${transactionId} completed successfully in ${executionTime}ms`,
+        );
+
         return {
           success: true,
           transactionId,
@@ -107,26 +117,32 @@ export class DepartmentTransactionService {
           canRetry: false,
           data: result,
         };
-
       } catch (error) {
         await queryRunner.rollbackTransaction();
         this.stats.rollbackCount++;
         lastError = error as Error;
-        
+
         const errorType = this.classifyError(error as Error);
         const canRetry = this.canRetryError(errorType, retryCount, finalConfig);
-        
-        this.logger.error(`Transaction ${transactionId} failed (attempt ${retryCount + 1}): ${error.message}`);
-        
+
+        this.logger.error(
+          `Transaction ${transactionId} failed (attempt ${retryCount + 1}): ${error.message}`,
+        );
+
         if (canRetry && retryCount < finalConfig.maxRetries) {
-          const delay = this.calculateRetryDelay(retryCount, finalConfig.retryDelay);
-          this.logger.log(`Retrying transaction ${transactionId} in ${delay}ms`);
+          const delay = this.calculateRetryDelay(
+            retryCount,
+            finalConfig.retryDelay,
+          );
+          this.logger.log(
+            `Retrying transaction ${transactionId} in ${delay}ms`,
+          );
           await this.sleep(delay);
           retryCount++;
         } else {
           const executionTime = Date.now() - startTime;
           this.updateStats(false, executionTime, errorType);
-          
+
           return {
             success: false,
             transactionId,
@@ -144,14 +160,14 @@ export class DepartmentTransactionService {
 
     // Should not reach here, but just in case
     const executionTime = Date.now() - startTime;
-    this.updateStats(false, executionTime, 'other');
-    
+    this.updateStats(false, executionTime, "other");
+
     return {
       success: false,
       transactionId,
       executionTime,
-      error: lastError?.message || 'Unknown error',
-      errorType: 'other',
+      error: lastError?.message || "Unknown error",
+      errorType: "other",
       retryCount,
       canRetry: false,
     };
@@ -163,7 +179,7 @@ export class DepartmentTransactionService {
   async bulkInsert<T>(
     entity: any,
     data: T[],
-    config: Partial<TransactionConfig> = {}
+    config: Partial<TransactionConfig> = {},
   ): Promise<TransactionResult & { insertedCount?: number }> {
     return this.executeTransaction(async (queryRunner) => {
       const repository = queryRunner.manager.getRepository(entity);
@@ -178,17 +194,17 @@ export class DepartmentTransactionService {
   async bulkUpdate<T>(
     entity: any,
     updates: { criteria: any; data: Partial<T> }[],
-    config: Partial<TransactionConfig> = {}
+    config: Partial<TransactionConfig> = {},
   ): Promise<TransactionResult & { updatedCount?: number }> {
     return this.executeTransaction(async (queryRunner) => {
       const repository = queryRunner.manager.getRepository(entity);
       let updatedCount = 0;
-      
+
       for (const update of updates) {
         const result = await repository.update(update.criteria, update.data);
         updatedCount += result.affected || 0;
       }
-      
+
       return updatedCount;
     }, config);
   }
@@ -196,44 +212,54 @@ export class DepartmentTransactionService {
   /**
    * Phân loại lỗi để xác định có thể retry hay không
    */
-  private classifyError(error: Error): TransactionResult['errorType'] {
+  private classifyError(error: Error): TransactionResult["errorType"] {
     const errorMessage = error.message.toLowerCase();
-    
-    if (errorMessage.includes('deadlock')) {
+
+    if (errorMessage.includes("deadlock")) {
       this.stats.deadlockCount++;
-      return 'deadlock';
+      return "deadlock";
     }
-    
-    if (errorMessage.includes('timeout') || errorMessage.includes('lock wait timeout')) {
+
+    if (
+      errorMessage.includes("timeout") ||
+      errorMessage.includes("lock wait timeout")
+    ) {
       this.stats.timeoutCount++;
-      return 'timeout';
+      return "timeout";
     }
-    
-    if (errorMessage.includes('connection') || errorMessage.includes('connect')) {
-      return 'connection';
+
+    if (
+      errorMessage.includes("connection") ||
+      errorMessage.includes("connect")
+    ) {
+      return "connection";
     }
-    
-    if (errorMessage.includes('constraint') || errorMessage.includes('duplicate') || errorMessage.includes('foreign key')) {
-      return 'constraint';
+
+    if (
+      errorMessage.includes("constraint") ||
+      errorMessage.includes("duplicate") ||
+      errorMessage.includes("foreign key")
+    ) {
+      return "constraint";
     }
-    
-    return 'other';
+
+    return "other";
   }
 
   /**
    * Xác định có thể retry lỗi hay không
    */
   private canRetryError(
-    errorType: TransactionResult['errorType'],
+    errorType: TransactionResult["errorType"],
     retryCount: number,
-    config: TransactionConfig
+    config: TransactionConfig,
   ): boolean {
     if (retryCount >= config.maxRetries) {
       return false;
     }
-    
+
     // Các lỗi có thể retry
-    const retryableErrors = ['deadlock', 'timeout', 'connection'];
+    const retryableErrors = ["deadlock", "timeout", "connection"];
     return retryableErrors.includes(errorType);
   }
 
@@ -259,25 +285,31 @@ export class DepartmentTransactionService {
    * Sleep utility
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
    * Cập nhật thống kê transaction
    */
-  private updateStats(success: boolean, executionTime: number, errorType?: TransactionResult['errorType']): void {
+  private updateStats(
+    success: boolean,
+    executionTime: number,
+    _errorType?: TransactionResult["errorType"],
+  ): void {
     this.stats.totalTransactions++;
     this.stats.totalExecutionTime += executionTime;
     this.stats.lastExecutionTime = new Date();
-    
+
     if (success) {
       this.stats.successfulTransactions++;
     } else {
       this.stats.failedTransactions++;
     }
-    
-    this.stats.averageExecutionTime = this.stats.totalExecutionTime / this.stats.totalTransactions;
-    this.stats.successRate = (this.stats.successfulTransactions / this.stats.totalTransactions) * 100;
+
+    this.stats.averageExecutionTime =
+      this.stats.totalExecutionTime / this.stats.totalTransactions;
+    this.stats.successRate =
+      (this.stats.successfulTransactions / this.stats.totalTransactions) * 100;
   }
 
   /**
@@ -308,42 +340,45 @@ export class DepartmentTransactionService {
    */
   async healthCheck(): Promise<{
     isHealthy: boolean;
-    connectionStatus: 'connected' | 'disconnected';
+    connectionStatus: "connected" | "disconnected";
     successRate: number;
     avgExecutionTime: number;
     issues: string[];
   }> {
     const issues: string[] = [];
-    let connectionStatus: 'connected' | 'disconnected' = 'disconnected';
-    
+    let connectionStatus: "connected" | "disconnected" = "disconnected";
+
     try {
       // Kiểm tra connection
       if (this.dataSource.isInitialized) {
-        await this.dataSource.query('SELECT 1');
-        connectionStatus = 'connected';
+        await this.dataSource.query("SELECT 1");
+        connectionStatus = "connected";
       }
     } catch (error) {
       issues.push(`Database connection issue: ${error.message}`);
     }
-    
+
     // Kiểm tra success rate
     if (this.stats.successRate < 90 && this.stats.totalTransactions > 10) {
       issues.push(`Low success rate: ${this.stats.successRate.toFixed(2)}%`);
     }
-    
+
     // Kiểm tra average execution time
     if (this.stats.averageExecutionTime > 5000) {
-      issues.push(`High average execution time: ${this.stats.averageExecutionTime}ms`);
+      issues.push(
+        `High average execution time: ${this.stats.averageExecutionTime}ms`,
+      );
     }
-    
+
     // Kiểm tra deadlock rate
-    const deadlockRate = this.stats.totalTransactions > 0 
-      ? (this.stats.deadlockCount / this.stats.totalTransactions) * 100 
-      : 0;
+    const deadlockRate =
+      this.stats.totalTransactions > 0
+        ? (this.stats.deadlockCount / this.stats.totalTransactions) * 100
+        : 0;
     if (deadlockRate > 5) {
       issues.push(`High deadlock rate: ${deadlockRate.toFixed(2)}%`);
     }
-    
+
     return {
       isHealthy: issues.length === 0,
       connectionStatus,
@@ -359,9 +394,9 @@ export class DepartmentTransactionService {
   async optimizeConnectionPool(): Promise<void> {
     try {
       // Thực hiện các tối ưu connection pool
-      await this.dataSource.query('SET SESSION wait_timeout = 600');
-      await this.dataSource.query('SET SESSION interactive_timeout = 600');
-      this.logger.log('Connection pool optimized');
+      await this.dataSource.query("SET SESSION wait_timeout = 600");
+      await this.dataSource.query("SET SESSION interactive_timeout = 600");
+      this.logger.log("Connection pool optimized");
     } catch (error) {
       this.logger.error(`Failed to optimize connection pool: ${error.message}`);
     }

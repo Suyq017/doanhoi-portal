@@ -1,6 +1,6 @@
-import { Expose, Transform, Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { LimitConfigStatus } from '../../../entities/ctxh-limit-config.entity';
+import { Expose, Transform, Type } from "class-transformer";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { LimitConfigStatus } from "../../../entities/ctxh-limit-config.entity";
 
 export class LimitConfigResponseDto {
   @ApiProperty()
@@ -13,7 +13,7 @@ export class LimitConfigResponseDto {
 
   @ApiProperty()
   @Expose()
-  @Transform(({ obj }) => obj.max_days) 
+  @Transform(({ obj }) => obj.max_days)
   maxDays: number;
 
   @ApiPropertyOptional()

@@ -1,7 +1,16 @@
-import { IsArray, ValidateNested, IsString, IsEnum, IsOptional, IsInt, IsBoolean, MaxLength } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
-import { FieldType } from '../../entities/template-field.entity';
+import {
+  IsArray,
+  ValidateNested,
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsInt,
+  IsBoolean,
+  MaxLength,
+} from "class-validator";
+import { Type } from "class-transformer";
+import { ApiProperty } from "@nestjs/swagger";
+import { FieldType } from "../../entities/template-field.entity";
 
 class ValidationRulesDto {
   @ApiProperty({ required: false })
@@ -41,33 +50,33 @@ class ValidationRulesDto {
 }
 
 class FieldOptionDto {
-  @ApiProperty({ example: 'Nam' })
+  @ApiProperty({ example: "Nam" })
   @IsString()
   label: string;
 
-  @ApiProperty({ example: 'male' })
+  @ApiProperty({ example: "male" })
   @IsString()
   value: string;
 }
 
 class DatePartsMappingDto {
-  @ApiProperty({ 
-    description: 'Original field name for day part',
-    example: '1' 
+  @ApiProperty({
+    description: "Original field name for day part",
+    example: "1",
   })
   @IsString()
   dayField: string;
 
-  @ApiProperty({ 
-    description: 'Original field name for month part',
-    example: '2' 
+  @ApiProperty({
+    description: "Original field name for month part",
+    example: "2",
   })
   @IsString()
   monthField: string;
 
-  @ApiProperty({ 
-    description: 'Original field name for year part',
-    example: '3' 
+  @ApiProperty({
+    description: "Original field name for year part",
+    example: "3",
   })
   @IsString()
   yearField: string;
@@ -75,32 +84,33 @@ class DatePartsMappingDto {
 
 export class ConfigureFieldDto {
   @ApiProperty({
-    description: 'Field name extracted from template (e.g., student_name from {{student_name}})',
-    example: 'student_name'
+    description:
+      "Field name extracted from template (e.g., student_name from {{student_name}})",
+    example: "student_name",
   })
   @IsString()
   @MaxLength(100)
   fieldName: string;
 
   @ApiProperty({
-    description: 'Display name shown in form',
-    example: 'Họ và tên sinh viên'
+    description: "Display name shown in form",
+    example: "Họ và tên sinh viên",
   })
   @IsString()
   @MaxLength(255)
   displayName: string;
 
   @ApiProperty({
-    description: 'Field type',
+    description: "Field type",
     enum: FieldType,
-    example: FieldType.TEXT
+    example: FieldType.TEXT,
   })
   @IsEnum(FieldType)
   fieldType: FieldType;
 
   @ApiProperty({
-    description: 'Display position in form',
-    example: 0
+    description: "Display position in form",
+    example: 0,
   })
   @IsInt()
   position: number;
@@ -118,22 +128,25 @@ export class ConfigureFieldDto {
   @Type(() => FieldOptionDto)
   options?: FieldOptionDto[];
 
-  @ApiProperty({ 
-    required: false, 
+  @ApiProperty({
+    required: false,
     type: DatePartsMappingDto,
-    description: 'Mapping for DATE fields created from 3 separate fields' 
+    description: "Mapping for DATE fields created from 3 separate fields",
   })
   @IsOptional()
   @ValidateNested()
   @Type(() => DatePartsMappingDto)
   datePartsMapping?: DatePartsMappingDto;
 
-  @ApiProperty({ required: false, example: 'Nhập họ và tên đầy đủ' })
+  @ApiProperty({ required: false, example: "Nhập họ và tên đầy đủ" })
   @IsOptional()
   @IsString()
   placeholder?: string;
 
-  @ApiProperty({ required: false, example: 'Nhập đúng họ tên như trong CMND/CCCD' })
+  @ApiProperty({
+    required: false,
+    example: "Nhập đúng họ tên như trong CMND/CCCD",
+  })
   @IsOptional()
   @IsString()
   helpText?: string;
@@ -151,8 +164,8 @@ export class ConfigureFieldDto {
 
 export class ConfigureFieldsDto {
   @ApiProperty({
-    description: 'Array of field configurations',
-    type: [ConfigureFieldDto]
+    description: "Array of field configurations",
+    type: [ConfigureFieldDto],
   })
   @IsArray()
   @ValidateNested({ each: true })

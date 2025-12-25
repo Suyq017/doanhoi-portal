@@ -1,5 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { UserValidationResult } from './import-validation.service';
+import { Injectable, Logger } from "@nestjs/common";
 
 export interface BatchData<T> {
   batchNumber: number;
@@ -34,13 +33,13 @@ export interface BatchProcessingStats {
 @Injectable()
 export class UserBatchProcessingService {
   private readonly logger = new Logger(UserBatchProcessingService.name);
-  
+
   private readonly DEFAULT_OPTIONS: BatchProcessingOptions = {
     batchSize: 200,
     maxRetries: 3,
     retryDelay: 1000,
     enableFallback: true,
-    fallbackBatchSize: 50
+    fallbackBatchSize: 50,
   };
 
   /**
@@ -49,38 +48,41 @@ export class UserBatchProcessingService {
   divideToBatches<T>(data: T[], batchSize: number): BatchData<T>[] {
     const batches: BatchData<T>[] = [];
     const totalRows = data.length;
-    
+
     for (let i = 0; i < totalRows; i += batchSize) {
       const endIndex = Math.min(i + batchSize, totalRows);
       const batchData = data.slice(i, endIndex);
-      
+
       batches.push({
         batchNumber: Math.floor(i / batchSize) + 1,
         data: batchData,
         startIndex: i,
         endIndex: endIndex - 1,
-        totalRows
+        totalRows,
       });
     }
-    
+
     return batches;
   }
 
   /**
    * Get optimized batch size based on data characteristics
    */
-  getOptimizedBatchSize(dataSize: number, options: Partial<BatchProcessingOptions> = {}): number {
+  getOptimizedBatchSize(
+    dataSize: number,
+    options: Partial<BatchProcessingOptions> = {},
+  ): number {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
-    
+
     // For large datasets, use larger batch sizes
     if (dataSize > 10000) {
       return Math.min(opts.batchSize * 2, 500);
     }
-    
+
     if (dataSize > 1000) {
       return opts.batchSize;
     }
-    
+
     // For small datasets, use smaller batch sizes
     return Math.max(opts.batchSize / 2, 50);
   }
@@ -98,10 +100,11 @@ export class UserBatchProcessingService {
     processedRows: number,
     successfulRows: number,
     failedRows: number,
-    skippedRows: number
+    skippedRows: number,
   ): BatchProcessingStats {
     const processingTime = endTime.getTime() - startTime.getTime();
-    const averageTimePerBatch = completedBatches > 0 ? processingTime / completedBatches : 0;
+    const averageTimePerBatch =
+      completedBatches > 0 ? processingTime / completedBatches : 0;
     const remainingBatches = totalBatches - completedBatches;
     const estimatedRemainingTime = remainingBatches * averageTimePerBatch;
 
@@ -116,7 +119,7 @@ export class UserBatchProcessingService {
       skippedRows,
       processingTime,
       averageTimePerBatch,
-      estimatedRemainingTime
+      estimatedRemainingTime,
     };
   }
 
@@ -128,18 +131,22 @@ export class UserBatchProcessingService {
     error: Error,
     retryCount: number,
     maxRetries: number,
-    retryDelay: number
+    retryDelay: number,
   ): Promise<boolean> {
     if (retryCount >= maxRetries) {
-      this.logger.error(`Batch ${batch.batchNumber} failed after ${maxRetries} retries: ${error.message}`);
+      this.logger.error(
+        `Batch ${batch.batchNumber} failed after ${maxRetries} retries: ${error.message}`,
+      );
       return false;
     }
 
-    this.logger.warn(`Batch ${batch.batchNumber} failed, retrying ${retryCount + 1}/${maxRetries} in ${retryDelay}ms`);
-    
+    this.logger.warn(
+      `Batch ${batch.batchNumber} failed, retrying ${retryCount + 1}/${maxRetries} in ${retryDelay}ms`,
+    );
+
     // Wait before retry
-    await new Promise(resolve => setTimeout(resolve, retryDelay));
-    
+    await new Promise((resolve) => setTimeout(resolve, retryDelay));
+
     return true;
   }
 
@@ -148,26 +155,28 @@ export class UserBatchProcessingService {
    */
   createFallbackBatches<T>(
     originalBatch: BatchData<T>,
-    fallbackBatchSize: number
+    fallbackBatchSize: number,
   ): BatchData<T>[] {
-    this.logger.log(`Creating fallback batches for batch ${originalBatch.batchNumber} with size ${fallbackBatchSize}`);
-    
+    this.logger.log(
+      `Creating fallback batches for batch ${originalBatch.batchNumber} with size ${fallbackBatchSize}`,
+    );
+
     const fallbackBatches: BatchData<T>[] = [];
     const data = originalBatch.data;
-    
+
     for (let i = 0; i < data.length; i += fallbackBatchSize) {
       const endIndex = Math.min(i + fallbackBatchSize, data.length);
       const batchData = data.slice(i, endIndex);
-      
+
       fallbackBatches.push({
         batchNumber: originalBatch.batchNumber + (i / fallbackBatchSize) * 0.1, // Sub-batch numbering
         data: batchData,
         startIndex: originalBatch.startIndex + i,
         endIndex: originalBatch.startIndex + endIndex - 1,
-        totalRows: originalBatch.totalRows
+        totalRows: originalBatch.totalRows,
       });
     }
-    
+
     return fallbackBatches;
   }
 
@@ -197,14 +206,19 @@ export class UserBatchProcessingService {
    * Log batch processing progress
    */
   logProgress(stats: BatchProcessingStats): void {
-    const progressPercent = (stats.processedRows / stats.totalRows * 100).toFixed(1);
+    const progressPercent = (
+      (stats.processedRows / stats.totalRows) *
+      100
+    ).toFixed(1);
     const elapsedSeconds = (stats.processingTime / 1000).toFixed(1);
-    const estimatedRemainingSeconds = (stats.estimatedRemainingTime / 1000).toFixed(1);
+    const estimatedRemainingSeconds = (
+      stats.estimatedRemainingTime / 1000
+    ).toFixed(1);
 
     this.logger.log(
       `User Import Progress: ${stats.completedBatches}/${stats.totalBatches} batches ` +
-      `(${progressPercent}%) | ${stats.processedRows}/${stats.totalRows} rows | ` +
-      `Elapsed: ${elapsedSeconds}s | ETA: ${estimatedRemainingSeconds}s`
+        `(${progressPercent}%) | ${stats.processedRows}/${stats.totalRows} rows | ` +
+        `Elapsed: ${elapsedSeconds}s | ETA: ${estimatedRemainingSeconds}s`,
     );
   }
 
@@ -218,7 +232,9 @@ export class UserBatchProcessingService {
   /**
    * Merge options with defaults
    */
-  mergeOptions(options: Partial<BatchProcessingOptions>): BatchProcessingOptions {
+  mergeOptions(
+    options: Partial<BatchProcessingOptions>,
+  ): BatchProcessingOptions {
     return { ...this.DEFAULT_OPTIONS, ...options };
   }
 }

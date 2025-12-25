@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class CreateTemplateSystem1731312000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -92,14 +92,16 @@ export class CreateTemplateSystem1731312000000 implements MigrationInterface {
       CREATE INDEX idx_submissions_template_status ON template_submissions(template_id, status);
     `);
 
-    console.log('✅ Template system tables created successfully');
+    console.log("✅ Template system tables created successfully");
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TABLE IF EXISTS template_submissions CASCADE`);
+    await queryRunner.query(
+      `DROP TABLE IF EXISTS template_submissions CASCADE`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS template_fields CASCADE`);
     await queryRunner.query(`DROP TABLE IF EXISTS templates CASCADE`);
-    
-    console.log('✅ Template system tables dropped successfully');
+
+    console.log("✅ Template system tables dropped successfully");
   }
 }

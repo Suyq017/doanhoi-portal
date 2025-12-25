@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { SubmissionStatus } from '../../entities/template-submission.entity';
-import { TemplateResponseDto } from '../../templates/dto';
+import { ApiProperty } from "@nestjs/swagger";
+import { SubmissionStatus } from "../../entities/template-submission.entity";
+import { TemplateResponseDto } from "../../templates/dto";
 
 export class SubmissionResponseDto {
   @ApiProperty()
