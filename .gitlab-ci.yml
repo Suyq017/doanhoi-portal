@@ -80,7 +80,7 @@ deploy_production:
       EOF
   environment:
     name:production
-    url: https://doanhoi.hcmut.edu.vn
+    url:https://doanhoi.hcmut.edu.vn
   only:
     - dev
 
