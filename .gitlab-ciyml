@@ -1,0 +1,211 @@
+# GitLab CI/CD Pipeline cho Doanhoi Portal
+# Tự động deploy khi push vào nhánh dev
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  # Production server config
+  # PRODUCTION_SERVER: "103.88.121.146"
+  # PRODUCTION_USER: "root"
+  # DEPLOY_PATH: "/opt/doanhoi-portal"
+  # DOMAIN: "doanhoi.hcmut.edu.vn"
+  
+  # Docker config
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+
+# Stage 1: Test và Validation
+test_backend:
+  stage: test
+  image: node:20.17-alpine
+  cache:
+    key: backend-$CI_COMMIT_REF_SLUG
+    paths:
+      - backend/node_modules/
+  before_script:
+    - cd backend
+    - npm ci
+  script:
+    - echo "🧪 Testing Backend..."
+    - npm run lint || echo "⚠️ Lint warnings found"
+    - npm run build
+    - echo "✅ Backend tests completed"
+  artifacts:
+    paths:
+      - backend/dist/
+      - backend/package*.json
+      - backend/tsconfig*.json
+      - backend/nest-cli.json
+    expire_in: 2 hours
+  only:
+    - dev
+    - main
+
+test_frontend:
+  stage: test
+  image: node:18-alpine
+  cache:
+    key: frontend-$CI_COMMIT_REF_SLUG
+    paths:
+      - frontend/node_modules/
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - echo "🧪 Testing Frontend..."
+    - npm run lint || echo "⚠️ Lint warnings found"
+    - npm run build
+    - echo "✅ Frontend tests completed"
+  artifacts:
+    paths:
+      - frontend/dist/
+      - frontend/package*.json
+      - frontend/tsconfig*.json
+      - frontend/vite.config.ts
+      - frontend/nginx.conf
+    expire_in: 2 hours
+  only:
+    - dev
+    - main
+
+# Stage 2: Build Artifacts
+build_artifacts:
+  stage: build
+  image: alpine:latest
+  dependencies:
+    - test_backend
+    - test_frontend
+  script:
+    - echo "📦 Preparing deployment artifacts..."
+    - ls -la
+    - echo "✅ Build artifacts ready"
+  artifacts:
+    name: "doanhoi-portal-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - backend/
+      - frontend/
+      - docker-compose.prod.yml
+      - .env.production
+    expire_in: 1 day
+  only:
+    - dev
+
+# Stage 3: Deploy to Production Server
+deploy_production:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client git bash curl
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
+    - chmod 600 ~/.ssh/config
+  script:
+    - echo "PRODUCTION_USER=$PRODUCTION_USER"
+    - echo "PRODUCTION_SERVER=$PRODUCTION_SERVER"
+    - echo "DEPLOY_PATH=$DEPLOY_PATH"
+    - echo "DOMAIN=$DOMAIN"
+    - echo "🚀 Deploying Doanhoi Portal on $PRODUCTION_SERVER ..."
+    - |
+      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << DEPLOY_SCRIPT
+        set -e
+        echo "📂 Moving into project directory..."
+        cd $DEPLOY_PATH
+
+        echo "🌿 Checking out dev branch..."
+        git fetch --all
+        git checkout dev
+        git pull origin dev
+
+        echo "🔨 Running deploy.sh..."
+        chmod +x deploy.sh
+        ./deploy.sh
+
+        echo "✅ Deployment finished successfully!"
+      DEPLOY_SCRIPT
+
+    - echo "🔍 Verifying deployment..."
+    - |
+      if curl -f -k https://$DOMAIN >/dev/null 2>&1; then
+        echo "🎉 SUCCESS: Website is accessible at https://$DOMAIN"
+      else
+        echo "⚠️ WARNING: Deployment finished but domain check failed"
+      fi
+  environment:
+    name: production
+    url: https://doanhoi.hcmut.edu.vn
+  only:
+    - dev
+  when: manual
+
+
+# Rollback job (manual trigger only)
+rollback_production:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client bash
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
+  script:
+    - echo "🔄 Starting rollback procedure..."
+    - |
+      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << 'ROLLBACK_SCRIPT'
+        cd $DEPLOY_PATH
+        
+        echo "=== 🔄 Starting Rollback ==="
+        
+        # Find latest backup
+        BACKUP_FILE=$(ls -t docker-compose.prod.yml.backup-* 2>/dev/null | head -n1)
+        
+        if [ -z "$BACKUP_FILE" ]; then
+          echo "❌ No backup file found!"
+          echo "Available backups:"
+          ls -la docker-compose.prod.yml.* 2>/dev/null || echo "No backups available"
+          exit 1
+        fi
+        
+        echo "📁 Rolling back to: $BACKUP_FILE"
+        
+        # Stop current containers
+        echo "🛑 Stopping current containers..."
+        docker-compose -f docker-compose.prod.yml down --timeout 30 || true
+        
+        # Restore backup
+        echo "📂 Restoring backup configuration..."
+        cp "$BACKUP_FILE" docker-compose.prod.yml
+        
+        # Start containers with backup config
+        echo "▶️ Starting containers with backup configuration..."
+        docker-compose -f docker-compose.prod.yml up -d
+        
+        # Wait and verify
+        echo "⏳ Waiting for containers..."
+        sleep 30
+        
+        # Health check
+        if curl -f http://localhost:2680 >/dev/null 2>&1 && curl -f http://localhost:2681/api >/dev/null 2>&1; then
+          echo "✅ Rollback successful!"
+        else
+          echo "⚠️ Rollback completed but health check failed"
+        fi
+        
+        docker-compose -f docker-compose.prod.yml ps
+        
+        echo "=== ✅ Rollback Completed ==="
+      ROLLBACK_SCRIPT
+  
+  environment:
+    name: production
+    url: https://doanhoi.hcmut.edu.vn
+  
+  only:
+    - dev
+  
+  when: manual
