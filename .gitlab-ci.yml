@@ -38,21 +38,17 @@ build_push_image:
   script:
     - echo "Logging into Gitlab Container Registry..."
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    
     - echo "🔍 DEBUG: Ta đang ở thư mục gốc:"
     - pwd
     - ls -la
-    
     - echo "🔍 DEBUG: Soi bên trong thư mục backend:"
     - ls -la backend
-
     - echo "Building & Pushing Backend..."
     - docker build --no-cache -f ./backend/Dockerfile.prod -t $BACKEND_IMAGE:latest -t $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA ./backend
     - docker push $BACKEND_IMAGE:latest
     - docker push $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA
-
     - echo "Building & Pushing Frontend..."
-    - docker build -f ./backend/Dockerfile.prod -t $FRONTEND_IMAGE:latest -t $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA ./frontend
+    - docker build --no-cache -f ./frontend/Dockerfile.prod -t $FRONTEND_IMAGE:latest -t $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA ./frontend
     - docker push $FRONTEND_IMAGE:latest
     - docker push $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA
   only:
