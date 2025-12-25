@@ -33,7 +33,7 @@ build_push_image:
   stage: build-push
   script:
     - echo "Logging into Gitlab Container Registry..."
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY_PASSWORD
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
     - echo "Building & Pushing Backend..."
     - docker build -t $BACKEND_IMAGE:latest -t $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA ./backend
@@ -52,7 +52,7 @@ deploy_production:
   stage: deploy
   image: alpine:latest
   before_script:
-    - apk add --np-cache openssh-client curl
+    - apk add --no-cache openssh-client curl
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
     - mkdir -p ~/.ssh
@@ -62,25 +62,25 @@ deploy_production:
     - scp docker-compose.prod.yml $PRODUCTION_USER@$PRODUCTION_SERVER:$DEPLOY_PATH/docker-compose.yml
 
     - |
-      ssh $PRODUCTION_USER@PRODUCTION_USER << EOF
+      ssh $PRODUCTION_USER@PRODUCTION_SERVER << EOF
         cd $DEPLOY_PATH
 
         echo "Logging into Registry..."
-        - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY_PASSWORD
+        - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
         echo "Pulling new images..."
         export CI_REGISTRY_IMAGE=ci_image
         docker-compose pull
 
         echo "Restarting container..."
-        docker-compose up -d -remove-orphan
+        docker-compose up -d -remove-orphans
 
         echo 'Cleaning up old images...'
-        docker image prune -failed
+        docker image prune -f
       EOF
   environment:
-    name:production
-    url:https://doanhoi.hcmut.edu.vn
+    name: production
+    url: https://doanhoi.hcmut.edu.vn
   only:
     - dev
 
