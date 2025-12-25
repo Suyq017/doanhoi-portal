@@ -165,7 +165,7 @@ export class UserBackgroundJobService extends EventEmitter {
     }
 
     job.result = {
-      importedCount: batchData?.length || 0,
+      importedCount: _batchData?.length || 0,
       message: "Background import completed successfully",
     };
   }
@@ -181,7 +181,7 @@ export class UserBackgroundJobService extends EventEmitter {
     }
 
     job.result = {
-      validRows: data?.length || 0,
+      validRows: _data?.length || 0,
       invalidRows: 0,
       message: "Background validation completed successfully",
     };
