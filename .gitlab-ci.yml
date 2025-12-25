@@ -7,6 +7,10 @@ stages:
   - build-push
   - deploy
 
+variables:
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/frontend
+
 # STAGE 1: test backend
 test_backend:
   stage: test
