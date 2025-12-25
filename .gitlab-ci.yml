@@ -36,12 +36,12 @@ build_push_image:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
     - echo "Building & Pushing Backend..."
-    - docker build -t -f ./backend/Dockerfile.prod $BACKEND_IMAGE:latest -t $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA ./backend
+    - docker build -f ./backend/Dockerfile.prod -t $BACKEND_IMAGE:latest -t $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA ./backend
     - docker push $BACKEND_IMAGE:latest
     - docker push $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA
 
     - echo "Building & Pushing Frontend..."
-    - docker build -t -f ./backend/Dockerfile.prod $FRONTEND_IMAGE:latest -t $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA ./frontend
+    - docker build -f ./backend/Dockerfile.prod -t $FRONTEND_IMAGE:latest -t $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA ./frontend
     - docker push $FRONTEND_IMAGE:latest
     - docker push $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA
   only:
