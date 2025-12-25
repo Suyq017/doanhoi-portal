@@ -185,27 +185,27 @@ const OrganizationTreeItem: React.FC<OrganizationTreeItemProps> = ({
         if (!code) return '#';
 
         // Trường hợp 1: Đang ở trang chính, chuyển sang trang detail
-        if (location.pathname === '/organizations') {
-            return `/organizations/${type}/${code}`;
+        if (location.pathname === '/portal/organizations') {
+            return `/portal/organizations/${type}/${code}`;
         }
 
         // Trường hợp 2: Đang ở trang detail, chuyển sang trang subdetail
         if (isInDetailPage && parent) {
-            return `/organizations/${parent.type}/${parent.code}/${type}/${code}`;
+            return `/portal/organizations/${parent.type}/${parent.code}/${type}/${code}`;
         }
 
         // Trường hợp 3: Đang ở trang subdetail, chuyển sang trang khác
         if (isInSubDetailPage && level >= 2) {
             // Lấy thông tin từ URL hiện tại
             const segments = location.pathname.split('/');
-            const currentParentType = segments[2];
-            const currentParentCode = segments[3];
+            const currentParentType = segments[3];
+            const currentParentCode = segments[4];
 
-            return `/organizations/${currentParentType}/${currentParentCode}/${type}/${code}`;
+            return `/portal/organizations/${currentParentType}/${currentParentCode}/${type}/${code}`;
         }
 
         // Mặc định
-        return `/organizations/${type}/${code}`;
+        return `/portal/organizations/${type}/${code}`;
     }; const shouldShowDetailLink = () => {
         // Không hiển thị eye icon cho tổ chức cấp 3 (Chi Đoàn/Chi Hội)
         // Vì cấp 3 không có trang detail riêng, chỉ có trang members

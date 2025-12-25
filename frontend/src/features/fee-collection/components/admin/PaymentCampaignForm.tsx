@@ -157,7 +157,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
           onSave();
         } else {
           // Navigate to detail page to add fee levels
-          navigate(`/admin/payment-campaigns/${newCampaign.id}`);
+          navigate(`/portal/admin/payment-campaigns/${newCampaign.id}`);
         }
       } else if (campaign) {
         // Update campaign
@@ -177,7 +177,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
         if (onSave) {
           onSave();
         } else {
-          navigate(`/admin/payment-campaigns/${campaign.id}`);
+          navigate(`/portal/admin/payment-campaigns/${campaign.id}`);
         }
       }
     } catch (err) {
@@ -193,7 +193,7 @@ const PaymentCampaignForm: React.FC<PaymentCampaignFormProps> = ({
       onCancel();
     } else {
       if (mode === 'edit' && campaign) {
-        navigate(`/admin/payment-campaigns/${campaign.id}`);
+        navigate(`/portal/admin/payment-campaigns/${campaign.id}`);
       } else {
         navigate('/portal/admin/payment-campaigns');
       }

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, InternalServerError
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { TemplateSubmission, SubmissionStatus } from '../entities/template-submission.entity';
@@ -14,6 +15,7 @@ import { ErrorMessages } from '../common/constants/error-messages';
 export class SubmissionsService {
   private s3Client: S3Client | null = null;
   private s3Config: any = null;
+  private presignedUrlCache: Map<string, { url: string; expiresAt: number }> = new Map();
 
   constructor(
     @InjectRepository(TemplateSubmission)
@@ -457,5 +459,85 @@ export class SubmissionsService {
       buffer,
       fileName: submission.outputFileName,
     };
+  }
+
+  /**
+   * Get public URL for Office Online Viewer using presigned URL
+   */
+  async getPublicUrl(id: string, userId: string): Promise<{ url: string; fileName: string }> {
+    const submission = await this.submissionRepository.findOne({
+      where: { id, userId },
+    });
+
+    if (!submission) {
+      throw new NotFoundException(ErrorMessages.SUBMISSION_NOT_FOUND);
+    }
+
+    if (submission.status !== SubmissionStatus.COMPLETED) {
+      throw new BadRequestException(ErrorMessages.SUBMISSION_NOT_COMPLETED);
+    }
+
+    if (!submission.outputFileUrl) {
+      throw new NotFoundException(ErrorMessages.SUBMISSION_OUTPUT_NOT_FOUND);
+    }
+
+    try {
+      if (!this.s3Client || !this.s3Config) {
+        throw new InternalServerErrorException('S3 configuration not available');
+      }
+
+      // Check cache first (cache for 50 minutes)
+      const cacheKey = `${id}-${userId}`;
+      const cached = this.presignedUrlCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        console.log('[SubmissionsService] Using cached presigned URL');
+        return {
+          url: cached.url,
+          fileName: submission.outputFileName || 'document.docx'
+        };
+      }
+
+      console.log('[SubmissionsService] Generating new presigned URL');
+      console.log('[SubmissionsService] S3 Config:', {
+        s3Bucket: this.s3Config.s3Bucket,
+        region: this.s3Config.region,
+        s3Endpoint: this.s3Config.s3Endpoint
+      });
+
+      // Extract key from full S3 URL
+      // URL format: https://s3-hcm5-r1.longvan.net/19429970-documents/submissions/...
+      const urlParts = submission.outputFileUrl.split('/');
+      const bucketIndex = urlParts.findIndex(part => part.includes('longvan.net')) + 1;
+      const key = urlParts.slice(bucketIndex + 1).join('/'); // Skip bucket name, get rest
+      
+      console.log('[SubmissionsService] Extracted key:', key);
+      console.log('[SubmissionsService] Bucket name:', this.s3Config.s3Bucket);
+      
+      // Create presigned URL (valid for 1 hour)
+      const command = new GetObjectCommand({
+        Bucket: this.s3Config.s3Bucket,
+        Key: key,
+      });
+      
+      const presignedUrl = await getSignedUrl(this.s3Client, command, {
+        expiresIn: 3600, // 1 hour
+      });
+      
+      console.log('[SubmissionsService] Generated presigned URL:', presignedUrl);
+      
+      // Cache the URL for 50 minutes (10 min buffer before expiry)
+      this.presignedUrlCache.set(cacheKey, {
+        url: presignedUrl,
+        expiresAt: Date.now() + 50 * 60 * 1000 // 50 minutes
+      });
+      
+      return {
+        url: presignedUrl,
+        fileName: submission.outputFileName || 'document.docx'
+      };
+    } catch (error) {
+      console.error('Error generating presigned URL:', error);
+      throw new InternalServerErrorException('Failed to generate presigned URL');
+    }
   }
 }

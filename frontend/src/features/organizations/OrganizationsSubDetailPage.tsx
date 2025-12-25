@@ -133,8 +133,8 @@ const OrganizationsSubDetailPage: React.FC = () => {
 
     const renderOrganization = useCallback((org: Organization, _level: number = 0, parentId?: string) => {
         const parentParams = {
-            type: window.location.pathname.split('/')[2],
-            code: window.location.pathname.split('/')[3]
+            type: window.location.pathname.split('/')[3],
+            code: window.location.pathname.split('/')[4]
         };
 
         return (

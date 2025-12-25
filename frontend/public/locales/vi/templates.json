@@ -75,8 +75,8 @@
     "day": "Ngày (DD)",
     "month": "Tháng (MM)",
     "year": "Năm (YYYY)",
-    "radio": "Chọn một trong nhiều lựa chọn (cần cấu hình options).\nVí dụ:\nGói dịch vụ: ☒ Thấp ☐ Trung bình ☐ Cao",
-    "checkbox": "Chọn nhiều lựa chọn (cần cấu hình options).\nVí dụ:\nDịch vụ bổ sung: ☒ Gửi email hàng loạt ☒ Thông báo SMS ☐ Hỗ trợ kỹ thuật"
+    "radio": "Chọn một trong nhiều lựa chọn (cần cấu hình options).\nVí dụ:\nGói dịch vụ: Thấp ☐ Trung bình ☒ Cao ☐",
+    "checkbox": "Chọn nhiều lựa chọn (cần cấu hình options).\nVí dụ:\nDịch vụ bổ sung: Gửi email hàng loạt ☒ Thông báo SMS ☒ Hỗ trợ kỹ thuật ☐"
   },
 
   "fieldTypeGroups": {
@@ -106,13 +106,16 @@
     "submit": "Gửi biểu mẫu",
     "saveChanges": "Lưu chỉnh sửa",
     "download": "Tải xuống",
+    "downloadAndView": "Tải xuống và xem",
     "delete": "Xóa",
     "back": "Quay lại",
     "backToList": "Quay lại danh sách",
     "saveConfig": "Lưu cấu hình",
     "addOption": "Thêm tùy chọn",
     "removeOption": "Xóa tùy chọn",
-    "preview": "Xem trước",
+    "preview": "Xem file",
+    "previewDocument": "Xem trước tài liệu",
+    "viewData": "Xem dữ liệu",
     "cancel": "Hủy"
   },
   
@@ -273,8 +276,26 @@
     "timeFormat": "Thời gian phải theo định dạng HH:MM (00:00-23:59)"
   },
   
+  "preview": {
+    "title": "Xem trước biểu mẫu",
+    "documentTitle": "Xem trước tài liệu",
+    "templateInfo": "Thông tin biểu mẫu",
+    "formData": "Dữ liệu đã điền",
+    "noFields": "Không có trường dữ liệu nào",
+    "errorMessage": "Thông báo lỗi",
+    "loadingDocument": "Đang tải tài liệu...",
+    "documentReady": "Tài liệu đã sẵn sàng",
+    "officeViewerNote": "Để xem tài liệu Word với định dạng đầy đủ, vui lòng tải xuống và mở bằng Microsoft Word hoặc ứng dụng tương thích.",
+    "downloadTip": "Click nút bên trên để tải xuống và xem tài liệu",
+    "viewerNote": "Nếu tài liệu không hiển thị, vui lòng tải xuống để xem.",
+    "viewerHint": "Bạn có thể chỉnh sửa biểu mẫu bằng cách nhấn nút 'Sửa', sau đó xem trước lại để kiểm tra trước khi tải xuống.",
+    "officeViewerHint": "Tài liệu sẽ hiển thị giống như khi mở bằng Word Online. Nếu không hiển thị, hãy nhấn nút Tải xuống."
+  },
+  
   "errors": {
     "loadingList": "Lỗi khi tải danh sách biểu mẫu",
+    "loadingSubmission": "Lỗi khi tải thông tin biểu mẫu",
+    "loadingDocument": "Lỗi khi tải tài liệu",
     "unknown": "Đã xảy ra lỗi không xác định",
     "unknownTemplate": "Không rõ",
     "invalidTemplateId": "ID biểu mẫu không hợp lệ",

@@ -438,7 +438,7 @@ const PaymentCampaignList: React.FC<PaymentCampaignListProps> = ({
                       <div className="flex items-center justify-end space-x-2">
                         {canViewCampaign(campaign) && (
                           <Link
-                            to={`/admin/payment-campaigns/${campaign.id}`}
+                            to={`/portal/admin/payment-campaigns/${campaign.id}`}
                             className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                             title={t('listComponent.viewDetail')}
                           >

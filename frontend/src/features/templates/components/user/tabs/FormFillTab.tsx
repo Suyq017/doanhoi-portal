@@ -65,12 +65,12 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
       const value = formData[field.fieldName];
       if (!value) return;
       
-      // Radio: "☐ Thấp ☒ Trung Bình ☐ Cao" → "Trung Bình"
+      // Radio: "Thấp ☐ Trung Bình ☒ Cao ☐" → "Trung Bình"
       if (field.fieldType === 'radio' && typeof value === 'string' && value.includes('☒')) {
         // Try to match against each option's formatted string
         if (field.options) {
           for (const option of field.options) {
-            const pattern = `☒ ${option.label}`;
+            const pattern = `${option.label} ☒`;
             if (value.includes(pattern)) {
               reversedData[field.fieldName] = option.value;
               break;
@@ -79,13 +79,13 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
         }
       }
       
-      // Checkbox: "☒ Option A ☐ Option B ☒ Option C" → ["Option A", "Option C"]
+      // Checkbox: "Option A ☒ Option B ☐ Option C ☒" → ["Option A", "Option C"]
       if (field.fieldType === 'checkbox' && typeof value === 'string' && (value.includes('☒') || value.includes('☐'))) {
         const selectedValues: string[] = [];
         
         if (field.options) {
           for (const option of field.options) {
-            const pattern = `☒ ${option.label}`;
+            const pattern = `${option.label} ☒`;
             if (value.includes(pattern)) {
               selectedValues.push(option.value);
             }
@@ -409,24 +409,24 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
       template.fields.forEach(field => {
         const value = transformedData[field.fieldName];
         
-        // Radio: Transform "Trung Bình" -> "☐ Thấp ☒ Trung Bình ☐ Cao"
+        // Radio: Transform "Trung Bình" -> "Thấp ☐ Trung Bình ☒ Cao ☐"
         if (field.fieldType === 'radio' && value && field.options) {
           transformedData[field.fieldName] = field.options
             .map(opt => {
               const isSelected = opt.value === value;
               const checkbox = isSelected ? '☒' : '☐';
-              return `${checkbox} ${opt.label}`;
+              return `${opt.label} ${checkbox}`;
             })
             .join(' ');
         }
         
-        // Checkbox: Transform ["A", "C"] -> "☒ A ☐ B ☒ C"
+        // Checkbox: Transform ["A", "C"] -> "A ☒ B ☐ C ☒"
         if (field.fieldType === 'checkbox' && Array.isArray(value) && field.options) {
           transformedData[field.fieldName] = field.options
             .map(opt => {
               const isSelected = value.includes(opt.value);
               const checkbox = isSelected ? '☒' : '☐';
-              return `${checkbox} ${opt.label}`;
+              return `${opt.label} ${checkbox}`;
             })
             .join(' ');
         }
