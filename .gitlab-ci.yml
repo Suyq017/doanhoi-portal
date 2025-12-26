@@ -66,7 +66,7 @@ deploy_production:
     - scp docker-compose.prod.yml $PRODUCTION_USER@$PRODUCTION_SERVER:$DEPLOY_PATH/docker-compose.yml
 
     - |
-      ssh $PRODUCTION_USER@PRODUCTION_SERVER << EOF
+      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << EOF
         cd $DEPLOY_PATH
 
         echo "Logging into Registry..."
