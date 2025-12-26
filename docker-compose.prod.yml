@@ -27,7 +27,7 @@ services:
     # build:
     #   context: ./backend
     #   dockerfile: Dockerfile.prod
-    image: ${CI_REGISTRY_IMAGE}/backend:latest
+    image: ${CI_REGISTRY_IMAGE}/backend:${TAG:-latest}
     container_name: doanhoi-backend-prod
     env_file:
       - .env.production
@@ -64,7 +64,7 @@ services:
     # build:
     #   context: ./frontend
     #   dockerfile: Dockerfile.prod
-    image: ${CI_REGISTRY_IMAGE}/frontend:latest
+    image: ${CI_REGISTRY_IMAGE}/frontend:${TAG:-latest}
     container_name: doanhoi-frontend-prod
     environment:
       NODE_ENV: production
