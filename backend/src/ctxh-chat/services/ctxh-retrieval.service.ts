@@ -42,8 +42,8 @@ export class CtxhRetrievalService {
       
       // Step 2: Extract options with defaults
       const {
-        k = this.configService.get('RAG_TOP_K', 5),
-        similarityThreshold = this.configService.get('RAG_SIMILARITY_THRESHOLD', 0.7),
+        k = this.configService.get('RAG_TOP_K'),
+        similarityThreshold = this.configService.get('RAG_SIMILARITY_THRESHOLD'),
         useMMR = false,
         mmrOptions = {},
         filters = {}
@@ -118,10 +118,10 @@ export class CtxhRetrievalService {
         'activity.total_days AS total_days',
         'activity.status AS activity_status',
         'embedding.content_text AS content_text',
-        'embedding.embedding_vector AS embedding_vector',
-        `1 - (embedding.embedding_vector <=> '[${queryEmbedding.join(',')}]') AS similarity_score`
+        'embedding.embedding AS embedding_vector',
+        `1 - (embedding.embedding <=> '[${queryEmbedding.join(',')}]') AS similarity_score`
       ])
-      .where(`1 - (embedding.embedding_vector <=> '[${queryEmbedding.join(',')}]') >= :threshold`, { 
+      .where(`1 - (embedding.embedding <=> '[${queryEmbedding.join(',')}]') >= :threshold`, { 
         threshold 
       })
       .orderBy('similarity_score', 'DESC')

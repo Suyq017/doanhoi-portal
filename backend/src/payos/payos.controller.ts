@@ -36,8 +36,8 @@ export class PayOSController {
         amount: requestBody.amount,
         description: `Thanh toan ma ${orderCode}`,
         orderCode: orderCode,
-        returnUrl: `${YOUR_DOMAIN}/payment-result/${orderCode}`,
-        cancelUrl: `${YOUR_DOMAIN}/payment-result/${orderCode}`,
+        returnUrl: `${YOUR_DOMAIN}/portal/payment-result/${orderCode}`,
+        cancelUrl: `${YOUR_DOMAIN}/portal/payment-result/${orderCode}`,
         campaignId: requestBody.campaignId
       };
 

@@ -12,11 +12,11 @@ export class ChatRequestDto {
 
   @ApiProperty({
     description: 'Optional session ID to continue existing conversation',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: 'test-session-1',
     required: false,
   })
   @IsOptional()
-  @IsUUID()
+  @IsString()
   sessionId?: string;
 
   @ApiProperty({

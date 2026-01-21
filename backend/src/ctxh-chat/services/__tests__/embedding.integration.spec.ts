@@ -150,7 +150,7 @@ describe('EmbeddingService Integration Tests', () => {
       expect(health.details.gemini.available).toBe(true);
       expect(health.details.redis.connected).toBe(true);
       expect(health.details.gemini.dimensions).toBe(768);
-      expect(health.details.gemini.model).toBe('gemini-embedding-001');
+      expect(health.details.gemini.model).toBe('gemini-embedding-004');
     }, 10000);
   });
 

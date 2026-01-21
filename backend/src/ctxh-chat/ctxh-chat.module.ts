@@ -37,11 +37,11 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     ConversationService,
     ResponseFormatterService,
 
-    // Rate Limiting Interceptor (Global)
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: RateLimitInterceptor,
-    },
+    // // Rate Limiting Interceptor (Global)
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: RateLimitInterceptor,
+    // },
 
     // Google Gemini AI Client
     {

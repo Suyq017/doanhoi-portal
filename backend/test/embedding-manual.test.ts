@@ -174,7 +174,7 @@ async function testEmbeddings() {
     console.log('✅ All Tests Completed Successfully!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('Summary:');
-    console.log(`  • Model: gemini-embedding-001`);
+    console.log(`  • Model: gemini-embedding-004`);
     console.log(`  • Dimensions: 768`);
     console.log(`  • Cache: Enabled (Redis)`);
     console.log(`  • Vietnamese Support: ✓`);

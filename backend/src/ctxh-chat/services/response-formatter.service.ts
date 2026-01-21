@@ -86,7 +86,7 @@ export class ResponseFormatterService {
       categoryName: doc.metadata.categoryName,
       similarityScore: Math.round(doc.similarityScore * 100) / 100,
       link: includeLinks 
-        ? `/activities/${doc.metadata.activityId}` 
+        ? `/ctxh/activities/${doc.metadata.activityId}` 
         : undefined,
     }));
   }

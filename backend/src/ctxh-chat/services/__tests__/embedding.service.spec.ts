@@ -68,7 +68,7 @@ describe('EmbeddingService', () => {
       expect(result).toEqual(mockEmbedding);
       expect(result.length).toBe(768);
       expect(mockGeminiAI.models.embedContent).toHaveBeenCalledWith({
-        model: 'gemini-embedding-001',
+        model: 'gemini-embedding-004',
         contents: testText,
         config: { outputDimensionality: 768 },
       });
@@ -130,7 +130,7 @@ describe('EmbeddingService', () => {
       expect(result.results.length).toBe(3);
       expect(result.results[0].embedding.length).toBe(768);
       expect(mockGeminiAI.models.embedContent).toHaveBeenCalledWith({
-        model: 'gemini-embedding-001',
+        model: 'gemini-embedding-004',
         contents: testTexts,
         config: { outputDimensionality: 768 },
       });

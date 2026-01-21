@@ -15,7 +15,7 @@ export class CtxhEmbedding {
   @Column('text', { name: 'content_text' })
   contentText: string;
 
-  @Column('vector', { length: 1536 })
+  @Column('vector', { length: 768 }) // Google Gemini text-embedding-004
   embedding: number[];
 
   @Column('integer', { name: 'chunk_index', default: 0 })

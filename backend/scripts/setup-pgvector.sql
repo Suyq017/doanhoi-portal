@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS ctxh_embeddings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     activity_id UUID NOT NULL REFERENCES ctxh_activity(id) ON DELETE CASCADE,
     content_text TEXT NOT NULL,
-    embedding vector(1536), -- OpenAI text-embedding-3-small dimension
+    embedding vector(768), -- Google Gemini text-embedding-004 dimension
     chunk_index INTEGER DEFAULT 0,
     metadata JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

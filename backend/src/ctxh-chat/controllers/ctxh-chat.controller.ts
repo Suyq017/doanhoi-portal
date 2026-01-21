@@ -192,6 +192,7 @@ export class CtxhChatController {
   // ========== DATA INGESTION ENDPOINTS (PHASE 1) ==========
 
   @Post('ingestion/full')
+  @UseGuards() // Bỏ authentication cho ingestion endpoints
   @ApiOperation({ summary: '[Phase 1] Run full ingestion pipeline for all activities' })
   @ApiResponse({
     status: 200,
@@ -206,6 +207,7 @@ export class CtxhChatController {
   }
 
   @Post('ingestion/incremental')
+  @UseGuards() // Bỏ authentication
   @ApiOperation({ summary: '[Phase 1] Run incremental update for recently modified activities' })
   @ApiResponse({
     status: 200,
@@ -222,6 +224,7 @@ export class CtxhChatController {
   }
 
   @Post('ingestion/activity/:activityId')
+  @UseGuards() // Bỏ authentication
   @ApiOperation({ summary: '[Phase 1] Process a single activity' })
   @ApiResponse({
     status: 200,
@@ -250,6 +253,7 @@ export class CtxhChatController {
   }
 
   @Get('ingestion/stats')
+  @UseGuards() // Bỏ authentication
   @ApiOperation({ summary: '[Phase 1] Get ingestion statistics' })
   @ApiResponse({
     status: 200,
@@ -262,6 +266,7 @@ export class CtxhChatController {
   // ========== HEALTH CHECK ENDPOINTS ==========
 
   @Get('health')
+  @UseGuards() // Bỏ authentication
   @ApiOperation({ summary: '[Phase 1] Health check for all pipeline components' })
   @ApiResponse({
     status: 200,
@@ -272,6 +277,7 @@ export class CtxhChatController {
   }
 
   @Get('health/embeddings')
+  @UseGuards() // Bỏ authentication
   @ApiOperation({ summary: '[Phase 1] Health check for embedding service' })
   @ApiResponse({
     status: 200,
@@ -282,6 +288,7 @@ export class CtxhChatController {
   }
 
   @Get('health/vector-store')
+  @UseGuards() // Bỏ authentication
   @ApiOperation({ summary: '[Phase 1] Health check for vector store' })
   @ApiResponse({
     status: 200,
@@ -294,6 +301,7 @@ export class CtxhChatController {
   // ========== STATS AND MONITORING ==========
 
   @Get('stats/storage')
+  @UseGuards() // Bỏ authentication
   @ApiOperation({ summary: '[Phase 1] Get vector storage statistics' })
   @ApiResponse({
     status: 200,
@@ -304,6 +312,7 @@ export class CtxhChatController {
   }
 
   @Get('stats/cache')
+  @UseGuards() // Bỏ authentication
   @ApiOperation({ summary: '[Phase 1] Get embedding cache statistics' })
   @ApiResponse({
     status: 200,
