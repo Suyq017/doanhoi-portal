@@ -1,7 +1,7 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class AddUserImportFields1728234567890 implements MigrationInterface {
-  name = 'AddUserImportFields1728234567890';
+  name = "AddUserImportFields1728234567890";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Add new columns to users table
@@ -43,8 +43,12 @@ export class AddUserImportFields1728234567890 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remove indexes
-    await queryRunner.query(`DROP INDEX \`IDX_users_faculty_code\` ON \`users\``);
-    await queryRunner.query(`DROP INDEX \`IDX_users_student_code\` ON \`users\``);
+    await queryRunner.query(
+      `DROP INDEX \`IDX_users_faculty_code\` ON \`users\``,
+    );
+    await queryRunner.query(
+      `DROP INDEX \`IDX_users_student_code\` ON \`users\``,
+    );
 
     // Revert enum changes
     await queryRunner.query(`

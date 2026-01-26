@@ -1,17 +1,24 @@
-import { IsNotEmpty, IsUUID, IsInt, IsOptional, IsString, Min } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class GradeParticipantDto {
   @ApiProperty({
-    description: 'ID của participation record',
-    example: 'uuid-string',
+    description: "ID của participation record",
+    example: "uuid-string",
   })
   @IsNotEmpty()
   @IsUUID()
   participation_id: string;
 
   @ApiProperty({
-    description: 'Số ngày CTXH thực tế của sinh viên',
+    description: "Số ngày CTXH thực tế của sinh viên",
     example: 3,
     minimum: 0,
   })
@@ -21,8 +28,8 @@ export class GradeParticipantDto {
   actual_days: number;
 
   @ApiPropertyOptional({
-    description: 'Ghi chú về điểm số',
-    example: 'Tham gia đầy đủ và tích cực',
+    description: "Ghi chú về điểm số",
+    example: "Tham gia đầy đủ và tích cực",
   })
   @IsOptional()
   @IsString()
@@ -31,7 +38,7 @@ export class GradeParticipantDto {
 
 export class GradeParticipantsDto {
   @ApiProperty({
-    description: 'Danh sách chấm điểm',
+    description: "Danh sách chấm điểm",
     type: [GradeParticipantDto],
   })
   @IsNotEmpty()

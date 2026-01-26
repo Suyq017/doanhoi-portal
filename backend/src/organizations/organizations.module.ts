@@ -1,21 +1,21 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { OrganizationsController } from './organizations.controller';
-import { OrganizationsService } from './organizations.service';
-import { OrganizationImportService } from './services/import.service';
-import { OrganizationBatchImportService } from './services/batch-import.service';
-import { OrganizationExcelParserService } from './services/excel-parser.service';
-import { OrganizationImportValidationService } from './services/import-validation.service';
-import { OrganizationImportSessionService } from './services/import-session.service';
-import { Organization } from '../entities/organization.entity';
-import { UserOrganization } from '../entities/user-organization.entity';
-import { User } from '../entities/user.entity';
-import { MetricsModule } from '../metrics/metrics.module';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { OrganizationsController } from "./organizations.controller";
+import { OrganizationsService } from "./organizations.service";
+import { OrganizationImportService } from "./services/import.service";
+import { OrganizationBatchImportService } from "./services/batch-import.service";
+import { OrganizationExcelParserService } from "./services/excel-parser.service";
+import { OrganizationImportValidationService } from "./services/import-validation.service";
+import { OrganizationImportSessionService } from "./services/import-session.service";
+import { Organization } from "../entities/organization.entity";
+import { UserOrganization } from "../entities/user-organization.entity";
+import { User } from "../entities/user.entity";
+import { MetricsModule } from "../metrics/metrics.module";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Organization, UserOrganization, User]),
-    MetricsModule
+    MetricsModule,
   ],
   controllers: [OrganizationsController],
   providers: [
@@ -24,7 +24,7 @@ import { MetricsModule } from '../metrics/metrics.module';
     OrganizationBatchImportService,
     OrganizationExcelParserService,
     OrganizationImportValidationService,
-    OrganizationImportSessionService
+    OrganizationImportSessionService,
   ],
   exports: [
     OrganizationsService,
@@ -32,7 +32,7 @@ import { MetricsModule } from '../metrics/metrics.module';
     OrganizationBatchImportService,
     OrganizationExcelParserService,
     OrganizationImportValidationService,
-    OrganizationImportSessionService
+    OrganizationImportSessionService,
   ],
 })
-export class OrganizationsModule { }
+export class OrganizationsModule {}

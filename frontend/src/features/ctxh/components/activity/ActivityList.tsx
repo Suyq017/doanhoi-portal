@@ -615,7 +615,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                       </td>
                       <td className="w-1/4 px-6 py-4">
                         <div
-                          className="text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5"
+                          className="text-sm text-gray-500 dark:text-gray-400 break-words overflow-hidden leading-5"
                           style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
@@ -624,26 +624,30 @@ const ActivityList: React.FC<ActivityListProps> = ({
                           }}
                           title={activity.location || t('activity.noLocation')}
                         >
-                          {activity.location || t('activity.noLocation')}
+                          {activity.location || <span className="text-gray-400 dark:text-gray-500 italic">{t('activity.noLocation')}</span>}
                         </div>
                       </td>
                       <td className="w-1/4 px-6 py-4">
                         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                           <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
                           <div className="overflow-hidden">
-                            <div className="truncate">{activity.startDate ? formatDate(activity.startDate) : '-'}</div>
-                            {activity.endDate && (
-                              <div className="text-xs truncate">{t('activity.to')} {formatDate(activity.endDate)}</div>
+                            {activity.startDate && activity.endDate ? (
+                              <>
+                                <div className="truncate">{formatDate(activity.startDate)}</div>
+                                <div className="text-xs truncate">{t('activity.to')} {formatDate(activity.endDate)}</div>
+                              </>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-500 italic">{t('activity.noTimePeriod')}</span>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="w-24 px-6 py-4">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(activity.status)}`}
-                        >
-                          {getStatusText(activity.status)}
-                        </span>
+                        <div className="flex justify-center items-center h-full">
+                          <span className={`px-4 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${getStatusColor(activity.status)} text-center`}>
+                            {getStatusText(activity.status)}
+                          </span>
+                        </div>
                       </td>
                       <td className="w-28 px-6 py-4 text-sm font-medium">
                         <div className="flex items-center space-x-2">

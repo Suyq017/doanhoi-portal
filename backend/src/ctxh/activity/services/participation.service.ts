@@ -1,11 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
-import { CtxhParticipation, ParticipationStatus } from '../../../entities/ctxh-participation.entity';
-import { CtxhActivity, ActivityStatus } from '../../../entities/ctxh-activity.entity';
-import { User } from '../../../entities/user.entity';
-import { ParticipationResponseDto } from '../dto/participation-response.dto';
-import { plainToClass } from 'class-transformer';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, IsNull } from "typeorm";
+import {
+  CtxhParticipation,
+  ParticipationStatus,
+} from "../../../entities/ctxh-participation.entity";
+import {
+  CtxhActivity,
+  ActivityStatus,
+} from "../../../entities/ctxh-activity.entity";
+import { User } from "../../../entities/user.entity";
+import { ParticipationResponseDto } from "../dto/participation-response.dto";
+import { plainToClass } from "class-transformer";
 
 @Injectable()
 export class ParticipationService {
@@ -18,53 +28,62 @@ export class ParticipationService {
     private userRepository: Repository<User>,
   ) {}
 
-  async findByActivity(activityId: string): Promise<ParticipationResponseDto[]> {
+  async findByActivity(
+    activityId: string,
+  ): Promise<ParticipationResponseDto[]> {
     const participations = await this.participationRepository
-      .createQueryBuilder('participation')
-      .where('participation.activity_id = :activityId', { activityId })
-      .andWhere('participation.deleted_at IS NULL')
-      .orderBy('participation.created_at', 'DESC')
+      .createQueryBuilder("participation")
+      .where("participation.activity_id = :activityId", { activityId })
+      .andWhere("participation.deleted_at IS NULL")
+      .orderBy("participation.created_at", "DESC")
       .getMany();
 
     // Get unique student codes
-    const studentCodes = [...new Set(participations.map(p => p.student_code))];
-    
+    const studentCodes = [
+      ...new Set(participations.map((p) => p.student_code)),
+    ];
+
     // Create lookup map
     const userMap = new Map();
-    
+
     // Only load user info if there are student codes
     if (studentCodes.length > 0) {
       const users = await this.userRepository
-        .createQueryBuilder('user')
-        .where('user.code IN (:...codes)', { codes: studentCodes })
+        .createQueryBuilder("user")
+        .where("user.code IN (:...codes)", { codes: studentCodes })
         .getMany();
-      
-      users.forEach(user => {
+
+      users.forEach((user) => {
         userMap.set(user.code, user);
       });
     }
 
-    return participations.map(p => {
+    return participations.map((p) => {
       const user = userMap.get(p.student_code);
-      return plainToClass(ParticipationResponseDto, {
-        ...p,
-        student_code: p.student_code,
-        student: {
-          id: user?.id || null,
+      return plainToClass(
+        ParticipationResponseDto,
+        {
+          ...p,
           student_code: p.student_code,
-          full_name: user?.familyName && user?.givenName 
-            ? `${user.familyName} ${user.givenName}`.trim()
-            : null,
-          email: user?.email || null,
-        }
-      }, { excludeExtraneousValues: true });
+          student: {
+            id: user?.id || null,
+            student_code: p.student_code,
+            full_name:
+              user?.familyName && user?.givenName
+                ? `${user.familyName} ${user.givenName}`.trim()
+                : null,
+            email: user?.email || null,
+          },
+        },
+        { excludeExtraneousValues: true },
+      );
     });
   }
 
   async addStudent(
-    activityId: string, 
-    studentCode: string, 
-    createdBy: string
+    activityId: string,
+    studentCode: string,
+    createdBy: string,
   ): Promise<ParticipationResponseDto> {
     // Validate activity exists and is not deleted
     const activity = await this.activityRepository.findOne({
@@ -72,25 +91,27 @@ export class ParticipationService {
     });
 
     if (!activity) {
-      throw new NotFoundException(`Hoạt động với ID ${activityId} không tồn tại`);
+      throw new NotFoundException(
+        `Hoạt động với ID ${activityId} không tồn tại`,
+      );
     }
 
     // Check if activity status is ACTIVE - only allow adding students to ACTIVE activities
     if (activity.status !== ActivityStatus.ACTIVE) {
       throw new BadRequestException(
-        `Chỉ có thể thêm sinh viên vào hoạt động có trạng thái ACTIVE. Trạng thái hiện tại: ${activity.status}`
+        `Chỉ có thể thêm sinh viên vào hoạt động có trạng thái ACTIVE. Trạng thái hiện tại: ${activity.status}`,
       );
     }
 
     // BACKEND VALIDATION: Check if student exists in users table
     const user = await this.userRepository.findOne({
       where: { code: studentCode },
-      select: ['id', 'code', 'familyName', 'givenName', 'email']
+      select: ["id", "code", "familyName", "givenName", "email"],
     });
 
     if (!user) {
       throw new BadRequestException(
-        `Không tìm thấy sinh viên với mã số ${studentCode} trong hệ thống`
+        `Không tìm thấy sinh viên với mã số ${studentCode} trong hệ thống`,
       );
     }
 
@@ -105,7 +126,7 @@ export class ParticipationService {
 
     if (existingParticipation) {
       throw new BadRequestException(
-        `Sinh viên ${studentCode} đã tham gia hoạt động này`
+        `Sinh viên ${studentCode} đã tham gia hoạt động này`,
       );
     }
 
@@ -118,24 +139,29 @@ export class ParticipationService {
       created_by: createdBy,
     });
 
-    const savedParticipation = await this.participationRepository.save(participation);
+    const savedParticipation =
+      await this.participationRepository.save(participation);
 
-    return plainToClass(ParticipationResponseDto, {
-      ...savedParticipation,
-      student_code: studentCode,
-      student: {
-        id: user.id,
+    return plainToClass(
+      ParticipationResponseDto,
+      {
+        ...savedParticipation,
         student_code: studentCode,
-        full_name: `${user.familyName} ${user.givenName}`.trim(),
-        email: user.email,
-      }
-    }, { excludeExtraneousValues: true });
+        student: {
+          id: user.id,
+          student_code: studentCode,
+          full_name: `${user.familyName} ${user.givenName}`.trim(),
+          email: user.email,
+        },
+      },
+      { excludeExtraneousValues: true },
+    );
   }
 
   async addMultipleStudents(
     activityId: string,
     studentCodes: string[],
-    createdBy: string
+    createdBy: string,
   ): Promise<{
     successful: ParticipationResponseDto[];
     failed: { studentCode: string; error: string }[];
@@ -146,12 +172,14 @@ export class ParticipationService {
     });
 
     if (!activity) {
-      throw new NotFoundException(`Hoạt động với ID ${activityId} không tồn tại`);
+      throw new NotFoundException(
+        `Hoạt động với ID ${activityId} không tồn tại`,
+      );
     }
 
     if (activity.status !== ActivityStatus.ACTIVE) {
       throw new BadRequestException(
-        `Chỉ có thể thêm sinh viên vào hoạt động có trạng thái ACTIVE. Trạng thái hiện tại: ${activity.status}`
+        `Chỉ có thể thêm sinh viên vào hoạt động có trạng thái ACTIVE. Trạng thái hiện tại: ${activity.status}`,
       );
     }
 
@@ -164,11 +192,11 @@ export class ParticipationService {
         activity_id: activityId,
         deleted_at: IsNull(),
       },
-      select: ['student_code'],
+      select: ["student_code"],
     });
 
     const existingStudentCodes = new Set(
-      existingParticipations.map(p => p.student_code).filter(Boolean)
+      existingParticipations.map((p) => p.student_code).filter(Boolean),
     );
 
     for (const studentCode of studentCodes) {
@@ -185,7 +213,7 @@ export class ParticipationService {
         // BACKEND VALIDATION: Check if student exists in users table
         const user = await this.userRepository.findOne({
           where: { code: studentCode },
-          select: ['id', 'code', 'familyName', 'givenName', 'email']
+          select: ["id", "code", "familyName", "givenName", "email"],
         });
 
         if (!user) {
@@ -205,24 +233,28 @@ export class ParticipationService {
           created_by: createdBy,
         });
 
-        const savedParticipation = await this.participationRepository.save(participation);
+        const savedParticipation =
+          await this.participationRepository.save(participation);
 
-        const participationResponse = plainToClass(ParticipationResponseDto, {
-          ...savedParticipation,
-          student_code: studentCode,
-          student: {
-            id: user.id,
+        const participationResponse = plainToClass(
+          ParticipationResponseDto,
+          {
+            ...savedParticipation,
             student_code: studentCode,
-            full_name: `${user.familyName} ${user.givenName}`.trim(),
-            email: user.email,
-          }
-        }, { excludeExtraneousValues: true });
+            student: {
+              id: user.id,
+              student_code: studentCode,
+              full_name: `${user.familyName} ${user.givenName}`.trim(),
+              email: user.email,
+            },
+          },
+          { excludeExtraneousValues: true },
+        );
 
         successful.push(participationResponse);
-        
+
         // Add to existing set to prevent duplicates within the same batch
         existingStudentCodes.add(studentCode);
-
       } catch (error) {
         failed.push({
           studentCode,
@@ -238,14 +270,16 @@ export class ParticipationService {
     participationId: string,
     actualDays: number,
     note: string,
-    gradedBy: string
+    gradedBy: string,
   ): Promise<ParticipationResponseDto> {
     const participation = await this.participationRepository.findOne({
       where: { id: participationId, deleted_at: IsNull() },
     });
 
     if (!participation) {
-      throw new NotFoundException(`Participation với ID ${participationId} không tồn tại`);
+      throw new NotFoundException(
+        `Participation với ID ${participationId} không tồn tại`,
+      );
     }
 
     // Store old actual_days to calculate the difference
@@ -263,7 +297,10 @@ export class ParticipationService {
 
     // Update user's ctxh_days
     if (participation.student_code) {
-      await this.updateUserCtxhDays(participation.student_code, actualDays - oldActualDays);
+      await this.updateUserCtxhDays(
+        participation.student_code,
+        actualDays - oldActualDays,
+      );
     }
 
     // Fetch updated participation
@@ -271,33 +308,42 @@ export class ParticipationService {
       where: { id: participationId },
     });
 
-    return plainToClass(ParticipationResponseDto, {
-      ...updatedParticipation,
-      student_code: updatedParticipation.student_code, // Map student_code to root level
-      student: {
-        id: updatedParticipation.student_id,
-        student_code: updatedParticipation.student_code,
-        full_name: null, // No user data available
-        email: null, // No user data available
-      }
-    }, { excludeExtraneousValues: true });
+    return plainToClass(
+      ParticipationResponseDto,
+      {
+        ...updatedParticipation,
+        student_code: updatedParticipation.student_code, // Map student_code to root level
+        student: {
+          id: updatedParticipation.student_id,
+          student_code: updatedParticipation.student_code,
+          full_name: null, // No user data available
+          email: null, // No user data available
+        },
+      },
+      { excludeExtraneousValues: true },
+    );
   }
 
   async removeParticipant(
     participationId: string,
-    deletedBy: string
+    deletedBy: string,
   ): Promise<void> {
     const participation = await this.participationRepository.findOne({
       where: { id: participationId, deleted_at: IsNull() },
     });
 
     if (!participation) {
-      throw new NotFoundException(`Participation với ID ${participationId} không tồn tại`);
+      throw new NotFoundException(
+        `Participation với ID ${participationId} không tồn tại`,
+      );
     }
 
     // Update user's ctxh_days (subtract the graded days)
     if (participation.student_code && participation.actual_days) {
-      await this.updateUserCtxhDays(participation.student_code, -participation.actual_days);
+      await this.updateUserCtxhDays(
+        participation.student_code,
+        -participation.actual_days,
+      );
     }
 
     // Soft delete
@@ -312,7 +358,10 @@ export class ParticipationService {
    * @param studentCode - Student code to update
    * @param daysDelta - Positive number to add, negative to subtract
    */
-  private async updateUserCtxhDays(studentCode: string, daysDelta: number): Promise<void> {
+  private async updateUserCtxhDays(
+    studentCode: string,
+    daysDelta: number,
+  ): Promise<void> {
     if (daysDelta === 0) return; // No change needed
 
     // Use raw query to safely get current ctxh_days and handle NaN at DB level
@@ -324,33 +373,39 @@ export class ParticipationService {
         END as ctxh_days
        FROM users 
        WHERE code = $1`,
-      [studentCode]
+      [studentCode],
     );
 
     if (!result || result.length === 0) {
-      console.warn(`User with code ${studentCode} not found when updating ctxh_days`);
+      console.warn(
+        `User with code ${studentCode} not found when updating ctxh_days`,
+      );
       return;
     }
 
     const user = result[0];
     let currentDays = parseFloat(user.ctxh_days) || 0;
-    
+
     // Double-check for NaN after parsing
     if (isNaN(currentDays)) {
-      console.warn(`User ${studentCode} has NaN ctxh_days after parsing, resetting to 0`);
+      console.warn(
+        `User ${studentCode} has NaN ctxh_days after parsing, resetting to 0`,
+      );
       currentDays = 0;
     }
-    
+
     const newDays = Math.max(0, currentDays + daysDelta); // Ensure non-negative
 
-    console.log(`Updating ctxh_days for ${studentCode}: ${currentDays} + ${daysDelta} = ${newDays}`);
+    console.log(
+      `Updating ctxh_days for ${studentCode}: ${currentDays} + ${daysDelta} = ${newDays}`,
+    );
 
     // Update with the new value
     await this.userRepository.query(
       `UPDATE users 
        SET ctxh_days = $1 
        WHERE id = $2`,
-      [newDays, user.id]
+      [newDays, user.id],
     );
   }
 
@@ -361,21 +416,25 @@ export class ParticipationService {
   private async recalculateUserCtxhDays(studentCode: string): Promise<void> {
     const user = await this.userRepository.findOne({
       where: { code: studentCode },
-      select: ['id', 'code']
+      select: ["id", "code"],
     });
 
     if (!user) {
-      console.warn(`User with code ${studentCode} not found when recalculating ctxh_days`);
+      console.warn(
+        `User with code ${studentCode} not found when recalculating ctxh_days`,
+      );
       return;
     }
 
     // Sum all actual_days from non-deleted participations
     const result = await this.participationRepository
-      .createQueryBuilder('participation')
-      .select('COALESCE(SUM(participation.actual_days), 0)', 'total')
-      .where('participation.student_code = :studentCode', { studentCode })
-      .andWhere('participation.deleted_at IS NULL')
-      .andWhere('participation.status = :status', { status: ParticipationStatus.COMPLETED })
+      .createQueryBuilder("participation")
+      .select("COALESCE(SUM(participation.actual_days), 0)", "total")
+      .where("participation.student_code = :studentCode", { studentCode })
+      .andWhere("participation.deleted_at IS NULL")
+      .andWhere("participation.status = :status", {
+        status: ParticipationStatus.COMPLETED,
+      })
       .getRawOne();
 
     const totalDays = parseFloat(result.total) || 0;
@@ -387,14 +446,14 @@ export class ParticipationService {
 
   async bulkGradeFromExcel(
     activityId: string,
-    gradingData: { studentCode: string; actualDays: number; note: string; }[],
-    gradedBy: string
+    gradingData: { studentCode: string; actualDays: number; note: string }[],
+    gradedBy: string,
   ): Promise<{
-    successful: { studentCode: string; message: string; }[];
-    failed: { studentCode: string; error: string; }[];
+    successful: { studentCode: string; message: string }[];
+    failed: { studentCode: string; error: string }[];
   }> {
-    const successful: { studentCode: string; message: string; }[] = [];
-    const failed: { studentCode: string; error: string; }[] = [];
+    const successful: { studentCode: string; message: string }[] = [];
+    const failed: { studentCode: string; error: string }[] = [];
 
     // Validate activity exists
     const activity = await this.activityRepository.findOne({
@@ -402,7 +461,9 @@ export class ParticipationService {
     });
 
     if (!activity) {
-      throw new NotFoundException(`Hoạt động với ID ${activityId} không tồn tại`);
+      throw new NotFoundException(
+        `Hoạt động với ID ${activityId} không tồn tại`,
+      );
     }
 
     // Process each grading record
@@ -439,17 +500,19 @@ export class ParticipationService {
         });
 
         // Update user's ctxh_days
-        await this.updateUserCtxhDays(data.studentCode, data.actualDays - oldActualDays);
+        await this.updateUserCtxhDays(
+          data.studentCode,
+          data.actualDays - oldActualDays,
+        );
 
         successful.push({
           studentCode: data.studentCode,
           message: `Đã chấm ${data.actualDays} ngày CTXH`,
         });
-
       } catch (error) {
         failed.push({
           studentCode: data.studentCode,
-          error: error.message || 'Lỗi không xác định',
+          error: error.message || "Lỗi không xác định",
         });
       }
     }

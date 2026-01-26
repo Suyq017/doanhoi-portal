@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Download, FileText, AlertCircle, Trash2, Clock, CheckCircle, XCircle, Loader, Edit, Search } from 'lucide-react';
+import { Download, FileText, AlertCircle, Trash2, Clock, CheckCircle, XCircle, Loader, Edit, Search, Eye } from 'lucide-react';
 import {
   getMySubmissions,
   downloadSubmissionFile,
@@ -10,21 +10,31 @@ import {
 } from '@/shared/services/template.service';
 import type { TemplateSubmission, SubmissionStatus } from '@/shared/types/template.types';
 import { useToast } from '@/shared/hooks/useToast';
-import { Toast, ConfirmDialog, Pagination } from '@/shared/components';
+import { ConfirmDialog, Pagination } from '@/shared/components';
+import SubmissionPreviewModal from '../SubmissionPreviewModal';
+import DocumentPreviewModal from '../DocumentPreviewModal';
 
 interface MySubmissionsTabProps {
   onEdit?: (submission: TemplateSubmission) => void;
+  showSuccess?: (message: string) => void;
+  showError?: (message: string) => void;
 }
 
-const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit }) => {
+const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit, showSuccess: propsShowSuccess, showError: propsShowError }) => {
   const { t } = useTranslation(['templates', 'common']);
   const queryClient = useQueryClient();
-  const { toasts, confirmDialog, showSuccess, showError, hideToast, showConfirm } = useToast();
+  const { confirmDialog, showConfirm } = useToast();
+  
+  // Use toast handlers from props or fallback to no-op
+  const showSuccess = propsShowSuccess || (() => {});
+  const showError = propsShowError || (() => {});
   
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [previewSubmissionId, setPreviewSubmissionId] = useState<string | null>(null);
+  const [documentPreview, setDocumentPreview] = useState<{ id: string; fileName: string } | null>(null);
 
   // Debounce search input
   useEffect(() => {
@@ -84,8 +94,13 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit }) => {
   const deleteMutation = useMutation({
     mutationFn: deleteSubmission,
     onSuccess: () => {
+      // Wait for ConfirmDialog backdrop to fully disappear (500ms for transition)
+      setTimeout(() => {
+        showSuccess(t('templates:messages.deleteSuccess'));
+      }, 500);
+      
+      // Invalidate queries immediately - React Query will handle batching
       queryClient.invalidateQueries({ queryKey: ['mySubmissions'] });
-      showSuccess(t('templates:messages.deleteSuccess'));
     },
     onError: (error: any) => {
       showError(error?.response?.data?.message || t('templates:messages.deleteError'));
@@ -103,6 +118,19 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit }) => {
     );
     if (confirmed) {
       deleteMutation.mutate(submissionId);
+    }
+  };
+
+  const handlePreview = (submission: TemplateSubmission) => {
+    if (submission.status === 'completed') {
+      // Nếu đã hoàn thành, hiển thị modal xem trước document
+      setDocumentPreview({
+        id: submission.id,
+        fileName: submission.outputFileName || 'document.docx'
+      });
+    } else {
+      // Nếu chưa hoàn thành, hiển thị modal xem dữ liệu
+      setPreviewSubmissionId(submission.id);
     }
   };
 
@@ -184,6 +212,21 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit }) => {
 
   return (
     <div className="space-y-6">
+      {/* Document Preview Modal */}
+      <DocumentPreviewModal
+        isOpen={documentPreview !== null}
+        submissionId={documentPreview?.id || null}
+        fileName={documentPreview?.fileName}
+        onClose={() => setDocumentPreview(null)}
+      />
+
+      {/* Data Preview Modal */}
+      <SubmissionPreviewModal
+        isOpen={previewSubmissionId !== null}
+        submissionId={previewSubmissionId}
+        onClose={() => setPreviewSubmissionId(null)}
+      />
+
       {/* Confirm Dialog */}
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
@@ -195,18 +238,6 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit }) => {
         onConfirm={confirmDialog.onConfirm || (() => {})}
         onCancel={confirmDialog.onCancel || (() => {})}
       />
-
-      {/* Toasts - Fixed position at top-right */}
-      <div className="fixed top-4 right-4 z-[99999] space-y-2">
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            type={toast.type}
-            message={toast.message}
-            onClose={() => hideToast(toast.id)}
-          />
-        ))}
-      </div>
 
       {/* Search Filter */}
       <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
@@ -298,11 +329,20 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit }) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end space-x-2">
+                    {/* Preview button - always show */}
+                    <button
+                      onClick={() => handlePreview(submission)}
+                      disabled={submission.status === 'completed' ? false : false}
+                      className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 hover:bg-green-50 dark:hover:bg-green-900/20 rounded disabled:opacity-50"
+                      title={submission.status === 'completed' ? t('templates:actions.previewDocument') : t('templates:actions.viewData')}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
                     {submission.status === 'completed' && (
                       <button
                         onClick={() => handleDownload(submission.id)}
                         disabled={downloadMutation.isPending}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 disabled:opacity-50"
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded disabled:opacity-50"
                         title={t('templates:actions.download')}
                       >
                         <Download className="w-4 h-4" />
@@ -311,7 +351,7 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit }) => {
                     {submission.status === 'completed' && (
                       <button
                         onClick={() => onEdit?.(submission)}
-                        className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 p-1"
+                        className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded"
                         title={t('common:actions.edit')}
                       >
                         <Edit className="w-4 h-4" />
@@ -320,7 +360,7 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit }) => {
                     <button
                       onClick={() => handleDelete(submission.id, submission.template?.name || t('templates:title'))}
                       disabled={deleteMutation.isPending}
-                      className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400 p-1 disabled:opacity-50"
+                      className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded disabled:opacity-50"
                       title={t('templates:actions.delete')}
                     >
                       <Trash2 className="w-4 h-4" />

@@ -190,22 +190,22 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                 <>
                   {/* Desktop Table */}
                   <div className="hidden lg:block overflow-x-auto max-w-full">
-                    <table className="w-full table-fixed">
+                    <table className="w-full">
                       <thead className="bg-gray-50 dark:bg-gray-900">
                         <tr>
-                          <th className="w-1/3 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 align-top" style={{ width: '30%' }}>
                             {t('activity.name')}
                           </th>
-                          <th className="w-24 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 align-top" style={{ width: '15%' }}>
                             {t('activity.status')}
                           </th>
-                          <th className="w-32 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 align-top" style={{ width: '18%' }}>
                             {t('activity.time')}
                           </th>
-                          <th className="w-32 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 align-top" style={{ width: '18%' }}>
                             {t('activity.location')}
                           </th>
-                          <th className="w-32 px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 align-top" style={{ width: '19%' }}>
                             {t('activity.unit')}
                           </th>
                         </tr>
@@ -215,7 +215,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                           const statusInfo = getStatusDisplay(activity.status);
                           return (
                             <tr key={activity.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                              <td className="w-1/3 px-6 py-4">
+                              <td className="px-6 py-4 align-top text-left" style={{ width: '30%' }}>
                                 <div className="overflow-hidden">
                                   <div 
                                     className="font-medium text-gray-900 dark:text-white break-words leading-5"
@@ -247,18 +247,24 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                                   )}
                                 </div>
                               </td>
-                              <td className="w-24 px-6 py-4">
+                              <td className="px-6 py-4 align-top text-left" style={{ width: '15%' }}>
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusInfo.class}`}>
                                   {statusInfo.text}
                                 </span>
                               </td>
-                              <td className="w-32 px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                              <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 align-top text-left" style={{ width: '18%' }}>
                                 <div className="break-words overflow-hidden">
-                                  <div className="truncate">{formatDate(activity.startDate)}</div>
-                                  <div className="truncate">- {formatDate(activity.endDate)}</div>
+                                  {activity.startDate && activity.endDate ? (
+                                    <>
+                                      <div className="truncate">{formatDate(activity.startDate)}</div>
+                                      <div className="truncate">- {formatDate(activity.endDate)}</div>
+                                    </>
+                                  ) : (
+                                    <span className="text-gray-400 dark:text-gray-500 italic">{t('activity.noTimePeriod')}</span>
+                                  )}
                                 </div>
                               </td>
-                              <td className="w-32 px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                              <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 align-top text-left" style={{ width: '18%' }}>
                                 <div 
                                   className="break-words overflow-hidden leading-5"
                                   style={{
@@ -267,12 +273,12 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                                     WebkitBoxOrient: 'vertical',
                                     overflow: 'hidden'
                                   }}
-                                  title={activity.location || '-'}
+                                  title={activity.location || t('activity.noLocation')}
                                 >
-                                  {activity.location || '-'}
+                                  {activity.location || <span className="text-gray-400 dark:text-gray-500 italic">{t('activity.noLocation')}</span>}
                                 </div>
                               </td>
-                              <td className="w-32 px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                              <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 align-top text-left" style={{ width: '19%' }}>
                                 <div 
                                   className="break-words overflow-hidden leading-5"
                                   style={{
@@ -295,70 +301,78 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
 
                   {/* Mobile Cards */}
                   <div className="lg:hidden">
-                    <div className="space-y-3 p-4">
+                    <div className="divide-y divide-gray-200 dark:divide-gray-600">
                       {activities.map((activity: CtxhActivity) => {
                         const statusInfo = getStatusDisplay(activity.status);
                         return (
-                          <div key={activity.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
-                            {/* Activity Name */}
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white text-base break-words">
-                                {activity.name}
-                              </div>
-                              {activity.description && (
-                                <div 
-                                  className="mt-1 text-sm text-gray-500 dark:text-gray-400 break-words overflow-hidden"
-                                  style={{
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    lineHeight: '1.4',
-                                    maxHeight: '2.8em'
-                                  }}
-                                  title={activity.description}
-                                >
-                                  {activity.description}
+                          <div key={activity.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                            {/* Activity Name & Status */}
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-gray-900 dark:text-white text-base break-words leading-tight">
+                                  {activity.name}
                                 </div>
-                              )}
-                            </div>
-                            
-                            {/* Status */}
-                            <div className="flex items-center justify-between">
-                              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
-                                {t('activity.status')}
+                                {activity.description && (
+                                  <div 
+                                    className="mt-1.5 text-sm text-gray-600 dark:text-gray-400 break-words"
+                                    style={{
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 2,
+                                      WebkitBoxOrient: 'vertical',
+                                      overflow: 'hidden',
+                                      lineHeight: '1.4'
+                                    }}
+                                    title={activity.description}
+                                  >
+                                    {activity.description}
+                                  </div>
+                                )}
                               </div>
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusInfo.class}`}>
+                              <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${statusInfo.class}`}>
                                 {statusInfo.text}
                               </span>
                             </div>
 
-                            {/* Time */}
-                            <div className="flex items-center justify-between">
-                              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
-                                {t('activity.time')}
-                              </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400 text-right">
-                                {formatDate(activity.startDate)} - {formatDate(activity.endDate)}
-                              </div>
-                            </div>
+                            {/* Divider */}
+                            <div className="border-t border-gray-200 dark:border-gray-600 my-3"></div>
 
-                            {/* Location */}
-                            <div className="flex items-center justify-between">
-                              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
-                                {t('activity.location')}
+                            {/* Info Grid */}
+                            <div className="space-y-2.5">
+                              {/* Time */}
+                              <div className="flex items-start gap-2">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider min-w-[80px] pt-0.5">
+                                  {t('activity.time')}
+                                </div>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 flex-1">
+                                  {activity.startDate && activity.endDate ? (
+                                    <>
+                                      <div>{formatDate(activity.startDate)}</div>
+                                      <div className="text-gray-500 dark:text-gray-400">đến {formatDate(activity.endDate)}</div>
+                                    </>
+                                  ) : (
+                                    <span className="text-gray-400 dark:text-gray-500 italic">{t('activity.noTimePeriod')}</span>
+                                  )}
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400 text-right break-words min-w-0 flex-1 ml-2">
-                                {activity.location || '-'}
-                              </div>
-                            </div>
 
-                            {/* Unit */}
-                            <div className="flex items-center justify-between">
-                              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
-                                {t('activity.unit')}
+                              {/* Location */}
+                              <div className="flex items-start gap-2">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider min-w-[80px] pt-0.5">
+                                  {t('activity.location')}
+                                </div>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 flex-1 break-words">
+                                  {activity.location || <span className="text-gray-400 dark:text-gray-500 italic">{t('activity.noLocation')}</span>}
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400 text-right break-words min-w-0 flex-1 ml-2">
-                                {activity.organization?.name || 'Chưa có thông tin tổ chức'}
+
+                              {/* Unit */}
+                              <div className="flex items-start gap-2">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider min-w-[80px] pt-0.5">
+                                  {t('activity.unit')}
+                                </div>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 flex-1 break-words">
+                                  {activity.organization?.name || 'Chưa có thông tin tổ chức'}
+                                </div>
                               </div>
                             </div>
                           </div>

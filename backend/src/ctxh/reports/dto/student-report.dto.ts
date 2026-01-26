@@ -1,5 +1,5 @@
-import { Expose, Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { Expose, Type } from "class-transformer";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class ActivityReportItemDto {
   @ApiProperty()
@@ -48,15 +48,18 @@ export class StudentReportDto {
   @Expose()
   student_email: string;
 
-  @ApiProperty({ description: 'Tổng số ngày CTXH (hệ thống mới + cũ)' })
+  @ApiProperty({ description: "Tổng số ngày CTXH (hệ thống mới + cũ)" })
   @Expose()
   total_days_completed: number;
 
-  @ApiProperty({ description: 'Số ngày CTXH từ hoạt động đã hoàn thành (hệ thống mới)', required: false })
+  @ApiProperty({
+    description: "Số ngày CTXH từ hoạt động đã hoàn thành (hệ thống mới)",
+    required: false,
+  })
   @Expose()
   ctxh_days_new_system?: number;
 
-  @ApiProperty({ description: 'Số ngày CTXH từ hệ thống cũ', required: false })
+  @ApiProperty({ description: "Số ngày CTXH từ hệ thống cũ", required: false })
   @Expose()
   ctxh_days_old_system?: number;
 

@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { OrganizationMemberImportData } from './excel-parser.service';
-import { OrganizationValidationResult, OrganizationMemberImportDataWithValidation } from './import-validation.service';
+import { Injectable } from "@nestjs/common";
+import { OrganizationMemberImportData } from "./excel-parser.service";
+import {
+  OrganizationValidationResult,
+  OrganizationMemberImportDataWithValidation,
+} from "./import-validation.service";
 
 export interface OrganizationImportSession {
   id: string;
@@ -9,7 +12,7 @@ export interface OrganizationImportSession {
   level: number;
   uploadedAt: Date;
   expiresAt: Date;
-  status: 'uploaded' | 'validated' | 'imported' | 'failed';
+  status: "uploaded" | "validated" | "imported" | "failed";
   data?: OrganizationMemberImportData[];
   validationResult?: OrganizationValidationResult;
   importResult?: OrganizationImportResult;
@@ -36,7 +39,12 @@ export class OrganizationImportSessionService {
   private sessions = new Map<string, OrganizationImportSession>();
   private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
-  createSession(fileName: string, organizationId: string | undefined, level: number, data: OrganizationMemberImportData[]): OrganizationImportSession {
+  createSession(
+    fileName: string,
+    organizationId: string | undefined,
+    level: number,
+    data: OrganizationMemberImportData[],
+  ): OrganizationImportSession {
     const sessionId = this.generateSessionId();
     const now = new Date();
 
@@ -47,15 +55,15 @@ export class OrganizationImportSessionService {
       level,
       uploadedAt: now,
       expiresAt: new Date(now.getTime() + this.SESSION_TIMEOUT),
-      status: 'uploaded',
+      status: "uploaded",
       data,
       metadata: {
         totalRows: data.length,
         validRows: 0,
         invalidRows: 0,
         errorCount: 0,
-        warningCount: 0
-      }
+        warningCount: 0,
+      },
     };
 
     this.sessions.set(sessionId, session);
@@ -69,34 +77,46 @@ export class OrganizationImportSessionService {
     return this.sessions.get(sessionId);
   }
 
-  updateSessionValidation(sessionId: string, validationResult: OrganizationValidationResult): void {
+  updateSessionValidation(
+    sessionId: string,
+    validationResult: OrganizationValidationResult,
+  ): void {
     const session = this.sessions.get(sessionId);
     if (!session) {
       return;
     }
 
     session.validationResult = validationResult;
-    session.status = 'validated';
-    session.metadata.validRows = validationResult.data.filter(item => item._errors.length === 0).length;
-    session.metadata.invalidRows = validationResult.data.filter(item => item._errors.length > 0).length;
+    session.status = "validated";
+    session.metadata.validRows = validationResult.data.filter(
+      (item) => item._errors.length === 0,
+    ).length;
+    session.metadata.invalidRows = validationResult.data.filter(
+      (item) => item._errors.length > 0,
+    ).length;
     session.metadata.errorCount = validationResult.errors.length;
     session.metadata.warningCount = validationResult.warnings.length;
 
     this.sessions.set(sessionId, session);
   }
 
-  updateSessionImport(sessionId: string, importResult: OrganizationImportResult): void {
+  updateSessionImport(
+    sessionId: string,
+    importResult: OrganizationImportResult,
+  ): void {
     const session = this.sessions.get(sessionId);
     if (!session) {
       return;
     }
 
     session.importResult = importResult;
-    session.status = importResult.success ? 'imported' : 'failed';
+    session.status = importResult.success ? "imported" : "failed";
     this.sessions.set(sessionId, session);
   }
 
-  getValidatedData(sessionId: string): OrganizationMemberImportDataWithValidation[] | undefined {
+  getValidatedData(
+    sessionId: string,
+  ): OrganizationMemberImportDataWithValidation[] | undefined {
     const session = this.sessions.get(sessionId);
     return session?.validationResult?.data;
   }

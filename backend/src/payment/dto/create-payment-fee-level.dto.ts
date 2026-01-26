@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, IsOptional, IsNumber, IsBoolean, IsUUID } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsUUID,
+} from "class-validator";
 
 export class CreatePaymentFeeLevelDto {
   @IsNotEmpty()

@@ -17,7 +17,7 @@ const FormsPage: React.FC = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [editingSubmission, setEditingSubmission] = useState<TemplateSubmission | null>(null);
   const [returnTab, setReturnTab] = useState<string>('templates'); // Tab để quay về
-  const { toasts, showSuccess, hideToast } = useToast();
+  const { toasts, showSuccess, showError, hideToast } = useToast();
 
   // Get active tab from URL
   const activeTab = searchParams.get('tab') || 'templates';
@@ -146,7 +146,13 @@ const FormsPage: React.FC = () => {
             editingSubmission={editingSubmission}
           />
         )}
-        {activeTab === 'submissions' && <MySubmissionsTab onEdit={handleEditSubmission} />}
+        {activeTab === 'submissions' && (
+          <MySubmissionsTab 
+            onEdit={handleEditSubmission} 
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
       </div>
     </div>
   );

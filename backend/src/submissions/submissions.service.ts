@@ -1,19 +1,35 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import Docxtemplater from 'docxtemplater';
-import PizZip from 'pizzip';
-import { TemplateSubmission, SubmissionStatus } from '../entities/template-submission.entity';
-import { Template } from '../entities/template.entity';
-import { AwsS3ConfigService } from '../aws-config/aws-s3-config.service';
-import { CreateSubmissionDto, UpdateSubmissionDto } from './dto';
-import { ErrorMessages } from '../common/constants/error-messages';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import Docxtemplater from "docxtemplater";
+import PizZip from "pizzip";
+import {
+  TemplateSubmission,
+  SubmissionStatus,
+} from "../entities/template-submission.entity";
+import { Template } from "../entities/template.entity";
+import { AwsS3ConfigService } from "../aws-config/aws-s3-config.service";
+import { CreateSubmissionDto, UpdateSubmissionDto } from "./dto";
+import { ErrorMessages } from "../common/constants/error-messages";
 
 @Injectable()
 export class SubmissionsService {
   private s3Client: S3Client | null = null;
   private s3Config: any = null;
+  private presignedUrlCache: Map<string, { url: string; expiresAt: number }> =
+    new Map();
 
   constructor(
     @InjectRepository(TemplateSubmission)
@@ -44,17 +60,20 @@ export class SubmissionsService {
         });
       }
     } catch (error) {
-      console.error('Failed to initialize S3 client:', error);
+      console.error("Failed to initialize S3 client:", error);
     }
   }
 
   /**
    * Create new submission (draft)
    */
-  async create(dto: CreateSubmissionDto, userId: string): Promise<TemplateSubmission> {
+  async create(
+    dto: CreateSubmissionDto,
+    userId: string,
+  ): Promise<TemplateSubmission> {
     const template = await this.templateRepository.findOne({
       where: { id: dto.templateId },
-      relations: ['fields'],
+      relations: ["fields"],
     });
 
     if (!template) {
@@ -74,7 +93,11 @@ export class SubmissionsService {
   /**
    * Update submission (save draft)
    */
-  async update(id: string, dto: UpdateSubmissionDto, userId: string): Promise<TemplateSubmission> {
+  async update(
+    id: string,
+    dto: UpdateSubmissionDto,
+    userId: string,
+  ): Promise<TemplateSubmission> {
     const submission = await this.submissionRepository.findOne({
       where: { id, userId },
     });
@@ -100,7 +123,7 @@ export class SubmissionsService {
   async submit(id: string, userId: string): Promise<TemplateSubmission> {
     const submission = await this.submissionRepository.findOne({
       where: { id, userId },
-      relations: ['template'],
+      relations: ["template"],
     });
 
     if (!submission) {
@@ -117,8 +140,8 @@ export class SubmissionsService {
     await this.submissionRepository.save(submission);
 
     // Generate document asynchronously
-    this.generateDocument(id).catch(error => {
-      console.error('Failed to generate document:', error);
+    this.generateDocument(id).catch((error) => {
+      console.error("Failed to generate document:", error);
     });
 
     return submission;
@@ -130,7 +153,7 @@ export class SubmissionsService {
   async generateDocument(submissionId: string): Promise<void> {
     const submission = await this.submissionRepository.findOne({
       where: { id: submissionId },
-      relations: ['template', 'template.fields'],
+      relations: ["template", "template.fields"],
     });
 
     if (!submission) {
@@ -139,21 +162,23 @@ export class SubmissionsService {
 
     try {
       // Download template file from S3
-      const templateBuffer = await this.downloadTemplate(submission.template.originalFileUrl);
+      const templateBuffer = await this.downloadTemplate(
+        submission.template.originalFileUrl,
+      );
 
       // Load template into docxtemplater with error handling
       const zip = new PizZip(templateBuffer);
       const doc = new Docxtemplater(zip, {
         paragraphLoop: true,
         linebreaks: true,
-        delimiters: { start: '{{', end: '}}' },
-        nullGetter: () => '', // Return empty string for missing values
+        delimiters: { start: "{{", end: "}}" },
+        nullGetter: () => "", // Return empty string for missing values
       });
 
       // Transform formData: convert date_parts objects to strings
       const transformedData = this.transformFormData(
-        submission.formData, 
-        submission.template.fields || []
+        submission.formData,
+        submission.template.fields || [],
       );
 
       // Render document with form data
@@ -161,35 +186,38 @@ export class SubmissionsService {
 
       // Get generated document as buffer
       const outputBuffer = doc.getZip().generate({
-        type: 'nodebuffer',
-        compression: 'DEFLATE',
+        type: "nodebuffer",
+        compression: "DEFLATE",
       });
 
       // Upload to S3
       if (!this.s3Client || !this.s3Config) {
         await this.initializeS3Client();
         if (!this.s3Client) {
-          throw new InternalServerErrorException('S3 configuration not available');
+          throw new InternalServerErrorException(
+            "S3 configuration not available",
+          );
         }
       }
 
       const timestamp = Date.now();
-      
+
       // Format: template_name_YYYYMMDD_HHMMSS.docx
       // More readable than pure timestamp
       const now = new Date();
-      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
-      const timeStr = now.toISOString().slice(11, 19).replace(/:/g, ''); // HHMMSS
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
+      const timeStr = now.toISOString().slice(11, 19).replace(/:/g, ""); // HHMMSS
       const readableTimestamp = `${dateStr}_${timeStr}`;
-      
-      const outputFileName = `${submission.template.originalFileName.replace('.docx', '')}_${readableTimestamp}.docx`;
+
+      const outputFileName = `${submission.template.originalFileName.replace(".docx", "")}_${readableTimestamp}.docx`;
       const outputKey = `submissions/${submission.userId}/${timestamp}_${outputFileName}`;
 
       const uploadCommand = new PutObjectCommand({
         Bucket: this.s3Config.s3Bucket,
         Key: outputKey,
         Body: outputBuffer,
-        ContentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ContentType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
 
       await this.s3Client.send(uploadCommand);
@@ -220,13 +248,18 @@ export class SubmissionsService {
       if (!this.s3Client || !this.s3Config) {
         await this.initializeS3Client();
         if (!this.s3Client) {
-          throw new InternalServerErrorException('S3 configuration not available');
+          throw new InternalServerErrorException(
+            "S3 configuration not available",
+          );
         }
       }
 
       // Extract key from URL
       // URL format: https://s3-hcm5-r1.longvan.net/bucket-name/path/to/file.docx
-      const urlParts = fileUrl.replace(`${this.s3Config.s3Endpoint}/${this.s3Config.s3Bucket}/`, '');
+      const urlParts = fileUrl.replace(
+        `${this.s3Config.s3Endpoint}/${this.s3Config.s3Bucket}/`,
+        "",
+      );
       const fileKey = urlParts;
 
       const command = new GetObjectCommand({
@@ -235,13 +268,13 @@ export class SubmissionsService {
       });
 
       const response = await this.s3Client.send(command);
-      
+
       // Convert stream to buffer
       const chunks: Buffer[] = [];
       for await (const chunk of response.Body as any) {
         chunks.push(chunk);
       }
-      
+
       return Buffer.concat(chunks);
     } catch (error) {
       throw new InternalServerErrorException(
@@ -253,28 +286,33 @@ export class SubmissionsService {
   /**
    * Get user's submissions
    */
-  async getUserSubmissions(userId: string, templateId?: string): Promise<TemplateSubmission[]> {
+  async getUserSubmissions(
+    userId: string,
+    templateId?: string,
+  ): Promise<TemplateSubmission[]> {
     // ✅ OPTIMIZATION: Use query builder for better control
     const queryBuilder = this.submissionRepository
-      .createQueryBuilder('submission')
+      .createQueryBuilder("submission")
       .select([
-        'submission.id',
-        'submission.status',
-        'submission.formData',
-        'submission.outputFileName',
-        'submission.outputFileSize',
-        'submission.submittedAt',
-        'submission.completedAt',
-        'submission.createdAt',
-        'submission.updatedAt',
+        "submission.id",
+        "submission.status",
+        "submission.formData",
+        "submission.outputFileName",
+        "submission.outputFileSize",
+        "submission.submittedAt",
+        "submission.completedAt",
+        "submission.createdAt",
+        "submission.updatedAt",
       ])
-      .leftJoin('submission.template', 'template')
-      .addSelect(['template.id', 'template.name', 'template.description'])
-      .where('submission.userId = :userId', { userId })
-      .orderBy('submission.createdAt', 'DESC');
-    
+      .leftJoin("submission.template", "template")
+      .addSelect(["template.id", "template.name", "template.description"])
+      .where("submission.userId = :userId", { userId })
+      .orderBy("submission.createdAt", "DESC");
+
     if (templateId) {
-      queryBuilder.andWhere('submission.templateId = :templateId', { templateId });
+      queryBuilder.andWhere("submission.templateId = :templateId", {
+        templateId,
+      });
     }
 
     return queryBuilder.getMany();
@@ -286,24 +324,24 @@ export class SubmissionsService {
   async getAllSubmissions(templateId?: string): Promise<TemplateSubmission[]> {
     // ✅ OPTIMIZATION: Use query builder with selective loading
     const queryBuilder = this.submissionRepository
-      .createQueryBuilder('submission')
+      .createQueryBuilder("submission")
       .select([
-        'submission.id',
-        'submission.status',
-        'submission.outputFileName',
-        'submission.outputFileSize',
-        'submission.submittedAt',
-        'submission.completedAt',
-        'submission.createdAt',
+        "submission.id",
+        "submission.status",
+        "submission.outputFileName",
+        "submission.outputFileSize",
+        "submission.submittedAt",
+        "submission.completedAt",
+        "submission.createdAt",
       ])
-      .leftJoin('submission.template', 'template')
-      .addSelect(['template.id', 'template.name'])
-      .leftJoin('submission.user', 'user')
-      .addSelect(['user.id', 'user.familyName', 'user.givenName', 'user.email'])
-      .orderBy('submission.createdAt', 'DESC');
-    
+      .leftJoin("submission.template", "template")
+      .addSelect(["template.id", "template.name"])
+      .leftJoin("submission.user", "user")
+      .addSelect(["user.id", "user.familyName", "user.givenName", "user.email"])
+      .orderBy("submission.createdAt", "DESC");
+
     if (templateId) {
-      queryBuilder.where('submission.templateId = :templateId', { templateId });
+      queryBuilder.where("submission.templateId = :templateId", { templateId });
     }
 
     return queryBuilder.getMany();
@@ -314,14 +352,14 @@ export class SubmissionsService {
    */
   async findOne(id: string, userId?: string): Promise<TemplateSubmission> {
     const query: any = { id };
-    
+
     if (userId) {
       query.userId = userId;
     }
 
     const submission = await this.submissionRepository.findOne({
       where: query,
-      relations: ['template', 'user'],
+      relations: ["template", "user"],
     });
 
     if (!submission) {
@@ -348,7 +386,7 @@ export class SubmissionsService {
       try {
         const fileKey = submission.outputFileUrl.replace(
           `${this.s3Config.s3Endpoint}/${this.s3Config.s3Bucket}/`,
-          '',
+          "",
         );
 
         const deleteCommand = new DeleteObjectCommand({
@@ -358,7 +396,7 @@ export class SubmissionsService {
 
         await this.s3Client.send(deleteCommand);
       } catch (error) {
-        console.error('Failed to delete output file from S3:', error);
+        console.error("Failed to delete output file from S3:", error);
         // Continue to delete from DB even if S3 deletion fails
       }
     }
@@ -370,7 +408,10 @@ export class SubmissionsService {
   /**
    * Transform form data: convert date_parts to formatted strings
    */
-  private transformFormData(formData: Record<string, any>, fields: any[]): Record<string, any> {
+  private transformFormData(
+    formData: Record<string, any>,
+    fields: any[],
+  ): Record<string, any> {
     const transformed = { ...formData };
 
     if (!fields || fields.length === 0) {
@@ -379,42 +420,46 @@ export class SubmissionsService {
 
     fields.forEach((field) => {
       const value = formData[field.fieldName];
-      
+
       // Handle date_parts: {day, month, year} -> "DD/MM/YYYY"
-      if (field.fieldType === 'date_parts' && value && typeof value === 'object') {
+      if (
+        field.fieldType === "date_parts" &&
+        value &&
+        typeof value === "object"
+      ) {
         const { day, month, year } = value;
-        
+
         if (day && month && year) {
           // Tạo chuỗi đầy đủ: "15/03/2024"
-          const dayStr = String(day).padStart(2, '0');
-          const monthStr = String(month).padStart(2, '0');
+          const dayStr = String(day).padStart(2, "0");
+          const monthStr = String(month).padStart(2, "0");
           transformed[field.fieldName] = `${dayStr}/${monthStr}/${year}`;
-          
+
           // Tạo thêm 3 fields riêng cho template có {{fieldName_day}}, {{fieldName_month}}, {{fieldName_year}}
           transformed[`${field.fieldName}_day`] = dayStr;
           transformed[`${field.fieldName}_month`] = monthStr;
           transformed[`${field.fieldName}_year`] = year;
         }
       }
-      
+
       // Handle date: "YYYY-MM-DD" -> "DD/MM/YYYY"
-      if (field.fieldType === 'date' && value && typeof value === 'string') {
+      if (field.fieldType === "date" && value && typeof value === "string") {
         // Parse "YYYY-MM-DD" hoặc "YYYY/MM/DD"
         const dateMatch = value.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
         if (dateMatch) {
           const [, year, month, day] = dateMatch;
-          const dayStr = String(day).padStart(2, '0');
-          const monthStr = String(month).padStart(2, '0');
-          
+          const dayStr = String(day).padStart(2, "0");
+          const monthStr = String(month).padStart(2, "0");
+
           // Tạo chuỗi format DD/MM/YYYY cho field chính
           transformed[field.fieldName] = `${dayStr}/${monthStr}/${year}`;
-          
+
           // Tạo các biến phụ: {fieldName}_day, {fieldName}_month, {fieldName}_year
           // Ví dụ: date -> date_day, date_month, date_year
           transformed[`${field.fieldName}_day`] = dayStr;
           transformed[`${field.fieldName}_month`] = monthStr;
           transformed[`${field.fieldName}_year`] = year;
-          
+
           // Nếu có datePartsMapping, tạo thêm các biến theo tên gốc
           // Ví dụ: mapping {dayField: "1", monthField: "2", yearField: "3"}
           // -> tạo thêm {{1}} = dayStr, {{2}} = monthStr, {{3}} = year
@@ -433,7 +478,10 @@ export class SubmissionsService {
   /**
    * Download submission output file from S3
    */
-  async downloadSubmissionFile(id: string, userId: string): Promise<{ buffer: Buffer; fileName: string }> {
+  async downloadSubmissionFile(
+    id: string,
+    userId: string,
+  ): Promise<{ buffer: Buffer; fileName: string }> {
     const submission = await this.submissionRepository.findOne({
       where: { id, userId },
     });
@@ -457,5 +505,96 @@ export class SubmissionsService {
       buffer,
       fileName: submission.outputFileName,
     };
+  }
+
+  /**
+   * Get public URL for Office Online Viewer using presigned URL
+   */
+  async getPublicUrl(
+    id: string,
+    userId: string,
+  ): Promise<{ url: string; fileName: string }> {
+    const submission = await this.submissionRepository.findOne({
+      where: { id, userId },
+    });
+
+    if (!submission) {
+      throw new NotFoundException(ErrorMessages.SUBMISSION_NOT_FOUND);
+    }
+
+    if (submission.status !== SubmissionStatus.COMPLETED) {
+      throw new BadRequestException(ErrorMessages.SUBMISSION_NOT_COMPLETED);
+    }
+
+    if (!submission.outputFileUrl) {
+      throw new NotFoundException(ErrorMessages.SUBMISSION_OUTPUT_NOT_FOUND);
+    }
+
+    try {
+      if (!this.s3Client || !this.s3Config) {
+        throw new InternalServerErrorException(
+          "S3 configuration not available",
+        );
+      }
+
+      // Check cache first (cache for 50 minutes)
+      const cacheKey = `${id}-${userId}`;
+      const cached = this.presignedUrlCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        console.log("[SubmissionsService] Using cached presigned URL");
+        return {
+          url: cached.url,
+          fileName: submission.outputFileName || "document.docx",
+        };
+      }
+
+      console.log("[SubmissionsService] Generating new presigned URL");
+      console.log("[SubmissionsService] S3 Config:", {
+        s3Bucket: this.s3Config.s3Bucket,
+        region: this.s3Config.region,
+        s3Endpoint: this.s3Config.s3Endpoint,
+      });
+
+      // Extract key from full S3 URL
+      // URL format: https://s3-hcm5-r1.longvan.net/19429970-documents/submissions/...
+      const urlParts = submission.outputFileUrl.split("/");
+      const bucketIndex =
+        urlParts.findIndex((part) => part.includes("longvan.net")) + 1;
+      const key = urlParts.slice(bucketIndex + 1).join("/"); // Skip bucket name, get rest
+
+      console.log("[SubmissionsService] Extracted key:", key);
+      console.log("[SubmissionsService] Bucket name:", this.s3Config.s3Bucket);
+
+      // Create presigned URL (valid for 1 hour)
+      const command = new GetObjectCommand({
+        Bucket: this.s3Config.s3Bucket,
+        Key: key,
+      });
+
+      const presignedUrl = await getSignedUrl(this.s3Client, command, {
+        expiresIn: 3600, // 1 hour
+      });
+
+      console.log(
+        "[SubmissionsService] Generated presigned URL:",
+        presignedUrl,
+      );
+
+      // Cache the URL for 50 minutes (10 min buffer before expiry)
+      this.presignedUrlCache.set(cacheKey, {
+        url: presignedUrl,
+        expiresAt: Date.now() + 50 * 60 * 1000, // 50 minutes
+      });
+
+      return {
+        url: presignedUrl,
+        fileName: submission.outputFileName || "document.docx",
+      };
+    } catch (error) {
+      console.error("Error generating presigned URL:", error);
+      throw new InternalServerErrorException(
+        "Failed to generate presigned URL",
+      );
+    }
   }
 }

@@ -1,8 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../../entities/user.entity';
-import { OldSystemCtxhRecordDto, ImportOldSystemCtxhResultDto } from './dto/import-old-system-ctxh.dto';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { User } from "../../entities/user.entity";
+import {
+  OldSystemCtxhRecordDto,
+  ImportOldSystemCtxhResultDto,
+} from "./dto/import-old-system-ctxh.dto";
 
 @Injectable()
 export class CtxhImportService {
@@ -19,7 +22,7 @@ export class CtxhImportService {
       successful: 0,
       failed: 0,
       errors: [],
-      message: '',
+      message: "",
     };
 
     for (const record of records) {

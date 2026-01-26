@@ -1,15 +1,19 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class MigrateOrganizationPayosConfigData1704722500000 implements MigrationInterface {
-  name = 'MigrateOrganizationPayosConfigData1704722500000';
+export class MigrateOrganizationPayosConfigData1704722500000
+  implements MigrationInterface
+{
+  name = "MigrateOrganizationPayosConfigData1704722500000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Check if old table exists
-    const oldTableExists = await queryRunner.hasTable('organization_payos_configs');
-    
+    const oldTableExists = await queryRunner.hasTable(
+      "organization_payos_configs",
+    );
+
     if (oldTableExists) {
       // Migration logic - if you have data to migrate, uncomment and modify the following:
-      
+
       /*
       // Example migration from organization-based to campaign-based config
       // This is a placeholder - you'll need to adapt based on your actual data structure
@@ -45,13 +49,17 @@ export class MigrateOrganizationPayosConfigData1704722500000 implements Migratio
       }
       */
 
-      console.log('Migration note: Please review and uncomment migration logic if you have existing data to migrate');
+      console.log(
+        "Migration note: Please review and uncomment migration logic if you have existing data to migrate",
+      );
     }
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
+  public async down(_queryRunner: QueryRunner): Promise<void> {
     // Reverse migration logic would go here
     // This is complex and depends on your specific migration strategy
-    console.log('Rollback: This migration cannot be automatically rolled back due to data structure changes');
+    console.log(
+      "Rollback: This migration cannot be automatically rolled back due to data structure changes",
+    );
   }
 }

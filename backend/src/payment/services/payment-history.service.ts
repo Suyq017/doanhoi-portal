@@ -1,13 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, IsNull, Not } from 'typeorm';
-import { PaymentHistory, PaymentHistoryStatus } from '../../entities/payment-history.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import {
+  PaymentHistory,
+  PaymentHistoryStatus,
+} from "../../entities/payment-history.entity";
 
 @Injectable()
 export class PaymentHistoryService {
   constructor(
     @InjectRepository(PaymentHistory)
-    private paymentHistoryRepository: Repository<PaymentHistory>
+    private paymentHistoryRepository: Repository<PaymentHistory>,
   ) {}
 
   async createPaymentRecord(data: {
@@ -25,7 +28,7 @@ export class PaymentHistoryService {
       status: PaymentHistoryStatus.PENDING,
       client_id: data.clientId,
       api_key: data.apiKey,
-      checksum_key: data.checksumKey
+      checksum_key: data.checksumKey,
     });
 
     return await this.paymentHistoryRepository.save(paymentHistory);
@@ -34,18 +37,22 @@ export class PaymentHistoryService {
   async findByOrderCode(orderCode: number): Promise<PaymentHistory | null> {
     return await this.paymentHistoryRepository.findOne({
       where: { order_code: orderCode },
-      relations: ['assignment', 'assignment.campaign', 'assignment.campaign.organization']
+      relations: [
+        "assignment",
+        "assignment.campaign",
+        "assignment.campaign.organization",
+      ],
     });
   }
 
   async updatePaymentStatus(
-    orderCode: number, 
+    orderCode: number,
     status: PaymentHistoryStatus,
-    paidAt?: Date
+    paidAt?: Date,
   ): Promise<PaymentHistory> {
     const paymentHistory = await this.findByOrderCode(orderCode);
     if (!paymentHistory) {
-      throw new Error('Payment history not found');
+      throw new Error("Payment history not found");
     }
 
     paymentHistory.status = status;
@@ -59,21 +66,29 @@ export class PaymentHistoryService {
   async findByAssignmentId(assignmentId: string): Promise<PaymentHistory[]> {
     return await this.paymentHistoryRepository.find({
       where: { assignment_id: assignmentId },
-      order: { created_at: 'DESC' }
+      order: { created_at: "DESC" },
     });
   }
 
   async findById(id: string): Promise<PaymentHistory | null> {
     return await this.paymentHistoryRepository.findOne({
       where: { id },
-      relations: ['assignment', 'assignment.campaign', 'assignment.campaign.organization']
+      relations: [
+        "assignment",
+        "assignment.campaign",
+        "assignment.campaign.organization",
+      ],
     });
   }
 
   async findAll(): Promise<PaymentHistory[]> {
     return await this.paymentHistoryRepository.find({
-      relations: ['assignment', 'assignment.campaign', 'assignment.campaign.organization'],
-      order: { created_at: 'DESC' }
+      relations: [
+        "assignment",
+        "assignment.campaign",
+        "assignment.campaign.organization",
+      ],
+      order: { created_at: "DESC" },
     });
   }
 
@@ -84,7 +99,7 @@ export class PaymentHistoryService {
       limit: number;
       search?: string;
       status?: string;
-    }
+    },
   ): Promise<{
     items: PaymentHistory[];
     total: number;
@@ -97,31 +112,37 @@ export class PaymentHistoryService {
 
     // Build query
     const queryBuilder = this.paymentHistoryRepository
-      .createQueryBuilder('ph')
-      .leftJoinAndSelect('ph.assignment', 'assignment')
-      .leftJoinAndSelect('assignment.user', 'user')
-      .leftJoinAndSelect('assignment.campaign', 'campaign')
-      .leftJoinAndSelect('assignment.feeLevel', 'feeLevel')
-      .where('campaign.id = :campaignId', { campaignId })
-      .andWhere('ph.status IN (:...allowedStatuses)', { 
-        allowedStatuses: [PaymentHistoryStatus.PAID, PaymentHistoryStatus.CANCELLED] 
+      .createQueryBuilder("ph")
+      .leftJoinAndSelect("ph.assignment", "assignment")
+      .leftJoinAndSelect("assignment.user", "user")
+      .leftJoinAndSelect("assignment.campaign", "campaign")
+      .leftJoinAndSelect("assignment.feeLevel", "feeLevel")
+      .where("campaign.id = :campaignId", { campaignId })
+      .andWhere("ph.status IN (:...allowedStatuses)", {
+        allowedStatuses: [
+          PaymentHistoryStatus.PAID,
+          PaymentHistoryStatus.CANCELLED,
+        ],
       });
 
     // Apply status filter
-    if (status && status !== 'all') {
+    if (status && status !== "all") {
       // Ensure the requested status is one of the allowed statuses
-      if (status === PaymentHistoryStatus.PAID || status === PaymentHistoryStatus.CANCELLED) {
-        queryBuilder.andWhere('ph.status = :status', { status });
+      if (
+        status === PaymentHistoryStatus.PAID ||
+        status === PaymentHistoryStatus.CANCELLED
+      ) {
+        queryBuilder.andWhere("ph.status = :status", { status });
       }
     }
 
     // Apply search filter
     if (search && search.trim()) {
       queryBuilder.andWhere(
-        '(LOWER(CONCAT(user.familyName, \' \', user.givenName)) LIKE LOWER(:search) OR ' +
-        'LOWER(user.code) LIKE LOWER(:search) OR ' +
-        'CAST(ph.order_code AS TEXT) LIKE :search)',
-        { search: `%${search.trim()}%` }
+        "(LOWER(CONCAT(user.familyName, ' ', user.givenName)) LIKE LOWER(:search) OR " +
+          "LOWER(user.code) LIKE LOWER(:search) OR " +
+          "CAST(ph.order_code AS TEXT) LIKE :search)",
+        { search: `%${search.trim()}%` },
       );
     }
 
@@ -130,7 +151,7 @@ export class PaymentHistoryService {
 
     // Get items with pagination
     const items = await queryBuilder
-      .orderBy('ph.created_at', 'DESC')
+      .orderBy("ph.created_at", "DESC")
       .skip(offset)
       .take(limit)
       .getMany();

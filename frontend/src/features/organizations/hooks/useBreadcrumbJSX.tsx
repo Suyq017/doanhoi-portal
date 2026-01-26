@@ -53,14 +53,14 @@ export const useBreadcrumbJSX = (config: BreadcrumbConfig) => {
             return (
                 <div className="flex items-center space-x-2">
                     <Link
-                        to="/organizations"
+                        to="/portal/organizations"
                         className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
                     >
                         {baseTitle}
                     </Link>
                     <ChevronRight className="w-4 h-4 text-gray-400" />
                     <Link
-                        to={`/organizations/${parentType}/${parentCode}`}
+                        to={`/portal/organizations/${parentType}/${parentCode}`}
                         className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
                     >
                         {parentOrg?.name || ''}
@@ -81,14 +81,14 @@ export const useBreadcrumbJSX = (config: BreadcrumbConfig) => {
             return (
                 <div className="flex items-center space-x-2">
                     <Link
-                        to="/organizations"
+                        to="/portal/organizations"
                         className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
                     >
                         {baseTitle}
                     </Link>
                     <ChevronRight className="w-4 h-4 text-gray-400" />
                     <Link
-                        to={`/organizations/${type}/${code}`}
+                        to={`/portal/organizations/${type}/${code}`}
                         className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
                     >
                         {displayOrganization.name}
@@ -103,21 +103,21 @@ export const useBreadcrumbJSX = (config: BreadcrumbConfig) => {
         if (isSubDetailPage) {
             const parentOrg = organizations[0];
             const pathParts = window.location.pathname.split('/');
-            const parentTypeFromPath = pathParts[2];
-            const parentCodeFromPath = pathParts[3];
+            const parentTypeFromPath = pathParts[3];
+            const parentCodeFromPath = pathParts[4];
 
             if (parentOrg && displayOrganization) {
                 return (
                     <div className="flex items-center space-x-2">
                         <Link
-                            to="/organizations"
+                            to="/portal/organizations"
                             className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
                         >
                             {baseTitle}
                         </Link>
                         <ChevronRight className="w-4 h-4 text-gray-400" />
                         <Link
-                            to={`/organizations/${parentTypeFromPath}/${parentCodeFromPath}`}
+                            to={`/portal/organizations/${parentTypeFromPath}/${parentCodeFromPath}`}
                             className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
                         >
                             {parentOrg.name}
@@ -135,7 +135,7 @@ export const useBreadcrumbJSX = (config: BreadcrumbConfig) => {
             return (
                 <div className="flex items-center space-x-2">
                     <Link
-                        to="/organizations"
+                        to="/portal/organizations"
                         className="text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 hover:underline transition-colors"
                     >
                         {baseTitle}

@@ -143,7 +143,7 @@
       "noOrganization": "No organization",
       "noAccessibleOrganization": "You do not have permission to create activities for any organization",
       "loadOrganizationError": "Unable to load organization information",
-      "organizationAutoSetHint": "Organization is automatically assigned from your account",
+      "organizationAutoSetHint": "Organization is automatically assigned from the creator's account",
       "noResults": "No results found",
       "loading": "Loading...",
       "totalDaysPlaceholder": "Enter total days...",

@@ -75,8 +75,8 @@
     "day": "Day (DD)",
     "month": "Month (MM)",
     "year": "Year (YYYY)",
-    "radio": "Select one from multiple choices (requires options configuration).\nExample:\nService Package: ☒ Low ☐ Medium ☐ High",
-    "checkbox": "Select multiple choices (requires options configuration).\nExample:\nAdditional Services: ☒ Bulk email ☒ SMS notifications ☐ Technical support"
+    "radio": "Select one from multiple choices (requires options configuration).\nExample:\nService Package: Low ☐ Medium ☒ High ☐",
+    "checkbox": "Select multiple choices (requires options configuration).\nExample:\nAdditional Services: Bulk email ☒ SMS notifications ☒ Technical support ☐"
   },
 
   "fieldTypeGroups": {
@@ -112,7 +112,9 @@
     "saveConfig": "Save Configuration",
     "addOption": "Add Option",
     "removeOption": "Remove Option",
-    "preview": "Preview",
+    "preview": "Preview File",
+    "previewDocument": "Preview Document",
+    "viewData": "View Data",
     "cancel": "Cancel"
   },
   
@@ -273,8 +275,24 @@
     "timeFormat": "Time must be in HH:MM format (00:00-23:59)"
   },
   
+  "preview": {
+    "title": "Preview Form",
+    "documentTitle": "Document Preview",
+    "templateInfo": "Template Information",
+    "formData": "Form Data",
+    "noFields": "No fields available",
+    "errorMessage": "Error Message",
+    "loadingDocument": "Loading document...",
+    "viewerNote": "If the document does not display, please download it to view.",
+    "viewerHint": "You can edit the form by clicking the 'Edit' button, then preview again to check before downloading.",
+    "officeViewerNote": "Using Microsoft Office Online Viewer",
+    "officeViewerHint": "The document will display like opening in Word Online. If it doesn't load, click Download button."
+  },
+  
   "errors": {
     "loadingList": "Error loading template list",
+    "loadingSubmission": "Error loading submission",
+    "loadingDocument": "Error loading document",
     "unknown": "An unknown error occurred",
     "unknownTemplate": "Unknown",
     "invalidTemplateId": "Invalid template ID",

@@ -1,6 +1,8 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class ChangeActivityDateToTimestamp1730707300000 implements MigrationInterface {
+export class ChangeActivityDateToTimestamp1730707300000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Change start_date from date to timestamp
     await queryRunner.query(`

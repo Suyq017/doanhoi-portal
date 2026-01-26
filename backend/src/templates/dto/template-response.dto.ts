@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { TemplateStatus } from '../../entities/template.entity';
-import { FieldType } from '../../entities/template-field.entity';
+import { ApiProperty } from "@nestjs/swagger";
+import { TemplateStatus } from "../../entities/template.entity";
+import { FieldType } from "../../entities/template-field.entity";
 
 export class TemplateFieldResponseDto {
   @ApiProperty()

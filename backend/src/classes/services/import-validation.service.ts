@@ -1,15 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Class } from '../../entities/class.entity';
-import { Department } from '../../entities/department.entity';
-import { ClassImportData } from './excel-parser.service';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Class } from "../../entities/class.entity";
+import { Department } from "../../entities/department.entity";
+import { ClassImportData } from "./excel-parser.service";
 
 export interface ValidationError {
   row: number;
   column: string;
   message: string;
-  severity: 'error' | 'warning';
+  severity: "error" | "warning";
 }
 
 export interface ClassImportDataWithValidation extends ClassImportData {
@@ -35,14 +35,14 @@ export interface ValidationResult {
 export interface DuplicateInfo {
   rows: number[];
   data: ClassImportData;
-  type: 'internal' | 'external';
+  type: "internal" | "external";
 }
 
 export interface ConflictInfo {
   row: number;
   data: ClassImportData;
   existingClass: Class;
-  conflictType: 'name' | 'code';
+  conflictType: "name" | "code";
 }
 
 @Injectable()
@@ -52,13 +52,13 @@ export class ImportValidationService {
     private classesRepository: Repository<Class>,
     @InjectRepository(Department)
     private departmentsRepository: Repository<Department>,
-  ) { }
+  ) {}
 
   async validateClassData(data: ClassImportData[]): Promise<ValidationResult> {
-    const validatedData: ClassImportDataWithValidation[] = data.map(item => ({
+    const validatedData: ClassImportDataWithValidation[] = data.map((item) => ({
       ...item,
       _errors: [] as ValidationError[],
-      _warnings: [] as ValidationError[]
+      _warnings: [] as ValidationError[],
     }));
     const allErrors: ValidationError[] = [];
     const allWarnings: ValidationError[] = [];
@@ -66,7 +66,7 @@ export class ImportValidationService {
     // Load all departments for validation
     const departments = await this.departmentsRepository.find();
     const departmentMap = new Map<string, string>(); // code -> id
-    departments.forEach(dept => {
+    departments.forEach((dept) => {
       if (dept.code) {
         departmentMap.set(dept.code.toLowerCase(), dept.id);
       }
@@ -78,12 +78,12 @@ export class ImportValidationService {
       const rowNumber = i + 2; // Excel row (header is row 1)
 
       // Required field validation
-      if (!item.name || item.name.trim() === '') {
+      if (!item.name || item.name.trim() === "") {
         const error: ValidationError = {
           row: rowNumber,
-          column: 'name',
-          message: 'Class name is required',
-          severity: 'error'
+          column: "name",
+          message: "Class name is required",
+          severity: "error",
         };
         item._errors.push(error);
         allErrors.push(error);
@@ -93,9 +93,9 @@ export class ImportValidationService {
       if (item.name && item.name.length > 100) {
         const error: ValidationError = {
           row: rowNumber,
-          column: 'name',
-          message: 'Class name must be less than 100 characters',
-          severity: 'error'
+          column: "name",
+          message: "Class name must be less than 100 characters",
+          severity: "error",
         };
         item._errors.push(error);
         allErrors.push(error);
@@ -107,9 +107,9 @@ export class ImportValidationService {
       if (item.year && (item.year < 2000 || item.year > 2100)) {
         const error: ValidationError = {
           row: rowNumber,
-          column: 'year',
-          message: 'Year must be between 2000 and 2100',
-          severity: 'error'
+          column: "year",
+          message: "Year must be between 2000 and 2100",
+          severity: "error",
         };
         item._errors.push(error);
         allErrors.push(error);
@@ -124,9 +124,9 @@ export class ImportValidationService {
       for (const row of duplicate.rows) {
         const error: ValidationError = {
           row: row + 2,
-          column: duplicate.type === 'name' ? 'name' : 'code',
+          column: duplicate.type === "name" ? "name" : "code",
           message: `Duplicate ${duplicate.type} found in import data`,
-          severity: 'error'
+          severity: "error",
         };
         validatedData[row]._errors.push(error);
         allErrors.push(error);
@@ -139,16 +139,18 @@ export class ImportValidationService {
       const rowNumber = i + 2;
 
       if (item.departmentCode) {
-        const departmentId = departmentMap.get(item.departmentCode.toLowerCase());
+        const departmentId = departmentMap.get(
+          item.departmentCode.toLowerCase(),
+        );
         if (departmentId) {
           item._departmentId = departmentId;
         } else {
           // Add error if department code doesn't exist (blocks import)
           const error: ValidationError = {
             row: rowNumber,
-            column: 'departmentCode',
+            column: "departmentCode",
             message: `Không tìm thấy khoa/đơn vị với mã '${item.departmentCode}'`,
-            severity: 'error'
+            severity: "error",
           };
           item._errors.push(error);
           allErrors.push(error);
@@ -164,15 +166,17 @@ export class ImportValidationService {
         const warning: ValidationError = {
           row: conflict.row + 2,
           column: conflict.conflictType,
-          message: `${conflict.conflictType === 'name' ? 'Name' : 'Code'} already exists in database`,
-          severity: 'warning'
+          message: `${conflict.conflictType === "name" ? "Name" : "Code"} already exists in database`,
+          severity: "warning",
         };
         validatedData[conflict.row]._warnings.push(warning);
         allWarnings.push(warning);
       }
     }
 
-    const validCount = validatedData.filter(item => item._errors.length === 0).length;
+    const validCount = validatedData.filter(
+      (item) => item._errors.length === 0,
+    ).length;
 
     return {
       isValid: allErrors.length === 0,
@@ -184,13 +188,15 @@ export class ImportValidationService {
         valid: validCount,
         invalid: data.length - validCount,
         duplicates: duplicates.length,
-        conflicts: conflicts.length
-      }
+        conflicts: conflicts.length,
+      },
     };
   }
 
-  checkDuplicates(data: ClassImportData[]): Array<{ rows: number[]; type: 'name' | 'code' }> {
-    const duplicates: Array<{ rows: number[]; type: 'name' | 'code' }> = [];
+  checkDuplicates(
+    data: ClassImportData[],
+  ): Array<{ rows: number[]; type: "name" | "code" }> {
+    const duplicates: Array<{ rows: number[]; type: "name" | "code" }> = [];
 
     // Check name duplicates within same year
     const nameYearMap = new Map<string, number[]>();
@@ -206,7 +212,7 @@ export class ImportValidationService {
 
     nameYearMap.forEach((rows) => {
       if (rows.length > 1) {
-        duplicates.push({ rows, type: 'name' });
+        duplicates.push({ rows, type: "name" });
       }
     });
 
@@ -215,7 +221,9 @@ export class ImportValidationService {
     return duplicates;
   }
 
-  async checkExistingConflicts(data: ClassImportData[]): Promise<ConflictInfo[]> {
+  async checkExistingConflicts(
+    data: ClassImportData[],
+  ): Promise<ConflictInfo[]> {
     const conflicts: ConflictInfo[] = [];
 
     for (let i = 0; i < data.length; i++) {
@@ -226,8 +234,8 @@ export class ImportValidationService {
         const existingByName = await this.classesRepository.findOne({
           where: {
             name: item.name,
-            year: item.year
-          }
+            year: item.year,
+          },
         });
 
         if (existingByName) {
@@ -235,7 +243,7 @@ export class ImportValidationService {
             row: i,
             data: item,
             existingClass: existingByName,
-            conflictType: 'name'
+            conflictType: "name",
           });
         }
       }

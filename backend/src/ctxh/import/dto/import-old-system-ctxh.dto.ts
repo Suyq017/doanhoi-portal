@@ -1,22 +1,28 @@
-import { IsString, IsNumber, Min, IsArray, ValidateNested } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import {
+  IsString,
+  IsNumber,
+  Min,
+  IsArray,
+  ValidateNested,
+} from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 
 export class OldSystemCtxhRecordDto {
-  @ApiProperty({ description: 'Mã số sinh viên' })
+  @ApiProperty({ description: "Mã số sinh viên" })
   @IsString()
   studentCode: string;
 
-  @ApiProperty({ description: 'Số ngày CTXH từ hệ thống cũ' })
+  @ApiProperty({ description: "Số ngày CTXH từ hệ thống cũ" })
   @IsNumber()
   @Min(0)
   days: number;
 }
 
 export class ImportOldSystemCtxhDto {
-  @ApiProperty({ 
+  @ApiProperty({
     type: [OldSystemCtxhRecordDto],
-    description: 'Danh sách bản ghi CTXH từ hệ thống cũ'
+    description: "Danh sách bản ghi CTXH từ hệ thống cũ",
   })
   @IsArray()
   @ValidateNested({ each: true })

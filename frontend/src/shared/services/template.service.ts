@@ -178,6 +178,13 @@ export const downloadSubmissionFile = async (id: string): Promise<Blob> => {
 };
 
 /**
+ * Get PDF preview of submission
+ */
+export const getSubmissionPdfPreview = async (id: string): Promise<Blob> => {
+  return apiClient.downloadBlob(`${SUBMISSIONS_BASE}/${id}/preview-pdf`);
+};
+
+/**
  * Delete submission (draft only)
  */
 export const deleteSubmission = async (id: string): Promise<void> => {

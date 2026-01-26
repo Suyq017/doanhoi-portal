@@ -24,9 +24,10 @@ services:
 
   # Backend NestJS
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.prod
+    # build:
+    #   context: ./backend
+    #   dockerfile: Dockerfile.prod
+    image: ${CI_REGISTRY_IMAGE}/backend:${TAG:-latest}
     container_name: doanhoi-backend-prod
     env_file:
       - .env.production
@@ -60,9 +61,10 @@ services:
 
   # Frontend React served by nginx
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
+    # build:
+    #   context: ./frontend
+    #   dockerfile: Dockerfile.prod
+    image: ${CI_REGISTRY_IMAGE}/frontend:${TAG:-latest}
     container_name: doanhoi-frontend-prod
     environment:
       NODE_ENV: production

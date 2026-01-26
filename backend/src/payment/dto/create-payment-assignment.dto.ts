@@ -1,5 +1,15 @@
-import { IsNotEmpty, IsUUID, IsNumber, IsOptional, IsString, IsDateString, Min, IsArray, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsNotEmpty,
+  IsUUID,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsDateString,
+  Min,
+  IsArray,
+  ValidateNested,
+} from "class-validator";
+import { Type } from "class-transformer";
 
 export class CreatePaymentAssignmentDto {
   @IsNotEmpty()

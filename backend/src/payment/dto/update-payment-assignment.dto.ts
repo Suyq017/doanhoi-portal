@@ -1,5 +1,12 @@
-import { IsOptional, IsNumber, IsString, IsDateString, IsEnum, Min } from 'class-validator';
-import { PaymentAssignmentStatus } from '../../entities/payment-assignment.entity';
+import {
+  IsOptional,
+  IsNumber,
+  IsString,
+  IsDateString,
+  IsEnum,
+  Min,
+} from "class-validator";
+import { PaymentAssignmentStatus } from "../../entities/payment-assignment.entity";
 
 export class UpdatePaymentAssignmentDto {
   @IsOptional()

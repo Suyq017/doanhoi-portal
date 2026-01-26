@@ -1,30 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { User } from './user.entity';
-import { Role } from './role.entity';
-import { Organization } from './organization.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from "typeorm";
+import { User } from "./user.entity";
+import { Role } from "./role.entity";
+import { Organization } from "./organization.entity";
 
-@Entity('user_roles')
-@Index(['userId', 'roleId', 'organizationId'], { unique: true })
+@Entity("user_roles")
+@Index(["userId", "roleId", "organizationId"], { unique: true })
 export class UserRole {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @ManyToOne(() => User, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "userId" })
   user: User;
 
   @Column()
   userId: string;
 
-  @ManyToOne(() => Role, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'roleId' })
+  @ManyToOne(() => Role, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "roleId" })
   role: Role;
 
   @Column()
   roleId: string;
 
-  @ManyToOne(() => Organization, { nullable: true, onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'organizationId' })
+  @ManyToOne(() => Organization, { nullable: true, onDelete: "CASCADE" })
+  @JoinColumn({ name: "organizationId" })
   organization?: Organization;
 
   @Column({ nullable: true })

@@ -1,25 +1,38 @@
-import { Injectable, Logger, BadRequestException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, QueryRunner, DataSource } from 'typeorm';
-import { User, Gender,  UserType, MembershipStatus, AuthProvider } from '../../entities/user.entity';
-import { Department } from '../../entities/department.entity';
-import { Class } from '../../entities/class.entity';
-import { Organization, OrganizationType } from '../../entities/organization.entity';
-import { UserOrganization, UserOrgRole } from '../../entities/user-organization.entity';
-import { ImportValidationService, UserValidationResult } from './import-validation.service';
-import { 
-  BatchImportRequestDto, 
-  UserImportDto, 
-  BatchInfoDto, 
-  ImportOptionsDto 
-} from '../dto/batch-import-request-simple.dto';
+import { Injectable, Logger, BadRequestException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, QueryRunner, DataSource } from "typeorm";
+import {
+  User,
+  Gender,
+  UserType,
+  MembershipStatus,
+  AuthProvider,
+} from "../../entities/user.entity";
+import { Department } from "../../entities/department.entity";
+import { Class } from "../../entities/class.entity";
+import {
+  Organization,
+  OrganizationType,
+} from "../../entities/organization.entity";
+import {
+  UserOrganization,
+  UserOrgRole,
+} from "../../entities/user-organization.entity";
+import {
+  ImportValidationService,
+  UserValidationResult,
+} from "./import-validation.service";
+import {
+  BatchImportRequestDto,
+  UserImportDto,
+  ImportOptionsDto,
+} from "../dto/batch-import-request-simple.dto";
 import {
   BatchImportResponseDto,
   BatchResultDto,
   SessionSummaryDto,
-  ImportErrorDto
-} from '../dto/batch-import-response.dto';
-import * as bcrypt from 'bcryptjs';
+} from "../dto/batch-import-response.dto";
+import * as bcrypt from "bcryptjs";
 
 interface SessionData {
   sessionId: string;
@@ -89,18 +102,26 @@ export class BatchImportService {
   /**
    * Process batch import of users
    */
-  async processBatch(request: BatchImportRequestDto): Promise<BatchImportResponseDto> {
+  async processBatch(
+    request: BatchImportRequestDto,
+  ): Promise<BatchImportResponseDto> {
     const { users, batchInfo, options } = request;
     const { sessionId, batchNumber, totalBatches } = batchInfo;
 
     // Validate batch size
     if (users.length > this.BATCH_SIZE_LIMIT) {
-      throw new BadRequestException(`Batch size exceeds limit of ${this.BATCH_SIZE_LIMIT} records`);
+      throw new BadRequestException(
+        `Batch size exceeds limit of ${this.BATCH_SIZE_LIMIT} records`,
+      );
     }
 
     // Initialize session if first batch
     if (batchNumber === 1) {
-      await this.initializeSession(sessionId, totalBatches, users.length * totalBatches);
+      await this.initializeSession(
+        sessionId,
+        totalBatches,
+        users.length * totalBatches,
+      );
     }
 
     // // Get or validate existing session
@@ -124,17 +145,17 @@ export class BatchImportService {
         processed: 0,
         successful: 0,
         failed: 0,
-        errors: []
+        errors: [],
       };
 
       // Process users in smaller sub-batches within the transaction
       for (let i = 0; i < users.length; i += this.SUB_BATCH_SIZE) {
         const subBatch = users.slice(i, i + this.SUB_BATCH_SIZE);
         const subBatchResult = await this.processSubBatch(
-          subBatch, 
-          queryRunner, 
+          subBatch,
+          queryRunner,
           options,
-          batchResult.processed + i + 1 // Starting row number for this sub-batch
+          batchResult.processed + i + 1, // Starting row number for this sub-batch
         );
 
         batchResult.processed += subBatchResult.processed;
@@ -144,17 +165,23 @@ export class BatchImportService {
       }
 
       await queryRunner.commitTransaction();
-      this.logger.log(`Batch ${batchNumber}/${totalBatches} committed successfully`);
+      this.logger.log(
+        `Batch ${batchNumber}/${totalBatches} committed successfully`,
+      );
 
       // Update session progress
-      this.updateSessionProgress(sessionId, batchResult, batchNumber === totalBatches);
+      this.updateSessionProgress(
+        sessionId,
+        batchResult,
+        batchNumber === totalBatches,
+      );
 
       // Get updated session summary
       const sessionSummary = this.getSessionSummary(sessionId);
 
       // Determine success based on ImportService logic: success if at least one record processed successfully
       const batchSuccess = batchResult.successful > 0;
-      
+
       // Create message similar to ImportService executeImport
       let message: string;
       if (batchSuccess && batchResult.failed === 0) {
@@ -169,7 +196,7 @@ export class BatchImportService {
       if (batchNumber === totalBatches) {
         const totalImported = sessionSummary.totalSuccessful;
         const totalFailed = sessionSummary.totalFailed;
-        
+
         if (totalImported > 0 && totalFailed === 0) {
           message += ` Session completed successfully. Total: ${totalImported} users imported.`;
         } else if (totalImported > 0 && totalFailed > 0) {
@@ -183,16 +210,15 @@ export class BatchImportService {
         success: batchSuccess,
         batchResult,
         sessionSummary,
-        message
+        message,
       };
-
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error(`Batch ${batchNumber}/${totalBatches} failed:`, error);
-      
+
       // Update session with error
       this.updateSessionWithError(sessionId, error.message);
-      
+
       throw error;
     } finally {
       await queryRunner.release();
@@ -202,37 +228,43 @@ export class BatchImportService {
   /**
    * Reset transaction after bulk operation failure
    */
-  private async resetTransactionSafely(queryRunner: QueryRunner): Promise<void> {
+  private async resetTransactionSafely(
+    queryRunner: QueryRunner,
+  ): Promise<void> {
     try {
       // Check if transaction is still active and rollback
       if (queryRunner.isTransactionActive) {
         await queryRunner.rollbackTransaction();
-        this.logger.warn('Transaction rolled back due to bulk operation failure');
+        this.logger.warn(
+          "Transaction rolled back due to bulk operation failure",
+        );
       }
     } catch (rollbackError) {
       // Ignore rollback errors - transaction might already be rolled back
-      this.logger.warn(`Transaction rollback warning (ignored): ${rollbackError.message}`);
+      this.logger.warn(
+        `Transaction rollback warning (ignored): ${rollbackError.message}`,
+      );
     }
-    
+
     // Start fresh transaction
     await queryRunner.startTransaction();
-    this.logger.log('Fresh transaction started for individual processing');
+    this.logger.log("Fresh transaction started for individual processing");
   }
 
   /**
    * Process a sub-batch of users within a transaction using bulk insert
    */
   private async processSubBatch(
-    users: UserImportDto[], 
-    queryRunner: QueryRunner, 
+    users: UserImportDto[],
+    queryRunner: QueryRunner,
     options: ImportOptionsDto,
-    startRowNumber: number
+    startRowNumber: number,
   ): Promise<BatchResultDto> {
     const result: BatchResultDto = {
       processed: 0,
       successful: 0,
       failed: 0,
-      errors: []
+      errors: [],
     };
 
     const validUsers: Array<{
@@ -244,7 +276,7 @@ export class BatchImportService {
     // Step 1: Filter valid users (basic validation + duplicate check)
     const seenCodes = new Set<string>();
     const seenEmails = new Set<string>();
-    
+
     for (let i = 0; i < users.length; i++) {
       const user = users[i];
       const rowNumber = startRowNumber + i;
@@ -269,7 +301,7 @@ export class BatchImportService {
       } else if (user.code) {
         seenCodes.add(user.code);
       }
-      
+
       if (user.email && seenEmails.has(user.email)) {
         result.failed++;
         const errorMessage = `Row ${rowNumber}: Duplicate email in batch: ${user.email}`;
@@ -284,55 +316,76 @@ export class BatchImportService {
         validUsers.push({
           userData: user,
           originalIndex: i,
-          rowNumber
+          rowNumber,
         });
       }
-      
+
       result.processed++;
     }
 
     // Step 2: Bulk insert valid users
     if (validUsers.length > 0) {
       this.logger.log(`Processing batch: ${validUsers.length} users`);
-      
+
       try {
-        const userEntities = await this.createUserEntitiesDirectly(validUsers, queryRunner);
-        
+        const userEntities = await this.createUserEntitiesDirectly(
+          validUsers,
+          queryRunner,
+        );
+
         if (userEntities.length > 0) {
           // Bulk insert users
-          const insertResult = await queryRunner.manager.insert(User, userEntities);
-          
+          const insertResult = await queryRunner.manager.insert(
+            User,
+            userEntities,
+          );
+
           // Handle organization assignments for each inserted user
           for (let i = 0; i < validUsers.length; i++) {
             const { userData } = validUsers[i];
             const insertedUserId = insertResult.identifiers[i]?.id;
-            
-            if (insertedUserId && userData.className && userData.trainingDepartment) {
+
+            if (
+              insertedUserId &&
+              userData.className &&
+              userData.trainingDepartment
+            ) {
               try {
                 await this.handleClassOrganizationCreation(
-                  queryRunner, 
-                  userData.className, 
-                  userData.trainingDepartment, 
-                  insertedUserId
+                  queryRunner,
+                  userData.className,
+                  userData.trainingDepartment,
+                  insertedUserId,
                 );
               } catch (orgError) {
-                this.logger.warn(`Failed to create organizations for user ${userData.code}: ${orgError.message}`);
+                this.logger.warn(
+                  `Failed to create organizations for user ${userData.code}: ${orgError.message}`,
+                );
                 // Don't fail the entire batch for organization creation errors
               }
             }
           }
-          
+
           result.successful += userEntities.length;
-          this.logger.log(`Bulk inserted ${userEntities.length} users successfully`);
+          this.logger.log(
+            `Bulk inserted ${userEntities.length} users successfully`,
+          );
         }
       } catch (bulkError) {
         // Check if this is a duplicate key constraint error
-        if (bulkError.message && bulkError.message.includes('duplicate key value violates unique constraint')) {
-          this.logger.warn(`Bulk insert failed due to duplicates, resetting transaction and processing individually: ${bulkError.message}`);
-          
+        if (
+          bulkError.message &&
+          bulkError.message.includes(
+            "duplicate key value violates unique constraint",
+          )
+        ) {
+          this.logger.warn(
+            `Bulk insert failed due to duplicates, resetting transaction and processing individually: ${bulkError.message}`,
+          );
+
           // CRITICAL: Reset transaction before individual processing
           await this.resetTransactionSafely(queryRunner);
-          
+
           // Process each user individually with duplicate check
           for (const { userData, rowNumber } of validUsers) {
             try {
@@ -340,14 +393,18 @@ export class BatchImportService {
               const existingUser = await queryRunner.manager.findOne(User, {
                 where: [
                   { code: userData.code },
-                  ...(userData.email ? [{ email: userData.email }] : [])
-                ]
+                  ...(userData.email ? [{ email: userData.email }] : []),
+                ],
               });
 
               if (existingUser) {
-                this.logger.warn(`User ${userData.code} already exists, skipping`);
+                this.logger.warn(
+                  `User ${userData.code} already exists, skipping`,
+                );
                 result.failed++;
-                result.errors.push(`Row ${rowNumber}: User with code ${userData.code} already exists (duplicate)`);
+                result.errors.push(
+                  `Row ${rowNumber}: User with code ${userData.code} already exists (duplicate)`,
+                );
                 continue;
               }
 
@@ -363,11 +420,13 @@ export class BatchImportService {
           }
         } else {
           // Other bulk errors - reset transaction and fall back to individual processing
-          this.logger.warn(`Bulk insert failed with non-duplicate error, resetting transaction and falling back: ${bulkError.message}`);
-          
+          this.logger.warn(
+            `Bulk insert failed with non-duplicate error, resetting transaction and falling back: ${bulkError.message}`,
+          );
+
           // Reset transaction for clean state
           await this.resetTransactionSafely(queryRunner);
-          
+
           for (const { userData, rowNumber } of validUsers) {
             try {
               await this.processUser(userData, queryRunner, options);
@@ -395,7 +454,7 @@ export class BatchImportService {
       originalIndex: number;
       rowNumber: number;
     }>,
-    queryRunner: QueryRunner
+    queryRunner: QueryRunner,
   ): Promise<User[]> {
     const userEntities: User[] = [];
 
@@ -406,8 +465,8 @@ export class BatchImportService {
         user.givenName = userData.givenName;
         user.email = userData.email || null;
         user.code = userData.code;
-        user.phone = userData.phone || '';
-        
+        user.phone = userData.phone || "";
+
         // Handle password generation
         if (userData.email) {
           const userPassword = this.generatePasswordFromEmail(userData.email);
@@ -429,26 +488,29 @@ export class BatchImportService {
         if (userData.identityCard) user.identityCard = userData.identityCard;
         if (userData.birthDate) user.birthDate = new Date(userData.birthDate);
         if (userData.gender) {
-          user.gender = userData.gender.toUpperCase() === 'NAM' ? Gender.NAM : Gender.NU;
+          user.gender =
+            userData.gender.toUpperCase() === "NAM" ? Gender.NAM : Gender.NU;
         }
         if (userData.admissionYear) user.admissionYear = userData.admissionYear;
-        if (userData.curriculumYear) user.curriculumYear = userData.curriculumYear;
+        if (userData.curriculumYear)
+          user.curriculumYear = userData.curriculumYear;
         if (userData.facultyCode) user.facultyCode = userData.facultyCode;
-        if (userData.trainingSystem) user.trainingSystem = userData.trainingSystem;
+        if (userData.trainingSystem)
+          user.trainingSystem = userData.trainingSystem;
         if (userData.trainingLevel) user.trainingLevel = userData.trainingLevel;
 
         // Set class reference
         if (userData.className) {
-          const classEntity = await queryRunner.manager.findOne(Class, { 
-            where: { name: userData.className } 
+          const classEntity = await queryRunner.manager.findOne(Class, {
+            where: { name: userData.className },
           });
           if (classEntity) user.class = classEntity;
         }
 
         // Set managementDepartment references
         if (userData.managementDepartment) {
-          const department = await queryRunner.manager.findOne(Department, { 
-            where: { code: userData.managementDepartment } 
+          const department = await queryRunner.manager.findOne(Department, {
+            where: { code: userData.managementDepartment },
           });
           if (department) {
             user.managementDepartment = department;
@@ -456,17 +518,19 @@ export class BatchImportService {
         }
 
         if (userData.trainingDepartment) {
-          const department = await queryRunner.manager.findOne(Department, { 
-            where: { code: userData.trainingDepartment } 
+          const department = await queryRunner.manager.findOne(Department, {
+            where: { code: userData.trainingDepartment },
           });
           if (department) {
             user.trainingDepartment = department;
-          } 
+          }
         }
 
         userEntities.push(user);
       } catch (error) {
-        this.logger.warn(`Failed to create user entity for ${userData.code}: ${error.message}`);
+        this.logger.warn(
+          `Failed to create user entity for ${userData.code}: ${error.message}`,
+        );
         // Skip this user, continue with others
         continue;
       }
@@ -479,9 +543,9 @@ export class BatchImportService {
    * Process individual user record using ImportService logic
    */
   private async processUser(
-    userData: UserImportDto, 
-    queryRunner: QueryRunner, 
-    options: ImportOptionsDto
+    userData: UserImportDto,
+    queryRunner: QueryRunner,
+    _options: ImportOptionsDto,
   ): Promise<User> {
     // // Check if user already exists
     // const existingUser = await queryRunner.manager.findOne(User, {
@@ -503,11 +567,15 @@ export class BatchImportService {
     // }
 
     // Convert UserImportDto to ResolvedUserData format for importSingleUser
-    const resolvedUserData: ResolvedUserData = await this.convertToResolvedUserData(userData, queryRunner);
-    
+    const resolvedUserData: ResolvedUserData =
+      await this.convertToResolvedUserData(userData, queryRunner);
+
     // Use ImportService's importSingleUser method with proper access
-    const savedUser = await this.importUserWithImportService(queryRunner, resolvedUserData);
-    
+    const savedUser = await this.importUserWithImportService(
+      queryRunner,
+      resolvedUserData,
+    );
+
     return savedUser;
   }
 
@@ -515,11 +583,14 @@ export class BatchImportService {
    * Convert UserImportDto to ResolvedUserData format
    */
   private async convertToResolvedUserData(
-    userData: UserImportDto, 
-    queryRunner: QueryRunner
+    userData: UserImportDto,
+    queryRunner: QueryRunner,
   ): Promise<ResolvedUserData> {
     // Resolve department and class IDs
-    const departmentId = await this.resolveDepartment(userData.managementDepartment, queryRunner);
+    const departmentId = await this.resolveDepartment(
+      userData.managementDepartment,
+      queryRunner,
+    );
     const classId = await this.resolveClass(userData.className, queryRunner);
 
     const resolvedData: ResolvedUserData = {
@@ -527,7 +598,7 @@ export class BatchImportService {
       givenName: userData.givenName,
       email: userData.email || null,
       code: userData.code,
-      phone: userData.phone || '',
+      phone: userData.phone || "",
       password: undefined, // Will be generated by importSingleUser
       userType: UserType.STUDENT,
       membershipStatus: MembershipStatus.NONE,
@@ -546,7 +617,7 @@ export class BatchImportService {
       curriculumYear: userData.curriculumYear,
       facultyCode: userData.facultyCode,
       trainingSystem: userData.trainingSystem,
-      trainingLevel: userData.trainingLevel
+      trainingLevel: userData.trainingLevel,
     };
 
     return resolvedData;
@@ -556,20 +627,20 @@ export class BatchImportService {
    * Call ImportService's importSingleUser method through reflection-like access
    */
   private async importUserWithImportService(
-    queryRunner: any, 
-    userData: ResolvedUserData
+    queryRunner: any,
+    userData: ResolvedUserData,
   ): Promise<User> {
     // Since importSingleUser is private, we need to access it through the service instance
     // We'll create a similar implementation using the same logic
-    
+
     // Create user entity
     const user = new User();
     user.familyName = userData.familyName;
     user.givenName = userData.givenName;
     user.email = userData.email || null;
     user.code = userData.code;
-    user.phone = userData.phone || '';
-    
+    user.phone = userData.phone || "";
+
     // Handle password using ImportService's generatePasswordFromEmail logic
     if (userData.password && userData.password.trim()) {
       // Use provided password
@@ -586,10 +657,11 @@ export class BatchImportService {
     }
 
     // Set user type
-    user.userType = userData.userType as UserType || UserType.STUDENT;
-    
+    user.userType = (userData.userType as UserType) || UserType.STUDENT;
+
     // Set membership status
-    user.membershipStatus = userData.membershipStatus as MembershipStatus || MembershipStatus.NONE;
+    user.membershipStatus =
+      (userData.membershipStatus as MembershipStatus) || MembershipStatus.NONE;
 
     // Set authentication fields
     user.authProvider = AuthProvider.LOCAL;
@@ -599,39 +671,40 @@ export class BatchImportService {
     if (userData.identityCard) {
       user.identityCard = userData.identityCard;
     }
-    
+
     if (userData.birthDate) {
       user.birthDate = new Date(userData.birthDate);
     }
-    
+
     if (userData.gender) {
-      user.gender = userData.gender.toUpperCase() === 'NAM' ? Gender.NAM : Gender.NU;
+      user.gender =
+        userData.gender.toUpperCase() === "NAM" ? Gender.NAM : Gender.NU;
     }
-    
+
     if (userData.admissionYear) {
       user.admissionYear = userData.admissionYear;
     }
-    
+
     if (userData.curriculumYear) {
       user.curriculumYear = userData.curriculumYear;
     }
-    
+
     if (userData.facultyCode) {
       user.facultyCode = userData.facultyCode;
     }
-    
+
     if (userData.trainingSystem) {
-      user.trainingSystem = userData.trainingSystem;  
+      user.trainingSystem = userData.trainingSystem;
     }
-    
+
     if (userData.trainingLevel) {
       user.trainingLevel = userData.trainingLevel;
     }
 
     // Set class reference
     if (userData.classId) {
-      const classEntity = await queryRunner.manager.findOne(Class, { 
-        where: { id: userData.classId } 
+      const classEntity = await queryRunner.manager.findOne(Class, {
+        where: { id: userData.classId },
       });
       if (classEntity) {
         user.class = classEntity;
@@ -640,8 +713,8 @@ export class BatchImportService {
 
     // Set management department reference
     if (userData.managementDepartmentId) {
-      const managementDept = await queryRunner.manager.findOne(Department, { 
-        where: { id: userData.managementDepartmentId } 
+      const managementDept = await queryRunner.manager.findOne(Department, {
+        where: { id: userData.managementDepartmentId },
       });
       if (managementDept) {
         user.managementDepartment = managementDept;
@@ -650,8 +723,8 @@ export class BatchImportService {
 
     // Set training department reference
     if (userData.trainingDepartmentId) {
-      const trainingDept = await queryRunner.manager.findOne(Department, { 
-        where: { id: userData.trainingDepartmentId } 
+      const trainingDept = await queryRunner.manager.findOne(Department, {
+        where: { id: userData.trainingDepartmentId },
       });
       if (trainingDept) {
         user.trainingDepartment = trainingDept;
@@ -663,7 +736,12 @@ export class BatchImportService {
 
     // Handle class organization creation and assignment using ImportService methods
     if (userData.className && userData.facultyCode) {
-      await this.handleClassOrganizationCreation(queryRunner, userData.className, userData.facultyCode, savedUser.id);
+      await this.handleClassOrganizationCreation(
+        queryRunner,
+        userData.className,
+        userData.facultyCode,
+        savedUser.id,
+      );
     }
 
     return savedUser;
@@ -673,14 +751,14 @@ export class BatchImportService {
    * Generate password from email using ImportService logic
    */
   private generatePasswordFromEmail(email: string | null): string {
-    if (!email) return '';
-    
+    if (!email) return "";
+
     // Generate password from email: take username part before @
     // Example: "nguyen.van.a@example.com" → "nguyenvana"
     // Example: "test@example.com" → "test"
-    const username = email.split('@')[0];
-    
-    const password = username.replace(/\./g, '');
+    const username = email.split("@")[0];
+
+    const password = username.replace(/\./g, "");
 
     return password;
   }
@@ -689,47 +767,60 @@ export class BatchImportService {
    * Handle class organization creation - copied from ImportService
    */
   private async handleClassOrganizationCreation(
-    queryRunner: any, 
-    className: string, 
-    trainingDepartment: string, 
-    userId: string
+    queryRunner: any,
+    className: string,
+    trainingDepartment: string,
+    userId: string,
   ): Promise<void> {
     // Create both Chi đoàn and Chi hội organizations for the class
-    const { chiDoan, chiHoi } = await this.createClassOrganizationsWithTransaction(queryRunner, className, trainingDepartment);
+    const { chiDoan, chiHoi } =
+      await this.createClassOrganizationsWithTransaction(
+        queryRunner,
+        className,
+        trainingDepartment,
+      );
 
     // Get parent organizations (level 2) and root organizations (level 1)
-    const { lienChiDoan, lienChiHoi } = await this.getOrCreateParentOrganizationsWithTransaction(queryRunner, className, trainingDepartment);
-    
-    // Get level 1 organizations 
+    const { lienChiDoan, lienChiHoi } =
+      await this.getOrCreateParentOrganizationsWithTransaction(
+        queryRunner,
+        className,
+        trainingDepartment,
+      );
+
+    // Get level 1 organizations
     const doanTruong = await queryRunner.manager.findOne(Organization, {
-      where: { type: OrganizationType.DOAN_TRUONG }
+      where: { type: OrganizationType.DOAN_TRUONG },
     });
-    
+
     const hoiSinhVien = await queryRunner.manager.findOne(Organization, {
-      where: { type: OrganizationType.HOI_SINH_VIEN_TRUONG }
+      where: { type: OrganizationType.HOI_SINH_VIEN_TRUONG },
     });
 
     // Collect all organizations to add user to (level 1, 2, and 3)
     const organizationsToAdd = [
-      chiDoan,      // Level 3 - Chi đoàn lớp
-      chiHoi,       // Level 3 - Chi hội lớp
-      lienChiDoan,  // Level 2 - Liên chi đoàn khoa/viện
-      lienChiHoi,   // Level 2 - Liên chi hội khoa/viện
-      doanTruong,   // Level 1 - Đoàn trường
-      hoiSinhVien   // Level 1 - Hội sinh viên trường
+      chiDoan, // Level 3 - Chi đoàn lớp
+      chiHoi, // Level 3 - Chi hội lớp
+      lienChiDoan, // Level 2 - Liên chi đoàn khoa/viện
+      lienChiHoi, // Level 2 - Liên chi hội khoa/viện
+      doanTruong, // Level 1 - Đoàn trường
+      hoiSinhVien, // Level 1 - Hội sinh viên trường
     ].filter(Boolean); // Remove any null/undefined organizations
 
     // Add user to all organizations
     for (const org of organizationsToAdd) {
-      const existingMembership = await queryRunner.manager.findOne(UserOrganization, {
-        where: { userId, organizationId: org.id }
-      });
+      const existingMembership = await queryRunner.manager.findOne(
+        UserOrganization,
+        {
+          where: { userId, organizationId: org.id },
+        },
+      );
 
       if (!existingMembership) {
         const membership = queryRunner.manager.create(UserOrganization, {
           userId,
           organizationId: org.id,
-          role: UserOrgRole.MEMBER
+          role: UserOrgRole.MEMBER,
         });
         await queryRunner.manager.save(UserOrganization, membership);
       }
@@ -740,20 +831,25 @@ export class BatchImportService {
    * Create class organizations - copied from ImportService
    */
   private async createClassOrganizationsWithTransaction(
-    queryRunner: any, 
-    className: string, 
-    trainingDepartment: string
-  ): Promise<{ chiDoan: Organization, chiHoi: Organization }> {
+    queryRunner: any,
+    className: string,
+    trainingDepartment: string,
+  ): Promise<{ chiDoan: Organization; chiHoi: Organization }> {
     // Get or create parent organizations (level 2)
-    const { lienChiDoan, lienChiHoi } = await this.getOrCreateParentOrganizationsWithTransaction(queryRunner, className, trainingDepartment);
+    const { lienChiDoan, lienChiHoi } =
+      await this.getOrCreateParentOrganizationsWithTransaction(
+        queryRunner,
+        className,
+        trainingDepartment,
+      );
 
     // Check if class organizations already exist
     let chiDoan = await queryRunner.manager.findOne(Organization, {
-      where: { code: `CHI_DOAN_${className}`, type: OrganizationType.CHI_DOAN }
+      where: { code: `CHI_DOAN_${className}`, type: OrganizationType.CHI_DOAN },
     });
 
     let chiHoi = await queryRunner.manager.findOne(Organization, {
-      where: { code: `CHI_HOI_${className}`, type: OrganizationType.CHI_HOI }
+      where: { code: `CHI_HOI_${className}`, type: OrganizationType.CHI_HOI },
     });
 
     // Create Chi đoàn if not exists
@@ -762,7 +858,7 @@ export class BatchImportService {
         name: `Chi đoàn ${className}`,
         code: `CHI_DOAN_${className}`,
         type: OrganizationType.CHI_DOAN,
-        parent: lienChiDoan
+        parent: lienChiDoan,
       });
       chiDoan = await queryRunner.manager.save(Organization, chiDoan);
     }
@@ -773,7 +869,7 @@ export class BatchImportService {
         name: `Chi hội ${className}`,
         code: `CHI_HOI_${className}`,
         type: OrganizationType.CHI_HOI,
-        parent: lienChiHoi
+        parent: lienChiHoi,
       });
       chiHoi = await queryRunner.manager.save(Organization, chiHoi);
     }
@@ -785,26 +881,26 @@ export class BatchImportService {
    * Get or create parent organizations - copied from ImportService
    */
   private async getOrCreateParentOrganizationsWithTransaction(
-    queryRunner: any, 
-    className: string, 
-    trainingDepartment: string
-  ): Promise<{ lienChiDoan: Organization, lienChiHoi: Organization }> {
-    let departmentName = 'Unknown Department';
-    let departmentCode = trainingDepartment || 'UNKNOWN';
+    queryRunner: any,
+    className: string,
+    trainingDepartment: string,
+  ): Promise<{ lienChiDoan: Organization; lienChiHoi: Organization }> {
+    let departmentName = "Unknown Department";
+    let departmentCode = trainingDepartment || "UNKNOWN";
 
     // Check if class name starts with international prefixes
-    const internationalPrefixes = ['CC', 'CN', 'CT', 'TT'];
-    const isInternational = internationalPrefixes.some(prefix => 
-      className.toUpperCase().startsWith(prefix)
+    const internationalPrefixes = ["CC", "CN", "CT", "TT"];
+    const isInternational = internationalPrefixes.some((prefix) =>
+      className.toUpperCase().startsWith(prefix),
     );
 
     if (isInternational) {
-      departmentName = 'Văn Phòng Đào Tạo Quốc Tế';
-      departmentCode = 'QT';
+      departmentName = "Văn Phòng Đào Tạo Quốc Tế";
+      departmentCode = "QT";
     } else if (trainingDepartment) {
       // Try to get department name from database
       const department = await queryRunner.manager.findOne(Department, {
-        where: { code: trainingDepartment }
+        where: { code: trainingDepartment },
       });
       if (department) {
         departmentName = department.name;
@@ -814,23 +910,25 @@ export class BatchImportService {
 
     // Get level 1 parent organizations
     const doanTruong = await queryRunner.manager.findOne(Organization, {
-      where: { type: OrganizationType.DOAN_TRUONG }
+      where: { type: OrganizationType.DOAN_TRUONG },
     });
-    
+
     const hoiSinhVien = await queryRunner.manager.findOne(Organization, {
-      where: { type: OrganizationType.HOI_SINH_VIEN_TRUONG }
+      where: { type: OrganizationType.HOI_SINH_VIEN_TRUONG },
     });
 
     if (!doanTruong || !hoiSinhVien) {
-      throw new Error('Không tìm thấy tổ chức cấp 1 (Đoàn Trường hoặc Hội Sinh viên)');
+      throw new Error(
+        "Không tìm thấy tổ chức cấp 1 (Đoàn Trường hoặc Hội Sinh viên)",
+      );
     }
 
     // Get or create Liên chi đoàn (level 2) - Đoàn cơ sở
     let lienChiDoan = await queryRunner.manager.findOne(Organization, {
-      where: { 
-        name: `Liên chi đoàn ${departmentName}`, 
-        type: OrganizationType.DOAN_CO_SO 
-      }
+      where: {
+        name: `Liên chi đoàn ${departmentName}`,
+        type: OrganizationType.DOAN_CO_SO,
+      },
     });
 
     if (!lienChiDoan) {
@@ -839,17 +937,17 @@ export class BatchImportService {
         code: `LIEN_CHI_DOAN_${departmentCode}`,
         type: OrganizationType.DOAN_CO_SO,
         description: `Đoàn cơ sở của ${departmentName}`,
-        parent: doanTruong
+        parent: doanTruong,
       });
       lienChiDoan = await queryRunner.manager.save(Organization, lienChiDoan);
     }
 
     // Get or create Liên chi hội (level 2)
     let lienChiHoi = await queryRunner.manager.findOne(Organization, {
-      where: { 
-        name: `Liên chi hội ${departmentName}`, 
-        type: OrganizationType.LIEN_CHI_HOI 
-      }
+      where: {
+        name: `Liên chi hội ${departmentName}`,
+        type: OrganizationType.LIEN_CHI_HOI,
+      },
     });
 
     if (!lienChiHoi) {
@@ -858,7 +956,7 @@ export class BatchImportService {
         code: `LIEN_CHI_HOI_${departmentCode}`,
         type: OrganizationType.LIEN_CHI_HOI,
         description: `Hội sinh viên cơ sở của ${departmentName}`,
-        parent: hoiSinhVien
+        parent: hoiSinhVien,
       });
       lienChiHoi = await queryRunner.manager.save(Organization, lienChiHoi);
     }
@@ -870,51 +968,52 @@ export class BatchImportService {
    * Update existing user with new data
    */
   private async updateExistingUser(
-    existingUser: User, 
-    userData: UserImportDto, 
-    queryRunner: QueryRunner
+    existingUser: User,
+    userData: UserImportDto,
+    queryRunner: QueryRunner,
   ): Promise<void> {
     // Update fields if provided
     if (userData.familyName) existingUser.familyName = userData.familyName;
     if (userData.givenName) existingUser.givenName = userData.givenName;
     if (userData.email) existingUser.email = userData.email;
     if (userData.phone) existingUser.phone = userData.phone;
-    
+
     // Map gender to enum
     if (userData.gender) {
-      existingUser.gender = userData.gender.toUpperCase() === 'NAM' ? Gender.NAM : Gender.NU;
+      existingUser.gender =
+        userData.gender.toUpperCase() === "NAM" ? Gender.NAM : Gender.NU;
     }
-    
+
     // Map date fields
     if (userData.birthDate) {
       existingUser.birthDate = new Date(userData.birthDate);
     }
-    
+
     // Map identity card field
     if (userData.identityCard) {
       existingUser.identityCard = userData.identityCard;
     }
-    
+
     // Map admission year as string
     if (userData.admissionYear) {
       existingUser.admissionYear = userData.admissionYear;
     }
-    
+
     // Map curriculum year
     if (userData.curriculumYear) {
       existingUser.curriculumYear = userData.curriculumYear;
     }
-    
+
     // Map faculty code
     if (userData.facultyCode) {
       existingUser.facultyCode = userData.facultyCode;
     }
-    
+
     // Map training system enum
     if (userData.trainingSystem) {
       existingUser.trainingSystem = userData.trainingSystem;
     }
-    
+
     // Map training level enum
     if (userData.trainingLevel) {
       existingUser.trainingLevel = userData.trainingLevel;
@@ -922,24 +1021,37 @@ export class BatchImportService {
 
     // Resolve references if provided
     if (userData.managementDepartment) {
-      const departmentId = await this.resolveDepartment(userData.managementDepartment, queryRunner);
+      const departmentId = await this.resolveDepartment(
+        userData.managementDepartment,
+        queryRunner,
+      );
       if (departmentId) {
-        existingUser.managementDepartment = await queryRunner.manager.findOne(Department, { where: { id: departmentId } });
+        existingUser.managementDepartment = await queryRunner.manager.findOne(
+          Department,
+          { where: { id: departmentId } },
+        );
       }
     }
 
     if (userData.trainingDepartment) {
-      const departmentId = await this.resolveDepartment(userData.trainingDepartment, queryRunner);
+      const departmentId = await this.resolveDepartment(
+        userData.trainingDepartment,
+        queryRunner,
+      );
       if (departmentId) {
-        existingUser.trainingDepartment = await queryRunner.manager.findOne(Department, { where: { id: departmentId } });
+        existingUser.trainingDepartment = await queryRunner.manager.findOne(
+          Department,
+          { where: { id: departmentId } },
+        );
       }
     }
-    
-    
+
     if (userData.className) {
       const classId = await this.resolveClass(userData.className, queryRunner);
       if (classId) {
-        existingUser.class = await queryRunner.manager.findOne(Class, { where: { id: classId } });
+        existingUser.class = await queryRunner.manager.findOne(Class, {
+          where: { id: classId },
+        });
       }
     }
 
@@ -950,11 +1062,14 @@ export class BatchImportService {
   /**
    * Resolve department by code
    */
-  private async resolveDepartment(departmentCode: string, queryRunner: QueryRunner): Promise<string | null> {
+  private async resolveDepartment(
+    departmentCode: string,
+    queryRunner: QueryRunner,
+  ): Promise<string | null> {
     if (!departmentCode) return null;
 
     const department = await queryRunner.manager.findOne(Department, {
-      where: { code: departmentCode }
+      where: { code: departmentCode },
     });
 
     if (!department) {
@@ -968,11 +1083,14 @@ export class BatchImportService {
   /**
    * Resolve class by name (since Class entity doesn't have code field)
    */
-  private async resolveClass(className: string, queryRunner: QueryRunner): Promise<string | null> {
+  private async resolveClass(
+    className: string,
+    queryRunner: QueryRunner,
+  ): Promise<string | null> {
     if (!className) return null;
 
     const classEntity = await queryRunner.manager.findOne(Class, {
-      where: { name: className }
+      where: { name: className },
     });
 
     if (!classEntity) {
@@ -986,7 +1104,11 @@ export class BatchImportService {
   /**
    * Initialize import session
    */
-  private async initializeSession(sessionId: string, totalBatches: number, totalRecords: number): Promise<void> {
+  private async initializeSession(
+    sessionId: string,
+    totalBatches: number,
+    totalRecords: number,
+  ): Promise<void> {
     const sessionData: SessionData = {
       sessionId,
       totalRecords,
@@ -997,17 +1119,23 @@ export class BatchImportService {
       startTime: new Date(),
       expectedBatches: totalBatches,
       completedBatches: 0,
-      isComplete: false
+      isComplete: false,
     };
 
     this.sessionCache.set(sessionId, sessionData);
-    this.logger.log(`Initialized session ${sessionId} with ${totalBatches} batches, ${totalRecords} total records`);
+    this.logger.log(
+      `Initialized session ${sessionId} with ${totalBatches} batches, ${totalRecords} total records`,
+    );
   }
 
   /**
    * Update session progress after batch completion
    */
-  private updateSessionProgress(sessionId: string, batchResult: BatchResultDto, isLastBatch: boolean): void {
+  private updateSessionProgress(
+    sessionId: string,
+    batchResult: BatchResultDto,
+    isLastBatch: boolean,
+  ): void {
     const session = this.sessionCache.get(sessionId);
     if (!session) return;
 
@@ -1029,7 +1157,10 @@ export class BatchImportService {
   /**
    * Update session with error information
    */
-  private updateSessionWithError(sessionId: string, errorMessage: string): void {
+  private updateSessionWithError(
+    sessionId: string,
+    errorMessage: string,
+  ): void {
     const session = this.sessionCache.get(sessionId);
     if (!session) return;
 
@@ -1053,7 +1184,7 @@ export class BatchImportService {
       throw new BadRequestException(`Session ${sessionId} not found`);
     }
 
-    const duration = session.endTime 
+    const duration = session.endTime
       ? session.endTime.getTime() - session.startTime.getTime()
       : Date.now() - session.startTime.getTime();
 
@@ -1064,7 +1195,7 @@ export class BatchImportService {
       isComplete: session.isComplete,
       startTime: session.startTime,
       endTime: session.endTime,
-      duration
+      duration,
     };
   }
 
@@ -1082,28 +1213,28 @@ export class BatchImportService {
    * Validate parsed user data from frontend using ImportValidationService
    */
   async validateParsedData(
-    userData: any[], 
-    options: { 
-      errorPage?: number; 
-      errorLimit?: number; 
-      warningPage?: number; 
-      warningLimit?: number; 
-    } = {}
+    userData: any[],
+    options: {
+      errorPage?: number;
+      errorLimit?: number;
+      warningPage?: number;
+      warningLimit?: number;
+    } = {},
   ): Promise<any> {
     if (!Array.isArray(userData) || userData.length === 0) {
-      throw new BadRequestException('Invalid or empty user data array');
+      throw new BadRequestException("Invalid or empty user data array");
     }
 
     const {
       errorPage = 1,
       errorLimit = 50,
       warningPage = 1,
-      warningLimit = 50
+      warningLimit = 50,
     } = options;
 
     try {
       // Convert input data to UserImportData format to match ImportValidationService
-      const userImportData = userData.map(user => ({
+      const userImportData = userData.map((user) => ({
         familyName: user.familyName,
         givenName: user.givenName,
         email: user.email,
@@ -1121,27 +1252,28 @@ export class BatchImportService {
         managementDepartment: user.managementDepartment,
         trainingDepartment: user.trainingDepartment,
         organizationCodes: user.organizationCodes,
-        userType: user.userType || 'student',
-        membershipStatus: user.membershipStatus || 'none',
+        userType: user.userType || "student",
+        membershipStatus: user.membershipStatus || "none",
         password: user.password,
-        isActive: user.isActive
+        isActive: user.isActive,
       }));
 
       // Validate using injected ImportValidationService
-      const validationResults: UserValidationResult[] = await this.validationService.validateImportData(userImportData);
+      const validationResults: UserValidationResult[] =
+        await this.validationService.validateImportData(userImportData);
 
       // Convert results to frontend format
       const validData = validationResults
-        .filter(result => result.validation.isValid)
-        .map(result => result.data);
+        .filter((result) => result.validation.isValid)
+        .map((result) => result.data);
 
       const allErrors = validationResults
-        .filter(result => result._errors && result._errors.length > 0)
-        .flatMap(result => result._errors || []);
+        .filter((result) => result._errors && result._errors.length > 0)
+        .flatMap((result) => result._errors || []);
 
       const allWarnings = validationResults
-        .filter(result => result._warnings && result._warnings.length > 0)
-        .flatMap(result => result._warnings || []);
+        .filter((result) => result._warnings && result._warnings.length > 0)
+        .flatMap((result) => result._warnings || []);
 
       // Apply pagination to errors
       const errorStartIndex = (errorPage - 1) * errorLimit;
@@ -1151,7 +1283,10 @@ export class BatchImportService {
       // Apply pagination to warnings
       const warningStartIndex = (warningPage - 1) * warningLimit;
       const warningEndIndex = warningStartIndex + warningLimit;
-      const paginatedWarnings = allWarnings.slice(warningStartIndex, warningEndIndex);
+      const paginatedWarnings = allWarnings.slice(
+        warningStartIndex,
+        warningEndIndex,
+      );
 
       return {
         isValid: validData.length > 0,
@@ -1163,28 +1298,31 @@ export class BatchImportService {
             page: errorPage,
             limit: errorLimit,
             total: allErrors.length,
-            totalPages: Math.ceil(allErrors.length / errorLimit)
+            totalPages: Math.ceil(allErrors.length / errorLimit),
           },
           warnings: {
             page: warningPage,
             limit: warningLimit,
             total: allWarnings.length,
-            totalPages: Math.ceil(allWarnings.length / warningLimit)
-          }
+            totalPages: Math.ceil(allWarnings.length / warningLimit),
+          },
         },
         summary: {
           total: userData.length,
           valid: validData.length,
           invalid: userData.length - validData.length,
-          duplicates: allErrors.filter(e => 
-            e.message.toLowerCase().includes('duplicate') || 
-            e.message.toLowerCase().includes('already exists')
-          ).length
-        }
+          duplicates: allErrors.filter(
+            (e) =>
+              e.message.toLowerCase().includes("duplicate") ||
+              e.message.toLowerCase().includes("already exists"),
+          ).length,
+        },
       };
-
     } catch (error) {
-      this.logger.error(`Validation failed using ImportValidationService: ${error.message}`, error.stack);
+      this.logger.error(
+        `Validation failed using ImportValidationService: ${error.message}`,
+        error.stack,
+      );
       throw new BadRequestException(`Validation failed: ${error.message}`);
     }
   }

@@ -1,7 +1,7 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class RemoveStudentCodeField1728234567891 implements MigrationInterface {
-  name = 'RemoveStudentCodeField1728234567891';
+  name = "RemoveStudentCodeField1728234567891";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // First, copy student_code data to code field if needed

@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DepartmentBatchImportConfigService } from './batch-import-config.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { DepartmentBatchImportConfigService } from "./batch-import-config.service";
 
 export interface PerformanceMetrics {
   // Memory Metrics
@@ -10,7 +10,7 @@ export interface PerformanceMetrics {
     rss: number;
     arrayBuffers: number;
   };
-  
+
   // Processing Metrics
   processingStats: {
     totalSessions: number;
@@ -20,7 +20,7 @@ export interface PerformanceMetrics {
     averageProcessingTime: number;
     throughput: number; // rows per second
   };
-  
+
   // Database Metrics
   databaseStats: {
     activeConnections: number;
@@ -30,7 +30,7 @@ export interface PerformanceMetrics {
     averageQueryTime: number;
     deadlocks: number;
   };
-  
+
   // Error Metrics
   errorStats: {
     totalErrors: number;
@@ -38,7 +38,7 @@ export interface PerformanceMetrics {
     errorsByType: Record<string, number>;
     recentErrors: string[];
   };
-  
+
   // System Metrics
   systemStats: {
     cpuUsage: number;
@@ -66,12 +66,14 @@ export interface SessionMetrics {
 
 @Injectable()
 export class DepartmentBatchImportMonitoringService {
-  private readonly logger = new Logger(DepartmentBatchImportMonitoringService.name);
-  
+  private readonly logger = new Logger(
+    DepartmentBatchImportMonitoringService.name,
+  );
+
   private sessionMetrics: Map<string, SessionMetrics> = new Map();
   private performanceHistory: PerformanceMetrics[] = [];
   private readonly maxHistorySize = 100;
-  
+
   private processingStats = {
     totalSessions: 0,
     activeSessions: 0,
@@ -80,7 +82,7 @@ export class DepartmentBatchImportMonitoringService {
     totalProcessingTime: 0,
     totalRowsProcessed: 0,
   };
-  
+
   private databaseStats = {
     activeConnections: 0,
     idleConnections: 0,
@@ -89,7 +91,7 @@ export class DepartmentBatchImportMonitoringService {
     totalQueryTime: 0,
     deadlocks: 0,
   };
-  
+
   private errorStats = {
     totalErrors: 0,
     errorsByType: new Map<string, number>(),
@@ -107,20 +109,24 @@ export class DepartmentBatchImportMonitoringService {
    */
   private startMonitoring(): void {
     const config = this.configService.getPerformanceConfig();
-    
+
     if (config.enablePerformanceMonitoring) {
       setInterval(() => {
         this.collectMetrics();
       }, config.performanceLoggingInterval);
-      
-      this.logger.log('Performance monitoring started');
+
+      this.logger.log("Performance monitoring started");
     }
   }
 
   /**
    * Initialize session monitoring
    */
-  initializeSessionMonitoring(sessionId: string, fileName: string, totalRows: number): void {
+  initializeSessionMonitoring(
+    sessionId: string,
+    fileName: string,
+    totalRows: number,
+  ): void {
     const sessionMetrics: SessionMetrics = {
       sessionId,
       fileName,
@@ -133,9 +139,9 @@ export class DepartmentBatchImportMonitoringService {
       memoryUsage: 0,
       averageBatchTime: 0,
       errorCount: 0,
-      status: 'initialized',
+      status: "initialized",
     };
-    
+
     this.sessionMetrics.set(sessionId, sessionMetrics);
     this.processingStats.totalSessions++;
     this.processingStats.activeSessions++;
@@ -150,7 +156,7 @@ export class DepartmentBatchImportMonitoringService {
     successRows: number,
     failedRows: number,
     batchTime: number,
-    errorCount: number = 0
+    errorCount: number = 0,
   ): void {
     const metrics = this.sessionMetrics.get(sessionId);
     if (!metrics) return;
@@ -160,17 +166,18 @@ export class DepartmentBatchImportMonitoringService {
     metrics.failedRows = failedRows;
     metrics.errorCount = errorCount;
     metrics.duration = Date.now() - metrics.startTime.getTime();
-    
+
     // Update average batch time
     if (batchTime > 0) {
       const currentAvg = metrics.averageBatchTime;
       const totalBatches = Math.ceil(processedRows / 200); // Assuming 200 rows per batch
-      metrics.averageBatchTime = totalBatches === 1 ? batchTime : (currentAvg + batchTime) / 2;
+      metrics.averageBatchTime =
+        totalBatches === 1 ? batchTime : (currentAvg + batchTime) / 2;
     }
-    
+
     // Update memory usage
     metrics.memoryUsage = this.getCurrentMemoryUsage();
-    
+
     this.sessionMetrics.set(sessionId, metrics);
   }
 
@@ -183,8 +190,8 @@ export class DepartmentBatchImportMonitoringService {
 
     metrics.endTime = new Date();
     metrics.duration = metrics.endTime.getTime() - metrics.startTime.getTime();
-    metrics.status = success ? 'completed' : 'failed';
-    
+    metrics.status = success ? "completed" : "failed";
+
     // Update global stats
     this.processingStats.activeSessions--;
     if (success) {
@@ -192,11 +199,13 @@ export class DepartmentBatchImportMonitoringService {
     } else {
       this.processingStats.failedSessions++;
     }
-    
+
     this.processingStats.totalProcessingTime += metrics.duration;
     this.processingStats.totalRowsProcessed += metrics.processedRows;
-    
-    this.logger.log(`Session ${sessionId} finalized: ${success ? 'success' : 'failed'}, Duration: ${metrics.duration}ms`);
+
+    this.logger.log(
+      `Session ${sessionId} finalized: ${success ? "success" : "failed"}, Duration: ${metrics.duration}ms`,
+    );
   }
 
   /**
@@ -206,18 +215,23 @@ export class DepartmentBatchImportMonitoringService {
     operationType: string,
     queryTime: number,
     success: boolean,
-    isSlowQuery: boolean = false
+    isSlowQuery: boolean = false,
   ): void {
     this.databaseStats.totalQueries++;
     this.databaseStats.totalQueryTime += queryTime;
-    
+
     if (isSlowQuery) {
       this.databaseStats.slowQueries++;
-      this.logger.warn(`Slow query detected: ${operationType} took ${queryTime}ms`);
+      this.logger.warn(
+        `Slow query detected: ${operationType} took ${queryTime}ms`,
+      );
     }
-    
+
     if (!success) {
-      this.recordError(`Database operation failed: ${operationType}`, 'database');
+      this.recordError(
+        `Database operation failed: ${operationType}`,
+        "database",
+      );
     }
   }
 
@@ -226,23 +240,26 @@ export class DepartmentBatchImportMonitoringService {
    */
   recordDeadlock(sessionId: string, batchId: string): void {
     this.databaseStats.deadlocks++;
-    this.recordError(`Deadlock detected in session ${sessionId}, batch ${batchId}`, 'deadlock');
+    this.recordError(
+      `Deadlock detected in session ${sessionId}, batch ${batchId}`,
+      "deadlock",
+    );
   }
 
   /**
    * Record error
    */
-  recordError(error: string, type: string = 'general'): void {
+  recordError(error: string, type: string = "general"): void {
     this.errorStats.totalErrors++;
-    
+
     const currentCount = this.errorStats.errorsByType.get(type) || 0;
     this.errorStats.errorsByType.set(type, currentCount + 1);
-    
+
     this.errorStats.recentErrors.push(error);
     if (this.errorStats.recentErrors.length > 50) {
       this.errorStats.recentErrors.shift();
     }
-    
+
     this.logger.error(`Error recorded [${type}]: ${error}`);
   }
 
@@ -252,15 +269,17 @@ export class DepartmentBatchImportMonitoringService {
   getCurrentMetrics(): PerformanceMetrics {
     const memoryUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
-    
+
     // loadavg is not available on Windows, so we use a fallback
     let loadAverage: number[];
     try {
-      loadAverage = (process as any).loadavg ? (process as any).loadavg() : [0, 0, 0];
+      loadAverage = (process as any).loadavg
+        ? (process as any).loadavg()
+        : [0, 0, 0];
     } catch {
       loadAverage = [0, 0, 0];
     }
-    
+
     return {
       memoryUsage: {
         heapUsed: memoryUsage.heapUsed,
@@ -274,9 +293,11 @@ export class DepartmentBatchImportMonitoringService {
         activeSessions: this.processingStats.activeSessions,
         completedSessions: this.processingStats.completedSessions,
         failedSessions: this.processingStats.failedSessions,
-        averageProcessingTime: this.processingStats.totalSessions > 0 
-          ? this.processingStats.totalProcessingTime / this.processingStats.totalSessions 
-          : 0,
+        averageProcessingTime:
+          this.processingStats.totalSessions > 0
+            ? this.processingStats.totalProcessingTime /
+              this.processingStats.totalSessions
+            : 0,
         throughput: this.calculateThroughput(),
       },
       databaseStats: {
@@ -284,9 +305,11 @@ export class DepartmentBatchImportMonitoringService {
         idleConnections: this.databaseStats.idleConnections,
         totalQueries: this.databaseStats.totalQueries,
         slowQueries: this.databaseStats.slowQueries,
-        averageQueryTime: this.databaseStats.totalQueries > 0 
-          ? this.databaseStats.totalQueryTime / this.databaseStats.totalQueries 
-          : 0,
+        averageQueryTime:
+          this.databaseStats.totalQueries > 0
+            ? this.databaseStats.totalQueryTime /
+              this.databaseStats.totalQueries
+            : 0,
         deadlocks: this.databaseStats.deadlocks,
       },
       errorStats: {
@@ -315,8 +338,9 @@ export class DepartmentBatchImportMonitoringService {
    * Get all active sessions
    */
   getActiveSessionsMetrics(): SessionMetrics[] {
-    return Array.from(this.sessionMetrics.values())
-      .filter(metrics => !metrics.endTime);
+    return Array.from(this.sessionMetrics.values()).filter(
+      (metrics) => !metrics.endTime,
+    );
   }
 
   /**
@@ -332,14 +356,14 @@ export class DepartmentBatchImportMonitoringService {
   checkMemoryWarning(): { warning: boolean; message?: string } {
     const memoryConfig = this.configService.getMemoryConfig();
     const currentMemory = this.getCurrentMemoryUsage();
-    
+
     if (currentMemory > memoryConfig.memoryWarningThreshold) {
       return {
         warning: true,
-        message: `Memory usage (${Math.round(currentMemory / 1024 / 1024)}MB) exceeds warning threshold (${Math.round(memoryConfig.memoryWarningThreshold / 1024 / 1024)}MB)`
+        message: `Memory usage (${Math.round(currentMemory / 1024 / 1024)}MB) exceeds warning threshold (${Math.round(memoryConfig.memoryWarningThreshold / 1024 / 1024)}MB)`,
       };
     }
-    
+
     return { warning: false };
   }
 
@@ -347,40 +371,47 @@ export class DepartmentBatchImportMonitoringService {
    * Get system health status
    */
   getSystemHealth(): {
-    status: 'healthy' | 'warning' | 'critical';
+    status: "healthy" | "warning" | "critical";
     issues: string[];
     metrics: PerformanceMetrics;
   } {
     const metrics = this.getCurrentMetrics();
     const issues: string[] = [];
-    let status: 'healthy' | 'warning' | 'critical' = 'healthy';
-    
+    let status: "healthy" | "warning" | "critical" = "healthy";
+
     // Check memory usage
     const memoryWarning = this.checkMemoryWarning();
     if (memoryWarning.warning) {
       issues.push(memoryWarning.message!);
-      status = 'warning';
+      status = "warning";
     }
-    
+
     // Check error rate
     if (metrics.errorStats.errorRate > 10) {
-      issues.push(`High error rate: ${metrics.errorStats.errorRate.toFixed(2)}%`);
-      status = status === 'healthy' ? 'warning' : 'critical';
+      issues.push(
+        `High error rate: ${metrics.errorStats.errorRate.toFixed(2)}%`,
+      );
+      status = status === "healthy" ? "warning" : "critical";
     }
-    
+
     // Check slow queries
     if (metrics.databaseStats.slowQueries > 10) {
-      issues.push(`High number of slow queries: ${metrics.databaseStats.slowQueries}`);
-      status = status === 'healthy' ? 'warning' : status;
+      issues.push(
+        `High number of slow queries: ${metrics.databaseStats.slowQueries}`,
+      );
+      status = status === "healthy" ? "warning" : status;
     }
-    
+
     // Check active sessions
-    const maxSessions = this.configService.getSessionConfig().maxConcurrentSessions;
+    const maxSessions =
+      this.configService.getSessionConfig().maxConcurrentSessions;
     if (metrics.processingStats.activeSessions > maxSessions * 0.8) {
-      issues.push(`High number of active sessions: ${metrics.processingStats.activeSessions}/${maxSessions}`);
-      status = status === 'healthy' ? 'warning' : status;
+      issues.push(
+        `High number of active sessions: ${metrics.processingStats.activeSessions}/${maxSessions}`,
+      );
+      status = status === "healthy" ? "warning" : status;
     }
-    
+
     return { status, issues, metrics };
   }
 
@@ -389,15 +420,15 @@ export class DepartmentBatchImportMonitoringService {
    */
   private collectMetrics(): void {
     const metrics = this.getCurrentMetrics();
-    
+
     this.performanceHistory.push(metrics);
     if (this.performanceHistory.length > this.maxHistorySize) {
       this.performanceHistory.shift();
     }
-    
+
     // Log system health
     const health = this.getSystemHealth();
-    if (health.status !== 'healthy') {
+    if (health.status !== "healthy") {
       this.logger.warn(`System health: ${health.status}`, health.issues);
     }
   }
@@ -407,15 +438,20 @@ export class DepartmentBatchImportMonitoringService {
    */
   private calculateThroughput(): number {
     const totalTime = this.processingStats.totalProcessingTime / 1000; // Convert to seconds
-    return totalTime > 0 ? this.processingStats.totalRowsProcessed / totalTime : 0;
+    return totalTime > 0
+      ? this.processingStats.totalRowsProcessed / totalTime
+      : 0;
   }
 
   /**
    * Calculate error rate
    */
   private calculateErrorRate(): number {
-    const totalOperations = this.processingStats.totalSessions + this.databaseStats.totalQueries;
-    return totalOperations > 0 ? (this.errorStats.totalErrors / totalOperations) * 100 : 0;
+    const totalOperations =
+      this.processingStats.totalSessions + this.databaseStats.totalQueries;
+    return totalOperations > 0
+      ? (this.errorStats.totalErrors / totalOperations) * 100
+      : 0;
   }
 
   /**
@@ -429,14 +465,14 @@ export class DepartmentBatchImportMonitoringService {
    * Clean up old session metrics
    */
   cleanupOldMetrics(): void {
-    const cutoffTime = Date.now() - (24 * 60 * 60 * 1000); // 24 hours ago
-    
+    const cutoffTime = Date.now() - 24 * 60 * 60 * 1000; // 24 hours ago
+
     for (const [sessionId, metrics] of this.sessionMetrics.entries()) {
       if (metrics.endTime && metrics.endTime.getTime() < cutoffTime) {
         this.sessionMetrics.delete(sessionId);
       }
     }
-    
-    this.logger.log('Old session metrics cleaned up');
+
+    this.logger.log("Old session metrics cleaned up");
   }
 }

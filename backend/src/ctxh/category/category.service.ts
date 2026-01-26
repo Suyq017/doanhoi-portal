@@ -1,11 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, Not } from 'typeorm';
-import { CtxhCategory } from '../../entities/ctxh-category.entity';
-import { CreateCategoryDto } from './dto/create-category.dto';
-import { UpdateCategoryDto } from './dto/update-category.dto';
-import { CategoryResponseDto } from './dto/category-response.dto';
-import { plainToClass } from 'class-transformer';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, IsNull, Not } from "typeorm";
+import { CtxhCategory } from "../../entities/ctxh-category.entity";
+import { CreateCategoryDto } from "./dto/create-category.dto";
+import { UpdateCategoryDto } from "./dto/update-category.dto";
+import { CategoryResponseDto } from "./dto/category-response.dto";
+import { plainToClass } from "class-transformer";
 
 @Injectable()
 export class CategoryService {
@@ -33,21 +38,25 @@ export class CategoryService {
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.categoryRepository
-      .createQueryBuilder('category')
-      .leftJoin('category.activities', 'activities', 'activities.deleted_at IS NULL')
-      .addSelect('COUNT(activities.id)', 'activities_count')
-      .where('category.deleted_at IS NULL')
-      .groupBy('category.id');
+      .createQueryBuilder("category")
+      .leftJoin(
+        "category.activities",
+        "activities",
+        "activities.deleted_at IS NULL",
+      )
+      .addSelect("COUNT(activities.id)", "activities_count")
+      .where("category.deleted_at IS NULL")
+      .groupBy("category.id");
 
     // Add search functionality
     if (queryParams?.search) {
       queryBuilder.andWhere(
-        '(category.name ILIKE :search OR category.description ILIKE :search)',
-        { search: `%${queryParams.search}%` }
+        "(category.name ILIKE :search OR category.description ILIKE :search)",
+        { search: `%${queryParams.search}%` },
       );
     }
 
-    queryBuilder.orderBy('category.created_at', 'DESC');
+    queryBuilder.orderBy("category.created_at", "DESC");
 
     // Get total count efficiently using getCount() instead of fetching all data
     const total = await queryBuilder.getCount();
@@ -60,7 +69,8 @@ export class CategoryService {
       const dto = plainToClass(CategoryResponseDto, category, {
         excludeExtraneousValues: true,
       });
-      dto.activities_count = parseInt(rawResults.raw[index].activities_count) || 0;
+      dto.activities_count =
+        parseInt(rawResults.raw[index].activities_count) || 0;
       return dto;
     });
 
@@ -77,12 +87,16 @@ export class CategoryService {
 
   async findOne(id: string): Promise<CategoryResponseDto> {
     const category = await this.categoryRepository
-      .createQueryBuilder('category')
-      .leftJoin('category.activities', 'activities', 'activities.deleted_at IS NULL')
-      .addSelect('COUNT(activities.id)', 'activities_count')
-      .where('category.id = :id', { id })
-      .andWhere('category.deleted_at IS NULL')
-      .groupBy('category.id')
+      .createQueryBuilder("category")
+      .leftJoin(
+        "category.activities",
+        "activities",
+        "activities.deleted_at IS NULL",
+      )
+      .addSelect("COUNT(activities.id)", "activities_count")
+      .where("category.id = :id", { id })
+      .andWhere("category.deleted_at IS NULL")
+      .groupBy("category.id")
       .getRawAndEntities();
 
     if (!category.entities.length) {
@@ -176,14 +190,14 @@ export class CategoryService {
     // Check if category has active activities
     const activitiesCount = await this.categoryRepository.manager
       .createQueryBuilder()
-      .from('ctxh_activity', 'activities')
-      .where('activities.category_id = :id', { id })
-      .andWhere('activities.deleted_at IS NULL')
+      .from("ctxh_activity", "activities")
+      .where("activities.category_id = :id", { id })
+      .andWhere("activities.deleted_at IS NULL")
       .getCount();
 
     if (activitiesCount > 0) {
       throw new BadRequestException(
-        'Không thể xóa danh mục đã có hoạt động. Vui lòng xóa tất cả hoạt động trước.',
+        "Không thể xóa danh mục đã có hoạt động. Vui lòng xóa tất cả hoạt động trước.",
       );
     }
 
@@ -197,9 +211,9 @@ export class CategoryService {
   async restore(id: string): Promise<CategoryResponseDto> {
     // Tìm danh mục đã bị xóa mềm (bao gồm cả soft deleted records)
     const category = await this.categoryRepository
-      .createQueryBuilder('category')
+      .createQueryBuilder("category")
       .withDeleted() // Quan trọng: bao gồm cả records đã bị soft delete
-      .where('category.id = :id', { id })
+      .where("category.id = :id", { id })
       .getOne();
 
     if (!category) {

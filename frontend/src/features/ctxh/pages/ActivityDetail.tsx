@@ -291,7 +291,7 @@ const ActivityDetail: React.FC = () => {
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('activity.statistics.loading')}</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-full overflow-hidden">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-full overflow-hidden">
                   <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                     <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{getStatistics().total}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">{t('activity.statistics.totalStudents')}</div>
@@ -303,10 +303,6 @@ const ActivityDetail: React.FC = () => {
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
                     <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{getStatistics().registered}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">{t('activity.statistics.participating')}</div>
-                  </div>
-                  <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
-                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">{getStatistics().cancelled}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">{t('activity.statistics.cancelled')}</div>
                   </div>
                 </div>
               )}

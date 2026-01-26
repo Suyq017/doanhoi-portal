@@ -1,35 +1,44 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { UserOrganization } from './user-organization.entity';
-import { Department } from './department.entity';
-import { Class } from './class.entity';
-import { UserRole } from './user-role.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from "typeorm";
+import { UserOrganization } from "./user-organization.entity";
+import { Department } from "./department.entity";
+import { Class } from "./class.entity";
+import { UserRole } from "./user-role.entity";
 
 export enum UserType {
-  STUDENT = 'student',
-  STAFF = 'staff',
+  STUDENT = "student",
+  STAFF = "staff",
 }
 
 export enum MembershipStatus {
-  DOAN_VIEN = 'doan_vien',
-  HOI_VIEN = 'hoi_vien',
-  BOTH = 'both',
-  NONE = 'none',
+  DOAN_VIEN = "doan_vien",
+  HOI_VIEN = "hoi_vien",
+  BOTH = "both",
+  NONE = "none",
 }
 
 // New enums for import system
 export enum Gender {
-  NAM = 'NAM',
-  NU = 'NU'
+  NAM = "NAM",
+  NU = "NU",
 }
 
 export enum AuthProvider {
-  LOCAL = 'local',
-  GOOGLE = 'google',
+  LOCAL = "local",
+  GOOGLE = "google",
 }
 
-@Entity('users')
+@Entity("users")
 export class User {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column({ nullable: true, unique: true })
@@ -54,7 +63,7 @@ export class User {
   googleId: string; // For Google OAuth
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: AuthProvider,
     default: AuthProvider.LOCAL,
   })
@@ -66,18 +75,18 @@ export class User {
   @Column({ nullable: true })
   lastLogin: Date;
 
-  @Column({ nullable: true, type: 'text' })
+  @Column({ nullable: true, type: "text" })
   refreshToken: string;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: UserType,
     default: UserType.STUDENT,
   })
   userType: UserType;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: MembershipStatus,
     default: MembershipStatus.NONE,
   })
@@ -85,71 +94,71 @@ export class User {
 
   // Optional fields
   @ManyToOne(() => Department, { nullable: true })
-  @JoinColumn({ name: 'managementDepartmentId' })
+  @JoinColumn({ name: "managementDepartmentId" })
   managementDepartment: Department;
 
   @ManyToOne(() => Department, { nullable: true })
-  @JoinColumn({ name: 'trainingDepartmentId' })
+  @JoinColumn({ name: "trainingDepartmentId" })
   trainingDepartment: Department;
 
   @ManyToOne(() => Class, { nullable: true })
-  @JoinColumn({ name: 'classId' })
+  @JoinColumn({ name: "classId" })
   class: Class;
 
-  @OneToMany('UserOrganization', 'user')
+  @OneToMany("UserOrganization", "user")
   organizations: UserOrganization[];
 
-  @OneToMany(() => UserRole, 'user')
+  @OneToMany(() => UserRole, "user")
   userRoles: UserRole[];
 
   // New fields for enhanced import system
-  @Column({ name: 'cccd', nullable: true })
+  @Column({ name: "cccd", nullable: true })
   identityCard: string;
 
-  @Column({ name: 'birth_date', type: 'date', nullable: true })
+  @Column({ name: "birth_date", type: "date", nullable: true })
   birthDate: Date;
 
-  @Column({ name: 'gender', type: 'enum', enum: Gender, nullable: true })
+  @Column({ name: "gender", type: "enum", enum: Gender, nullable: true })
   gender: Gender;
 
-  @Column({ name: 'nam_vao', nullable: true })
+  @Column({ name: "nam_vao", nullable: true })
   admissionYear: string;
   //năm vào
 
-  @Column({ name: 'nam_ctdt', nullable: true })
+  @Column({ name: "nam_ctdt", nullable: true })
   curriculumYear: string;
   //năm chương trình đào tạo
 
-  @Column({ name: 'faculty_code', nullable: true })
+  @Column({ name: "faculty_code", nullable: true })
   facultyCode: string;
   //mã khoa
 
-  @Column({ name: 'he_dao_tao', nullable: true })
+  @Column({ name: "he_dao_tao", nullable: true })
   trainingSystem: string;
   //hệ đào tạo
 
-  @Column({ name: 'bac_dao_tao', nullable: true })
+  @Column({ name: "bac_dao_tao", nullable: true })
   trainingLevel: string;
   //bậc đào tạo
 
   // CTXH fields
-  @Column({ 
-    name: 'ctxh_days', 
-    type: 'decimal', 
-    precision: 5, 
-    scale: 1, 
+  @Column({
+    name: "ctxh_days",
+    type: "decimal",
+    precision: 5,
+    scale: 1,
     nullable: true,
-    comment: 'Tổng số ngày CTXH hiện tại'
+    comment: "Tổng số ngày CTXH hiện tại",
   })
   ctxhDays: number;
 
-  @Column({ 
-    name: 'ctxh_days_old_system', 
-    type: 'decimal', 
-    precision: 5, 
-    scale: 1, 
+  @Column({
+    name: "ctxh_days_old_system",
+    type: "decimal",
+    precision: 5,
+    scale: 1,
     nullable: true,
-    comment: 'Số ngày CTXH từ hệ thống cũ'
+    comment: "Số ngày CTXH từ hệ thống cũ",
   })
   ctxhDaysOldSystem: number;
 

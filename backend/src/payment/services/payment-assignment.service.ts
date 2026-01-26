@@ -1,13 +1,25 @@
-import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, LessThan } from 'typeorm';
-import { PaymentAssignment, PaymentAssignmentStatus } from '../../entities/payment-assignment.entity';
-import { PaymentCampaign } from '../../entities/payment-campaign.entity';
-import { PaymentFeeLevel } from '../../entities/payment-fee-level.entity';
-import { User } from '../../entities/user.entity';
-import { PaymentHistory, PaymentHistoryStatus, PaymentMethod } from '../../entities/payment-history.entity';
-import { CreatePaymentAssignmentDto } from '../dto/create-payment-assignment.dto';
-import { UpdatePaymentAssignmentDto } from '../dto/update-payment-assignment.dto';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, In, LessThan } from "typeorm";
+import {
+  PaymentAssignment,
+  PaymentAssignmentStatus,
+} from "../../entities/payment-assignment.entity";
+import { PaymentCampaign } from "../../entities/payment-campaign.entity";
+import { PaymentFeeLevel } from "../../entities/payment-fee-level.entity";
+import { User } from "../../entities/user.entity";
+import {
+  PaymentHistory,
+  PaymentHistoryStatus,
+  PaymentMethod,
+} from "../../entities/payment-history.entity";
+import { CreatePaymentAssignmentDto } from "../dto/create-payment-assignment.dto";
+import { UpdatePaymentAssignmentDto } from "../dto/update-payment-assignment.dto";
 
 @Injectable()
 export class PaymentAssignmentService {
@@ -29,45 +41,50 @@ export class PaymentAssignmentService {
   /**
    * Create payment assignment
    */
-  async create(createDto: CreatePaymentAssignmentDto, userId: string): Promise<PaymentAssignment> {
+  async create(
+    createDto: CreatePaymentAssignmentDto,
+    userId: string,
+  ): Promise<PaymentAssignment> {
     // Verify campaign exists
     const campaign = await this.campaignRepository.findOne({
       where: { id: createDto.campaignId },
-      relations: ['organization']
+      relations: ["organization"],
     });
 
     if (!campaign) {
-      throw new NotFoundException('Payment campaign not found');
+      throw new NotFoundException("Payment campaign not found");
     }
 
     // Verify user exists
     const user = await this.userRepository.findOne({
-      where: { id: createDto.userId }
+      where: { id: createDto.userId },
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
 
     // Verify fee level exists
     const feeLevel = await this.feeLevelRepository.findOne({
-      where: { id: createDto.feeLevelId }
+      where: { id: createDto.feeLevelId },
     });
 
     if (!feeLevel) {
-      throw new NotFoundException('Fee level not found');
+      throw new NotFoundException("Fee level not found");
     }
 
     // Check if assignment already exists for this user and campaign
     const existingAssignment = await this.assignmentRepository.findOne({
       where: {
         campaignId: createDto.campaignId,
-        userId: createDto.userId
-      }
+        userId: createDto.userId,
+      },
     });
 
     if (existingAssignment) {
-      throw new BadRequestException(`Payment assignment already exists for user ${createDto.userId} in campaign ${createDto.campaignId}`);
+      throw new BadRequestException(
+        `Payment assignment already exists for user ${createDto.userId} in campaign ${createDto.campaignId}`,
+      );
     }
 
     // Create assignment
@@ -83,7 +100,9 @@ export class PaymentAssignmentService {
 
     const savedAssignment = await this.assignmentRepository.save(assignment);
 
-    this.logger.log(`Created payment assignment ${savedAssignment.id} for user ${createDto.userId}`);
+    this.logger.log(
+      `Created payment assignment ${savedAssignment.id} for user ${createDto.userId}`,
+    );
 
     return savedAssignment;
   }
@@ -91,7 +110,10 @@ export class PaymentAssignmentService {
   /**
    * Create bulk assignments
    */
-  async createBulk(assignments: CreatePaymentAssignmentDto[], userId: string): Promise<PaymentAssignment[]> {
+  async createBulk(
+    assignments: CreatePaymentAssignmentDto[],
+    userId: string,
+  ): Promise<PaymentAssignment[]> {
     const created: PaymentAssignment[] = [];
     const errors: any[] = [];
 
@@ -99,24 +121,34 @@ export class PaymentAssignmentService {
 
     for (const assignmentDto of assignments) {
       try {
-        this.logger.log(`Creating assignment for user ${assignmentDto.userId} in campaign ${assignmentDto.campaignId}`);
+        this.logger.log(
+          `Creating assignment for user ${assignmentDto.userId} in campaign ${assignmentDto.campaignId}`,
+        );
         const assignment = await this.create(assignmentDto, userId);
         created.push(assignment);
         this.logger.log(`Successfully created assignment ${assignment.id}`);
       } catch (error) {
-        this.logger.error(`Failed to create assignment for user ${assignmentDto.userId}:`, error.message);
+        this.logger.error(
+          `Failed to create assignment for user ${assignmentDto.userId}:`,
+          error.message,
+        );
         errors.push({
           assignment: assignmentDto,
-          error: error.message
+          error: error.message,
         });
       }
     }
 
     if (errors.length > 0) {
-      this.logger.warn(`Bulk assignment creation had ${errors.length} errors:`, errors);
+      this.logger.warn(
+        `Bulk assignment creation had ${errors.length} errors:`,
+        errors,
+      );
     }
 
-    this.logger.log(`Bulk creation complete: ${created.length} created, ${errors.length} errors`);
+    this.logger.log(
+      `Bulk creation complete: ${created.length} created, ${errors.length} errors`,
+    );
     return created;
   }
 
@@ -128,32 +160,34 @@ export class PaymentAssignmentService {
     userId?: string,
     status?: PaymentAssignmentStatus,
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
   ) {
     try {
       const whereConditions: any = {};
-      
+
       if (campaignId) {
         whereConditions.campaignId = campaignId;
       }
-      
+
       if (userId) {
         whereConditions.userId = userId;
       }
-      
+
       if (status) {
         whereConditions.status = status;
       }
 
       const offset = (page - 1) * limit;
-      
-      const [assignments, total] = await this.assignmentRepository.findAndCount({
-        where: whereConditions,
-        relations: ['campaign', 'user', 'feeLevel'],
-        order: { createdAt: 'DESC' },
-        skip: offset,
-        take: limit
-      });
+
+      const [assignments, total] = await this.assignmentRepository.findAndCount(
+        {
+          where: whereConditions,
+          relations: ["campaign", "user", "feeLevel"],
+          order: { createdAt: "DESC" },
+          skip: offset,
+          take: limit,
+        },
+      );
 
       return {
         assignments,
@@ -161,11 +195,11 @@ export class PaymentAssignmentService {
           page,
           limit,
           total,
-          pages: Math.ceil(total / limit)
-        }
+          pages: Math.ceil(total / limit),
+        },
       };
     } catch (error) {
-      this.logger.error('Error in findAll:', error);
+      this.logger.error("Error in findAll:", error);
       throw error;
     }
   }
@@ -176,11 +210,11 @@ export class PaymentAssignmentService {
   async findOne(id: string): Promise<PaymentAssignment> {
     const assignment = await this.assignmentRepository.findOne({
       where: { id },
-      relations: ['campaign', 'user', 'feeLevel']
+      relations: ["campaign", "user", "feeLevel"],
     });
 
     if (!assignment) {
-      throw new NotFoundException('Payment assignment not found');
+      throw new NotFoundException("Payment assignment not found");
     }
 
     return assignment;
@@ -189,12 +223,20 @@ export class PaymentAssignmentService {
   /**
    * Update assignment
    */
-  async update(id: string, updateDto: UpdatePaymentAssignmentDto): Promise<PaymentAssignment> {
+  async update(
+    id: string,
+    updateDto: UpdatePaymentAssignmentDto,
+  ): Promise<PaymentAssignment> {
     const assignment = await this.findOne(id);
 
     // Validate status transitions
-    if (updateDto.status && !this.isValidStatusTransition(assignment.status, updateDto.status)) {
-      throw new BadRequestException(`Invalid status transition from ${assignment.status} to ${updateDto.status}`);
+    if (
+      updateDto.status &&
+      !this.isValidStatusTransition(assignment.status, updateDto.status)
+    ) {
+      throw new BadRequestException(
+        `Invalid status transition from ${assignment.status} to ${updateDto.status}`,
+      );
     }
 
     // Update assignment
@@ -210,11 +252,14 @@ export class PaymentAssignmentService {
   /**
    * Mark assignment as paid
    */
-  async markAsPaid(id: string, isOnlinePayment: boolean): Promise<PaymentAssignment> {
+  async markAsPaid(
+    id: string,
+    isOnlinePayment: boolean,
+  ): Promise<PaymentAssignment> {
     const assignment = await this.findOne(id);
 
     if (assignment.status === PaymentAssignmentStatus.PAID) {
-      throw new BadRequestException('Assignment is already marked as paid');
+      throw new BadRequestException("Assignment is already marked as paid");
     }
 
     // Update assignment status
@@ -228,18 +273,22 @@ export class PaymentAssignmentService {
       assignment_id: assignment.id,
       amount: assignment.feeLevel.amount,
       status: PaymentHistoryStatus.PAID,
-      payment_method: isOnlinePayment? PaymentMethod.ONLINE : PaymentMethod.MANUAL,
+      payment_method: isOnlinePayment
+        ? PaymentMethod.ONLINE
+        : PaymentMethod.MANUAL,
       order_code: Math.floor(Math.random() * 900000) + 100000, // Generate a simple order code based on timestamp
       paid_at: new Date(),
       // PayOS fields can be null for manual payments
       client_id: null,
       api_key: null,
-      checksum_key: null
+      checksum_key: null,
     });
 
     await this.paymentHistoryRepository.save(paymentHistory);
 
-    this.logger.log(`Marked assignment ${id} as paid manually and created payment history`);
+    this.logger.log(
+      `Marked assignment ${id} as paid manually and created payment history`,
+    );
 
     return updatedAssignment;
   }
@@ -251,7 +300,9 @@ export class PaymentAssignmentService {
     const assignment = await this.findOne(id);
 
     if (assignment.status !== PaymentAssignmentStatus.PENDING) {
-      throw new BadRequestException('Only pending assignments can be marked as overdue');
+      throw new BadRequestException(
+        "Only pending assignments can be marked as overdue",
+      );
     }
 
     assignment.status = PaymentAssignmentStatus.OVERDUE;
@@ -269,7 +320,7 @@ export class PaymentAssignmentService {
   async remove(id: string): Promise<void> {
     // Kiểm tra xem có thể xóa được không (giai đoạn này bỏ qua việc kiểm tra)
     // const deleteCheck = await this.canDelete(id);
-    
+
     // if (!deleteCheck.canDelete) {
     //   throw new BadRequestException(deleteCheck.reason);
     // }
@@ -284,17 +335,19 @@ export class PaymentAssignmentService {
   private async removeWithCascade(assignmentId: string): Promise<void> {
     // Bước 1: Xóa tất cả payment history liên quan
     const paymentHistories = await this.paymentHistoryRepository.find({
-      where: { assignment_id: assignmentId }
+      where: { assignment_id: assignmentId },
     });
 
     if (paymentHistories.length > 0) {
       await this.paymentHistoryRepository.remove(paymentHistories);
-      this.logger.log(`Deleted ${paymentHistories.length} payment history records for assignment ${assignmentId}`);
+      this.logger.log(
+        `Deleted ${paymentHistories.length} payment history records for assignment ${assignmentId}`,
+      );
     }
 
     // Bước 2: Xóa assignment
     const assignment = await this.assignmentRepository.findOne({
-      where: { id: assignmentId }
+      where: { id: assignmentId },
     });
 
     if (assignment) {
@@ -306,32 +359,34 @@ export class PaymentAssignmentService {
   /**
    * Check if assignment can be safely deleted
    */
-  async canDelete(id: string): Promise<{ canDelete: boolean; reason?: string; relatedData?: any }> {
+  async canDelete(
+    id: string,
+  ): Promise<{ canDelete: boolean; reason?: string; relatedData?: any }> {
     const assignment = await this.findOne(id);
 
     // Không thể xóa assignment đã thanh toán
     if (assignment.status === PaymentAssignmentStatus.PAID) {
       return {
         canDelete: false,
-        reason: 'Cannot delete paid assignments'
+        reason: "Cannot delete paid assignments",
       };
     }
 
     // Kiểm tra payment history liên quan
     const paymentHistories = await this.paymentHistoryRepository.find({
-      where: { assignment_id: id }
+      where: { assignment_id: id },
     });
 
-    const paidHistories = paymentHistories.filter(h => h.status === 'PAID');
-    
+    const paidHistories = paymentHistories.filter((h) => h.status === "PAID");
+
     if (paidHistories.length > 0) {
       return {
         canDelete: false,
-        reason: 'Assignment has paid payment history records',
+        reason: "Assignment has paid payment history records",
         relatedData: {
           paymentHistoryCount: paymentHistories.length,
-          paidHistoryCount: paidHistories.length
-        }
+          paidHistoryCount: paidHistories.length,
+        },
       };
     }
 
@@ -339,8 +394,8 @@ export class PaymentAssignmentService {
       canDelete: true,
       relatedData: {
         paymentHistoryCount: paymentHistories.length,
-        paidHistoryCount: 0
-      }
+        paidHistoryCount: 0,
+      },
     };
   }
 
@@ -350,7 +405,7 @@ export class PaymentAssignmentService {
   async getStatistics(campaignId?: string, organizationId?: string) {
     try {
       const whereConditions: any = {};
-      
+
       if (campaignId) {
         whereConditions.campaignId = campaignId;
       }
@@ -358,12 +413,12 @@ export class PaymentAssignmentService {
       // If organizationId is provided, we need to filter through campaign
       const queryOptions: any = {
         where: whereConditions,
-        relations: ['campaign', 'feeLevel']
+        relations: ["campaign", "feeLevel"],
       };
 
       if (organizationId && !campaignId) {
         queryOptions.where = {
-          campaign: { organizationId }
+          campaign: { organizationId },
         };
       }
 
@@ -371,18 +426,31 @@ export class PaymentAssignmentService {
 
       // Calculate statistics from the retrieved assignments
       const totalAssignments = assignments.length;
-      const pendingCount = assignments.filter(a => a.status === PaymentAssignmentStatus.PENDING).length;
-      const paidCount = assignments.filter(a => a.status === PaymentAssignmentStatus.PAID).length;
-      const overdueCount = assignments.filter(a => a.status === PaymentAssignmentStatus.OVERDUE).length;
-      const exemptedCount = assignments.filter(a => a.status === PaymentAssignmentStatus.EXEMPTED).length;
-      
+      const pendingCount = assignments.filter(
+        (a) => a.status === PaymentAssignmentStatus.PENDING,
+      ).length;
+      const paidCount = assignments.filter(
+        (a) => a.status === PaymentAssignmentStatus.PAID,
+      ).length;
+      const overdueCount = assignments.filter(
+        (a) => a.status === PaymentAssignmentStatus.OVERDUE,
+      ).length;
+      const exemptedCount = assignments.filter(
+        (a) => a.status === PaymentAssignmentStatus.EXEMPTED,
+      ).length;
+
       const totalPaidAmount = assignments
-        .filter(a => a.status === PaymentAssignmentStatus.PAID)
+        .filter((a) => a.status === PaymentAssignmentStatus.PAID)
         .reduce((sum, a) => sum + (a.feeLevel?.amount || 0), 0);
-      
-      const totalAmount = assignments.reduce((sum, a) => sum + (a.feeLevel?.amount || 0), 0);
-      const averageAmount = totalAssignments > 0 ? totalAmount / totalAssignments : 0;
-      const paymentRate = totalAssignments > 0 ? (paidCount / totalAssignments) * 100 : 0;
+
+      const totalAmount = assignments.reduce(
+        (sum, a) => sum + (a.feeLevel?.amount || 0),
+        0,
+      );
+      const averageAmount =
+        totalAssignments > 0 ? totalAmount / totalAssignments : 0;
+      const paymentRate =
+        totalAssignments > 0 ? (paidCount / totalAssignments) * 100 : 0;
 
       return {
         totalAssignments,
@@ -393,10 +461,10 @@ export class PaymentAssignmentService {
         totalPaidAmount,
         totalAmount,
         averageAmount,
-        paymentRate
+        paymentRate,
       };
     } catch (error) {
-      this.logger.error('Error in getStatistics:', error);
+      this.logger.error("Error in getStatistics:", error);
       throw error;
     }
   }
@@ -406,21 +474,23 @@ export class PaymentAssignmentService {
    */
   async checkOverdueAssignments(): Promise<number> {
     const now = new Date();
-    
+
     const overdueAssignments = await this.assignmentRepository.find({
       where: {
         status: PaymentAssignmentStatus.PENDING,
-        dueDate: LessThan(now)
-      }
+        dueDate: LessThan(now),
+      },
     });
 
     if (overdueAssignments.length > 0) {
       await this.assignmentRepository.update(
-        { id: In(overdueAssignments.map(a => a.id)) },
-        { status: PaymentAssignmentStatus.OVERDUE }
+        { id: In(overdueAssignments.map((a) => a.id)) },
+        { status: PaymentAssignmentStatus.OVERDUE },
       );
 
-      this.logger.log(`Updated ${overdueAssignments.length} assignments to overdue status`);
+      this.logger.log(
+        `Updated ${overdueAssignments.length} assignments to overdue status`,
+      );
     }
 
     return overdueAssignments.length;
@@ -429,21 +499,22 @@ export class PaymentAssignmentService {
   /**
    * Validate status transition
    */
-  private isValidStatusTransition(current: PaymentAssignmentStatus, target: PaymentAssignmentStatus): boolean {
+  private isValidStatusTransition(
+    current: PaymentAssignmentStatus,
+    target: PaymentAssignmentStatus,
+  ): boolean {
     const validTransitions = {
       [PaymentAssignmentStatus.PENDING]: [
         PaymentAssignmentStatus.PAID,
         PaymentAssignmentStatus.OVERDUE,
-        PaymentAssignmentStatus.EXEMPTED
+        PaymentAssignmentStatus.EXEMPTED,
       ],
       [PaymentAssignmentStatus.OVERDUE]: [
         PaymentAssignmentStatus.PAID,
-        PaymentAssignmentStatus.EXEMPTED
+        PaymentAssignmentStatus.EXEMPTED,
       ],
       [PaymentAssignmentStatus.PAID]: [], // Paid assignments cannot be changed
-      [PaymentAssignmentStatus.EXEMPTED]: [
-        PaymentAssignmentStatus.PENDING
-      ]
+      [PaymentAssignmentStatus.EXEMPTED]: [PaymentAssignmentStatus.PENDING],
     };
 
     return validTransitions[current]?.includes(target) || false;
@@ -452,16 +523,21 @@ export class PaymentAssignmentService {
   /**
    * Update assignment status
    */
-  async updateStatus(id: string, status: PaymentAssignmentStatus): Promise<PaymentAssignment> {
+  async updateStatus(
+    id: string,
+    status: PaymentAssignmentStatus,
+  ): Promise<PaymentAssignment> {
     const assignment = await this.findOne(id);
 
     // Validate status transition
     if (!this.isValidStatusTransition(assignment.status, status)) {
-      throw new BadRequestException(`Cannot change status from ${assignment.status} to ${status}`);
+      throw new BadRequestException(
+        `Cannot change status from ${assignment.status} to ${status}`,
+      );
     }
 
     assignment.status = status;
-    
+
     if (status === PaymentAssignmentStatus.PAID) {
       assignment.paidAt = new Date();
     }

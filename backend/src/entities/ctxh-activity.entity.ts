@@ -8,93 +8,93 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-} from 'typeorm';
-import { User } from './user.entity';
-import { Organization } from './organization.entity';
+} from "typeorm";
+import { User } from "./user.entity";
+import { Organization } from "./organization.entity";
 
 export enum ActivityStatus {
-  DRAFT = 'DRAFT',
-  ACTIVE = 'ACTIVE',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
+  DRAFT = "DRAFT",
+  ACTIVE = "ACTIVE",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
 }
 
-@Entity('ctxh_activity')
+@Entity("ctxh_activity")
 export class CtxhActivity {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: "varchar", length: 255 })
   name: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   description: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: "uuid" })
   category_id: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: "uuid" })
   organization_id: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   start_date: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: "timestamp", nullable: true })
   end_date: Date;
 
-  @Column({ type: 'decimal', precision: 5, scale: 1, nullable: true })
+  @Column({ type: "decimal", precision: 5, scale: 1, nullable: true })
   total_days: number;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ type: "varchar", length: 500, nullable: true })
   location: string;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: ActivityStatus,
     default: ActivityStatus.DRAFT,
   })
   status: ActivityStatus;
 
   // Audit fields
-  @Column({ type: 'uuid' })
+  @Column({ type: "uuid" })
   created_by: string;
 
   @CreateDateColumn()
   created_at: Date;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: "uuid", nullable: true })
   updated_by: string;
 
   @UpdateDateColumn()
   updated_at: Date;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: "uuid", nullable: true })
   deleted_by: string;
 
   @DeleteDateColumn()
   deleted_at: Date;
 
   // Relations
-  @ManyToOne('CtxhCategory', 'activities', { eager: false })
-  @JoinColumn({ name: 'category_id' })
+  @ManyToOne("CtxhCategory", "activities", { eager: false })
+  @JoinColumn({ name: "category_id" })
   category: any;
 
   @ManyToOne(() => Organization, { eager: false })
-  @JoinColumn({ name: 'organization_id' })
+  @JoinColumn({ name: "organization_id" })
   organization: Organization;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
+  @JoinColumn({ name: "created_by" })
   creator: User;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'updated_by' })
+  @JoinColumn({ name: "updated_by" })
   updater: User;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'deleted_by' })
+  @JoinColumn({ name: "deleted_by" })
   deleter: User;
 
-  @OneToMany('CtxhParticipation', 'activity')
+  @OneToMany("CtxhParticipation", "activity")
   participations: any[];
 }
