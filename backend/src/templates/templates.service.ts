@@ -158,7 +158,7 @@ export class TemplatesService {
 
       // Find all {{placeholder}} patterns
       const regex = /\{\{([^}]+)\}\}/g;
-      const matches = plainText.match(regex) || [];
+      const matches: string[] = plainText.match(regex) || [];
 
       // Count occurrences of each placeholder
       const placeholderCounts: Record<string, number> = {};
