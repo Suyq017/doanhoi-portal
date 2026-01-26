@@ -143,11 +143,11 @@ export class TemplatesService {
       
       // Find all {{placeholder}} patterns
       const regex = /\{\{([^}]+)\}\}/g;
-      const matches = plainText.match(regex) || [];
+      const matches: string[] = plainText.match(regex) || [];
       
       // Count occurrences of each placeholder
       const placeholderCounts: Record<string, number> = {};
-      matches.forEach(tag => {
+      matches.forEach((tag: string) => {
         const placeholder = tag.replace(/\{\{|\}\}/g, '').trim();
         if (placeholder.length > 0) {
           placeholderCounts[placeholder] = (placeholderCounts[placeholder] || 0) + 1;

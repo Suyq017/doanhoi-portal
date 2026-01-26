@@ -44,7 +44,8 @@
     "rag:ingest-incremental": "curl -X POST http://localhost:9200/api/ctxh-chat/ingestion/incremental -H \"Content-Type: application/json\"",
     "rag:stats": "curl -X GET http://localhost:9200/api/ctxh-chat/ingestion/stats",
     "rag:health": "curl -X GET http://localhost:9200/api/ctxh-chat/health",
-    "rag:test": "npm run test -- --testPathPattern=rag"
+    "rag:test": "npm run test -- --testPathPattern=rag",
+    "ctxh:clear-vectors": "node scripts/clear-ctxh-embeddings.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.927.0",

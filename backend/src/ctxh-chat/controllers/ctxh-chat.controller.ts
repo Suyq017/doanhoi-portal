@@ -13,11 +13,10 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { CtxhChatService } from '@/ctxh-chat/services/ctxh-chat.service';
-import { CtxhIngestionPipelineService } from '@/ctxh-chat/services/ctxh-ingestion-pipeline.service';
-import { EmbeddingService } from '@/ctxh-chat/services/embedding.service';
-import { VectorStoreService } from '@/ctxh-chat/services/vector-store.service';
-import { ConversationService } from '@/ctxh-chat/services/conversation.service';
+import { LangChainRagChainService } from '../services/langchain-rag-chain.service';
+import { LangChainIngestionService } from '../services/langchain-ingestion.service';
+import { LangChainVectorStoreService } from '../services/langchain-vector-store.service';
+import { LangChainMemoryService } from '../services/langchain-memory.service';
 import { ChatRequestDto, ChatResponseDto } from '../dto';
 import type { Request } from 'express';
 
@@ -27,17 +26,16 @@ import type { Request } from 'express';
 @ApiBearerAuth()
 export class CtxhChatController {
   constructor(
-    private readonly ctxhChatService: CtxhChatService,
-    private readonly conversationService: ConversationService,
-    private readonly ingestionPipelineService: CtxhIngestionPipelineService,
-    private readonly embeddingService: EmbeddingService,
-    private readonly vectorStoreService: VectorStoreService,
+    private readonly ragChainService: LangChainRagChainService,
+    private readonly memoryService: LangChainMemoryService,
+    private readonly ingestionService: LangChainIngestionService,
+    private readonly vectorStoreService: LangChainVectorStoreService,
   ) {}
 
-  // ========== PHASE 2: RAG CHAT ENDPOINTS ==========
+  // ========== RAG CHAT ENDPOINTS ==========
 
   @Post('message')
-  @ApiOperation({ summary: '[Phase 2] Send a message to the CTXH RAG chatbot' })
+  @ApiOperation({ summary: 'Send a message to the CTXH RAG chatbot' })
   @ApiResponse({
     status: 200,
     description: 'Chat response with sources and follow-up suggestions',
@@ -48,31 +46,40 @@ export class CtxhChatController {
     @Req() request: Request,
   ): Promise<ChatResponseDto> {
     const userId = (request as any).user?.id;
+    const sessionId = chatRequestDto.sessionId || `session_${userId}_${Date.now()}`;
     
-    const response = await this.ctxhChatService.processMessage(
+    const response = await this.ragChainService.invoke(
       chatRequestDto.message,
-      chatRequestDto.sessionId,
-      userId,
+      sessionId,
       {
-        includeSourceLinks: true,
-        enableMarkdown: true,
-        addFollowUpSuggestions: true,
+        k: 5,
+        useMMR: false,
+        includeHistory: true,
       }
     );
 
+    // Generate follow-up suggestions based on response
+    const followUpSuggestions = this.generateFollowUpSuggestions(response.response);
+
     return {
-      sessionId: response.sessionId,
+      sessionId: response.sessionId || sessionId,
       response: response.response,
-      sources: response.sources,
+      sources: response.sources.map(doc => ({
+        activityId: doc.metadata?.activityId,
+        activityName: doc.metadata?.activityName,
+        organizationName: doc.metadata?.organizationName,
+        content: doc.pageContent.substring(0, 200) + '...',
+        similarityScore: doc.metadata?.score || 0,
+      })),
       responseTime: response.responseTime,
-      timestamp: response.timestamp,
-      followUpSuggestions: response.followUpSuggestions,
-      confidence: response.confidence,
+      timestamp: new Date(),
+      followUpSuggestions,
+      confidence: this.calculateConfidence(response.sources.length),
     };
   }
 
   @Sse('stream')
-  @ApiOperation({ summary: '[Phase 2] Stream chat response with Server-Sent Events' })
+  @ApiOperation({ summary: 'Stream chat response with Server-Sent Events' })
   @ApiResponse({
     status: 200,
     description: 'Streamed chat response',
@@ -82,56 +89,45 @@ export class CtxhChatController {
     @Req() request: Request,
   ): Observable<MessageEvent> {
     const userId = (request as any).user?.id;
+    const sessionId = chatRequestDto.sessionId || `session_${userId}_${Date.now()}`;
     
     return new Observable(observer => {
-      this.ctxhChatService.processMessage(
-        chatRequestDto.message,
-        chatRequestDto.sessionId,
-        userId,
-        {
-          includeSourceLinks: true,
-          enableMarkdown: true,
-          addFollowUpSuggestions: true,
-        }
-      ).then(response => {
-        // Stream response in chunks
-        const chunks = response.response.split('\n');
-        
-        chunks.forEach((chunk, index) => {
+      (async () => {
+        try {
+          const chunks: string[] = [];
+          
+          for await (const chunk of this.ragChainService.stream(
+            chatRequestDto.message,
+            sessionId,
+          )) {
+            chunks.push(chunk);
+            observer.next({
+              data: {
+                type: 'content',
+                content: chunk,
+                isLast: false,
+              }
+            } as any);
+          }
+
+          // Send completion event
           observer.next({
             data: {
-              type: 'content',
-              content: chunk,
-              isLast: index === chunks.length - 1,
+              type: 'complete',
+              fullResponse: chunks.join(''),
             }
           } as any);
-        });
 
-        // Send sources
-        observer.next({
-          data: {
-            type: 'sources',
-            sources: response.sources,
-          }
-        } as any);
-
-        // Send follow-up suggestions
-        observer.next({
-          data: {
-            type: 'suggestions',
-            suggestions: response.followUpSuggestions,
-          }
-        } as any);
-
-        observer.complete();
-      }).catch(error => {
-        observer.error(error);
-      });
+          observer.complete();
+        } catch (error) {
+          observer.error(error);
+        }
+      })();
     });
   }
 
   @Get('history/:sessionId')
-  @ApiOperation({ summary: '[Phase 2] Get conversation history with metadata' })
+  @ApiOperation({ summary: 'Get conversation history with metadata' })
   @ApiResponse({
     status: 200,
     description: 'Full conversation history retrieved',
@@ -140,24 +136,24 @@ export class CtxhChatController {
     @Param('sessionId') sessionId: string,
     @Req() request: Request,
   ) {
-    const userId = (request as any).user?.id;
-    const session = await this.conversationService.getOrCreateSession(userId, sessionId);
+    const messages = await this.memoryService.getMessages(sessionId);
+    const metadata = this.memoryService.getSessionMetadata(sessionId);
     
     return {
-      sessionId: session.sessionId,
-      userId: session.userId,
-      messages: session.messages.map(msg => ({
-        role: msg.role,
+      sessionId,
+      messages: messages.map(msg => ({
+        role: msg._getType() === 'human' ? 'user' : 'assistant',
         content: msg.content,
-        timestamp: msg.timestamp,
       })),
-      metadata: session.metadata,
-      context: session.context,
+      metadata: {
+        turnCount: metadata.turnCount,
+        lastAccessed: metadata.lastAccessed,
+      },
     };
   }
 
   @Delete('session/:sessionId')
-  @ApiOperation({ summary: '[Phase 2] Clear conversation session' })
+  @ApiOperation({ summary: 'Clear conversation session' })
   @ApiResponse({
     status: 200,
     description: 'Session cleared successfully'
@@ -166,13 +162,12 @@ export class CtxhChatController {
     @Param('sessionId') sessionId: string,
     @Req() request: Request,
   ): Promise<{ message: string }> {
-    const userId = (request as any).user?.id;
-    await this.ctxhChatService.clearSession(sessionId, userId);
+    await this.memoryService.clearMemory(sessionId);
     return { message: 'Session cleared successfully' };
   }
 
   @Post('feedback')
-  @ApiOperation({ summary: '[Phase 2] Submit feedback for chat response' })
+  @ApiOperation({ summary: 'Submit feedback for chat response' })
   @ApiResponse({
     status: 200,
     description: 'Feedback submitted successfully'
@@ -185,21 +180,22 @@ export class CtxhChatController {
       comment?: string 
     }
   ): Promise<{ message: string }> {
-    await this.ctxhChatService.submitFeedback(feedback);
+    // TODO: Implement feedback storage
+    console.log('Feedback received:', feedback);
     return { message: 'Feedback submitted successfully' };
   }
 
-  // ========== DATA INGESTION ENDPOINTS (PHASE 1) ==========
+  // ========== DATA INGESTION ENDPOINTS ==========
 
   @Post('ingestion/full')
   @UseGuards() // Bỏ authentication cho ingestion endpoints
-  @ApiOperation({ summary: '[Phase 1] Run full ingestion pipeline for all activities' })
+  @ApiOperation({ summary: 'Run full ingestion pipeline for all activities' })
   @ApiResponse({
     status: 200,
     description: 'Full ingestion completed',
   })
   async runFullIngestion() {
-    const result = await this.ingestionPipelineService.runFullIngestion();
+    const result = await this.ingestionService.runFullIngestion();
     return {
       success: result.errors.length === 0,
       ...result,
@@ -208,15 +204,15 @@ export class CtxhChatController {
 
   @Post('ingestion/incremental')
   @UseGuards() // Bỏ authentication
-  @ApiOperation({ summary: '[Phase 1] Run incremental update for recently modified activities' })
+  @ApiOperation({ summary: 'Run incremental update for recently modified activities' })
   @ApiResponse({
     status: 200,
     description: 'Incremental update completed',
   })
   async runIncrementalUpdate(@Query('since') since?: string) {
-    const sinceDate = since ? new Date(since) : new Date(Date.now() - 24 * 60 * 60 * 1000); // Default: last 24 hours
+    const sinceDate = since ? new Date(since) : new Date(Date.now() - 24 * 60 * 60 * 1000);
     
-    const result = await this.ingestionPipelineService.runIncrementalUpdate(sinceDate);
+    const result = await this.ingestionService.runIncrementalUpdate(sinceDate);
     return {
       success: result.errors.length === 0,
       ...result,
@@ -225,13 +221,13 @@ export class CtxhChatController {
 
   @Post('ingestion/activity/:activityId')
   @UseGuards() // Bỏ authentication
-  @ApiOperation({ summary: '[Phase 1] Process a single activity' })
+  @ApiOperation({ summary: 'Process a single activity' })
   @ApiResponse({
     status: 200,
     description: 'Activity processed successfully',
   })
   async processActivity(@Param('activityId') activityId: string) {
-    await this.ingestionPipelineService.processActivity(activityId);
+    await this.ingestionService.processActivity(activityId);
     return {
       success: true,
       message: `Activity ${activityId} processed successfully`,
@@ -239,13 +235,13 @@ export class CtxhChatController {
   }
 
   @Delete('ingestion/activity/:activityId')
-  @ApiOperation({ summary: '[Phase 1] Delete embeddings for an activity' })
+  @ApiOperation({ summary: 'Delete embeddings for an activity' })
   @ApiResponse({
     status: 200,
     description: 'Activity embeddings deleted',
   })
   async deleteActivity(@Param('activityId') activityId: string) {
-    await this.ingestionPipelineService.deleteActivity(activityId);
+    await this.ingestionService.deleteActivity(activityId);
     return {
       success: true,
       message: `Embeddings for activity ${activityId} deleted successfully`,
@@ -254,86 +250,104 @@ export class CtxhChatController {
 
   @Get('ingestion/stats')
   @UseGuards() // Bỏ authentication
-  @ApiOperation({ summary: '[Phase 1] Get ingestion statistics' })
+  @ApiOperation({ summary: 'Get ingestion statistics' })
   @ApiResponse({
     status: 200,
     description: 'Ingestion statistics',
   })
   async getIngestionStats() {
-    return this.ingestionPipelineService.getIngestionStats();
+    return this.ingestionService.getIngestionStats();
   }
 
   // ========== HEALTH CHECK ENDPOINTS ==========
 
   @Get('health')
   @UseGuards() // Bỏ authentication
-  @ApiOperation({ summary: '[Phase 1] Health check for all pipeline components' })
+  @ApiOperation({ summary: 'Health check for all pipeline components' })
   @ApiResponse({
     status: 200,
     description: 'Health check results',
   })
   async healthCheck() {
-    return this.ingestionPipelineService.healthCheck();
-  }
-
-  @Get('health/embeddings')
-  @UseGuards() // Bỏ authentication
-  @ApiOperation({ summary: '[Phase 1] Health check for embedding service' })
-  @ApiResponse({
-    status: 200,
-    description: 'Embedding service health',
-  })
-  async embeddingHealthCheck() {
-    return this.embeddingService.healthCheck();
+    return this.ingestionService.healthCheck();
   }
 
   @Get('health/vector-store')
   @UseGuards() // Bỏ authentication
-  @ApiOperation({ summary: '[Phase 1] Health check for vector store' })
+  @ApiOperation({ summary: 'Health check for vector store' })
   @ApiResponse({
     status: 200,
     description: 'Vector store health',
   })
   async vectorStoreHealthCheck() {
-    return this.vectorStoreService.healthCheck();
+    return {
+      status: this.vectorStoreService.isInitialized() ? 'healthy' : 'not initialized',
+      initialized: this.vectorStoreService.isInitialized(),
+    };
   }
 
   // ========== STATS AND MONITORING ==========
 
-  @Get('stats/storage')
+  @Get('stats/memory')
   @UseGuards() // Bỏ authentication
-  @ApiOperation({ summary: '[Phase 1] Get vector storage statistics' })
+  @ApiOperation({ summary: 'Get memory/session statistics' })
   @ApiResponse({
     status: 200,
-    description: 'Storage statistics',
+    description: 'Memory statistics',
   })
-  async getStorageStats() {
-    return this.vectorStoreService.getStorageStats();
+  async getMemoryStats() {
+    return this.memoryService.getStats();
   }
 
-  @Get('stats/cache')
+  @Get('stats/sessions')
   @UseGuards() // Bỏ authentication
-  @ApiOperation({ summary: '[Phase 1] Get embedding cache statistics' })
+  @ApiOperation({ summary: 'Get active sessions list' })
   @ApiResponse({
     status: 200,
-    description: 'Cache statistics',
+    description: 'Active sessions',
   })
-  async getCacheStats() {
-    return this.embeddingService.getCacheStats();
-  }
-
-  @Delete('cache/clear')
-  @ApiOperation({ summary: '[Phase 1] Clear embedding cache' })
-  @ApiResponse({
-    status: 200,
-    description: 'Cache cleared',
-  })
-  async clearCache() {
-    const clearedCount = await this.embeddingService.clearCache();
+  async getActiveSessions() {
+    const sessions = this.memoryService.getActiveSessions();
     return {
-      success: true,
-      message: `Cleared ${clearedCount} cache entries`,
-      clearedCount,
+      count: sessions.length,
+      sessions: sessions.slice(0, 100),
     };
+  }
+
+  // ========== HELPER METHODS ==========
+
+  /**
+   * Generate follow-up suggestions based on response
+   */
+  private generateFollowUpSuggestions(response: string): string[] {
+    const suggestions: string[] = [];
+    
+    if (response.includes('hoạt động') || response.includes('CTXH')) {
+      suggestions.push('Cho tôi biết thêm chi tiết về hoạt động này');
+      suggestions.push('Làm sao để đăng ký tham gia?');
+    }
+    
+    if (response.includes('ngày') || response.includes('thời gian')) {
+      suggestions.push('Có hoạt động nào khác trong tháng này không?');
+    }
+    
+    if (suggestions.length === 0) {
+      suggestions.push('Có hoạt động CTXH nào đang mở đăng ký?');
+      suggestions.push('Tìm hoạt động CTXH theo địa điểm');
+      suggestions.push('Hoạt động nào có nhiều ngày CTXH nhất?');
+    }
+    
+    return suggestions.slice(0, 3);
+  }
+
+  /**
+   * Calculate confidence based on number of sources
+   */
+  private calculateConfidence(sourceCount: number): number {
+    if (sourceCount === 0) return 0.3;
+    if (sourceCount === 1) return 0.6;
+    if (sourceCount === 2) return 0.75;
+    if (sourceCount >= 3) return 0.9;
+    return 0.5;
   }
 }
