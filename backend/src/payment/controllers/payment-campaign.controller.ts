@@ -25,7 +25,7 @@ export class PaymentCampaignController {
   constructor(
     private readonly campaignService: PaymentCampaignService,
     private readonly rolesService: RolesService,
-  ) {}
+  ) { }
 
   @Post()
   @RequirePermissions("payment-campaigns.create")

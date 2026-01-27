@@ -427,8 +427,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
 
   // Helper function để kiểm tra sinh viên có tồn tại
   const isStudentValid = (participant: ParticipationResponse): boolean => {
-    return !!(participant.student?.full_name || 
-             (participant.student_code && participantsStudentInfo[participant.student_code]?.name));
+    return !!(participant.student?.full_name ||
+      (participant.student_code && participantsStudentInfo[participant.student_code]?.name));
   };
 
   // Helper function để lấy email sinh viên
@@ -860,43 +860,43 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                 </button>
 
                 {showAddStudentDropdown && activity.status === 'ACTIVE' && (
-                <div className="absolute mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden"
-                     style={{
-                       width: '15rem',
-                       maxWidth: 'calc(100vw - 3rem)',
-                       right: '-3rem'
-                     }}>
-                  <div className="py-1">
-                    <button
-                      onClick={() => {
-                        setShowAddStudentModal(true);
-                        setShowAddStudentDropdown(false);
-                      }}
-                      className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors"
-                    >
-                      <Plus className="mr-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                      <div>
-                        <div className="font-medium">{t('participant.addIndividualStudent')}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{t('participant.addIndividualStudentDesc')}</div>
-                      </div>
-                    </button>
+                  <div className="absolute mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden"
+                    style={{
+                      width: '15rem',
+                      maxWidth: 'calc(100vw - 3rem)',
+                      right: '-3rem'
+                    }}>
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          setShowAddStudentModal(true);
+                          setShowAddStudentDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors"
+                      >
+                        <Plus className="mr-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                        <div>
+                          <div className="font-medium">{t('participant.addIndividualStudent')}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{t('participant.addIndividualStudentDesc')}</div>
+                        </div>
+                      </button>
 
-                    <button
-                      onClick={() => {
-                        setShowStudentImportModal(true);
-                        setShowAddStudentDropdown(false);
-                      }}
-                      className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors"
-                    >
-                      <Upload className="mr-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                      <div>
-                        <div className="font-medium">{t('participant.addFromFile')}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{t('participant.addFromFileDesc')}</div>
-                      </div>
-                    </button>
+                      <button
+                        onClick={() => {
+                          setShowStudentImportModal(true);
+                          setShowAddStudentDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center transition-colors"
+                      >
+                        <Upload className="mr-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                        <div>
+                          <div className="font-medium">{t('participant.addFromFile')}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{t('participant.addFromFileDesc')}</div>
+                        </div>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               </div>
             )}
 
@@ -1034,8 +1034,8 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${participant.status === 'COMPLETED' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
-                            participant.status === 'CANCELLED' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
-                              'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                          participant.status === 'CANCELLED' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
+                            'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
                           }`}>
                           {participant.status === 'COMPLETED' ? t('participant.statusOptions.completed') :
                             participant.status === 'CANCELLED' ? t('participant.statusOptions.cancelled') :

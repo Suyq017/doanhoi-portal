@@ -37,7 +37,7 @@ export const PaymentCampaignsPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<PaymentCampaign | null>(null);
-  
+
   // ✅ Toast hook for success messages
   const { toasts, showSuccess, hideToast } = useToast();
   // ✅ Remove refreshTrigger - cache automatically updates via mutations

@@ -11,7 +11,7 @@ export class SimplePayosService {
     private payosConfigService: PaymentCampaignPayosConfigService,
     private paymentHistoryService: PaymentHistoryService,
     private paymentAssignmentService: PaymentAssignmentService,
-  ) {}
+  ) { }
 
   /**
    * Get PayOS configuration for a campaign

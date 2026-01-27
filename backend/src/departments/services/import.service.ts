@@ -89,7 +89,7 @@ export class ImportService {
     private transactionService: DepartmentTransactionService,
     private configService: DepartmentBatchImportConfigService,
     private monitoringService: DepartmentBatchImportMonitoringService,
-  ) {}
+  ) { }
 
   async uploadFile(file: Express.Multer.File): Promise<ImportUploadResponse> {
     if (!file) {
@@ -398,13 +398,13 @@ export class ImportService {
         // Check for existing department by name or code
         const existingByName = rowData.name
           ? await this.departmentsRepository.findOne({
-              where: { name: rowData.name },
-            })
+            where: { name: rowData.name },
+          })
           : null;
         const existingByCode = rowData.code
           ? await this.departmentsRepository.findOne({
-              where: { code: rowData.code },
-            })
+            where: { code: rowData.code },
+          })
           : null;
 
         if (existingByName || existingByCode) {
@@ -680,7 +680,7 @@ export class ImportService {
           transactionResult.executionTime,
           transactionResult.success,
           transactionResult.executionTime >
-            this.configService.getPerformanceConfig().slowQueryThreshold,
+          this.configService.getPerformanceConfig().slowQueryThreshold,
         );
 
         if (transactionResult.success && transactionResult.data) {

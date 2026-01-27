@@ -54,7 +54,7 @@ export class UserTransactionService {
     retryDelay: 1000, // 1 second
   };
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource) { }
 
   /**
    * Execute a function within a transaction with retry logic
@@ -141,7 +141,7 @@ export class UserTransactionService {
    */
   private createTimeoutPromise<T>(timeout?: number): Promise<T> {
     if (!timeout) {
-      return new Promise(() => {}); // Never resolves
+      return new Promise(() => { }); // Never resolves
     }
 
     return new Promise((_, reject) => {

@@ -234,8 +234,8 @@ export class BatchProcessingService {
 
     this.logger.log(
       `Batch Progress: ${stats.completedBatches}/${stats.totalBatches} batches ` +
-        `(${progressPercent}%) | ${stats.processedRows}/${stats.totalRows} rows | ` +
-        `Elapsed: ${elapsedSeconds}s | ETA: ${estimatedRemainingSeconds}s`,
+      `(${progressPercent}%) | ${stats.processedRows}/${stats.totalRows} rows | ` +
+      `Elapsed: ${elapsedSeconds}s | ETA: ${estimatedRemainingSeconds}s`,
     );
   }
 

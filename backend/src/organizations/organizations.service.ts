@@ -29,7 +29,7 @@ export class OrganizationsService {
     private organizationsRepository: TreeRepository<Organization>,
     @InjectRepository(UserOrganization)
     private userOrganizationsRepository: Repository<UserOrganization>,
-  ) {}
+  ) { }
 
   async create(
     createOrganizationDto: CreateOrganizationDto,

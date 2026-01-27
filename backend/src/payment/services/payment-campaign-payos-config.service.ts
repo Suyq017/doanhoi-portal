@@ -43,7 +43,7 @@ export class PaymentCampaignPayosConfigService {
     private readonly organizationRepository: Repository<Organization>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   /**
    * Create new PayOS configuration for payment campaign

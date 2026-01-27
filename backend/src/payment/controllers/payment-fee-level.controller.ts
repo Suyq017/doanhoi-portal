@@ -13,7 +13,7 @@ import { UpdatePaymentFeeLevelDto } from "../dto/update-payment-fee-level.dto";
 
 @Controller("payment-fee-levels")
 export class PaymentFeeLevelController {
-  constructor(private readonly feeLevelService: PaymentFeeLevelService) {}
+  constructor(private readonly feeLevelService: PaymentFeeLevelService) { }
 
   @Post()
   create(@Body() createDto: CreatePaymentFeeLevelDto) {

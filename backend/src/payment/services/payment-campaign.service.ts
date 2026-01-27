@@ -39,7 +39,7 @@ export class PaymentCampaignService {
     @InjectRepository(Organization)
     private readonly organizationRepository: Repository<Organization>,
     private readonly rolesService: RolesService,
-  ) {} /**
+  ) { } /**
    * Create new payment campaign
    */
   async create(

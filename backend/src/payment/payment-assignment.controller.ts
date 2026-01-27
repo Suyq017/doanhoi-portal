@@ -18,7 +18,7 @@ import { PaymentAssignmentStatus } from "../entities/payment-assignment.entity";
 export class PaymentAssignmentController {
   private readonly logger = new Logger(PaymentAssignmentController.name);
 
-  constructor(private readonly assignmentService: PaymentAssignmentService) {}
+  constructor(private readonly assignmentService: PaymentAssignmentService) { }
 
   /**
    * Create payment assignment

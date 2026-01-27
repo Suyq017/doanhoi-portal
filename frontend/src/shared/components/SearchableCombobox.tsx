@@ -141,9 +141,8 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
         type="button"
         onClick={handleToggle}
         disabled={disabled}
-        className={`w-full px-3 py-2 text-left border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-doan-500 focus:border-doan-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:disabled:bg-gray-600 ${
-          disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400 dark:hover:border-gray-500 cursor-pointer'
-        } ${isOpen ? 'ring-2 ring-doan-500 border-doan-500' : ''} transition-colors duration-200`}
+        className={`w-full px-3 py-2 text-left border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-doan-500 focus:border-doan-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:disabled:bg-gray-600 ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400 dark:hover:border-gray-500 cursor-pointer'
+          } ${isOpen ? 'ring-2 ring-doan-500 border-doan-500' : ''} transition-colors duration-200`}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
@@ -173,8 +172,8 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
                 className="w-full py-2 pl-8 pr-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-doan-500 focus:border-doan-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:placeholder-gray-400"
               />
             </div>
-          </div>          
-          
+          </div>
+
           {/* Options List */}
           <ul
             ref={listRef}
@@ -195,8 +194,8 @@ const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
                   key={option.value}
                   onClick={() => !option.disabled && handleSelect(option.value)}
                   className={`px-3 py-2 text-sm cursor-pointer transition-colors duration-150 flex items-center justify-between ${option.disabled
-                      ? 'text-gray-400 cursor-not-allowed dark:text-gray-500'
-                      : 'text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600'
+                    ? 'text-gray-400 cursor-not-allowed dark:text-gray-500'
+                    : 'text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600'
                     } ${option.value === value
                       ? 'bg-doan-50 text-doan-600 dark:bg-doan-900/20 dark:text-doan-400'
                       : ''

@@ -17,10 +17,10 @@ async function bootstrap() {
   const allowedOrigins =
     process.env.NODE_ENV === "production"
       ? [
-          process.env.FRONTEND_URL || "https://doanhoi.hcmut.edu.vn",
-          "https://doanhoi.hcmut.edu.vn/grafana",
-          "https://doanhoi.hcmut.edu.vn/prometheus",
-        ]
+        process.env.FRONTEND_URL || "https://doanhoi.hcmut.edu.vn",
+        "https://doanhoi.hcmut.edu.vn/grafana",
+        "https://doanhoi.hcmut.edu.vn/prometheus",
+      ]
       : ["http://localhost:9100", "http://localhost:3000"];
 
   app.enableCors({

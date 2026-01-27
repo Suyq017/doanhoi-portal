@@ -42,7 +42,7 @@ export class ActivitiesService {
     @InjectRepository(Organization)
     private organizationRepository: Repository<Organization>,
     private organizationsService: OrganizationsService,
-  ) {}
+  ) { }
 
   async create(
     createActivityDto: CreateActivityDto,

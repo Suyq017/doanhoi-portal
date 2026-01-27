@@ -18,7 +18,7 @@ const EXPANDED_MENUS_KEY = 'expandedMenus';
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  
+
   // Load expanded menus from localStorage, default to ['dataManagement', 'ctxh'] if not found
   const [expandedMenus, setExpandedMenus] = useState<string[]>(() => {
     try {
@@ -28,7 +28,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       return ['dataManagement', 'ctxh'];
     }
   });
-  
+
   const location = useLocation();
   const { t } = useTranslation('common');
   const permissions = usePermissions();
@@ -316,7 +316,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Menu className="w-5 h-5" />
             </button>
           </div>
-          
+
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {navigation.map((item) => {

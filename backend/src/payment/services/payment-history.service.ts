@@ -11,7 +11,7 @@ export class PaymentHistoryService {
   constructor(
     @InjectRepository(PaymentHistory)
     private paymentHistoryRepository: Repository<PaymentHistory>,
-  ) {}
+  ) { }
 
   async createPaymentRecord(data: {
     assignmentId: string;
@@ -140,8 +140,8 @@ export class PaymentHistoryService {
     if (search && search.trim()) {
       queryBuilder.andWhere(
         "(LOWER(CONCAT(user.familyName, ' ', user.givenName)) LIKE LOWER(:search) OR " +
-          "LOWER(user.code) LIKE LOWER(:search) OR " +
-          "CAST(ph.order_code AS TEXT) LIKE :search)",
+        "LOWER(user.code) LIKE LOWER(:search) OR " +
+        "CAST(ph.order_code AS TEXT) LIKE :search)",
         { search: `%${search.trim()}%` },
       );
     }
