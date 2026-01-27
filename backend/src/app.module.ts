@@ -13,6 +13,7 @@ import { CleanEmptyStringsMiddleware } from "./common/middleware/clean-empty-str
 import { PaymentModule } from "./payment/payment.module";
 import { PayosModule } from "./payos/payos.module";
 import { CtxhModule } from "./ctxh/ctxh.module";
+import { CtxhChatModule } from "./ctxh-chat/ctxh-chat.module";
 import { MetricsModule } from "./metrics/metrics.module";
 import { AwsS3ConfigModule } from "./aws-config/aws-s3-config.module";
 import { TemplatesModule } from "./templates/templates.module";
@@ -48,6 +49,7 @@ import { TemplatesModule } from "./templates/templates.module";
     PaymentModule,
     PayosModule,
     CtxhModule,
+    CtxhChatModule,
     MetricsModule,
     AwsS3ConfigModule,
     TemplatesModule,

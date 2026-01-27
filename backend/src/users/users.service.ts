@@ -231,8 +231,17 @@ export class UsersService {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 
-    // Extract role and organization data
-    const { roleId, organizationId, roles, ...userData } = updateUserDto;
+    // Extract role and organization data, and relationship IDs
+    const { 
+      roleId, 
+      organizationId, 
+      roles, 
+      roleAssignments,
+      classId,
+      managementDepartmentId,
+      trainingDepartmentId,
+      ...userData 
+    } = updateUserDto;
 
     console.log(
       "Extracted roles:",
@@ -243,9 +252,37 @@ export class UsersService {
       organizationId,
     );
 
-    // Update user data
+    // Update basic user data
     Object.assign(user, userData);
-    const updatedUser = await this.usersRepository.save(user); // Handle role assignment
+
+    // Handle class assignment
+    if (classId !== undefined) {
+      if (classId && classId.trim() !== '') {
+        user.class = { id: classId } as any;
+      } else {
+        user.class = null;
+      }
+    }
+
+    // Handle management department assignment
+    if (managementDepartmentId !== undefined) {
+      if (managementDepartmentId && managementDepartmentId.trim() !== '') {
+        user.managementDepartment = { id: managementDepartmentId } as any;
+      } else {
+        user.managementDepartment = null;
+      }
+    }
+
+    // Handle training department assignment
+    if (trainingDepartmentId !== undefined) {
+      if (trainingDepartmentId && trainingDepartmentId.trim() !== '') {
+        user.trainingDepartment = { id: trainingDepartmentId } as any;
+      } else {
+        user.trainingDepartment = null;
+      }
+    }
+
+    const updatedUser = await this.usersRepository.save(user);    // Handle role assignment
     if (roles && Array.isArray(roles)) {
       console.log("Processing multiple roles assignment:", roles);
       // Handle multiple roles assignment (including empty array to remove all roles)
