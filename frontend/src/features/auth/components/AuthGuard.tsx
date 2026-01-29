@@ -1,7 +1,8 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AuthLoadingScreen } from '../components/AuthLoadingScreen';
+import { getHasInitiallyLoaded, setHasInitiallyLoaded } from '../utils/authLoadingState';
 
 interface AuthGuardProps {
     children: ReactNode;
@@ -15,8 +16,15 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     const { auth } = useAuth();
     const location = useLocation();
 
-    // Show loading while checking authentication
-    if (auth.isLoading) {
+    // Track when initial load completes
+    useEffect(() => {
+        if (!auth.isLoading) {
+            setHasInitiallyLoaded(true);
+        }
+    }, [auth.isLoading]);
+
+    // Show loading while checking authentication (only on initial load)
+    if (auth.isLoading && !getHasInitiallyLoaded()) {
         return <AuthLoadingScreen />;
     }
 
