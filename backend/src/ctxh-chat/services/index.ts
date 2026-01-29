@@ -1,3 +1,7 @@
+// Universal Services (Ollama/Gemini toggle)
+export * from './universal-embeddings.service';
+export * from './universal-llm.service';
+
 // LangChain Services
 export * from './langchain-vector-store.service';
 export * from './langchain-memory.service';

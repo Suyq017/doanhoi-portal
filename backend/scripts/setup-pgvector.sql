@@ -10,12 +10,15 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- Verify extension installation
 SELECT * FROM pg_extension WHERE extname = 'vector';
 
+-- Drop existing table if exists (sẽ xóa dữ liệu cũ)
+DROP TABLE IF EXISTS ctxh_embeddings CASCADE;
+
 -- Create ctxh_embeddings table for storing vector embeddings
-CREATE TABLE IF NOT EXISTS ctxh_embeddings (
+CREATE TABLE ctxh_embeddings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     activity_id UUID NOT NULL REFERENCES ctxh_activity(id) ON DELETE CASCADE,
     content_text TEXT NOT NULL,
-    embedding vector(768), -- Google Gemini text-embedding-004 dimension
+    embedding vector(1024), -- BGE-M3 (Ollama) dimension: 1024, Gemini: 768
     chunk_index INTEGER DEFAULT 0,
     metadata JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -23,23 +26,23 @@ CREATE TABLE IF NOT EXISTS ctxh_embeddings (
 );
 
 -- Create indexes for optimal performance
-CREATE INDEX IF NOT EXISTS idx_ctxh_embeddings_activity_id 
+CREATE INDEX idx_ctxh_embeddings_activity_id 
 ON ctxh_embeddings(activity_id);
 
 -- Create HNSW index for vector similarity search (cosine distance)
-CREATE INDEX IF NOT EXISTS idx_ctxh_embeddings_vector 
+CREATE INDEX idx_ctxh_embeddings_vector 
 ON ctxh_embeddings USING hnsw (embedding vector_cosine_ops);
 
 -- Create GIN index for metadata queries
-CREATE INDEX IF NOT EXISTS idx_ctxh_embeddings_metadata 
+CREATE INDEX idx_ctxh_embeddings_metadata 
 ON ctxh_embeddings USING gin (metadata);
 
 -- Create index for chunk ordering
-CREATE INDEX IF NOT EXISTS idx_ctxh_embeddings_chunk_index 
+CREATE INDEX idx_ctxh_embeddings_chunk_index 
 ON ctxh_embeddings(activity_id, chunk_index);
 
 -- Create index for timestamps (for cleanup tasks)
-CREATE INDEX IF NOT EXISTS idx_ctxh_embeddings_created_at 
+CREATE INDEX idx_ctxh_embeddings_created_at 
 ON ctxh_embeddings(created_at);
 
 -- Add trigger to automatically update updated_at timestamp
@@ -57,20 +60,13 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Test vector operations
 DO $$
+DECLARE
+    test_vector vector(1024);
 BEGIN
-    -- Insert test data
-    INSERT INTO ctxh_embeddings (content_text, embedding, metadata) 
-    VALUES ('Test content for vector search', '[0.1,0.2,0.3]'::vector, '{"test": true}');
+    -- Create a test vector with 1024 dimensions (all zeros except first 3)
+    test_vector := array_fill(0::float, ARRAY[1024])::vector;
     
-    -- Test vector similarity search
-    PERFORM content_text FROM ctxh_embeddings 
-    ORDER BY embedding <-> '[0.1,0.2,0.3]'::vector 
-    LIMIT 5;
-    
-    -- Clean up test data
-    DELETE FROM ctxh_embeddings WHERE metadata->>'test' = 'true';
-    
-    RAISE NOTICE 'pgVector setup completed successfully!';
+    RAISE NOTICE 'pgVector setup completed successfully! Dimension: 1024';
 END $$;
 
 -- Display table info

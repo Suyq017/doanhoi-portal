@@ -1,20 +1,24 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
+import { Embeddings } from '@langchain/core/embeddings';
 import { Document } from '@langchain/core/documents';
 import { VectorStoreRetriever } from '@langchain/core/vectorstores';
 import { LangChainConfig } from '../config/langchain.config';
+import { Client } from 'pg';
 
 /**
  * LangChain Vector Store Service
  * Wraps PGVectorStore for seamless integration with existing ctxh_embeddings table
+ * Supports both Ollama (1024d) and Gemini (768d) embeddings
  */
 @Injectable()
 export class LangChainVectorStoreService implements OnModuleInit {
   private readonly logger = new Logger(LangChainVectorStoreService.name);
   private vectorStore: any;
-  private embeddings: GoogleGenerativeAIEmbeddings;
+  private embeddings: Embeddings;
+  private dbConfig: any;
   private initialized = false;
+  private embeddingDimension: number;
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -36,11 +40,16 @@ export class LangChainVectorStoreService implements OnModuleInit {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { PGVectorStore } = require('@langchain/community/vectorstores/pgvector');
 
-      // Initialize embeddings
+      // Initialize embeddings and get dimension
       this.embeddings = LangChainConfig.getEmbeddings(this.configService);
+      this.embeddingDimension = LangChainConfig.getEmbeddingDimension(this.configService);
+      
+      const modelType = LangChainConfig.isUsingLocalModel(this.configService) ? 'Ollama' : 'Gemini';
+      this.logger.log(`Using ${modelType} embeddings with dimension: ${this.embeddingDimension}`);
 
       // Get database config
       const dbConfig = LangChainConfig.getVectorStoreConfig(this.configService);
+      this.dbConfig = dbConfig;
 
       // PostgreSQL connection config
       const poolConfig = {
@@ -52,9 +61,11 @@ export class LangChainVectorStoreService implements OnModuleInit {
         max: 10, // Maximum pool connections
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 5000,
+        embeddingDimension: 1024, // Ensure this matches the embedding dimension
       };
 
-      // Initialize PGVectorStore with existing table schema
+      // Initialize PGVectorStore
+      // Let it use the existing table without modifications
       this.vectorStore = await PGVectorStore.initialize(this.embeddings, {
         postgresConnectionOptions: poolConfig,
         tableName: 'ctxh_embeddings',
@@ -68,7 +79,7 @@ export class LangChainVectorStoreService implements OnModuleInit {
       });
 
       this.initialized = true;
-      this.logger.log('LangChain VectorStore initialized successfully');
+      this.logger.log(`LangChain VectorStore initialized successfully (dimension: ${this.embeddingDimension})`);
     } catch (error) {
       this.logger.error('Failed to initialize LangChain VectorStore', error);
       throw error;
@@ -112,17 +123,85 @@ export class LangChainVectorStoreService implements OnModuleInit {
   }
 
   /**
-   * Add documents to the vector store
+   * Add documents to the vector store with custom SQL to include activity_id
    */
   async addDocuments(documents: Document[]): Promise<void> {
     await this.ensureInitialized();
 
+    if (!documents || documents.length === 0) {
+      this.logger.warn('No documents to add');
+      return;
+    }
+
+    // Validate documents have content
+    const validDocs = documents.filter(doc => {
+      if (!doc.pageContent || doc.pageContent.trim().length === 0) {
+        this.logger.warn(`Skipping document with empty content: ${JSON.stringify(doc.metadata)}`);
+        return false;
+      }
+      if (!doc.metadata?.activityId) {
+        this.logger.warn(`Skipping document without activityId: ${doc.pageContent.substring(0, 50)}...`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validDocs.length === 0) {
+      this.logger.warn('No valid documents after filtering');
+      return;
+    }
+
+    this.logger.debug(`Adding ${validDocs.length}/${documents.length} valid documents...`);
+
+    // Create database client for direct insert
+    const client = new Client({
+      host: this.dbConfig.host,
+      port: this.dbConfig.port,
+      database: this.dbConfig.database,
+      user: this.dbConfig.user,
+      password: this.dbConfig.password,
+    });
+
     try {
-      await this.vectorStore.addDocuments(documents);
-      this.logger.log(`Added ${documents.length} documents to vector store`);
+      await client.connect();
+
+      for (const doc of validDocs) {
+        try {
+          // Generate embedding
+          const embedding = await this.embeddings.embedQuery(doc.pageContent);
+          
+          if (!embedding || embedding.length === 0) {
+            this.logger.warn(`Empty embedding for activity: ${doc.metadata.activityId}`);
+            continue;
+          }
+
+          // Format embedding as PostgreSQL vector string
+          const embeddingStr = `[${embedding.join(',')}]`;
+
+          // Insert with activity_id
+          await client.query(
+            `INSERT INTO ctxh_embeddings (activity_id, content_text, embedding, metadata, chunk_index)
+             VALUES ($1, $2, $3::vector, $4, $5)`,
+            [
+              doc.metadata.activityId,
+              doc.pageContent,
+              embeddingStr,
+              JSON.stringify(doc.metadata),
+              doc.metadata.chunkIndex || 0,
+            ]
+          );
+        } catch (docError) {
+          this.logger.error(`Failed to insert document for activity ${doc.metadata.activityId}: ${docError.message}`);
+          throw docError;
+        }
+      }
+
+      this.logger.log(`✅ Successfully added ${validDocs.length} documents to vector store`);
     } catch (error) {
-      this.logger.error('Failed to add documents', error);
+      this.logger.error('Failed to add documents', error.stack || error);
       throw error;
+    } finally {
+      await client.end();
     }
   }
 
@@ -153,7 +232,7 @@ export class LangChainVectorStoreService implements OnModuleInit {
   /**
    * Get the embeddings instance
    */
-  getEmbeddings(): GoogleGenerativeAIEmbeddings {
+  getEmbeddings(): Embeddings {
     return this.embeddings;
   }
 

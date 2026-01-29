@@ -17,6 +17,8 @@ import { LangChainRagChainService } from '../services/langchain-rag-chain.servic
 import { LangChainIngestionService } from '../services/langchain-ingestion.service';
 import { LangChainVectorStoreService } from '../services/langchain-vector-store.service';
 import { LangChainMemoryService } from '../services/langchain-memory.service';
+import { UniversalEmbeddingsService } from '../services/universal-embeddings.service';
+import { UniversalLLMService } from '../services/universal-llm.service';
 import { ChatRequestDto, ChatResponseDto } from '../dto';
 import type { Request } from 'express';
 
@@ -30,6 +32,8 @@ export class CtxhChatController {
     private readonly memoryService: LangChainMemoryService,
     private readonly ingestionService: LangChainIngestionService,
     private readonly vectorStoreService: LangChainVectorStoreService,
+    private readonly universalEmbeddingsService: UniversalEmbeddingsService,
+    private readonly universalLLMService: UniversalLLMService,
   ) {}
 
   // ========== RAG CHAT ENDPOINTS ==========
@@ -188,7 +192,7 @@ export class CtxhChatController {
   // ========== DATA INGESTION ENDPOINTS ==========
 
   @Post('ingestion/full')
-  @UseGuards() // Bỏ authentication cho ingestion endpoints
+  //@UseGuards() // Bỏ authentication cho ingestion endpoints
   @ApiOperation({ summary: 'Run full ingestion pipeline for all activities' })
   @ApiResponse({
     status: 200,
@@ -283,6 +287,33 @@ export class CtxhChatController {
     return {
       status: this.vectorStoreService.isInitialized() ? 'healthy' : 'not initialized',
       initialized: this.vectorStoreService.isInitialized(),
+    };
+  }
+
+  @Get('health/models')
+  @UseGuards() // Bỏ authentication
+  @ApiOperation({ summary: 'Health check for AI models (Ollama/Gemini)' })
+  @ApiResponse({
+    status: 200,
+    description: 'AI models health status',
+  })
+  async checkModelsHealth() {
+    const embeddingsHealth = await this.universalEmbeddingsService.healthCheck();
+    const llmHealth = await this.universalLLMService.healthCheck();
+    const isLocalModel = this.universalEmbeddingsService.isUsingLocalModel();
+
+    return {
+      status: embeddingsHealth && llmHealth ? 'healthy' : 'unhealthy',
+      modelType: isLocalModel ? 'Ollama (Local)' : 'Gemini (Cloud)',
+      embeddings: {
+        healthy: embeddingsHealth,
+        model: this.universalEmbeddingsService.getModelName(),
+        dimension: this.universalEmbeddingsService.getDimension(),
+      },
+      llm: {
+        healthy: llmHealth,
+        model: this.universalLLMService.getModelName(),
+      },
     };
   }
 

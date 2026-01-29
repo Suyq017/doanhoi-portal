@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { RunnableSequence, RunnablePassthrough } from '@langchain/core/runnables';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { Document } from '@langchain/core/documents';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { LangChainVectorStoreService } from './langchain-vector-store.service';
 import { LangChainMemoryService } from './langchain-memory.service';
 import { LangChainConfig } from '../config/langchain.config';
@@ -31,11 +31,12 @@ export interface RAGChainOptions {
 /**
  * LangChain RAG Chain Service
  * Core RAG implementation using LangChain.js
+ * Supports both Ollama (local) and Gemini (cloud) LLMs
  */
 @Injectable()
 export class LangChainRagChainService implements OnModuleInit {
   private readonly logger = new Logger(LangChainRagChainService.name);
-  private llm: ChatGoogleGenerativeAI;
+  private llm: BaseChatModel;
   private ragChain: RunnableSequence;
   private questionRewriteChain: RunnableSequence;
   private initialized = false;
@@ -61,8 +62,11 @@ export class LangChainRagChainService implements OnModuleInit {
     try {
       this.logger.log('Initializing LangChain RAG chains...');
 
-      // Initialize LLM
+      // Initialize LLM (supports both Ollama and Gemini)
       this.llm = LangChainConfig.getLLM(this.configService);
+      
+      const modelType = LangChainConfig.isUsingLocalModel(this.configService) ? 'Ollama' : 'Gemini';
+      this.logger.log(`Using ${modelType} LLM for RAG chain`);
 
       // Ensure vector store is ready
       if (!this.vectorStoreService.isInitialized()) {

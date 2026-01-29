@@ -37,7 +37,7 @@
     "verify:super-admin": "ts-node src/database/scripts/verify-super-admin-permissions.ts",
     "migrate:aws-s3": "ts-node src/database/migrations/create-aws-s3-configs-table.ts",
     "migrate:ctxh-updates": "ts-node src/database/migrations/add-ctxh-columns-and-update-activity-dates.ts",
-    "rag:install": "npm install @langchain/core @langchain/community langchain @google/genai pgvector redis uuid",
+
     "rag:setup": "docker cp scripts/setup-pgvector.sql doanhoi-postgres:/tmp/setup-pgvector.sql && docker exec doanhoi-postgres psql -U postgres -d doanhoi -f /tmp/setup-pgvector.sql",
     "rag:test-connections": "node scripts/test-rag-connections.js",
     "rag:ingest": "curl -X POST http://localhost:9200/api/ctxh-chat/ingestion/full -H \"Content-Type: application/json\"",
@@ -45,7 +45,10 @@
     "rag:stats": "curl -X GET http://localhost:9200/api/ctxh-chat/ingestion/stats",
     "rag:health": "curl -X GET http://localhost:9200/api/ctxh-chat/health",
     "rag:test": "npm run test -- --testPathPattern=rag",
-    "ctxh:clear-vectors": "node scripts/clear-ctxh-embeddings.js"
+    "ctxh:clear-vectors": "node scripts/clear-ctxh-embeddings.js",
+    "check:models": "ts-node -r tsconfig-paths/register src/scripts/check-model-status.ts",
+    "migrate:embeddings": "ts-node -r tsconfig-paths/register src/scripts/migrate-embeddings.ts",
+    "models:health": "curl -X GET http://localhost:9200/api/ctxh-chat/health/models"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.927.0",
@@ -53,7 +56,8 @@
     "@google/genai": "^1.33.0",
     "@langchain/community": "^1.0.4",
     "@langchain/core": "^1.1.8",
-    "@langchain/google-genai": "^2.1.11",
+    "@langchain/google-genai": "^2.1.13",
+    "@langchain/ollama": "^1.2.1",
     "@langchain/textsplitters": "^1.0.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.1.1",

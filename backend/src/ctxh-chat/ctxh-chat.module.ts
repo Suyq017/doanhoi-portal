@@ -6,6 +6,10 @@ import { CtxhEmbedding } from '../entities/ctxh-embedding.entity';
 import { CtxhActivity } from '../entities/ctxh-activity.entity';
 import { CtxhChatController } from './controllers/ctxh-chat.controller';
 
+// Universal Services (Ollama/Gemini toggle)
+import { UniversalEmbeddingsService } from './services/universal-embeddings.service';
+import { UniversalLLMService } from './services/universal-llm.service';
+
 // LangChain Services
 import { LangChainVectorStoreService } from './services/langchain-vector-store.service';
 import { LangChainMemoryService } from './services/langchain-memory.service';
@@ -20,6 +24,9 @@ import { LangChainIngestionService } from './services/langchain-ingestion.servic
   ],
   controllers: [CtxhChatController],
   providers: [
+    // Universal Services (must be initialized first)
+    UniversalEmbeddingsService,
+    UniversalLLMService,
     // LangChain Services
     LangChainVectorStoreService,
     LangChainMemoryService,
@@ -28,6 +35,9 @@ import { LangChainIngestionService } from './services/langchain-ingestion.servic
     LangChainIngestionService,
   ],
   exports: [
+    // Universal Services
+    UniversalEmbeddingsService,
+    UniversalLLMService,
     // LangChain Services
     LangChainVectorStoreService,
     LangChainMemoryService,
