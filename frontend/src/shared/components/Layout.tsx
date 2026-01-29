@@ -322,14 +322,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 return ctxhPermissions.activities.view;
               } else if (child.requiredPermission === 'ctxh.config.manage') {
                 return ctxhPermissions.config.manage;
+              } else if (child.requiredPermission === 'ctxh.import.old_system') {
+                return permissions.hasPermission('ctxh.import.old_system', permissions.currentOrganizationId);
               }
             }
             return false; // Default to false for CTXH items without permission
           });
 
-          // Show dropdown only if has ctxh.access AND has accessible children
-          const hasCtxhAccess = permissions.hasPermission('ctxh.access', permissions.currentOrganizationId);
-          return hasCtxhAccess && accessibleChildren.length > 0;
+          // Show dropdown only if has accessible children (ẩn nếu không có quyền xem bất kỳ mục con nào)
+          return accessibleChildren.length > 0;
         }
 
         // Regular permission check for other menus
