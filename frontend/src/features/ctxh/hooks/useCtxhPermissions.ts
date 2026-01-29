@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { usePermissions } from '../../../shared/hooks/usePermissions';
 
 // Cache for CTXH permissions to prevent loading flash on route changes
