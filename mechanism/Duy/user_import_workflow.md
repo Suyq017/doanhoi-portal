@@ -377,7 +377,8 @@ sequenceDiagram
     participant BE as Backend
     participant DB as Database
     
-    User->>FE: Upload file Excel
+    User->>+FE: Upload file Excel
+    activate FE
     FE->>FE: Parse file thành UserImportData[]
     Note over FE: ExcelParserService.parseWithProgress()
     
@@ -387,30 +388,38 @@ sequenceDiagram
     Note over FE: Nếu > 500 records
     
     loop Mỗi chunk
-        FE->>BE: POST /api/users/validate-batch
-        BE->>DB: Check duplicates, departments, classes
-        DB-->>BE: Kết quả kiểm tra
+        FE->>+BE: POST /api/users/validate-batch
+        activate BE
+        BE->>+DB: Check duplicates, departments, classes
+        activate DB
+        DB-->>-BE: Kết quả kiểm tra
+        deactivate DB
         BE->>BE: Validate format, business rules
-        BE-->>FE: ValidationResult
+        BE-->>-FE: ValidationResult
+        deactivate BE
     end
     
     FE->>FE: Merge validation results
-    FE->>User: Hiển thị errors/warnings
+    FE->>-User: Hiển thị errors/warnings
+    deactivate FE
     
-    User->>FE: Xác nhận import
+    User->>+FE: Xác nhận import
+    activate FE
     
     FE->>FE: Chia batch 200 records
     FE->>FE: Generate sessionId
     
     loop Mỗi batch (200 users)
-        FE->>BE: POST /api/users/batch-import
+        FE->>+BE: POST /api/users/batch-import
+        activate BE
         Note over BE: BatchImportService.processBatch()
         
         BE->>BE: Tạo/update session
         BE->>BE: Chia sub-batch 20 users
         
         loop Mỗi sub-batch (20 users)
-            BE->>DB: START TRANSACTION
+            BE->>+DB: START TRANSACTION
+            activate DB
             BE->>BE: Validate basic + check duplicate in batch
             
             alt Bulk Insert Success
@@ -421,7 +430,9 @@ sequenceDiagram
                 DB-->>BE: Success
             else Bulk Insert Failed (Duplicate)
                 BE->>DB: ROLLBACK
-                BE->>DB: START NEW TRANSACTION
+                deactivate DB
+                BE->>+DB: START NEW TRANSACTION
+                activate DB
                 
                 loop Mỗi user
                     BE->>DB: SELECT user WHERE code/email
@@ -436,14 +447,18 @@ sequenceDiagram
             end
             
             BE->>DB: COMMIT TRANSACTION
+            deactivate DB
+            DB-->>-BE: Transaction completed
         end
         
         BE->>BE: Update session progress
-        BE-->>FE: BatchResult + SessionSummary
+        BE-->>-FE: BatchResult + SessionSummary
+        deactivate BE
         FE->>User: Update progress: X/Y batches
     end
     
-    FE->>User: Hiển thị kết quả cuối cùng
+    FE->>-User: Hiển thị kết quả cuối cùng
+    deactivate FE
 ```
 
 ---

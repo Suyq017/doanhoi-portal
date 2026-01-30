@@ -9,6 +9,235 @@
 - Vector Database: PostgreSQL + pgVector
 - RAG Framework: LangChain.js
 - LLM: OpenAI/Anthropic/Local LLM
+- Caching: Redis
+---
+
+## 🔧 BƯỚC 0: CÀI ĐẶT DEPENDENCIES
+
+### Dependencies Cần Thiết
+
+#### Backend Dependencies (NestJS)
+
+**Core RAG & AI Libraries:**
+```bash
+# LangChain.js - Framework chính cho RAG
+npm install @langchain/core @langchain/community langchain
+
+# OpenAI integration (nếu sử dụng OpenAI)
+npm install @langchain/openai openai
+
+# Google AI integration (nếu sử dụng Gemini)
+npm install @langchain/google-genai @google/generative-ai
+```
+
+**Database & Vector Store:**
+```bash
+# PostgreSQL với pgVector
+npm install @langchain/community pgvector pg @types/pg
+npm install typeorm reflect-metadata
+
+# UUID support
+npm install uuid @types/uuid
+```
+
+**Caching & Session Management:**
+```bash
+# Redis client
+npm install redis @types/redis
+npm install ioredis @types/ioredis  # Alternative Redis client (recommended)
+```
+
+**Text Processing & Utilities:**
+```bash
+# Text splitting và chunking
+npm install @langchain/textsplitters
+
+# Crypto utilities cho hashing
+# sử dụng bcrypt đã cài đặt sẵn trong dự án
+
+# Validation
+npm install class-validator class-transformer
+```
+
+#### Database Setup
+
+**PostgreSQL với pgVector Extension:**
+```sql
+-- Kết nối vào PostgreSQL database
+\c doanhoi_db
+
+-- Enable pgVector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Kiểm tra extension đã được cài đặt
+SELECT * FROM pg_extension WHERE extname = 'vector';
+```
+
+**Tạo Bảng Embeddings:**
+```sql
+-- Tạo bảng lưu trữ vector embeddings
+CREATE TABLE IF NOT EXISTS ctxh_embeddings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    activity_id UUID NOT NULL REFERENCES ctxh_activity(id) ON DELETE CASCADE,
+    content_text TEXT NOT NULL,
+    embedding vector(1536), -- OpenAI text-embedding-3-small dimension
+    chunk_index INTEGER DEFAULT 0,
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tạo indexes cho hiệu suất
+CREATE INDEX IF NOT EXISTS idx_ctxh_embeddings_activity_id 
+ON ctxh_embeddings(activity_id);
+
+CREATE INDEX IF NOT EXISTS idx_ctxh_embeddings_vector 
+ON ctxh_embeddings USING hnsw (embedding vector_cosine_ops);
+
+CREATE INDEX IF NOT EXISTS idx_ctxh_embeddings_metadata 
+ON ctxh_embeddings USING gin (metadata);
+```
+
+**Redis Setup (Docker):**
+```bash
+# Thêm Redis vào docker-compose.yml
+# (Đã có Redis 8.2.3 trong docker-compose hiện tại)
+
+# Hoặc chạy Redis standalone
+docker run -d --name redis-ctxh -p 6379:6379 redis:8.2.3
+```
+
+#### Environment Variables
+
+**Cập nhật .env file:**
+```env
+# AI/LLM Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+GOOGLE_AI_API_KEY=your_google_ai_api_key_here
+
+# Vector Database
+PGVECTOR_CONNECTION_STRING=postgresql://username:password@localhost:5432/doanhoi_db
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+REDIS_PASSWORD=your_redis_password
+
+# RAG Configuration
+RAG_CHUNK_SIZE=1000
+RAG_CHUNK_OVERLAP=200
+RAG_TOP_K_RESULTS=5
+RAG_SIMILARITY_THRESHOLD=0.7
+
+# Session Management
+SESSION_TTL_SECONDS=3600  # 1 hour
+MAX_CONVERSATION_HISTORY=10
+```
+
+#### TypeORM Entity Setup
+
+**Entities/ctxh-embedding.entity.ts:**
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { CtxhActivity } from './ctxh-activity.entity';
+
+@Entity('ctxh_embeddings')
+export class CtxhEmbedding {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column('uuid')
+  activityId: string;
+
+  @Column('text')
+  contentText: string;
+
+  @Column('vector', { length: 1536 })
+  embedding: number[];
+
+  @Column('integer', { default: 0 })
+  chunkIndex: number;
+
+  @Column('jsonb', { nullable: true })
+  metadata: Record<string, any>;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @ManyToOne(() => CtxhActivity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'activity_id' })
+  activity: CtxhActivity;
+}
+```
+
+#### NestJS Module Setup
+
+**Ctxh-chat.module.ts:**
+```typescript
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
+import { CtxhEmbedding } from './entities/ctxh-embedding.entity';
+import { CtxhActivity } from '../ctxh/entities/ctxh-activity.entity';
+import { CtxhChatController } from './controllers/ctxh-chat.controller';
+import { CtxhChatService } from './services/ctxh-chat.service';
+import { EmbeddingService } from './services/embedding.service';
+import { VectorStoreService } from './services/vector-store.service';
+
+@Module({
+  imports: [
+    ConfigModule,
+    TypeOrmModule.forFeature([CtxhEmbedding, CtxhActivity]),
+  ],
+  controllers: [CtxhChatController],
+  providers: [
+    CtxhChatService,
+    EmbeddingService,
+    VectorStoreService,
+  ],
+  exports: [CtxhChatService],
+})
+export class CtxhChatModule {}
+```
+
+#### Package.json Scripts
+
+**Thêm vào package.json:**
+```json
+{
+  "scripts": {
+    "rag:install": "npm install @langchain/core @langchain/community langchain @langchain/openai pgvector redis uuid crypto-js",
+    "db:migrate:rag": "npm run typeorm migration:run",
+    "rag:setup": "npm run db:migrate:rag && npm run rag:seed",
+    "rag:seed": "node dist/scripts/seed-embeddings.js",
+    "rag:test": "npm run test -- --testPathPattern=rag"
+  }
+}
+```
+
+### Installation Commands Summary
+
+**Chạy theo thứ tự:**
+```bash
+# 1. Cài đặt backend dependencies
+cd backend
+npm install @langchain/core @langchain/community langchain
+npm install @langchain/openai openai
+npm install pgvector pg @types/pg uuid @types/uuid
+npm install redis @types/redis crypto-js @types/crypto-js
+
+# 2. Setup database
+psql -U postgres -d doanhoi_db -f scripts/setup-pgvector.sql
+
+# 3. Chạy migrations (nếu có)
+npm run typeorm migration:run
+
+# 4. Test connections
+npm run test:connections
+```
 
 ---
 
@@ -21,7 +250,7 @@
 **Cần làm:**
 - Enable `pgvector` extension trong PostgreSQL
 - Tạo bảng `ctxh_embeddings` để lưu vectors
-- Thiết lập indexes cho vector search (HNSW hoặc IVFFlat)
+- Thiết lập indexes cho vector search (HNSW)
 
 **Schema bảng `ctxh_embeddings`:**
 ```
@@ -298,7 +527,7 @@ Ngày CTXH được cấp: [total_days] ngày
 #### 10.1. Service: ChatAgentService
 
 **LangChain Agent setup:**
-- Khởi tạo LLM (GPT-4, Claude, v.v.)
+- Khởi tạo LLM (GPT-4, Gemini)
 - Tạo retriever từ VectorStore
 - Setup RetrievalQA chain hoặc ConversationalRetrievalChain
 
@@ -450,17 +679,25 @@ hãy thông báo rõ ràng."
 
 ## 📅 Timeline Đề Xuất
 
+**Phase 0: Dependencies & Setup (3-5 ngày)**
+- Bước 0: Cài đặt tất cả dependencies
+- Setup PostgreSQL + pgVector extension
+- Setup Redis và test connections
+- Configure environment variables
+
 **Phase 1: Data Ingestion (1-2 tuần)**
-- Bước 1-6: Setup database, implement ingestion pipeline
+- Bước 1-6: Setup database schema, implement ingestion pipeline
 - Initial indexing của toàn bộ activities
+- Test embedding generation và storage
 
 **Phase 2: RAG Implementation (2-3 tuần)**
 - Bước 7-12: Implement chat agent, API endpoints
 - Testing và fine-tuning prompts
+- Integration với frontend (optional)
 
 **Phase 3: Polish & Deploy (1 tuần)**
 - Bước 13-15: Testing, monitoring, optimization
-- Production deployment
+- Production deployment và load testing
 
 **Total: 4-6 tuần**
 
@@ -506,10 +743,51 @@ hãy thông báo rõ ràng."
 - Model version upgrades
 - Prompt improvements based on feedback
 
+**Cost Management:**
+- Monitor LLM API usage (OpenAI có limit và cost)
+- Implement caching để giảm API calls
+- Consider local models cho development
+
+---
+
+## 🚀 Getting Started Checklist
+
+**Prerequisites:**
+- [ ] Node.js 18+ installed
+- [ ] PostgreSQL 14+ với pgVector extension
+- [ ] Redis 6+ running
+- [ ] OpenAI/Anthropic API keys
+
+**Phase 0 Setup:**
+- [ ] Clone repository và setup development environment
+- [ ] Cài đặt dependencies theo hướng dẫn trên
+- [ ] Setup database và run migrations
+- [ ] Configure environment variables
+- [ ] Test connections (DB, Redis, LLM APIs)
+
+**Phase 1 Development:**
+- [ ] Implement data ingestion pipeline
+- [ ] Create embedding generation service
+- [ ] Setup vector storage với pgVector
+- [ ] Test với sample CTXH activities
+
+**Phase 2 RAG Implementation:**
+- [ ] Implement retrieval service
+- [ ] Create chat agent với LangChain
+- [ ] Build API endpoints
+- [ ] Add conversation management
+
+**Phase 3 Production Ready:**
+- [ ] Add comprehensive testing
+- [ ] Implement monitoring và logging
+- [ ] Performance optimization
+- [ ] Deploy to production
+
 ---
 
 **📌 Next Steps:**
-1. Review và approve kế hoạch
-2. Setup development environment
-3. Implement Phase 1 (Data Ingestion)
-4. Demo và iterate
+1. ✅ **Review và approve kế hoạch**
+2. 🔧 **Chạy Phase 0: Setup dependencies**
+3. 🗄️ **Implement Phase 1: Data Ingestion**
+4. 🤖 **Build Phase 2: RAG Implementation**
+5. 🚢 **Deploy Phase 3: Production**

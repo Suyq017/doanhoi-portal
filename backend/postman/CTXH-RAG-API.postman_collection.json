@@ -1,0 +1,359 @@
+{
+  "info": {
+    "name": "CTXH RAG API",
+    "description": "Collection for testing CTXH RAG Chatbot API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:9200",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+                  "    console.log('Access token saved:', jsonData.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Health Checks",
+      "item": [
+        {
+          "name": "Overall Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "health"]
+            }
+          }
+        },
+        {
+          "name": "Embedding Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/health/embeddings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "health", "embeddings"]
+            }
+          }
+        },
+        {
+          "name": "Vector Store Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/health/vector-store",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "health", "vector-store"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Data Ingestion",
+      "item": [
+        {
+          "name": "Run Full Ingestion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/ingestion/full",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "ingestion", "full"]
+            }
+          }
+        },
+        {
+          "name": "Run Incremental Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/ingestion/incremental?since=2024-12-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "ingestion", "incremental"],
+              "query": [
+                {
+                  "key": "since",
+                  "value": "2024-12-01",
+                  "description": "ISO date string (optional)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Process Single Activity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/ingestion/activity/:activityId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "ingestion", "activity", ":activityId"],
+              "variable": [
+                {
+                  "key": "activityId",
+                  "value": "your-activity-uuid-here"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Ingestion Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/ingestion/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "ingestion", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Chat Operations",
+      "item": [
+        {
+          "name": "Send Message",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Có những hoạt động tình nguyện nào liên quan đến môi trường?\",\n  \"sessionId\": \"test-session-1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/message",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "message"]
+            }
+          }
+        },
+        {
+          "name": "Get Chat History",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/history/:sessionId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "history", ":sessionId"],
+              "variable": [
+                {
+                  "key": "sessionId",
+                  "value": "test-session-1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Clear Session",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/session/:sessionId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "session", ":sessionId"],
+              "variable": [
+                {
+                  "key": "sessionId",
+                  "value": "test-session-1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Submit Feedback",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"test-session-1\",\n  \"rating\": \"positive\",\n  \"comment\": \"Câu trả lời rất hữu ích!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "feedback"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Statistics",
+      "item": [
+        {
+          "name": "Get Storage Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/stats/storage",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "stats", "storage"]
+            }
+          }
+        },
+        {
+          "name": "Get Cache Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/stats/cache",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "stats", "cache"]
+            }
+          }
+        },
+        {
+          "name": "Clear Cache",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ctxh-chat/cache/clear",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ctxh-chat", "cache", "clear"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
