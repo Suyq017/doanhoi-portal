@@ -9,7 +9,6 @@ import { Client } from 'pg';
 /**
  * LangChain Vector Store Service
  * Wraps PGVectorStore for seamless integration with existing ctxh_embeddings table
- * Supports both Ollama (1024d) and Gemini (768d) embeddings
  */
 @Injectable()
 export class LangChainVectorStoreService implements OnModuleInit {
@@ -18,7 +17,6 @@ export class LangChainVectorStoreService implements OnModuleInit {
   private embeddings: Embeddings;
   private dbConfig: any;
   private initialized = false;
-  private embeddingDimension: number;
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -28,6 +26,7 @@ export class LangChainVectorStoreService implements OnModuleInit {
 
   /**
    * Initialize the Vector Store connection
+   * Sử dụng direct SQL thay vì PGVectorStore để tránh auto-alter table dimension
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
@@ -35,51 +34,51 @@ export class LangChainVectorStoreService implements OnModuleInit {
     }
 
     try {
-      this.logger.log('Initializing LangChain VectorStore...');
+      this.logger.log('Initializing LangChain VectorStore (Direct SQL mode)...');
 
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { PGVectorStore } = require('@langchain/community/vectorstores/pgvector');
-
-      // Initialize embeddings and get dimension
+      // Initialize embeddings
       this.embeddings = LangChainConfig.getEmbeddings(this.configService);
-      this.embeddingDimension = LangChainConfig.getEmbeddingDimension(this.configService);
-      
-      const modelType = LangChainConfig.isUsingLocalModel(this.configService) ? 'Ollama' : 'Gemini';
-      this.logger.log(`Using ${modelType} embeddings with dimension: ${this.embeddingDimension}`);
 
       // Get database config
       const dbConfig = LangChainConfig.getVectorStoreConfig(this.configService);
       this.dbConfig = dbConfig;
 
-      // PostgreSQL connection config
-      const poolConfig = {
+      // Verify database connection and vector dimension
+      const client = new Client({
         host: dbConfig.host,
         port: dbConfig.port,
         database: dbConfig.database,
         user: dbConfig.user,
         password: dbConfig.password,
-        max: 10, // Maximum pool connections
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000,
-        embeddingDimension: 1024, // Ensure this matches the embedding dimension
-      };
-
-      // Initialize PGVectorStore
-      // Let it use the existing table without modifications
-      this.vectorStore = await PGVectorStore.initialize(this.embeddings, {
-        postgresConnectionOptions: poolConfig,
-        tableName: 'ctxh_embeddings',
-        columns: {
-          idColumnName: 'id',
-          vectorColumnName: 'embedding',
-          contentColumnName: 'content_text',
-          metadataColumnName: 'metadata',
-        },
-        distanceStrategy: 'cosine',
       });
 
+      try {
+        await client.connect();
+        
+        // Check current vector dimension in database
+        const dimResult = await client.query(`
+          SELECT atttypmod as dimension 
+          FROM pg_attribute 
+          WHERE attrelid = 'ctxh_embeddings'::regclass 
+          AND attname = 'embedding'
+        `);
+        
+        const dbDimension = dimResult.rows[0]?.dimension || 'unknown';
+        const expectedDimension = LangChainConfig.getEmbeddingDimension(this.configService);
+        
+        this.logger.log(`📊 Database embedding dimension: ${dbDimension}`);
+        this.logger.log(`🎯 Expected embedding dimension: ${expectedDimension}`);
+        
+        if (dbDimension !== expectedDimension) {
+          this.logger.warn(`⚠️ Dimension mismatch! DB: ${dbDimension}, Expected: ${expectedDimension}`);
+          this.logger.warn(`Run: ALTER TABLE ctxh_embeddings ALTER COLUMN embedding TYPE vector(${expectedDimension})`);
+        }
+      } finally {
+        await client.end();
+      }
+
       this.initialized = true;
-      this.logger.log(`LangChain VectorStore initialized successfully (dimension: ${this.embeddingDimension})`);
+      this.logger.log('✅ LangChain VectorStore initialized (Direct SQL mode)');
     } catch (error) {
       this.logger.error('Failed to initialize LangChain VectorStore', error);
       throw error;
@@ -96,7 +95,7 @@ export class LangChainVectorStoreService implements OnModuleInit {
   }
 
   /**
-   * Perform similarity search with scores
+   * Perform similarity search with scores using direct SQL
    */
   async similaritySearchWithScore(
     query: string,
@@ -104,13 +103,46 @@ export class LangChainVectorStoreService implements OnModuleInit {
   ): Promise<[Document, number][]> {
     await this.ensureInitialized();
 
+    const client = new Client({
+      host: this.dbConfig.host,
+      port: this.dbConfig.port,
+      database: this.dbConfig.database,
+      user: this.dbConfig.user,
+      password: this.dbConfig.password,
+    });
+
     try {
-      const results = await this.vectorStore.similaritySearchWithScore(query, k);
+      await client.connect();
+
+      // Generate query embedding
+      const queryEmbedding = await this.embeddings.embedQuery(query);
+      const embeddingStr = `[${queryEmbedding.join(',')}]`;
+
+      // Cosine similarity search using pgvector
+      const result = await client.query(
+        `SELECT id, content_text, metadata, 1 - (embedding <=> $1::vector) as similarity
+         FROM ctxh_embeddings
+         WHERE embedding IS NOT NULL
+         ORDER BY embedding <=> $1::vector
+         LIMIT $2`,
+        [embeddingStr, k]
+      );
+
+      const results: [Document, number][] = result.rows.map((row) => [
+        new Document({
+          pageContent: row.content_text,
+          metadata: typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata,
+        }),
+        row.similarity,
+      ]);
+
       this.logger.debug(`Similarity search returned ${results.length} documents`);
       return results;
     } catch (error) {
       this.logger.error('Similarity search failed', error);
       throw error;
+    } finally {
+      await client.end();
     }
   }
 
@@ -118,8 +150,8 @@ export class LangChainVectorStoreService implements OnModuleInit {
    * Perform similarity search (documents only)
    */
   async similaritySearch(query: string, k: number = 5): Promise<Document[]> {
-    await this.ensureInitialized();
-    return this.vectorStore.similaritySearch(query, k);
+    const results = await this.similaritySearchWithScore(query, k);
+    return results.map(([doc]) => doc);
   }
 
   /**
@@ -207,26 +239,23 @@ export class LangChainVectorStoreService implements OnModuleInit {
 
   /**
    * Get a retriever for use in LangChain chains
+   * Returns a custom retriever that uses direct SQL
    */
   getRetriever(k: number = 5): VectorStoreRetriever {
     if (!this.initialized) {
       throw new Error('VectorStore not initialized. Call initialize() first.');
     }
 
-    return this.vectorStore.asRetriever({
-      k,
-      searchType: 'similarity',
-    });
-  }
-
-  /**
-   * Get the underlying vector store instance
-   */
-  getVectorStore(): any {
-    if (!this.initialized) {
-      throw new Error('VectorStore not initialized. Call initialize() first.');
-    }
-    return this.vectorStore;
+    // Create a simple retriever wrapper
+    const self = this;
+    return {
+      async invoke(query: string): Promise<Document[]> {
+        return self.similaritySearch(query, k);
+      },
+      async getRelevantDocuments(query: string): Promise<Document[]> {
+        return self.similaritySearch(query, k);
+      },
+    } as unknown as VectorStoreRetriever;
   }
 
   /**
@@ -244,7 +273,7 @@ export class LangChainVectorStoreService implements OnModuleInit {
   }
 
   /**
-   * Perform MMR (Maximum Marginal Relevance) search
+   * Perform MMR (Maximum Marginal Relevance) search using direct SQL
    * Returns diverse results that are relevant but not too similar to each other
    */
   async maxMarginalRelevanceSearch(
@@ -260,13 +289,49 @@ export class LangChainVectorStoreService implements OnModuleInit {
     const { k = 5, fetchK = 20, lambda = 0.5 } = options;
 
     try {
-      const results = await this.vectorStore.maxMarginalRelevanceSearch(query, {
-        k,
-        fetchK,
-        lambda,
-      });
-      this.logger.debug(`MMR search returned ${results.length} documents`);
-      return results;
+      // Fetch more candidates first, then apply MMR
+      const candidates = await this.similaritySearchWithScore(query, fetchK);
+      
+      if (candidates.length === 0) {
+        return [];
+      }
+
+      // Simple MMR implementation: select diverse documents
+      const selected: Document[] = [];
+      const selectedIndices = new Set<number>();
+
+      // Always include the most relevant document first
+      selected.push(candidates[0][0]);
+      selectedIndices.add(0);
+
+      while (selected.length < k && selected.length < candidates.length) {
+        let bestScore = -Infinity;
+        let bestIdx = -1;
+
+        for (let i = 0; i < candidates.length; i++) {
+          if (selectedIndices.has(i)) continue;
+
+          const relevance = candidates[i][1];
+          // Simplified diversity penalty based on position
+          const diversityPenalty = 1 - (selected.length / fetchK);
+          const mmrScore = lambda * relevance + (1 - lambda) * diversityPenalty;
+
+          if (mmrScore > bestScore) {
+            bestScore = mmrScore;
+            bestIdx = i;
+          }
+        }
+
+        if (bestIdx >= 0) {
+          selected.push(candidates[bestIdx][0]);
+          selectedIndices.add(bestIdx);
+        } else {
+          break;
+        }
+      }
+
+      this.logger.debug(`MMR search returned ${selected.length} documents`);
+      return selected;
     } catch (error) {
       this.logger.error('MMR search failed', error);
       throw error;

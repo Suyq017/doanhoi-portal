@@ -16,7 +16,7 @@ export class LangChainConfig {
    * Check if using local model (Ollama)
    */
   static isUsingLocalModel(configService: ConfigService): boolean {
-    return configService.get('USE_LOCAL_MODEL', 'false') === 'true';
+    return configService.get('USE_LOCAL_MODEL') === 'true';
   }
 
   /**
@@ -28,10 +28,10 @@ export class LangChainConfig {
 
     if (useLocalModel) {
       // Use Ollama Qwen2.5:7b
-      const baseUrl = configService.get('OLLAMA_BASE_URL', 'http://localhost:11434');
-      const model = configService.get('OLLAMA_LLM_MODEL', 'qwen2.5:7b');
-      const numCtx = parseInt(configService.get('OLLAMA_NUM_CTX', '4096'), 10);
-      const temperature = parseFloat(configService.get('RAG_TEMPERATURE', '0.0'));
+      const baseUrl = configService.get('OLLAMA_BASE_URL');
+      const model = configService.get('OLLAMA_LLM_MODEL');
+      const numCtx = parseInt(configService.get('OLLAMA_NUM_CTX'), 10);
+      const temperature = parseFloat(configService.get('RAG_TEMPERATURE'));
 
       return new ChatOllama({
         baseUrl,
@@ -47,10 +47,10 @@ export class LangChainConfig {
       }
 
       return new ChatGoogleGenerativeAI({
-        model: configService.get('RAG_CHAT_MODEL') || 'gemini-2.5-flash',
+        model: configService.get('RAG_CHAT_MODEL'),
         apiKey,
-        temperature: parseFloat(configService.get('RAG_TEMPERATURE', '0.0')),
-        maxOutputTokens: parseInt(configService.get('RAG_MAX_OUTPUT_TOKENS', '2048'), 10),
+        temperature: parseFloat(configService.get('RAG_TEMPERATURE')),
+        maxOutputTokens: parseInt(configService.get('RAG_MAX_OUTPUT_TOKENS'), 10),
       });
     }
   }
@@ -64,8 +64,8 @@ export class LangChainConfig {
 
     if (useLocalModel) {
       // Use Ollama BGE-M3 (dimension: 1024)
-      const baseUrl = configService.get('OLLAMA_BASE_URL', 'http://localhost:11434');
-      const model = configService.get('OLLAMA_EMBEDDING_MODEL', 'bge-m3');
+      const baseUrl = configService.get('OLLAMA_BASE_URL');
+      const model = configService.get('OLLAMA_EMBEDDING_MODEL');
 
       return new OllamaEmbeddings({
         baseUrl,
@@ -80,9 +80,9 @@ export class LangChainConfig {
 
       return new GoogleGenAIEmbeddings({
         apiKey,
-        model: configService.get('GEMINI_EMBEDDING_MODEL', 'gemini-embedding-001'),
+        model: configService.get('GEMINI_EMBEDDING_MODEL'),
         outputDimensionality: parseInt(
-          configService.get('GEMINI_EMBEDDING_DIMENSION', '768'),
+          configService.get('GEMINI_EMBEDDING_DIMENSION'),
           10,
         ),
       });
@@ -96,9 +96,9 @@ export class LangChainConfig {
     const useLocalModel = this.isUsingLocalModel(configService);
     
     if (useLocalModel) {
-      return parseInt(configService.get('OLLAMA_EMBEDDING_DIMENSION', '1024'), 10);
+      return parseInt(configService.get('OLLAMA_EMBEDDING_DIMENSION'), 10);
     } else {
-      return parseInt(configService.get('GEMINI_EMBEDDING_DIMENSION', '768'), 10);
+      return parseInt(configService.get('GEMINI_EMBEDDING_DIMENSION'), 10);
     }
   }
 
@@ -107,11 +107,11 @@ export class LangChainConfig {
    */
   static getVectorStoreConfig(configService: ConfigService) {
     return {
-      host: configService.get<string>('DB_HOST', 'localhost'),
-      port: parseInt(configService.get<string>('DB_PORT', '5432'), 10),
-      database: configService.get<string>('DB_NAME', 'doanhoi'),
-      user: configService.get<string>('DB_USERNAME', 'postgres'),
-      password: configService.get<string>('DB_PASSWORD', ''),
+      host: configService.get<string>('DB_HOST'),
+      port: parseInt(configService.get<string>('DB_PORT'), 10),
+      database: configService.get<string>('DB_NAME'),
+      user: configService.get<string>('DB_USERNAME'),
+      password: configService.get<string>('DB_PASSWORD'),
     };
   }
 
@@ -121,10 +121,10 @@ export class LangChainConfig {
   static getRAGConfig(configService: ConfigService) {
     return {
       topK: configService.get<number>('RAG_TOP_K', 5),
-      similarityThreshold: configService.get<number>('RAG_SIMILARITY_THRESHOLD', 0.7),
-      useMultiQuery: configService.get<boolean>('RAG_USE_MULTI_QUERY', false),
-      enableMemory: configService.get<boolean>('RAG_ENABLE_MEMORY', true),
-      memoryWindowSize: configService.get<number>('RAG_MEMORY_WINDOW_SIZE', 6),
+      similarityThreshold: configService.get<number>('RAG_SIMILARITY_THRESHOLD'),
+      useMultiQuery: configService.get<boolean>('RAG_USE_MULTI_QUERY'),
+      enableMemory: configService.get<boolean>('RAG_ENABLE_MEMORY'),
+      memoryWindowSize: configService.get<number>('RAG_MEMORY_WINDOW_SIZE'),
     };
   }
 }

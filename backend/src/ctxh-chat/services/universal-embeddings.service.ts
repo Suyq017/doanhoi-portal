@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { OllamaEmbeddings } from '@langchain/ollama';
 import { Embeddings } from '@langchain/core/embeddings';
 import { GoogleGenAIEmbeddings } from '../config/google-genai-embeddings';
+import { OpenAIEmbeddings } from "@langchain/openai";
 
 /**
  * Universal Embeddings Service
@@ -19,7 +20,7 @@ export class UniversalEmbeddingsService implements OnModuleInit {
 
   constructor(private readonly configService: ConfigService) {
     this.useLocalModel =
-      this.configService.get('USE_LOCAL_MODEL', 'false') === 'true';
+      this.configService.get('USE_LOCAL_MODEL') === 'true';
   }
 
   async onModuleInit(): Promise<void> {
@@ -41,20 +42,17 @@ export class UniversalEmbeddingsService implements OnModuleInit {
    * Initialize Ollama BGE-M3 embeddings (local)
    */
   private async initializeOllamaEmbeddings(): Promise<void> {
-    const baseUrl = this.configService.get(
-      'OLLAMA_BASE_URL',
-      'http://localhost:11434',
-    );
-    this.modelName = this.configService.get('OLLAMA_EMBEDDING_MODEL', 'bge-m3');
-    this.dimension = parseInt(
-      this.configService.get('OLLAMA_EMBEDDING_DIMENSION', '1024'),
-      10,
-    );
+    const baseUrl = this.configService.get('OLLAMA_BASE_URL',);
+    this.modelName = this.configService.get('OLLAMA_EMBEDDING_MODEL');
+    this.dimension = parseInt(this.configService.get('OLLAMA_EMBEDDING_DIMENSION'),);
 
-    this.embeddings = new OllamaEmbeddings({
-      baseUrl,
+    this.embeddings = new OpenAIEmbeddings({
       model: this.modelName,
-    }) as unknown as Embeddings;
+      dimensions: this.dimension,
+      configuration: {
+        baseURL: baseUrl,
+      },
+    });
 
     this.logger.log(
       `✅ Using LOCAL Ollama Embeddings: ${this.modelName} (dimension: ${this.dimension}) at ${baseUrl}`,
@@ -66,14 +64,8 @@ export class UniversalEmbeddingsService implements OnModuleInit {
    */
   private async initializeGeminiEmbeddings(): Promise<void> {
     const apiKey = this.configService.get('GEMINI_API_KEY');
-    this.modelName = this.configService.get(
-      'GEMINI_EMBEDDING_MODEL',
-      'gemini-embedding-001',
-    );
-    this.dimension = parseInt(
-      this.configService.get('GEMINI_EMBEDDING_DIMENSION', '768'),
-      10,
-    );
+    this.modelName = this.configService.get('GEMINI_EMBEDDING_MODEL',);
+    this.dimension = parseInt(this.configService.get('GEMINI_EMBEDDING_DIMENSION'),);
 
     if (!apiKey) {
       throw new Error(

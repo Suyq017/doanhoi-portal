@@ -37,8 +37,8 @@
     "verify:super-admin": "ts-node src/database/scripts/verify-super-admin-permissions.ts",
     "migrate:aws-s3": "ts-node src/database/migrations/create-aws-s3-configs-table.ts",
     "migrate:ctxh-updates": "ts-node src/database/migrations/add-ctxh-columns-and-update-activity-dates.ts",
-
     "rag:setup": "docker cp scripts/setup-pgvector.sql doanhoi-postgres:/tmp/setup-pgvector.sql && docker exec doanhoi-postgres psql -U postgres -d doanhoi -f /tmp/setup-pgvector.sql",
+    "rag:update-dimension": "docker cp scripts/update-vector-dimension.sql doanhoi-postgres:/tmp/update-vector-dimension.sql && docker exec doanhoi-postgres psql -U postgres -d doanhoi -f /tmp/update-vector-dimension.sql",
     "rag:test-connections": "node scripts/test-rag-connections.js",
     "rag:ingest": "curl -X POST http://localhost:9200/api/ctxh-chat/ingestion/full -H \"Content-Type: application/json\"",
     "rag:ingest-incremental": "curl -X POST http://localhost:9200/api/ctxh-chat/ingestion/incremental -H \"Content-Type: application/json\"",
@@ -58,6 +58,7 @@
     "@langchain/core": "^1.1.8",
     "@langchain/google-genai": "^2.1.13",
     "@langchain/ollama": "^1.2.1",
+    "@langchain/openai": "^1.1.2",
     "@langchain/textsplitters": "^1.0.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.1.1",

@@ -22,8 +22,8 @@ export class GoogleGenAIEmbeddings extends Embeddings {
     }
 
     this.ai = new GoogleGenAI({ apiKey: options.apiKey });
-    this.model = options.model || 'gemini-embedding-001';
-    this.outputDimensionality = options.outputDimensionality || 768;
+    this.model = options.model;
+    this.outputDimensionality = options.outputDimensionality;
   }
 
   /**
@@ -31,6 +31,8 @@ export class GoogleGenAIEmbeddings extends Embeddings {
    */
   async embedQuery(text: string): Promise<number[]> {
     try {
+      console.log(`🔧 Requesting embedding with dimension: ${this.outputDimensionality}`);
+      
       const response = await this.ai.models.embedContent({
         model: this.model,
         contents: text,
@@ -48,6 +50,7 @@ export class GoogleGenAIEmbeddings extends Embeddings {
         throw new Error('Empty embedding values returned');
       }
 
+      console.log(`✅ Received embedding dimension: ${embedding.length}`);
       return embedding;
     } catch (error) {
       throw new Error(`Failed to generate embedding: ${error.message}`);

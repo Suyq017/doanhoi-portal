@@ -199,22 +199,6 @@ describe('LangChainVectorStoreService', () => {
     });
   });
 
-  describe('getVectorStore', () => {
-    it('should return vector store after initialization', async () => {
-      await service.initialize();
-
-      const vectorStore = service.getVectorStore();
-
-      expect(vectorStore).toBeDefined();
-    });
-
-    it('should throw error when not initialized', () => {
-      expect(() => service.getVectorStore()).toThrow(
-        'VectorStore not initialized. Call initialize() first.'
-      );
-    });
-  });
-
   describe('getEmbeddings', () => {
     beforeEach(async () => {
       await service.initialize();
