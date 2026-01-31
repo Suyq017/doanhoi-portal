@@ -52,7 +52,7 @@ frontend/src/features/ctxh/
 ### 1. Quản lý danh mục (Categories)
 - Tạo/sửa/xóa danh mục hoạt động
 - Xem danh sách danh mục
-- Thống kê số hoạt động mỗi danh mục
+- Xem danh sách chi tiết hoạt động của mỗi danh mục
 
 ### 2. Quản lý hoạt động (Activities)
 - Tạo hoạt động CTXH mới
@@ -62,14 +62,13 @@ frontend/src/features/ctxh/
 
 ### 3. Quản lý người tham gia (Participants)
 - Thêm sinh viên vào hoạt động
-- Điểm danh (chấm ngày CTXH thực tế)
+- Chấm ngày CTXH thực tế
 - Xóa sinh viên khỏi hoạt động
-- Import danh sách từ Excel
+- Import danh sách từ Excel (Thêm sinh viên, chấm ngày CTXH)
 
 ### 4. Cấu hình giới hạn (Limit Config)
-- Cấu hình số ngày CTXH tối thiểu
-- Áp dụng cho từng năm học
-- Có thể cấu hình theo tổ chức
+- Cấu hình số ngày CTXH tối đa của tổ chức có thể cấp cho 1 hoạt động
+- Tự động áp dụng cấu hình cho tổ chức con khi tạo hoặc chỉnh sửa
 
 ### 5. AI Chat Assistant
 - Hỏi đáp về quy định CTXH
@@ -202,7 +201,7 @@ ctxh.activities.create      # Tạo hoạt động
 ctxh.activities.update      # Sửa hoạt động
 ctxh.activities.delete      # Xóa hoạt động
 ctxh.participants.manage    # Quản lý người tham gia
-ctxh.participants.grade     # Chấm ngày CTXH
+ctxh.reports.export         # Xuất file danh sách kết quả của sinh viên thuộc hoạt động
 ctxh.limit-configs.manage   # Quản lý cấu hình giới hạn
 ```
 

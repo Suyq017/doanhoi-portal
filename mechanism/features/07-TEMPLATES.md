@@ -52,18 +52,16 @@ frontend/src/features/templates/
 - Loại field (text, date, select, ...)
 - Validation rules
 - Giá trị mặc định
-- Auto-fill từ profile
 
 ### 3. User - Điền đơn
 - Xem danh sách mẫu đơn
 - Điền form theo cấu hình
-- Preview văn bản trước khi nộp
 - Submit và download
+- Preview văn bản không cần tải xuống
 
 ### 4. User - Quản lý đơn đã nộp
 - Xem danh sách submissions
 - Preview/Download đơn đã nộp
-- Xem trạng thái xử lý
 
 ## Types
 
@@ -186,13 +184,9 @@ Columns:
 
 ## Permissions
 ```
-templates.access            # Truy cập module
-templates.manage            # Quản lý templates (admin)
-templates.upload            # Upload template mới
-templates.configure         # Cấu hình fields
-templates.delete            # Xóa template
-templates.fill              # Điền mẫu đơn (user)
-templates.view-submissions  # Xem submissions
+templates.access            # Xem trang Biểu mẫu
+templates.admin.access      # Xem trang Quản lý biểu mẫu (admin)
+templates.manage            # Quản lý trang quản lý biểu mẫu (admin)
 ```
 
 ## Template Placeholder Format
@@ -234,23 +228,21 @@ ${REASON}
    ↓
 2. Form được render từ field config
    ↓
-3. Auto-fill fields từ profile
+3. User điền các fields
    ↓
-4. User điền các fields còn lại
+4. Submit form
    ↓
-5. Preview document (optional)
+5. Backend generate file với data
    ↓
-6. Submit form
+6. Preview document (optional)
    ↓
-7. Backend generate file với data
-   ↓
-8. User có thể download file
+7. User có thể download file
 ```
 
 ## Lưu ý kỹ thuật
-- File Word được lưu trên S3
+- File Word được lưu trên S3, các thông tin được lưu trong Database
+- Chỉ nhận file Docx (Word 2007 trở lên), cần chuyển file doc -> docx
 - Generate document sử dụng docxtemplater
 - Office Viewer sử dụng Microsoft Online viewer
 - Support Vietnamese characters
-- Date format có thể cấu hình (DD/MM/YYYY, ...)
 - Mapping ngày: Tách ngày/tháng/năm thành 3 fields riêng
