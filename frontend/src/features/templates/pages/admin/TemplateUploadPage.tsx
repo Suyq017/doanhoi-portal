@@ -1,128 +1,34 @@
-import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, ArrowLeft, AlertCircle, Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { uploadTemplate, parseTemplateFile } from '@/shared/services/template.service';
-import { useToast } from '@/shared/hooks/useToast';
+import { FileText, ArrowLeft, AlertCircle, Loader } from 'lucide-react';
+import { useTemplateUploadPage } from '../../hooks';
+import { FileDropzone, UploadInstructions } from '../../components/admin';
 import { Toast } from '@/shared/components';
 
 const TemplateUploadPage: React.FC = () => {
   const { t } = useTranslation(['templates', 'common']);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { toasts, showError, hideToast } = useToast();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [dragActive, setDragActive] = useState(false);
-  const [step, setStep] = useState<'upload' | 'info'>('upload'); // Step control
-  const [detectedFields, setDetectedFields] = useState<string[]>([]);
-  const [placeholderCounts, setPlaceholderCounts] = useState<Record<string, number>>({});
-  const [isParsing, setIsParsing] = useState(false);
 
-  const uploadMutation = useMutation({
-    mutationFn: (data: { file: File; name: string; description?: string }) =>
-      uploadTemplate(data.file, { name: data.name, description: data.description }),
-    onSuccess: () => {
-      // Invalidate queries to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['templates'] }); // Admin list
-      queryClient.invalidateQueries({ queryKey: ['templates-active'] }); // User list
-      
-      // Navigate back immediately with success message
-      navigate('/portal/admin/templates', { 
-        state: { 
-          showSuccessToast: true, 
-          message: t('templates:messages.uploadSuccess')
-        },
-        replace: true // Use replace to avoid back button showing upload page
-      });
-    },
-    onError: (error: any) => {
-      // Show error toast on current page
-      showError(error?.response?.data?.message || t('common:messages.error.upload'));
-    },
-  });
+  const {
+    state,
+    setName,
+    setDescription,
+    handleFileChange,
+    handleCancelFile,
+    handleSubmit,
+    handleDrag,
+    handleDrop,
+    isUploading,
+    toasts,
+    hideToast,
+  } = useTemplateUploadPage();
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files[0]) {
-      handleFileChange(files[0]);
-    }
-  };
-
-  const handleFileChange = (selectedFile: File) => {
-    if (!selectedFile.name.endsWith('.docx')) {
-      showError(t('templates:upload.onlyDocx'));
-      return;
-    }
-    setFile(selectedFile);
-    
-    // Parse file to detect fields
-    setIsParsing(true);
-    parseTemplateFile(selectedFile)
-      .then((result) => {
-        setDetectedFields(result.placeholders || []);
-        setPlaceholderCounts(result.placeholderCounts || {});
-        setIsParsing(false);
-        setStep('info'); // Move to info step after file selected and parsed
-      })
-      .catch((error) => {
-        console.error('Parse error:', error);
-        setDetectedFields([]);
-        setPlaceholderCounts({});
-        setIsParsing(false);
-        // Still move to info step even if parse fails
-        setStep('info');
-      });
-  };
-
-  const handleCancelFile = () => {
-    setFile(null);
-    setName('');
-    setDescription('');
-    setDetectedFields([]);
-    setPlaceholderCounts({});
-    setStep('upload'); // Back to upload step
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!file) {
-      showError(t('templates:upload.selectFile'));
-      return;
-    }
-
-    if (!name.trim()) {
-      showError(t('templates:upload.enterName'));
-      return;
-    }
-
-    uploadMutation.mutate({
-      file,
-      name: name.trim(),
-      description: description.trim() || undefined,
-    });
-  };
+  const { name, description, file, step, detectedFields, placeholderCounts, isParsing, dragActive } = state;
 
   return (
     <div className="space-y-6">
-      {/* Toasts - Fixed position at top-right */}
+      {/* Toasts */}
       <div className="fixed top-4 right-4 z-[9999] space-y-2">
         {toasts.map((toast) => (
           <Toast
@@ -166,68 +72,14 @@ const TemplateUploadPage: React.FC = () => {
               {t('templates:upload.step1')}
             </h2>
 
-            <div
-              className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                dragActive
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-              }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
+            <FileDropzone
+              dragActive={dragActive}
+              onDrag={handleDrag}
               onDrop={handleDrop}
-            >
-              <input
-                type="file"
-                id="file-upload"
-                accept=".docx"
-                onChange={(e) => {
-                  const selectedFile = e.target.files?.[0];
-                  if (selectedFile) handleFileChange(selectedFile);
-                }}
-                className="hidden"
-              />
+              onFileSelect={handleFileChange}
+            />
 
-              <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <div className="mb-2">
-                <label
-                  htmlFor="file-upload"
-                  className="cursor-pointer text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold"
-                >
-                  {t('templates:upload.clickToSelect')}
-                </label>
-                <span className="text-gray-600 dark:text-gray-400"> {t('templates:upload.orDragDrop')}</span>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {t('templates:upload.onlyDocx')}
-              </p>
-            </div>
-
-            {/* Instructions */}
-            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <div className="flex">
-                <AlertCircle className="h-5 w-5 text-blue-500 dark:text-blue-400 mr-3 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-blue-700 dark:text-blue-300">
-                  <p className="font-semibold mb-2">{t('templates:upload.instructionTitle')}:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-1">
-                    <li>{t('templates:upload.instructionFieldSyntax')}</li>
-                    <li>{t('templates:upload.instructionExample')}</li>
-                    <li>{t('templates:upload.instructionFieldName')}</li>
-                    <li>{t('templates:upload.instructionAutoDetect')}</li>
-                  </ul>
-                  
-                  <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
-                    <p className="font-semibold mb-1">{t('templates:upload.convertTitle')}:</p>
-                    <ol className="list-decimal list-inside space-y-1 ml-1">
-                      <li>{t('templates:upload.convertStep1')}</li>
-                      <li>{t('templates:upload.convertStep2')}</li>
-                      <li>{t('templates:upload.convertStep3')}</li>
-                      <li>{t('templates:upload.convertStep4')}</li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <UploadInstructions />
           </div>
         )}
 
@@ -248,6 +100,7 @@ const TemplateUploadPage: React.FC = () => {
                   {t('templates:upload.chooseAnother')}
                 </button>
               </div>
+
               <div className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <FileText className="h-10 w-10 text-blue-500 flex-shrink-0" />
                 <div className="text-left min-w-0 flex-1">
@@ -258,7 +111,9 @@ const TemplateUploadPage: React.FC = () => {
                     {(file.size / 1024).toFixed(2)} KB
                     {isParsing && <span className="ml-2">• {t('templates:upload.analyzing')}</span>}
                     {!isParsing && detectedFields.length > 0 && (
-                      <span className="ml-2">• {t('templates:upload.detected', { count: detectedFields.length })}</span>
+                      <span className="ml-2">
+                        • {t('templates:upload.detected', { count: detectedFields.length })}
+                      </span>
                     )}
                   </p>
                 </div>
@@ -270,10 +125,12 @@ const TemplateUploadPage: React.FC = () => {
                   <div className="flex items-start">
                     <AlertCircle className="h-5 w-5 text-blue-500 dark:text-blue-400 mr-2 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-blue-700 dark:text-blue-300 flex-1">
-                      <p className="font-semibold mb-2">{t('templates:upload.detectedFields', { count: detectedFields.length })}:</p>
+                      <p className="font-semibold mb-2">
+                        {t('templates:upload.detectedFields', { count: detectedFields.length })}:
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         {detectedFields.map((field, idx) => (
-                          <code 
+                          <code
                             key={idx}
                             className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 rounded text-xs"
                           >
@@ -287,24 +144,28 @@ const TemplateUploadPage: React.FC = () => {
               )}
 
               {/* Show warning for duplicate placeholders */}
-              {!isParsing && Object.keys(placeholderCounts).length > 0 && (
+              {!isParsing && Object.keys(placeholderCounts).length > 0 &&
                 (() => {
-                  const duplicates = Object.entries(placeholderCounts).filter(([, count]) => count > 1);
+                  const duplicates = Object.entries(placeholderCounts).filter(
+                    ([, count]) => count > 1
+                  );
                   if (duplicates.length === 0) return null;
-                  
+
                   return (
                     <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                       <div className="flex items-start">
                         <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mr-2 flex-shrink-0 mt-0.5" />
                         <div className="text-sm text-yellow-800 dark:text-yellow-300 flex-1">
-                          <p className="font-semibold mb-2">⚠️ {t('templates:upload.duplicateWarning')}</p>
+                          <p className="font-semibold mb-2">
+                            ⚠️ {t('templates:upload.duplicateWarning')}
+                          </p>
                           <ul className="space-y-1 list-disc list-inside">
                             {duplicates.map(([field, count]) => (
                               <li key={field}>
                                 <code className="px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/40 rounded text-xs font-mono">
                                   {`{{${field}}}`}
-                                </code>
-                                {' '}{t('templates:upload.duplicateDesc', { count })}
+                                </code>{' '}
+                                {t('templates:upload.duplicateDesc', { count })}
                               </li>
                             ))}
                           </ul>
@@ -312,8 +173,7 @@ const TemplateUploadPage: React.FC = () => {
                       </div>
                     </div>
                   );
-                })()
-              )}
+                })()}
             </div>
 
             {/* Template Info Form */}
@@ -367,7 +227,7 @@ const TemplateUploadPage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/portal/admin/templates')}
-            disabled={uploadMutation.isPending}
+            disabled={isUploading}
             className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {t('common:actions.cancel')}
@@ -375,10 +235,10 @@ const TemplateUploadPage: React.FC = () => {
           {step === 'info' && (
             <button
               type="submit"
-              disabled={uploadMutation.isPending || !file || !name.trim()}
+              disabled={isUploading || !file || !name.trim()}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {uploadMutation.isPending ? (
+              {isUploading ? (
                 <>
                   <Loader className="h-4 w-4 mr-2 animate-spin" />
                   {t('templates:upload.uploading')}

@@ -265,10 +265,10 @@ const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
 
                     {/* Validation Progress */}
                     {validating && (
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                        <div className="bg-doan-50 dark:bg-doan-900/20 border border-doan-200 dark:border-doan-800 rounded-lg p-4">
                             <div className="flex items-center space-x-3">
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                                <div className="text-sm text-blue-700 dark:text-blue-300">
+                                <div className="animate-spin rounded-full h-5 w-5 border-4 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400"></div>
+                                <div className="text-sm text-doan-700 dark:text-doan-300">
                                     Đang kiểm tra dữ liệu...
                                 </div>
                             </div>

@@ -1,4 +1,4 @@
-export { default as PermissionsPage } from './PermissionsPage';
+export { default as PermissionsPage } from './pages/PermissionsPage';
 
 // Re-export components
 export * from './components';

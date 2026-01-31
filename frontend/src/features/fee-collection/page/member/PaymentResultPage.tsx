@@ -24,7 +24,7 @@ export const PaymentResultPage: React.FC = () => {
   const { orderCode } = useParams<{ orderCode: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation('paymentResult');
-  
+
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export const PaymentResultPage: React.FC = () => {
   useEffect(() => {
     if (orderCode) {
       checkPaymentStatus();
-      
+
       // Auto-refresh every 5 seconds if status is pending
       const interval = setInterval(() => {
         if (paymentStatus?.status === 'PENDING') {
@@ -47,15 +47,15 @@ export const PaymentResultPage: React.FC = () => {
 
   const checkPaymentStatus = async () => {
     if (!orderCode) return;
-    
+
     try {
       setChecking(true);
       setError(null);
 
       // Call PayOS service để check status (không cần organizationId)
-      const response : any = await paymentService.checkPaymentStatus(orderCode);
+      const response: any = await paymentService.checkPaymentStatus(orderCode);
       setPaymentStatus(response?.data);
-      
+
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error.title'));
     } finally {
@@ -109,7 +109,7 @@ export const PaymentResultPage: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
-          <div className="w-8 h-8 mx-auto mb-4 border-b-2 border-blue-600 rounded-full animate-spin"></div>
+          <div className="w-10 h-10 mx-auto mb-4 border-4 border-gray-200 border-t-doan-500 rounded-full animate-spin"></div>
           <p className="text-gray-600">{t('loading.checkingStatus')}</p>
         </div>
       </div>
@@ -197,7 +197,7 @@ export const PaymentResultPage: React.FC = () => {
           }
         `
       }} />
-      
+
       <div className="max-w-md px-4 mx-auto">
         <div className="overflow-hidden bg-white border-2 border-gray-500 rounded-lg shadow-lg printable-area">
           {/* Header */}
@@ -209,16 +209,16 @@ export const PaymentResultPage: React.FC = () => {
 
           {/* Status Display */}
           <div className="p-6">
-              <div className="mb-6 text-center">
-                <div className="flex justify-center">
-                  {statusDisplay.icon}
-                </div>
-                <h2 className="mt-4 mb-2 text-xl font-bold text-gray-900">
-                  {statusDisplay.title}
-                </h2>
-                <p className="text-gray-600">
-                  {statusDisplay.message}
-                </p>
+            <div className="mb-6 text-center">
+              <div className="flex justify-center">
+                {statusDisplay.icon}
+              </div>
+              <h2 className="mt-4 mb-2 text-xl font-bold text-gray-900">
+                {statusDisplay.title}
+              </h2>
+              <p className="text-gray-600">
+                {statusDisplay.message}
+              </p>
             </div>
 
             {/* Transaction Details */}
@@ -228,7 +228,7 @@ export const PaymentResultPage: React.FC = () => {
                   <span className="text-sm text-gray-600">{t('details.orderCode')}</span>
                   <span className="font-mono text-sm font-medium">{paymentStatus.orderCode}</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">{t('details.amount')}</span>
                   <span className="text-lg font-bold text-indigo-600">
@@ -262,9 +262,9 @@ export const PaymentResultPage: React.FC = () => {
                         </div>
                         <div className="flex items-start justify-between">
                           <span className="text-sm text-gray-600">{t('details.description')}</span>
-                            <span className="flex-1 ml-2 text-sm text-right">
+                          <span className="flex-1 ml-2 text-sm text-right">
                             {tx.description.split(' ').slice(-4).join(' ')}
-                            </span>
+                          </span>
                         </div>
                       </div>
                     ))}

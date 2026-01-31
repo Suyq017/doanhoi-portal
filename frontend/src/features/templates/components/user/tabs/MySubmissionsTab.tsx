@@ -24,11 +24,11 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit, showSuccess
   const { t } = useTranslation(['templates', 'common']);
   const queryClient = useQueryClient();
   const { confirmDialog, showConfirm } = useToast();
-  
+
   // Use toast handlers from props or fallback to no-op
-  const showSuccess = propsShowSuccess || (() => {});
-  const showError = propsShowError || (() => {});
-  
+  const showSuccess = propsShowSuccess || (() => { });
+  const showError = propsShowError || (() => { });
+
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -60,21 +60,21 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit, showSuccess
   // Client-side filtering and pagination
   const { filteredData, totalPages, total } = useMemo(() => {
     if (!allSubmissions) return { filteredData: [], totalPages: 0, total: 0 };
-    
+
     // Filter by search
     const filtered = debouncedSearch
       ? allSubmissions.filter((submission) =>
-          submission.template?.name.toLowerCase().includes(debouncedSearch.toLowerCase())
-        )
+        submission.template?.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+      )
       : allSubmissions;
-    
+
     // Pagination
     const total = filtered.length;
     const totalPages = Math.ceil(total / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedData = filtered.slice(startIndex, endIndex);
-    
+
     return { filteredData: paginatedData, totalPages, total };
   }, [allSubmissions, debouncedSearch, page, limit]);
 
@@ -98,7 +98,7 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit, showSuccess
       setTimeout(() => {
         showSuccess(t('templates:messages.deleteSuccess'));
       }, 500);
-      
+
       // Invalidate queries immediately - React Query will handle batching
       queryClient.invalidateQueries({ queryKey: ['mySubmissions'] });
     },
@@ -173,7 +173,7 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit, showSuccess
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-doan-500 dark:border-t-doan-400"></div>
       </div>
     );
   }
@@ -235,8 +235,8 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit, showSuccess
         confirmText={confirmDialog.confirmText}
         cancelText={confirmDialog.cancelText}
         variant={confirmDialog.variant}
-        onConfirm={confirmDialog.onConfirm || (() => {})}
-        onCancel={confirmDialog.onCancel || (() => {})}
+        onConfirm={confirmDialog.onConfirm || (() => { })}
+        onCancel={confirmDialog.onCancel || (() => { })}
       />
 
       {/* Search Filter */}
@@ -265,125 +265,125 @@ const MySubmissionsTab: React.FC<MySubmissionsTabProps> = ({ onEdit, showSuccess
           </p>
         </div>
       ) : (
-      <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
-        <div className="overflow-x-auto max-w-full">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                >
-                  {t('templates:fields.name')}
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                >
-                  {t('templates:fields.status')}
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                >
-                  {t('templates:fields.updatedAt')}
-                </th>
-                <th scope="col" className="relative px-6 py-3">
-                  <span className="sr-only">{t('common:fields.actions')}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredData.map((submission: TemplateSubmission) => (
-              <tr key={submission.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <FileText className="h-5 w-5 text-gray-400 mr-3" />
-                    <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {submission.template?.name || t('templates:errors.unknownTemplate')}
-                      </div>
-                      {submission.errorMessage && (
-                        <div className="text-sm text-red-600 dark:text-red-400">
-                          {submission.errorMessage}
+        <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+          <div className="overflow-x-auto max-w-full">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  >
+                    {t('templates:fields.name')}
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  >
+                    {t('templates:fields.status')}
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  >
+                    {t('templates:fields.updatedAt')}
+                  </th>
+                  <th scope="col" className="relative px-6 py-3">
+                    <span className="sr-only">{t('common:fields.actions')}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredData.map((submission: TemplateSubmission) => (
+                  <tr key={submission.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <FileText className="h-5 w-5 text-gray-400 mr-3" />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {submission.template?.name || t('templates:errors.unknownTemplate')}
+                          </div>
+                          {submission.errorMessage && (
+                            <div className="text-sm text-red-600 dark:text-red-400">
+                              {submission.errorMessage}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(submission.status)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {(() => {
-                    const date = new Date(submission.updatedAt);
-                    // Add 7 hours manually for Vietnam timezone
-                    date.setHours(date.getHours() + 7);
-                    const day = String(date.getDate()).padStart(2, '0');
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const year = date.getFullYear();
-                    const hours = String(date.getHours()).padStart(2, '0');
-                    const minutes = String(date.getMinutes()).padStart(2, '0');
-                    return `${hours}:${minutes}, ${day}/${month}/${year}`;
-                  })()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex items-center justify-end space-x-2">
-                    {/* Preview button - always show */}
-                    <button
-                      onClick={() => handlePreview(submission)}
-                      disabled={submission.status === 'completed' ? false : false}
-                      className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 hover:bg-green-50 dark:hover:bg-green-900/20 rounded disabled:opacity-50"
-                      title={submission.status === 'completed' ? t('templates:actions.previewDocument') : t('templates:actions.viewData')}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    {submission.status === 'completed' && (
-                      <button
-                        onClick={() => handleDownload(submission.id)}
-                        disabled={downloadMutation.isPending}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded disabled:opacity-50"
-                        title={t('templates:actions.download')}
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                    )}
-                    {submission.status === 'completed' && (
-                      <button
-                        onClick={() => onEdit?.(submission)}
-                        className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded"
-                        title={t('common:actions.edit')}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDelete(submission.id, submission.template?.name || t('templates:title'))}
-                      disabled={deleteMutation.isPending}
-                      className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded disabled:opacity-50"
-                      title={t('templates:actions.delete')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getStatusBadge(submission.status)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {(() => {
+                        const date = new Date(submission.updatedAt);
+                        // Add 7 hours manually for Vietnam timezone
+                        date.setHours(date.getHours() + 7);
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const year = date.getFullYear();
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        return `${hours}:${minutes}, ${day}/${month}/${year}`;
+                      })()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end space-x-2">
+                        {/* Preview button - always show */}
+                        <button
+                          onClick={() => handlePreview(submission)}
+                          disabled={submission.status === 'completed' ? false : false}
+                          className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 hover:bg-green-50 dark:hover:bg-green-900/20 rounded disabled:opacity-50"
+                          title={submission.status === 'completed' ? t('templates:actions.previewDocument') : t('templates:actions.viewData')}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {submission.status === 'completed' && (
+                          <button
+                            onClick={() => handleDownload(submission.id)}
+                            disabled={downloadMutation.isPending}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded disabled:opacity-50"
+                            title={t('templates:actions.download')}
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        )}
+                        {submission.status === 'completed' && (
+                          <button
+                            onClick={() => onEdit?.(submission)}
+                            className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded"
+                            title={t('common:actions.edit')}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(submission.id, submission.template?.name || t('templates:title'))}
+                          disabled={deleteMutation.isPending}
+                          className="text-red-700 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded disabled:opacity-50"
+                          title={t('templates:actions.delete')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            showLimitSelector={true}
+          />
         </div>
-        
-        {/* Pagination */}
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          total={total}
-          limit={limit}
-          onPageChange={setPage}
-          onLimitChange={setLimit}
-          showLimitSelector={true}
-        />
-      </div>
       )}
     </div>
   );

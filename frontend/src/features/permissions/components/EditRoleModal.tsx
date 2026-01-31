@@ -519,7 +519,7 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
                                     </div>                                        {loading ? (
                                         <div className="text-center py-8 flex-1 flex items-center justify-center">
                                             <div className="text-center">
-                                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                                                <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400 mx-auto"></div>
                                                 <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">{t('labels.loadingPermissions')}</p>
                                             </div>
                                         </div>) : (<div className="space-y-3 flex-1 overflow-y-auto pr-1" style={{ maxHeight: 'calc(100vh - 450px)' }}>

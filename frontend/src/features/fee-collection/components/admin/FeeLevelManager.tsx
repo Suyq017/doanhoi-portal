@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
-import { 
-  PaymentFeeLevel, 
-  CreatePaymentFeeLevelDto, 
-  UpdatePaymentFeeLevelDto 
+import {
+  PaymentFeeLevel,
+  CreatePaymentFeeLevelDto,
+  UpdatePaymentFeeLevelDto
 } from '../../types';
 import { paymentFeeLevelService } from '@/shared/services/fee-collection-service';
 
@@ -40,10 +40,10 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
   const loadFeeLevels = async () => {
     try {
       setLoading(true);
-      const response : any = await paymentFeeLevelService.getFeeLevelsByCampaign(campaignId);
+      const response: any = await paymentFeeLevelService.getFeeLevelsByCampaign(campaignId);
       const sortedFeeLevels = response?.sort((a: { orderIndex: number; }, b: { orderIndex: number; }) => a.orderIndex - b.orderIndex);
       setFeeLevels(sortedFeeLevels);
-      
+
       // Notify parent component about fee levels change
       if (onFeeLevelsChange) {
         onFeeLevelsChange(sortedFeeLevels);
@@ -85,30 +85,30 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
       setError(t('validation.nameRequired'));
       return false;
     }
-    
+
     if (formData.amount <= 0) {
       setError(t('validation.amountGreaterThanZero'));
       return false;
     }
-    
+
     return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     try {
       setError(null);
-      
+
       if (isCreating) {
         const createData: CreatePaymentFeeLevelDto = {
           levelName: formData.levelName,
           amount: formData.amount,
           description: formData.description,
         };
-        
+
         await paymentFeeLevelService.createFeeLevel(campaignId, createData);
       } else if (editingId) {
         const updateData: UpdatePaymentFeeLevelDto = {
@@ -116,10 +116,10 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
           amount: formData.amount,
           description: formData.description,
         };
-        
+
         await paymentFeeLevelService.updateFeeLevel(campaignId, editingId, updateData);
       }
-      
+
       resetForm();
       loadFeeLevels();
     } catch (err) {
@@ -129,7 +129,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
 
   const handleDelete = async (id: string) => {
     if (!confirm(t('actions.confirmDelete'))) return;
-    
+
     try {
       await paymentFeeLevelService.deleteFeeLevel(campaignId, id);
       loadFeeLevels();
@@ -148,7 +148,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <div className="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-gray-200 dark:border-gray-700 border-t-doan-500 dark:border-t-doan-400 rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -182,7 +182,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
           <h4 className="mb-3 font-medium text-gray-900 dark:text-white">
             {isCreating ? t('actions.addNewFeeLevel') : t('actions.editFeeLevel')}
           </h4>
-          
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -260,17 +260,17 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                   <div className="flex items-center space-x-2">
                     <h4 className="font-medium text-gray-900 dark:text-white">{level.levelName}</h4>
                   </div>
-                  
+
                   <div className="mt-1 text-lg font-semibold text-blue-600 dark:text-blue-400">
                     {formatAmount(level.amount)}
                   </div>
-                  
+
                   {level.description && (
                     <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                       {level.description}
                     </div>
                   )}
-                  
+
                 </div>
 
                 {!readOnly && (
@@ -282,7 +282,7 @@ const FeeLevelManager: React.FC<FeeLevelManagerProps> = ({ campaignId, readOnly 
                     >
                       <Edit className="w-4 h-4" />
                     </button>
-                    
+
                     <button
                       onClick={() => handleDelete(level.id)}
                       className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"

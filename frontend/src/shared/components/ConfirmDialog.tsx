@@ -119,7 +119,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 className={`px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${styles.confirmBtn} disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
               >
                 {loading && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-200/30 border-t-white mr-2"></div>
                 )}
                 {confirmText}
               </button>

@@ -13,3 +13,7 @@ export type { SelectOption } from './Select';
 export type { DropdownOption } from './AddDropdownButton';
 export type { PaginationProps } from './Pagination';
 export * from './UserTable';
+
+// Loading components
+export * from './Loading';
+export { AppLoadingScreen } from './AppLoadingScreen';

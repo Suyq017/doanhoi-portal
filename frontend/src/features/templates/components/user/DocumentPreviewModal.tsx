@@ -40,24 +40,24 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     setIsLoading(true);
     setError(null);
     setViewerUrl('');
-    
+
     try {
       // Download DOCX file for download button
       const fileBlob = await downloadSubmissionFile(submissionId!);
       setBlob(fileBlob);
-      
+
       // Get public URL from backend using apiClient (auto handles auth)
       const data = await apiClient.get<{ url: string; fileName: string }>(
         `/submissions/${submissionId}/public-url`
       );
-      
+
       const publicUrl = data.url;
-      
+
       // Use Microsoft Office Online Viewer with public S3 URL
       const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(publicUrl)}`;
-      
+
       setViewerUrl(officeViewerUrl);
-      
+
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || t('templates:messages.downloadError'));
       console.error('Error loading document:', err);
@@ -117,7 +117,7 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-gray-900">
             {isLoading && (
               <div className="flex flex-col items-center justify-center h-full">
-                <Loader className="h-12 w-12 text-blue-500 animate-spin mb-4" />
+                <Loader className="h-12 w-12 text-doan-500 animate-spin mb-4" />
                 <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">
                   {t('templates:preview.loadingDocument')}
                 </p>

@@ -1,68 +1,258 @@
-import React, { useState } from 'react';
+// MyCampaignsPage - Member Page
+// Refactored with custom hooks and shared components
+
+import React from 'react';
 import { CreditCard, Clock, CheckCircle, AlertCircle, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useUserPaymentAssignments } from '@/shared/hooks/queries';
 import type { PaymentAssignment } from '@/shared/hooks/queries';
-import { paymentService } from '../../../../shared/services/fee-collection-service';
-import { usePermissions } from '../../../../shared/hooks/usePermissions';
-import { useToast } from '../../../../shared/hooks/useToast';
-import { Toast } from '../../../../shared/components';
-import { UserTablePagination } from '../../../../shared/components/UserTable/UserTablePagination';
-import Select, { SelectOption } from '../../../../shared/components/Select';
+import { UserTablePagination } from '@/shared/components/UserTable/UserTablePagination';
+import Select, { SelectOption } from '@/shared/components/Select';
+import { useMyCampaignsPage } from '../../hooks';
+import {
+  PageHeader,
+  LoadingState,
+  ErrorState,
+  StatCard,
+  EmptyState,
+  ToastContainer,
+  PermissionInfoBadge
+} from '../../components/shared';
 
-interface Filters {
-  status: string;
-  search: string;
-  sortBy: 'dueDate' | 'assignedAt' | 'amount';
-  sortOrder: 'asc' | 'desc';
-  page: number;
-  limit: number;
+// =============================================================================
+// Sub-components for better organization
+// =============================================================================
+
+interface FiltersBarProps {
+  filters: ReturnType<typeof useMyCampaignsPage>['filters'];
+  setFilters: ReturnType<typeof useMyCampaignsPage>['setFilters'];
+  statusOptions: SelectOption[];
+  sortByOptions: SelectOption[];
+  sortOrderOptions: SelectOption[];
+  searchPlaceholder: string;
 }
+
+const FiltersBar: React.FC<FiltersBarProps> = ({
+  filters,
+  setFilters,
+  statusOptions,
+  sortByOptions,
+  sortOrderOptions,
+  searchPlaceholder
+}) => (
+  <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
+        <input
+          type="text"
+          placeholder={searchPlaceholder}
+          value={filters.search}
+          onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
+          className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+        />
+      </div>
+
+      {/* Status Filter */}
+      <div>
+        <Select
+          options={statusOptions}
+          value={filters.status}
+          onChange={(value) => setFilters(prev => ({ ...prev, status: value, page: 1 }))}
+          placeholder={statusOptions[0]?.label}
+        />
+      </div>
+
+      {/* Sort By */}
+      <div>
+        <Select
+          options={sortByOptions}
+          value={filters.sortBy}
+          onChange={(value) => setFilters(prev => ({ ...prev, sortBy: value as any }))}
+        />
+      </div>
+
+      {/* Sort Order */}
+      <div>
+        <Select
+          options={sortOrderOptions}
+          value={filters.sortOrder}
+          onChange={(value) => setFilters(prev => ({ ...prev, sortOrder: value as any }))}
+        />
+      </div>
+    </div>
+  </div>
+);
+
+interface AssignmentRowProps {
+  assignment: PaymentAssignment;
+  onPayNow: (id: string) => void;
+  formatAmount: (amount: number) => string;
+  t: (key: string) => string;
+}
+
+const AssignmentRow: React.FC<AssignmentRowProps> = ({
+  assignment,
+  onPayNow,
+  formatAmount,
+  t
+}) => (
+  <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div>
+        <div className="font-medium text-gray-900 dark:text-white">
+          {assignment.campaign.name}
+        </div>
+        {assignment.campaign.description && (
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {assignment.campaign.description}
+          </div>
+        )}
+      </div>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div className="text-sm text-gray-900 dark:text-white">
+        {assignment.campaign.organization.name}
+      </div>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+        {formatAmount(Number(assignment.feeLevel?.amount) || 0)}
+      </div>
+      {assignment.feeLevel && (
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          {assignment.feeLevel.levelName}
+        </div>
+      )}
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div className="text-sm text-gray-900 dark:text-white">
+        {new Date(assignment.campaign.startDate).toLocaleDateString('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })} {new Date(assignment.campaign.startDate).toLocaleTimeString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        })}
+      </div>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div className="text-sm text-gray-900 dark:text-white">
+        {new Date(assignment.campaign.endDate).toLocaleDateString('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })} {new Date(assignment.campaign.endDate).toLocaleTimeString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        })}
+      </div>
+    </td>
+    <td className="px-6 py-4 text-sm font-medium text-center whitespace-nowrap">
+      <PaymentButton assignment={assignment} onPayNow={onPayNow} t={t} />
+    </td>
+  </tr>
+);
+
+interface PaymentButtonProps {
+  assignment: PaymentAssignment;
+  onPayNow: (id: string) => void;
+  t: (key: string) => string;
+}
+
+const PaymentButton: React.FC<PaymentButtonProps> = ({ assignment, onPayNow, t }) => {
+  if (assignment.status === 'PENDING' && assignment.campaign.status === 'ACTIVE') {
+    return (
+      <button
+        onClick={() => onPayNow(assignment.id)}
+        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-all duration-300 bg-blue-600 rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
+      >
+        <CreditCard className="w-4 h-4" />
+        <span>{t('actions.payNow')}</span>
+      </button>
+    );
+  }
+
+  if (assignment.status === 'PENDING' && assignment.campaign.status === 'CANCELLED') {
+    return (
+      <button
+        disabled
+        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-red-800 bg-red-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-red-900 dark:text-red-400"
+      >
+        <AlertCircle className="w-4 h-4" />
+        <span>{t('actions.paymentExpired')}</span>
+      </button>
+    );
+  }
+
+  if (assignment.status === 'OVERDUE') {
+    return (
+      <button
+        disabled
+        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-red-800 bg-red-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-red-900 dark:text-red-400"
+      >
+        <AlertCircle className="w-4 h-4" />
+        <span>{t('actions.paymentExpired')}</span>
+      </button>
+    );
+  }
+
+  if (assignment.status === 'PAID') {
+    return (
+      <button
+        disabled
+        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-green-800 bg-green-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-green-900 dark:text-green-400"
+      >
+        <CheckCircle className="w-4 h-4" />
+        <span>{t('actions.alreadyPaid')}</span>
+      </button>
+    );
+  }
+
+  return null;
+};
+
+// =============================================================================
+// Main Component
+// =============================================================================
 
 export const MyCampaignsPage: React.FC = () => {
   const { t } = useTranslation('myPayments');
-  const { showError, toasts, hideToast } = useToast();
-  const [filters, setFilters] = useState<Filters>({
-    status: '',
-    search: '',
-    sortBy: 'dueDate',
-    sortOrder: 'asc',
-    page: 1,
-    limit: 10
-  });
 
   const {
-    canAccessMyPaymentsInOrg,
-    userRoles,
+    // State
+    filters,
+    loading,
+    error,
+    permissionsLoading,
+
+    // Data
+    paginatedAssignments,
+    summaryStats,
+    totalFiltered,
+    totalPages,
+
+    // Permissions
     isSuperAdmin,
-    permissionsLoading
-  } = usePermissions();
+    userRoles,
+    canAccessMyPaymentsInOrg,
 
-  // ✅ Get current user ID from localStorage
-  const userData = localStorage.getItem('user');
-  const userId = userData ? JSON.parse(userData)?.id : null;
+    // Actions
+    setFilters,
+    handlePayNow,
+    refetch,
+    getOrganizationName,
 
-  // ✅ Use TanStack Query to fetch user assignments
-  const {
-    data,
-    isLoading: loading,
-    error: queryError,
-    refetch
-  } = useUserPaymentAssignments(userId);
+    // Helpers
+    formatAmount,
 
-  const assignments = data?.assignments || [];
-  const error = queryError ? (queryError instanceof Error ? queryError.message : t('errors.loadError')) : null;
-
-  // Helper function để lấy tên tổ chức từ assignment hoặc hiển thị organizationId
-  const getOrganizationName = (organizationId?: string) => {
-    if (!organizationId) return 'N/A';
-
-    // Tìm tên tổ chức từ assignments nếu có
-    const assignment = assignments.find((a: PaymentAssignment) => a.campaign.organization.id === organizationId);
-    return assignment?.campaign.organization.name || `Tổ chức ${organizationId}`;
-  };
-
-  // ✅ Remove useEffect and fetchAssignments - TanStack Query handles this automatically
+    // Toast
+    toasts,
+    hideToast
+  } = useMyCampaignsPage();
 
   // Select options
   const statusOptions: SelectOption[] = [
@@ -83,319 +273,91 @@ export const MyCampaignsPage: React.FC = () => {
     { value: 'desc', label: t('sort.descending') }
   ];
 
-  // ✅ TanStack Query handles fetching automatically - no need for useEffect
-
-  const handlePayNow = async (assignmentId: string) => {
-    try {
-      // Tìm assignment để lấy thông tin thanh toán
-      const assignment = assignments.find((a: PaymentAssignment) => a.id === assignmentId);
-      if (!assignment) {
-        showError(t('errors.assignmentNotFound'));
-        return;
-      }
-
-      // Lấy số tiền và thông tin cần thiết
-      const amount = Number(assignment.feeLevel?.amount) || 0;
-      const organizationId = assignment.campaign.organization.id;
-
-      // Gọi PayOS service để tạo payment link
-      const paymentResponse = await paymentService.createPaymentLink({
-        assignmentId,
-        campaignId: assignment.campaign.id,
-        amount,
-        description: `Thanh toán: ${assignment.campaign.name}`,
-        organizationId,
-      });
-
-      // Redirect đến PayOS checkout URL
-      if (paymentResponse.success && paymentResponse.data?.checkoutUrl) {
-        window.location.href = paymentResponse.data.checkoutUrl;
-      } else {
-        throw new Error(paymentResponse.message || 'Không nhận được URL thanh toán từ server');
-      }
-
-    } catch (error) {
-      console.error('Error creating payment:', error);
-      showError(t('errors.paymentSystemError'));
-    }
-  };
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
-  };
-
-  const filteredAndSortedAssignments = assignments
-    .filter((assignment: PaymentAssignment) => {
-      // Chỉ hiển thị assignments từ campaigns có status ACTIVE hoặc CANCELLED
-      const isValidCampaignStatus = assignment.campaign.status === 'ACTIVE' || assignment.campaign.status === 'CANCELLED';
-
-      const matchesStatus = !filters.status || assignment.status === filters.status;
-      const matchesSearch = !filters.search ||
-        assignment.campaign.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        assignment.campaign.organization.name.toLowerCase().includes(filters.search.toLowerCase());
-
-      return isValidCampaignStatus && matchesStatus && matchesSearch;
-    })
-    .sort((a: PaymentAssignment, b: PaymentAssignment) => {
-      // Ưu tiên PENDING lên đầu
-      if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
-      if (b.status === 'PENDING' && a.status !== 'PENDING') return 1;
-
-      let comparison = 0;
-
-      switch (filters.sortBy) {
-        case 'dueDate':
-          const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-          const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-          comparison = dateA - dateB;
-          break;
-        case 'assignedAt':
-          comparison = new Date(a.assignedAt).getTime() - new Date(b.assignedAt).getTime();
-          break;
-        case 'amount':
-          const amountA = Number(a.feeLevel?.amount) || 0;
-          const amountB = Number(b.feeLevel?.amount) || 0;
-          comparison = amountA - amountB;
-          break;
-      }
-
-      return filters.sortOrder === 'desc' ? -comparison : comparison;
-    });
-
-  // Pagination calculations
-  const totalFiltered = filteredAndSortedAssignments.length;
-  const totalPages = Math.ceil(totalFiltered / filters.limit);
-  const startIndex = (filters.page - 1) * filters.limit;
-  const endIndex = startIndex + filters.limit;
-  const paginatedAssignments = filteredAndSortedAssignments.slice(startIndex, endIndex);
-
-  // Lọc assignments để chỉ tính những assignments từ campaigns có status hợp lệ
-  const validAssignments = assignments.filter((a: PaymentAssignment) =>
-    a.campaign.status === 'ACTIVE' || a.campaign.status === 'CANCELLED'
-  );
-  const summaryStats = {
-    total: validAssignments.length,
-    pending: validAssignments
-      .filter((a: PaymentAssignment) => a.status === 'PENDING')
-      .length,
-    overdue: validAssignments
-      .filter((a: PaymentAssignment) => a.status === 'OVERDUE')
-      .length,
-    paid: validAssignments.filter((a: PaymentAssignment) => a.status === 'PAID').length,
-    totalAmount: validAssignments
-      .filter((a: PaymentAssignment) => a.status === 'PENDING')
-      .reduce((sum: number, a: PaymentAssignment) => {
-        const amount = Number(a.feeLevel?.amount) || 0;
-        return sum + amount;
-      }, 0)
-  };
-
+  // Loading state
   if (loading || permissionsLoading) {
     return (
-      <div className="">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {t('title')}
-            </h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">
-              {t('description')}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
-        </div>
-      </div>
+      <LoadingState
+        title={t('title')}
+        subtitle={t('description')}
+      />
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {t('title')}
-            </h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">
-              {t('description')}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="mb-4 text-xl text-red-500">⚠️</div>
-            <p className="text-red-600 dark:text-red-400">{error}</p>
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-2 mt-4 text-white rounded-lg bg-doan-600 hover:bg-doan-700"
-            >
-              {t('actions.retry')}
-            </button>
-          </div>
-        </div>
-      </div>
+      <ErrorState
+        title={t('title')}
+        subtitle={t('description')}
+        error={error}
+        onRetry={refetch}
+        retryLabel={t('actions.retry')}
+      />
     );
   }
+
+  // Permission info component
+  const permissionInfo = (
+    <PermissionInfoBadge
+      isSuperAdmin={isSuperAdmin}
+      userRoles={userRoles}
+      canAccessMyPaymentsInOrg={canAccessMyPaymentsInOrg}
+      getOrganizationName={getOrganizationName}
+      accessRightsLabel={t('accessRights')}
+      organizationAccessLabel={t('organizationAccess')}
+      superAdminLabel={t('superAdminRights')}
+      superAdminDescription={t('superAdminDescription')}
+    />
+  );
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {t('title')}
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            {t('description')}
-          </p>
-
-          {/* Permission Info */}
-          {!isSuperAdmin() && userRoles && userRoles.length > 0 && (
-            <div className="p-3 mt-3 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="w-2 h-2 mt-2 bg-blue-500 rounded-full"></div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
-                    {t('accessRights')}
-                  </p>                  <div className="mt-1 text-xs text-blue-800 dark:text-blue-300">
-                    {t('organizationAccess')} {' '}
-                    <span className="font-semibold">
-                      {userRoles
-                        .filter(userRole => userRole.organizationId && canAccessMyPaymentsInOrg(userRole.organizationId))
-                        .map(userRole => getOrganizationName(userRole.organizationId))
-                        .join(', ')
-                      }
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {isSuperAdmin() && (
-            <div className="p-3 mt-3 border border-green-200 rounded-lg bg-green-50 dark:bg-green-900/20 dark:border-green-800">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="w-2 h-2 mt-2 bg-green-500 rounded-full"></div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-green-900 dark:text-green-200">
-                    {t('superAdminRights')}
-                  </p>
-                  <div className="mt-1 text-xs text-green-800 dark:text-green-300">
-                    {t('superAdminDescription')}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title={t('title')}
+        subtitle={t('description')}
+        permissionInfo={permissionInfo}
+      />
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('stats.total')}</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{summaryStats.total}</p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-full dark:bg-blue-900">
-              <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('stats.pending')}</p>
-              <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{summaryStats.pending}</p>
-            </div>
-            <div className="p-3 bg-yellow-100 rounded-full dark:bg-yellow-900">
-              <Clock className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('stats.overdue')}</p>
-              <p className="text-3xl font-bold text-red-600 dark:text-red-400">{summaryStats.overdue}</p>
-            </div>
-            <div className="p-3 bg-red-100 rounded-full dark:bg-red-900">
-              <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('stats.totalAmount')}</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-white">
-                {formatAmount(summaryStats.totalAmount)}
-              </p>
-            </div>
-            <div className="p-3 bg-green-100 rounded-full dark:bg-green-900">
-              <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title={t('stats.total')}
+          value={summaryStats.total}
+          icon={<CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
+          iconBgClass="bg-blue-100 dark:bg-blue-900"
+        />
+        <StatCard
+          title={t('stats.pending')}
+          value={summaryStats.pending}
+          icon={<Clock className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />}
+          iconBgClass="bg-yellow-100 dark:bg-yellow-900"
+          valueColorClass="text-yellow-600 dark:text-yellow-400"
+        />
+        <StatCard
+          title={t('stats.overdue')}
+          value={summaryStats.overdue}
+          icon={<AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />}
+          iconBgClass="bg-red-100 dark:bg-red-900"
+          valueColorClass="text-red-600 dark:text-red-400"
+        />
+        <StatCard
+          title={t('stats.totalAmount')}
+          value={formatAmount(summaryStats.totalAmount)}
+          icon={<CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />}
+          iconBgClass="bg-green-100 dark:bg-green-900"
+        />
       </div>
 
       {/* Filters */}
-      <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
-            <input
-              type="text"
-              placeholder={t('search.placeholder')}
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
-              className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            />
-          </div>
-
-          {/* Status Filter */}
-          <div>
-            <Select
-              options={statusOptions}
-              value={filters.status}
-              onChange={(value) => setFilters(prev => ({ ...prev, status: value, page: 1 }))}
-              placeholder={t('filters.allStatus')}
-            />
-          </div>
-
-          {/* Sort By */}
-          <div>
-            <Select
-              options={sortByOptions}
-              value={filters.sortBy}
-              onChange={(value) => setFilters(prev => ({ ...prev, sortBy: value as any }))}
-            />
-          </div>
-
-          {/* Sort Order */}
-          <div>
-            <Select
-              options={sortOrderOptions}
-              value={filters.sortOrder}
-              onChange={(value) => setFilters(prev => ({ ...prev, sortOrder: value as any }))}
-            />
-          </div>
-        </div>
-      </div>
+      <FiltersBar
+        filters={filters}
+        setFilters={setFilters}
+        statusOptions={statusOptions}
+        sortByOptions={sortByOptions}
+        sortOrderOptions={sortOrderOptions}
+        searchPlaceholder={t('search.placeholder')}
+      />
 
       {/* Assignments Table */}
       <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
@@ -425,132 +387,45 @@ export const MyCampaignsPage: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
               {paginatedAssignments.map((assignment: PaymentAssignment) => (
-                <tr key={assignment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {assignment.campaign.name}
-                      </div>
-                      {assignment.campaign.description && (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {assignment.campaign.description}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">
-                      {assignment.campaign.organization.name}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                      {formatAmount(Number(assignment.feeLevel?.amount) || 0)}
-                    </div>
-                    {assignment.feeLevel && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {assignment.feeLevel.levelName}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">
-                      {new Date(assignment.campaign.startDate).toLocaleDateString('vi-VN', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      })} {new Date(assignment.campaign.startDate).toLocaleTimeString('vi-VN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false
-                      })}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">
-                      {new Date(assignment.campaign.endDate).toLocaleDateString('vi-VN', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      })} {new Date(assignment.campaign.endDate).toLocaleTimeString('vi-VN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false
-                      })}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-center whitespace-nowrap">
-                    {assignment.status === 'PENDING' && assignment.campaign.status === 'ACTIVE' && (
-                      <button
-                        onClick={() => handlePayNow(assignment.id)}
-                        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-all duration-300 bg-blue-600 rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
-                      >
-                        <CreditCard className="w-4 h-4" />
-                        <span>{t('actions.payNow')}</span>
-                      </button>
-                    )}
-
-                    {assignment.status === 'PENDING' && assignment.campaign.status === 'CANCELLED' && (
-                      <button
-                        disabled
-                        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-red-800 bg-red-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-red-900 dark:text-red-400"
-                      >
-                        <AlertCircle className="w-4 h-4" />
-                        <span>{t('actions.paymentExpired')}</span>
-                      </button>
-                    )}
-
-                    {assignment.status === 'OVERDUE' && (
-                      <button
-                        disabled
-                        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-red-800 bg-red-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-red-900 dark:text-red-400"
-                      >
-                        <AlertCircle className="w-4 h-4" />
-                        <span>{t('actions.paymentExpired')}</span>
-                      </button>
-                    )}
-
-                    {assignment.status === 'PAID' && (
-                      <button
-                        disabled
-                        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-green-800 bg-green-200 rounded-lg shadow-sm cursor-not-allowed opacity-60 dark:bg-green-900 dark:text-green-400"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        <span>{t('actions.alreadyPaid')}</span>
-                      </button>
-                    )}
-                  </td>
-                </tr>
+                <AssignmentRow
+                  key={assignment.id}
+                  assignment={assignment}
+                  onPayNow={handlePayNow}
+                  formatAmount={formatAmount}
+                  t={t}
+                />
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* Empty State */}
         {totalFiltered === 0 && (
-          <div className="py-12 text-center">
-            <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-            <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
-              {t('empty.noCampaigns')}
-            </h3>
-            <div className="text-gray-500 dark:text-gray-400">
-              {filters.search || filters.status
+          <EmptyState
+            title={t('empty.noCampaigns')}
+            message={
+              filters.search || filters.status
                 ? t('empty.noResults')
-                : isSuperAdmin()
+                : isSuperAdmin
                   ? t('empty.noAssignmentsSuperAdmin')
                   : t('empty.noAssignmentsRegular')
-              }
-            </div>            {!isSuperAdmin() && userRoles && userRoles.length > 0 && (
-              <div className="mt-4 text-sm text-gray-400">
-                {t('empty.accessOrganizations')} {' '}
-                {userRoles
-                  .filter(userRole => userRole.organizationId && canAccessMyPaymentsInOrg(userRole.organizationId))
-                  .map(userRole => getOrganizationName(userRole.organizationId))
-                  .join(', ')
-                }
-              </div>
-            )}
-          </div>
+            }
+            additionalInfo={
+              !isSuperAdmin && userRoles && userRoles.length > 0 ? (
+                <div className="mt-4 text-sm text-gray-400">
+                  {t('empty.accessOrganizations')}{' '}
+                  {userRoles
+                    .filter(userRole => userRole.organizationId && canAccessMyPaymentsInOrg(userRole.organizationId))
+                    .map(userRole => getOrganizationName(userRole.organizationId))
+                    .join(', ')
+                  }
+                </div>
+              ) : undefined
+            }
+          />
         )}
       </div>
+
       {/* Pagination */}
       <UserTablePagination
         currentPage={filters.page}
@@ -561,17 +436,7 @@ export const MyCampaignsPage: React.FC = () => {
       />
 
       {/* Toast notifications */}
-      <div className="fixed top-4 right-4 z-[9999] space-y-2">
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            type={toast.type}
-            message={toast.message}
-            duration={toast.duration}
-            onClose={() => hideToast(toast.id)}
-          />
-        ))}
-      </div>
+      <ToastContainer toasts={toasts} onHide={hideToast} />
     </div>
   );
 };

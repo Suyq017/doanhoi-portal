@@ -127,7 +127,7 @@ const PaymentFeeLevelForm: React.FC<PaymentFeeLevelFormProps> = ({ mode }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-32 h-32 border-b-2 border-blue-600 rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-gray-200 dark:border-gray-700 border-t-doan-500 dark:border-t-doan-400 rounded-full animate-spin"></div>
       </div>
     );
   }

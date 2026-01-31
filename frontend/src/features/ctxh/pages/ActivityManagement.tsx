@@ -1,181 +1,55 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { CtxhActivity } from '../types';
+import { useActivityManagement } from '../hooks';
+import { ActivityManagementHeader } from '../components/shared';
+import { ToastContainer } from '../components/shared';
 import ActivityForm from '../components/ActivityForm';
 import ActivityList from '../components/activity/ActivityList';
-import { useToast } from '../../../shared/hooks';
-import { usePermissions } from '../../../shared/hooks';
-import { Toast, ConfirmDialog } from '../../../shared/components';
-import {
-  useCreateActivity,
-  useUpdateActivity,
-  useDeleteActivity,
-  useUserPrimaryOrganization,
-} from '../../../shared/hooks/queries';
+import { ConfirmDialog } from '../../../shared/components';
 
+/**
+ * Activity Management Page
+ * Refactored with separation of concerns using custom hook
+ */
 const ActivityManagement: React.FC = () => {
   const { t } = useTranslation('ctxh');
-
-  // ActivityManagement component
-  const navigate = useNavigate();
-  const [showActivityForm, setShowActivityForm] = useState(false);
-  const [editingActivity, setEditingActivity] = useState<CtxhActivity | null>(null);
-
-  // Toast notifications
-  const { toasts, hideToast, showSuccess, showError, confirmDialog, showConfirm } = useToast();
-
-  // ✅ TanStack Query mutations
-  const createMutation = useCreateActivity();
-  const updateMutation = useUpdateActivity();
-  const deleteMutation = useDeleteActivity();
-
-  // ✅ Use cached query for user's primary organization
-  const { data: primaryOrgData, isLoading: checkingPermissions } = useUserPrimaryOrganization();
-
-  // ✅ Get permissions
+  
   const {
-    canCreateCtxhActivity,
-    canUpdateCtxhActivity,
-    canDeleteCtxhActivity,
-    isSuperAdmin
-  } = usePermissions();
-
-  // Super admin luôn được phép tạo hoạt động, không cần tổ chức
-  const canCreateActivity = isSuperAdmin() ? canCreateCtxhActivity() : (primaryOrgData?.organization !== null && canCreateCtxhActivity());
-
-  // ✅ DEBUG LOG: Kiểm tra điều kiện hiển thị nút create
-  console.log('[ActivityManagement] ========== CREATE BUTTON DEBUG ==========');
-  console.log('[ActivityManagement] isSuperAdmin:', isSuperAdmin());
-  console.log('[ActivityManagement] canCreateCtxhActivity:', canCreateCtxhActivity());
-  console.log('[ActivityManagement] checkingPermissions:', checkingPermissions);
-  console.log('[ActivityManagement] primaryOrgData:', primaryOrgData);
-  console.log('[ActivityManagement] primaryOrgData?.organization:', primaryOrgData?.organization);
-  console.log('[ActivityManagement] canCreateActivity (final):', canCreateActivity);
-  console.log('[ActivityManagement] Button will show:', !checkingPermissions && canCreateActivity);
-  console.log('[ActivityManagement] =================================================');
-
-
-  const handleCreateActivity = () => {
-    setEditingActivity(null);
-    setShowActivityForm(true);
-  };
-
-  const handleEditActivity = (activity: CtxhActivity) => {
-    setEditingActivity(activity);
-    setShowActivityForm(true);
-  };
-
-  const handleDeleteActivity = async (activity: CtxhActivity) => {
-    // Deleting activity
-
-    const confirmed = await showConfirm(
-      t('activity.deleteConfirm'),
-      t('activity.deleteMessage', { name: activity.name }),
-      {
-        confirmText: t('activity.delete'),
-        cancelText: t('category.cancel'),
-        variant: 'danger'
-      }
-    );
-
-    if (!confirmed) return;
-
-    try {
-      await deleteMutation.mutateAsync(activity.id);
-      showSuccess(t('activity.deleted'));
-      // ✅ Cache tự động refetch
-    } catch (error: any) {
-      console.error('Failed to delete activity:', error);
-
-      // Handle different error formats
-      let errorMessage = t('activity.deleteError');
-
-      // The error message is now in error.message (thanks to updated apiClient)
-      if (error.message) {
-        // Check if it's the specific "has participants" error
-        if (error.message.includes('sinh viên tham gia') || error.message.includes('participants')) {
-          errorMessage = t('activity.deleteErrorHasParticipants');
-        } else {
-          // Use the full server error message
-          errorMessage = error.message;
-        }
-      } else if (error.response?.data?.message) {
-        // Fallback to response data message
-        errorMessage = error.response.data.message;
-      }
-
-      showError(errorMessage);
-    }
-  };
-
-  const handleViewActivity = (activity: CtxhActivity) => {
-      // Always navigate to the activity detail page, default tab is 'overview'.
-      navigate(`/portal/ctxh/activities/${activity.id}`);
-  };
-
-  const handleActivitySaved = () => {
-    setShowActivityForm(false);
-    setEditingActivity(null);
-    // ✅ Cache tự động refetch, không cần refreshTrigger
-    showSuccess(editingActivity ? t('activity.updated') : t('activity.created'));
-  };
-
-  const handleActivitySubmit = async (data: any) => {
-    try {
-      if (editingActivity) {
-        await updateMutation.mutateAsync({ id: editingActivity.id, data });
-      } else {
-        await createMutation.mutateAsync(data);
-      }
-      handleActivitySaved();
-    } catch (error: any) {
-      // Get error message from various possible locations
-      const errorMessage = error.message || error.response?.data?.message || error.response?.data?.error;
-      
-      // Handle specific server errors
-      if (errorMessage) {
-        showError(errorMessage);
-      } else {
-        showError(t('activity.saveError'));
-      }
-      throw error;
-    }
-  };
-
-  const handleShowToast = (type: 'success' | 'error' | 'info', message: string) => {
-    if (type === 'success') {
-      showSuccess(message);
-    } else if (type === 'error') {
-      showError(message);
-    }
-  };
+    // State
+    showActivityForm,
+    editingActivity,
+    checkingPermissions,
+    canCreateActivity,
+    
+    // Actions
+    handleCreateActivity,
+    handleEditActivity,
+    handleDeleteActivity,
+    handleViewActivity,
+    handleActivitySubmit,
+    handleCloseForm,
+    handleShowToast,
+    
+    // Permissions
+    permissions,
+    
+    // Toast
+    toasts,
+    hideToast,
+    confirmDialog
+  } = useActivityManagement();
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {t('activity.title')}
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            {t('activity.subtitle')}
-          </p>
-        </div>
-        {!checkingPermissions && canCreateActivity && (
-          <div className="mt-4 sm:mt-0">
-            <button
-              onClick={handleCreateActivity}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-doan-500 hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {t('activity.create')}
-            </button>
-          </div>
-        )}
-      </div>
+      <ActivityManagementHeader
+        title={t('activity.title')}
+        subtitle={t('activity.subtitle')}
+        canCreate={canCreateActivity}
+        checkingPermissions={checkingPermissions}
+        onCreateClick={handleCreateActivity}
+        createButtonLabel={t('activity.create')}
+      />
 
       {/* Activity List */}
       <ActivityList
@@ -184,11 +58,7 @@ const ActivityManagement: React.FC = () => {
         onDeleteClick={handleDeleteActivity}
         onViewClick={handleViewActivity}
         showToast={handleShowToast}
-        permissions={{
-          create: canCreateCtxhActivity(),
-          update: canUpdateCtxhActivity(),
-          delete: canDeleteCtxhActivity()
-        }}
+        permissions={permissions}
       />
 
       {/* Activity Form Modal */}
@@ -197,39 +67,27 @@ const ActivityManagement: React.FC = () => {
           activity={editingActivity || undefined}
           title={editingActivity ? t('activity.edit') : t('activity.create')}
           isOpen={showActivityForm}
-          onClose={() => {
-            setShowActivityForm(false);
-            setEditingActivity(null);
-          }}
+          onClose={handleCloseForm}
           onSubmit={handleActivitySubmit}
         />
       )}
 
-      {/* Toasts */}
-      <div className="fixed top-4 right-4 z-[9999] space-y-2">
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            type={toast.type}
-            message={toast.message}
-            onClose={() => hideToast(toast.id)}
-          />
-        ))}
-      </div>
-
       {/* Confirm Dialog */}
-      {confirmDialog.isOpen && (
+      {confirmDialog && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
           title={confirmDialog.title}
           message={confirmDialog.message}
+          variant={confirmDialog.variant}
           confirmText={confirmDialog.confirmText}
           cancelText={confirmDialog.cancelText}
-          variant={confirmDialog.variant}
-          onConfirm={confirmDialog.onConfirm!}
-          onCancel={confirmDialog.onCancel!}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={confirmDialog.onCancel}
         />
       )}
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onHide={hideToast} />
     </div>
   );
 };

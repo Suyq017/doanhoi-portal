@@ -10,3 +10,5 @@ export * from './useCtxhQueries';
 export * from './ctxhKeys';
 export * from './usePaymentAssignmentQueries';
 export * from './useRoleQueries';
+export * from './useSystemConfigQueries';
+export * from './useDashboardQueries';

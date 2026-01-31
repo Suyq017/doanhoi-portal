@@ -1,23 +1,24 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Upload } from 'lucide-react';
 import { ImportModal } from '@/shared/components';
+import { useOldSystemImport } from '../hooks';
 import { ctxhOldSystemImportConfig } from '../config/oldSystemImportConfig';
 
+/**
+ * CTXH Old System Import Page
+ * Refactored with separation of concerns using custom hook
+ */
 export const CtxhOldSystemImportPage = () => {
   const { t } = useTranslation('ctxh-import');
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [modalKey, setModalKey] = useState(0);
-
-  const handleImportSuccess = (result: any) => {
-    console.log('Import completed:', result);
-    // Optionally show success toast or redirect
-  };
-
-  const handleImportError = (error: Error) => {
-    console.error('Import failed:', error);
-    // Optionally show error toast
-  };
+  
+  const {
+    isImportModalOpen,
+    modalKey,
+    openImportModal,
+    closeImportModal,
+    handleImportSuccess,
+    handleImportError
+  } = useOldSystemImport();
 
   return (
     <div className="space-y-6">
@@ -47,10 +48,7 @@ export const CtxhOldSystemImportPage = () => {
 
           {/* Import Button */}
           <button
-            onClick={() => {
-              setModalKey(prev => prev + 1); // Force remount modal
-              setIsImportModalOpen(true);
-            }}
+            onClick={openImportModal}
             className="w-full py-3 px-4 bg-doan-500 hover:bg-doan-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
           >
             <Upload className="w-5 h-5" />
@@ -63,7 +61,7 @@ export const CtxhOldSystemImportPage = () => {
       <ImportModal
         key={modalKey}
         isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
+        onClose={closeImportModal}
         config={{
           ...ctxhOldSystemImportConfig,
           onSuccess: handleImportSuccess,
@@ -73,3 +71,5 @@ export const CtxhOldSystemImportPage = () => {
     </div>
   );
 };
+
+export default CtxhOldSystemImportPage;

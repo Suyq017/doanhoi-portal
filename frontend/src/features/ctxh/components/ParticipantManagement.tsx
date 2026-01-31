@@ -955,7 +955,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden max-w-full">
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400"></div>
           </div>
         ) : filteredParticipants.length === 0 ? (
           <div className="text-center py-12">
@@ -1147,7 +1147,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                       {lookingUpStudent && (
                         <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
                           <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400 mr-2"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400 mr-2"></div>
                             <span className="text-sm text-gray-600 dark:text-gray-300">{t('participant.lookingUpStudent')}</span>
                           </div>
                         </div>

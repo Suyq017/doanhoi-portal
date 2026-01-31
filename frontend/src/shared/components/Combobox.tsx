@@ -316,7 +316,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                     />
                 )}
                 {loading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-doan-500"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400"></div>
                 ) : (
                     <ChevronDown
                         className={`w-4 h-4 text-gray-400 transition-transform cursor-pointer ${isOpen ? 'rotate-180' : ''}`}

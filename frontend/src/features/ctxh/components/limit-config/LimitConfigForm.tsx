@@ -348,8 +348,8 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                         }}
                         placeholder={t('limitConfig.selectOrganization')}
                         className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.organizationId
-                            ? 'border-red-300 focus:ring-red-500'
-                            : 'border-gray-300 focus:border-blue-500'
+                          ? 'border-red-300 focus:ring-red-500'
+                          : 'border-gray-300 focus:border-blue-500'
                           }`}
                       />
                       <ChevronDown
@@ -361,7 +361,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                       <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                         {loadingOrganizations ? (
                           <div className="px-3 py-2 flex justify-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400"></div>
                           </div>
                         ) : organizations.length > 0 ? (
                           organizations.map((org: { id: string; name: string }) => (
