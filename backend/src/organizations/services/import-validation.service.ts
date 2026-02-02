@@ -48,7 +48,7 @@ export class OrganizationImportValidationService {
     private userOrganizationsRepository: Repository<UserOrganization>,
     @InjectRepository(Organization)
     private organizationsRepository: Repository<Organization>,
-  ) {}
+  ) { }
 
   async validateOrganizationMemberData(
     data: OrganizationMemberImportData[],
@@ -75,9 +75,9 @@ export class OrganizationImportValidationService {
       // Query 1: Validate organization exists (if organizationId is provided)
       organizationId
         ? this.organizationsRepository.findOne({
-            where: { id: organizationId },
-            select: ["id"],
-          })
+          where: { id: organizationId },
+          select: ["id"],
+        })
         : Promise.resolve(null), // Skip organization check if not provided
       // Query 2: Extract and bulk load users
       (async () => {

@@ -266,8 +266,8 @@ const UserSearchCombobox: React.FC<UserSearchComboboxProps> = ({
                                             }}
                                             onMouseEnter={() => setHighlightedIndex(index)}
                                             className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${index === highlightedIndex
-                                                    ? 'bg-doan-50 dark:bg-doan-900/20 text-doan-700 dark:text-doan-300'
-                                                    : 'text-gray-900 dark:text-white'
+                                                ? 'bg-doan-50 dark:bg-doan-900/20 text-doan-700 dark:text-doan-300'
+                                                : 'text-gray-900 dark:text-white'
                                                 }`}
                                         >
                                             <div className="flex items-center">

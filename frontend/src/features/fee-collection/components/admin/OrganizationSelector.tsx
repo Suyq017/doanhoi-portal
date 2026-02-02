@@ -40,7 +40,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
 
       // Use getOrganizationTree to get the hierarchical structure
       const orgTree = await organizationService.getOrganizationTree();
-      
+
       // Convert the tree structure to match our Organization interface
       const convertToOrganization = (org: BaseOrganization): Organization => {
         return {
@@ -82,7 +82,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
 
     try {
       const children = await organizationService.getOrganizationChildren(orgId);
-      
+
       // For each child, check if they have children too
       const childrenWithHasChildrenFlag = await Promise.allSettled(
         children.slice(0, 20).map(async (child: BaseOrganization) => {
@@ -124,7 +124,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
       }));
 
       const allChildren = [...processedChildren, ...remainingChildren];
-      
+
       setOrganizations(prevOrgs => {
         const updateOrgChildren = (orgs: Organization[]): Organization[] => {
           return orgs.map(org => {
@@ -198,9 +198,8 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
     return (
       <div key={org.id}>
         <div
-          className={`flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer dark:border-gray-700 dark:hover:bg-gray-700 ${
-            isSelected ? 'bg-blue-50 border-blue-200 dark:bg-blue-900 dark:border-blue-800' : ''
-          }`}
+          className={`flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer dark:border-gray-700 dark:hover:bg-gray-700 ${isSelected ? 'bg-blue-50 border-blue-200 dark:bg-blue-900 dark:border-blue-800' : ''
+            }`}
           style={{ paddingLeft: paddingLeft + 16 }}
           onClick={() => handleOrganizationSelect(org)}
         >
@@ -277,7 +276,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
             <div className="overflow-y-auto">
               {loading ? (
                 <div className="flex items-center justify-center p-8">
-                  <div className="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin dark:border-blue-400"></div>
+                  <div className="w-8 h-8 border-4 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400 rounded-full animate-spin"></div>
                   <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">{t('loadingOrganizations')}</span>
                 </div>
               ) : error ? (

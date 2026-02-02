@@ -103,7 +103,7 @@ export class ImportService {
     private readonly monitoringService: UserImportMonitoringService,
     private readonly backgroundJobService: UserBackgroundJobService,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async uploadFile(file: Express.Multer.File): Promise<ImportUploadResponse> {
     if (!file) {
@@ -653,9 +653,9 @@ export class ImportService {
         this.monitoringService.updateProgress(
           sessionId,
           importResult.importedCount +
-            importResult.failedCount +
-            batchResult.importedCount +
-            batchResult.failedCount,
+          importResult.failedCount +
+          batchResult.importedCount +
+          batchResult.failedCount,
           importResult.importedCount + batchResult.importedCount,
           importResult.failedCount + batchResult.failedCount,
         );

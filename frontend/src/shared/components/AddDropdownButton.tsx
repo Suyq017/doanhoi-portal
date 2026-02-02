@@ -52,7 +52,7 @@ const AddDropdownButton: React.FC<AddDropdownButtonProps> = ({
 
   const handleOptionClick = (option: DropdownOption) => {
     if (loading || disabled) return;
-    
+
     setIsOpen(false);
     option.onClick();
   };
@@ -63,18 +63,16 @@ const AddDropdownButton: React.FC<AddDropdownButtonProps> = ({
       <button
         onClick={handleMainButtonClick}
         disabled={loading || disabled}
-        className={`inline-flex items-center px-4 py-2 bg-doan-500 text-white rounded-md hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-doan-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-          isOpen ? 'bg-doan-600' : ''
-        } ${buttonClassName}`}
+        className={`inline-flex items-center px-4 py-2 bg-doan-500 text-white rounded-md hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-doan-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${isOpen ? 'bg-doan-600' : ''
+          } ${buttonClassName}`}
       >
         <Plus className="w-5 h-5 mr-2" />
         <span className="font-medium">
-          {loading ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent inline-block"></div> : label}
+          {loading ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-200/30 border-t-white inline-block"></div> : label}
         </span>
-        <ChevronDown 
-          className={`w-4 h-4 ml-2 transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
-          }`} 
+        <ChevronDown
+          className={`w-4 h-4 ml-2 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''
+            }`}
         />
       </button>
 

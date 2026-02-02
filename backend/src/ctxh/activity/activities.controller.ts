@@ -44,7 +44,7 @@ export class ActivitiesController {
     private readonly activitiesService: ActivitiesService,
     private readonly participationService: ParticipationService,
     private readonly excelService: ExcelService,
-  ) {}
+  ) { }
 
   @Get("participants/template")
   @ApiOperation({

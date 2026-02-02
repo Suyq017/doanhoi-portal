@@ -46,7 +46,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
   const [selectedOrgId, setSelectedOrgId] = useState<string>(organizationId || '');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrganizations, setLoadingOrganizations] = useState(false);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -90,7 +90,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
 
       // Load the campaign organization first
       const mainOrg = await organizationService.getOrganizationById(campaignOrgId);
-      
+
       // Create list with parent organization first
       const allOrgs: Organization[] = [
         {
@@ -106,7 +106,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
       const loadAllChildren = async (parentId: string, level: number = 1): Promise<void> => {
         try {
           const children = await organizationService.getOrganizationChildren(parentId);
-          
+
           if (children && children.length > 0) {
             for (const org of children) {
               // Add current level organization
@@ -117,7 +117,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
                 code: org.code,
                 displayName: `${'└─'.repeat(level)} ${org.name}` // Tree-like display based on level
               });
-              
+
               // Recursively load children of this organization
               await loadAllChildren(org.id, level + 1);
             }
@@ -129,7 +129,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
 
       // Start loading from the main organization
       await loadAllChildren(mainOrg.id);
-      
+
       setOrganizations(allOrgs);
     } catch (err) {
       console.error('Error loading organizations:', err);
@@ -157,7 +157,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
           name: userOrg.organization?.name || 'Unknown Organization'
         }
       }));
-      
+
       setMembers(membersList);
       setTotalPages(response.totalPages);
       setTotalMembers(response.total);
@@ -296,7 +296,7 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
           <div className="overflow-y-auto max-h-96">
             {loadingMembers ? (
               <div className="flex items-center justify-center p-8">
-                <div className="w-6 h-6 border-b-2 border-blue-600 rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-4 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400 rounded-full animate-spin"></div>
                 <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">{t('loadingMembers')}</span>
               </div>
             ) : error ? (
@@ -316,9 +316,8 @@ const MemberSelector: React.FC<MemberSelectorProps> = ({
                 return (
                   <div
                     key={member.id}
-                    className={`flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer dark:border-gray-700 dark:hover:bg-gray-700 ${
-                      disabled ? 'opacity-50 cursor-not-allowed' : ''
-                    } ${isSelected ? 'bg-blue-50 border-blue-200 dark:bg-blue-900 dark:border-blue-800' : ''}`}
+                    className={`flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer dark:border-gray-700 dark:hover:bg-gray-700 ${disabled ? 'opacity-50 cursor-not-allowed' : ''
+                      } ${isSelected ? 'bg-blue-50 border-blue-200 dark:bg-blue-900 dark:border-blue-800' : ''}`}
                     onClick={() => handleMemberToggle(member.id)}
                   >
                     <div className="flex items-center flex-1">

@@ -1,1 +1,40 @@
-export { default as DepartmentsPage } from './DepartmentsPage';
+/**
+ * Departments feature barrel export
+ * 
+ * Exports:
+ * - Pages: DepartmentsPage
+ * - Hooks: useDepartmentPage, useDepartmentModals, useDepartmentImport
+ * - Types: Department types and interfaces
+ * - Components: Department-specific components
+ */
+
+// Pages
+export { DepartmentsPage } from './pages';
+
+// Hooks
+export {
+  useDepartmentPage,
+  useDepartmentModals,
+  useDepartmentImport,
+} from './hooks';
+
+// Types
+export type {
+  Department,
+  DepartmentPermissions,
+  UseDepartmentPageOptions,
+  UseDepartmentPageReturn,
+  UseDepartmentModalsOptions,
+  UseDepartmentModalsReturn,
+  UseDepartmentImportOptions,
+  UseDepartmentImportReturn,
+} from './types';
+
+// Components (for external use if needed)
+export {
+  DepartmentPageHeader,
+  DepartmentFilters,
+  BulkActionsToolbar,
+  DepartmentTable,
+  DepartmentPagination,
+} from './components';

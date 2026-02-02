@@ -134,9 +134,9 @@ export class DepartmentBatchProcessingService {
     const averageProcessingTime =
       completedBatches.length > 0
         ? completedBatches.reduce(
-            (sum, b) => sum + (b.processingTime || 0),
-            0,
-          ) / completedBatches.length
+          (sum, b) => sum + (b.processingTime || 0),
+          0,
+        ) / completedBatches.length
         : 0;
 
     const remainingBatches = totalBatches - processedBatches;

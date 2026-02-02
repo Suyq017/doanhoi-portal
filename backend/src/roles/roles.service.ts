@@ -22,7 +22,7 @@ export class RolesService {
     private permissionRepository: Repository<Permission>,
     @InjectRepository(UserRole)
     private userRoleRepository: Repository<UserRole>,
-  ) {}
+  ) { }
 
   async findAll(query: QueryRoleDto) {
     const { page = 1, limit = 10, search, isActive } = query;

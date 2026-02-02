@@ -137,7 +137,7 @@ export class UserImportMonitoringService {
       // Calculate average batch time
       const totalCompletedTime =
         metric.batchStats.averageBatchTime *
-          (metric.batchStats.completedBatches - 1) +
+        (metric.batchStats.completedBatches - 1) +
         batchTime;
       metric.batchStats.averageBatchTime =
         totalCompletedTime / metric.batchStats.completedBatches;
@@ -211,9 +211,9 @@ export class UserImportMonitoringService {
     const averageSpeed =
       activeMetrics.length > 0
         ? activeMetrics.reduce(
-            (sum, metric) => sum + metric.averageRowsPerSecond,
-            0,
-          ) / activeMetrics.length
+          (sum, metric) => sum + metric.averageRowsPerSecond,
+          0,
+        ) / activeMetrics.length
         : 0;
 
     return {

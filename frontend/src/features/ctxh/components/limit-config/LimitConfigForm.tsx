@@ -32,7 +32,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
   loading = false
 }) => {
   const { t } = useTranslation('ctxh');
-  
+
   // Prefetch organizations using React Query (for caching)
   useOrganizationList();
 
@@ -78,9 +78,9 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
     try {
       setLoadingOrganizations(true);
       // Call API with search and only level 1 & 2
-      const response = await organizationService.searchCtxhActivityViewableOrganizations({ 
-        search, 
-        limit: 20 
+      const response = await organizationService.searchCtxhActivityViewableOrganizations({
+        search,
+        limit: 20
       });
       setOrganizations(response.data.map((org: any) => ({ id: org.id, name: org.name })));
     } catch (error) {
@@ -316,7 +316,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                   <Building2 className="inline h-4 w-4 mr-1" />
                   {t('limitConfig.organization')} <span className="text-red-500">*</span>
                 </label>
-                
+
                 {config ? (
                   // Edit mode - show selected organization as disabled input
                   <div>
@@ -347,14 +347,13 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                           setOrganizationDropdownOpen(true);
                         }}
                         placeholder={t('limitConfig.selectOrganization')}
-                        className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          errors.organizationId
-                            ? 'border-red-300 focus:ring-red-500'
-                            : 'border-gray-300 focus:border-blue-500'
-                        }`}
+                        className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.organizationId
+                          ? 'border-red-300 focus:ring-red-500'
+                          : 'border-gray-300 focus:border-blue-500'
+                          }`}
                       />
-                      <ChevronDown 
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" 
+                      <ChevronDown
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
                       />
                     </div>
 
@@ -362,7 +361,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                       <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                         {loadingOrganizations ? (
                           <div className="px-3 py-2 flex justify-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400"></div>
                           </div>
                         ) : organizations.length > 0 ? (
                           organizations.map((org: { id: string; name: string }) => (
@@ -387,7 +386,7 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                     )}
                   </div>
                 )}
-                
+
                 {errors.organizationId && (
                   <p className="mt-1 text-xs text-red-500">{errors.organizationId}</p>
                 )}
@@ -407,8 +406,8 @@ const LimitConfigForm: React.FC<LimitConfigFormProps> = ({
                   onChange={(e) => handleInputChange('maxDays', parseFloat(e.target.value) || 0)}
                   disabled={submitting}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.maxDays
-                      ? 'border-red-300 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-500'
+                    ? 'border-red-300 focus:ring-red-500'
+                    : 'border-gray-300 focus:border-blue-500'
                     }`}
                   placeholder={t('limitConfig.maxDaysPlaceholder')}
                 />

@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useRef, useCallback, useLayoutEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Users, Building, Home, Menu, Sun, Moon, Building2, GraduationCap, Database, ChevronDown, ChevronRight, Shield, CreditCard, Heart, Calendar, BarChart, Settings, Upload, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -14,11 +14,18 @@ interface LayoutProps {
 }
 
 const EXPANDED_MENUS_KEY = 'expandedMenus';
+const SIDEBAR_SCROLL_KEY = 'sidebarScrollPosition';
+const EXPANDED_SECTIONS_KEY = 'expandedSections';
+const LAYOUT_LOADED_KEY = 'layoutInitiallyLoaded';
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  
+  const navRef = useRef<HTMLElement>(null);
+  const isRestoringScroll = useRef(false);
+  // Initialize from sessionStorage to persist across remounts
+  const hasInitiallyLoaded = useRef(sessionStorage.getItem(LAYOUT_LOADED_KEY) === 'true');
+
   // Load expanded menus from localStorage, default to ['dataManagement', 'ctxh'] if not found
   const [expandedMenus, setExpandedMenus] = useState<string[]>(() => {
     try {
@@ -28,16 +35,70 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       return ['dataManagement', 'ctxh'];
     }
   });
-  
+
+  // Load expanded sections from localStorage, default to all expanded
+  const [expandedSections, setExpandedSections] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(EXPANDED_SECTIONS_KEY);
+      return saved ? JSON.parse(saved) : ['common', 'admin', 'student'];
+    } catch {
+      return ['common', 'admin', 'student'];
+    }
+  });
+
   const location = useLocation();
   const { t } = useTranslation('common');
   const permissions = usePermissions();
   const ctxhPermissions = useCtxhPermissions();
 
+  // Track initial load completion using shared state
+  useEffect(() => {
+    if (!permissions.permissionsLoading && !ctxhPermissions.loading) {
+      hasInitiallyLoaded.current = true;
+      // Also set in sessionStorage to persist across Layout remounts
+      sessionStorage.setItem(LAYOUT_LOADED_KEY, 'true');
+    }
+  }, [permissions.permissionsLoading, ctxhPermissions.loading]);
+
+  // Restore scroll position after navigation - use useLayoutEffect for synchronous update
+  useLayoutEffect(() => {
+    const restoreScroll = () => {
+      const savedScrollPosition = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+      if (savedScrollPosition && navRef.current) {
+        isRestoringScroll.current = true;
+        navRef.current.scrollTop = parseInt(savedScrollPosition, 10);
+        // Reset flag after a short delay
+        setTimeout(() => {
+          isRestoringScroll.current = false;
+        }, 100);
+      }
+    };
+
+    // Restore immediately
+    restoreScroll();
+
+    // Also restore after a small delay to handle async renders
+    const timeoutId = setTimeout(restoreScroll, 50);
+
+    return () => clearTimeout(timeoutId);
+  }, [location.pathname]);
+
+  // Save scroll position on scroll (but not when restoring)
+  const handleNavScroll = useCallback(() => {
+    if (navRef.current && !isRestoringScroll.current) {
+      sessionStorage.setItem(SIDEBAR_SCROLL_KEY, navRef.current.scrollTop.toString());
+    }
+  }, []);
+
   // Save expanded menus to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem(EXPANDED_MENUS_KEY, JSON.stringify(expandedMenus));
   }, [expandedMenus]);
+
+  // Save expanded sections to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(EXPANDED_SECTIONS_KEY, JSON.stringify(expandedSections));
+  }, [expandedSections]);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -51,32 +112,63 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         : [...prev, menuKey]
     );
   };
+
+  const toggleSection = (sectionKey: string) => {
+    setExpandedSections(prev =>
+      prev.includes(sectionKey)
+        ? prev.filter(key => key !== sectionKey)
+        : [...prev, sectionKey]
+    );
+  };
+
+  // Navigation sections
+  type NavSection = 'common' | 'admin' | 'student';
+
+  interface NavItem {
+    name: string;
+    href?: string;
+    icon: any;
+    key?: string;
+    requiredPermission?: string;
+    section: NavSection;
+    children?: {
+      name: string;
+      href: string;
+      icon: any;
+      requiredPermission?: string;
+    }[];
+  }
+
   // Filter navigation items based on permissions
   const getFilteredNavigation = () => {
-    const baseNavigation = [
+    const baseNavigation: NavItem[] = [
+      // === COMMON SECTION ===
       {
         name: t('navigation.dashboard'),
         href: '/portal',
         icon: Home,
-        requiredPermission: 'dashboard.access'
+        requiredPermission: 'dashboard.access',
+        section: 'common'
       },
-      {
-        name: t('navigation.users'),
-        href: '/portal/users',
-        icon: Users,
-        requiredPermission: 'users.access'
-      },
-      {
-        name: t('navigation.organizations'),
-        href: '/portal/organizations',
-        icon: Building,
-        requiredPermission: 'organizations.access'
-      },
+      // === ADMIN SECTION ===
       {
         name: t('navigation.dataManagement'),
         key: 'dataManagement',
         icon: Database,
+        section: 'admin',
         children: [
+          {
+            name: t('navigation.users'),
+            href: '/portal/users',
+            icon: Users,
+            requiredPermission: 'users.access'
+          },
+          {
+            name: t('navigation.organizations'),
+            href: '/portal/organizations',
+            icon: Building,
+            requiredPermission: 'organizations.access'
+          },
           {
             name: t('navigation.departments'),
             href: '/portal/departments',
@@ -90,23 +182,33 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             requiredPermission: 'classes.access'
           },
         ]
-      }, {
-        name: t('navigation.permissions'),
-        href: '/portal/permissions',
-        icon: Shield,
-        requiredPermission: 'permissions.access'
       },
       {
         name: t('navigation.systemConfig'),
-        href: '/portal/system-config',
+        key: 'systemConfig',
         icon: Settings,
-        requiredPermission: 'system-config.access'
+        section: 'admin',
+        children: [
+          {
+            name: t('navigation.permissions'),
+            href: '/portal/permissions',
+            icon: Shield,
+            requiredPermission: 'permissions.access'
+          },
+          {
+            name: t('navigation.systemConfig'),
+            href: '/portal/system-config',
+            icon: Settings,
+            requiredPermission: 'system-config.access'
+          },
+        ]
       },
       {
         name: t('navigation.ctxh'),
         key: 'ctxh',
         icon: Heart,
-        requiredPermission: 'ctxh.access', // Only need access to show dropdown
+        requiredPermission: 'ctxh.access',
+        section: 'admin',
         children: [
           {
             name: t('navigation.ctxhCategories'),
@@ -135,33 +237,38 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         ]
       },
       {
-        name: t('navigation.ctxhStudentReport'),
-        href: '/portal/student-reports',
-        icon: BarChart,
-        // requiredPermission: 'ctxh.reports.view'
-      },
-      {
         name: t('navigation.templates'),
         href: '/portal/forms',
         icon: FileText,
-        requiredPermission: 'templates.access'
+        requiredPermission: 'templates.access',
+        section: 'admin'
       },
       {
         name: t('navigation.templatesAdmin'),
         href: '/portal/admin/templates',
         icon: Settings,
-        requiredPermission: 'templates.admin.access'
+        requiredPermission: 'templates.admin.access',
+        section: 'admin'
       },
       {
         name: t('navigation.paymentAdmin'),
         href: '/portal/admin/payment-campaigns',
         icon: CreditCard,
-        requiredPermission: 'payment-campaigns.access'
+        requiredPermission: 'payment-campaigns.access',
+        section: 'admin'
+      },
+      // === STUDENT SECTION ===
+      {
+        name: t('navigation.ctxhStudentReport'),
+        href: '/portal/student-reports',
+        icon: BarChart,
+        section: 'student'
       },
       {
         name: t('navigation.myPayments'),
         href: '/portal/payment/my-campaigns',
         icon: CreditCard,
+        section: 'student'
       }
     ];
 
@@ -215,14 +322,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 return ctxhPermissions.activities.view;
               } else if (child.requiredPermission === 'ctxh.config.manage') {
                 return ctxhPermissions.config.manage;
+              } else if (child.requiredPermission === 'ctxh.import.old_system') {
+                return permissions.hasPermission('ctxh.import.old_system', permissions.currentOrganizationId);
               }
             }
             return false; // Default to false for CTXH items without permission
           });
 
-          // Show dropdown only if has ctxh.access AND has accessible children
-          const hasCtxhAccess = permissions.hasPermission('ctxh.access', permissions.currentOrganizationId);
-          return hasCtxhAccess && accessibleChildren.length > 0;
+          // Show dropdown only if has accessible children (ẩn nếu không có quyền xem bất kỳ mục con nào)
+          return accessibleChildren.length > 0;
         }
 
         // Regular permission check for other menus
@@ -277,8 +385,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
   const navigation = getFilteredNavigation();
 
-  // Show loading if permissions are still loading
-  if (permissions.permissionsLoading || ctxhPermissions.loading) {
+  // Show loading only on initial load, not on subsequent navigations
+  const isInitialLoading = (permissions.permissionsLoading || ctxhPermissions.loading) && !hasInitiallyLoaded.current;
+  if (isInitialLoading) {
     return <AppLoadingScreen />;
   }
 
@@ -316,76 +425,116 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Menu className="w-5 h-5" />
             </button>
           </div>
-          
+
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            {navigation.map((item) => {
-              const Icon = item.icon;
+          <nav
+            ref={navRef}
+            onScroll={handleNavScroll}
+            className="flex-1 p-4 space-y-1 overflow-y-auto"
+          >
+            {/* Section render helper */}
+            {(['common', 'admin', 'student'] as NavSection[]).map((section) => {
+              const sectionItems = navigation.filter(item => item.section === section);
+              if (sectionItems.length === 0) return null;
 
-              // If item has children (is a parent menu)
-              if ('children' in item && item.children) {
-                const isExpanded = expandedMenus.includes(item.key!);
-                const hasActiveChild = isParentActive(item.children);
+              const sectionLabels: Record<NavSection, string> = {
+                common: t('navigation.sectionCommon'),
+                admin: t('navigation.sectionAdmin'),
+                student: t('navigation.sectionStudent')
+              };
 
-                return (
-                  <div key={item.key}>
-                    {/* Parent menu item */}
-                    <button
-                      onClick={() => toggleMenu(item.key!)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${hasActiveChild
-                        ? 'bg-white bg-opacity-20 text-white border-l-2 border-white'
-                        : 'text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-white'
-                        }`}
-                    >
-                      <div className="flex items-center">
-                        <Icon className="w-5 h-5 mr-3" />
-                        {item.name}
-                      </div>
-                      {isExpanded ? (
-                        <ChevronDown className="w-4 h-4" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4" />
-                      )}
-                    </button>
+              const isSectionExpanded = expandedSections.includes(section);
 
-                    {/* Child menu items */}
-                    {isExpanded && (
-                      <div className="mt-2 ml-8 space-y-1">
-                        {item.children.map((child) => {
-                          const ChildIcon = child.icon;
-                          return (
-                            <Link
-                              key={child.name}
-                              to={child.href}
-                              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(child.href)
-                                ? 'bg-white text-doan-500'
-                                : 'text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-white'
-                                }`}
-                            >
-                              <ChildIcon className="w-4 h-4 mr-3" />
-                              {child.name}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-
-              // Regular menu item
               return (
-                <Link
-                  key={item.name}
-                  to={item.href!}
-                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(item.href!)
-                    ? 'bg-white text-doan-500'
-                    : 'text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-white'
-                    }`}
-                >
-                  <Icon className="w-5 h-5 mr-3" />
-                  {item.name}
-                </Link>
+                <div key={section} className="mb-2">
+                  {/* Section Header - Clickable */}
+                  <button
+                    onClick={() => toggleSection(section)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-white text-opacity-70 uppercase tracking-wider hover:bg-white hover:bg-opacity-10 rounded-md transition-colors"
+                  >
+                    <span>{sectionLabels[section]}</span>
+                    {isSectionExpanded ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </button>
+
+                  {/* Section Items */}
+                  {isSectionExpanded && (
+                    <div className="space-y-1 mt-1">
+                      {sectionItems.map((item) => {
+                        const Icon = item.icon;
+
+                        // If item has children (is a parent menu)
+                        if ('children' in item && item.children) {
+                          const isExpanded = expandedMenus.includes(item.key!);
+                          const hasActiveChild = isParentActive(item.children);
+
+                          return (
+                            <div key={item.key}>
+                              {/* Parent menu item */}
+                              <button
+                                onClick={() => toggleMenu(item.key!)}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${hasActiveChild
+                                  ? 'bg-white bg-opacity-20 text-white border-l-2 border-white'
+                                  : 'text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-white'
+                                  }`}
+                              >
+                                <div className="flex items-center">
+                                  <Icon className="w-5 h-5 mr-3" />
+                                  {item.name}
+                                </div>
+                                {isExpanded ? (
+                                  <ChevronDown className="w-4 h-4" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4" />
+                                )}
+                              </button>
+
+                              {/* Child menu items */}
+                              {isExpanded && (
+                                <div className="mt-2 ml-8 space-y-1">
+                                  {item.children.map((child) => {
+                                    const ChildIcon = child.icon;
+                                    return (
+                                      <Link
+                                        key={child.name}
+                                        to={child.href}
+                                        className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(child.href)
+                                          ? 'bg-white text-doan-500'
+                                          : 'text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-white'
+                                          }`}
+                                      >
+                                        <ChildIcon className="w-4 h-4 mr-3" />
+                                        {child.name}
+                                      </Link>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        // Regular menu item
+                        return (
+                          <Link
+                            key={item.name}
+                            to={item.href!}
+                            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(item.href!)
+                              ? 'bg-white text-doan-500'
+                              : 'text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-white'
+                              }`}
+                          >
+                            <Icon className="w-5 h-5 mr-3" />
+                            {item.name}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </nav>

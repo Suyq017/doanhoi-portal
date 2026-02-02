@@ -24,7 +24,7 @@ const LoadingState: React.FC<LoadingStateProps> = ({
                 </div>
             </div>
             <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-doan-500 dark:border-t-doan-400 mx-auto"></div>
             </div>
         </div>
     );

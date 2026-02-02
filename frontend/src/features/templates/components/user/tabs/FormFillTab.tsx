@@ -28,7 +28,7 @@ interface FormFillTabProps {
 
 const FormFillTab: React.FC<FormFillTabProps> = ({ templateId, onBack, onSubmitSuccess, editingSubmission }) => {
   const { i18n } = useTranslation();
-  
+
   // Force re-mount when language changes to rebuild form with new translations
   return <FormFillTabInner key={i18n.language} templateId={templateId} onBack={onBack} onSubmitSuccess={onSubmitSuccess} editingSubmission={editingSubmission} />;
 };
@@ -60,11 +60,11 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
   // Helper function: Reverse transform data from DB back to original values
   const reverseTransformFormData = (formData: Record<string, any>, fields: TemplateField[]): Record<string, any> => {
     const reversedData: Record<string, any> = { ...formData };
-    
+
     fields.forEach((field) => {
       const value = formData[field.fieldName];
       if (!value) return;
-      
+
       // Radio: "Thấp ☐ Trung Bình ☒ Cao ☐" → "Trung Bình"
       if (field.fieldType === 'radio' && typeof value === 'string' && value.includes('☒')) {
         // Try to match against each option's formatted string
@@ -78,11 +78,11 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
           }
         }
       }
-      
+
       // Checkbox: "Option A ☒ Option B ☐ Option C ☒" → ["Option A", "Option C"]
       if (field.fieldType === 'checkbox' && typeof value === 'string' && (value.includes('☒') || value.includes('☐'))) {
         const selectedValues: string[] = [];
-        
+
         if (field.options) {
           for (const option of field.options) {
             const pattern = `${option.label} ☒`;
@@ -91,11 +91,11 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
             }
           }
         }
-        
+
         reversedData[field.fieldName] = selectedValues;
       }
     });
-    
+
     return reversedData;
   };
 
@@ -160,7 +160,7 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
             ])
               .transform((val) => typeof val === 'string' ? parseInt(val, 10) : val)
               .refine((val) => val >= 1 && val <= 31, t('templates:validation.day'));
-            
+
             if (field.validationRules?.min !== undefined) {
               daySchema = daySchema.refine(
                 (val) => val >= field.validationRules!.min!,
@@ -183,7 +183,7 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
             ])
               .transform((val) => typeof val === 'string' ? parseInt(val, 10) : val)
               .refine((val) => val >= 1 && val <= 12, t('templates:validation.month'));
-            
+
             if (field.validationRules?.min !== undefined) {
               monthSchema = monthSchema.refine(
                 (val) => val >= field.validationRules!.min!,
@@ -206,7 +206,7 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
             ])
               .transform((val) => typeof val === 'string' ? parseInt(val, 10) : val)
               .refine((val) => val >= 1900 && val <= 2100, t('templates:validation.year'));
-            
+
             if (field.validationRules?.min !== undefined) {
               yearSchema = yearSchema.refine(
                 (val) => val >= field.validationRules!.min!,
@@ -226,7 +226,7 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
             // Số điện thoại Việt Nam: 10-11 số, bắt đầu bằng 0
             let phoneSchema = z.string()
               .regex(/^0\d{9}$/, t('templates:validation.phone'));
-            
+
             if (field.validationRules?.pattern) {
               phoneSchema = z.string().regex(
                 new RegExp(field.validationRules.pattern),
@@ -329,18 +329,18 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
       if (!actualTemplateId) {
         throw new Error('Template ID is required');
       }
-      
+
       // Tạo submission mới
       const newSubmission = await createSubmission({ templateId: actualTemplateId, formData });
-      
+
       // Submit ngay
       const result = await submitSubmission(newSubmission.id);
-      
+
       // Nếu đang edit và submit thành công, xóa submission cũ
       if (editingSubmission && result.status === 'submitted') {
         await deleteSubmission(editingSubmission.id);
       }
-      
+
       return result;
     },
     onSuccess: async (submission) => {
@@ -360,22 +360,22 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
       let attempts = 0;
       const maxAttempts = 30;
       let finalStatus: 'completed' | 'failed' | 'pending' = 'pending';
-      
+
       while (attempts < maxAttempts) {
         finalStatus = await checkStatus();
         if (finalStatus === 'completed' || finalStatus === 'failed') break;
-        
+
         await new Promise(resolve => setTimeout(resolve, 1000));
         attempts++;
       }
 
       queryClient.invalidateQueries({ queryKey: ['mySubmissions'] });
       setIsSubmitting(false);
-      
+
       // Tạo message dựa trên kết quả
       let message: string;
       if (finalStatus === 'completed') {
-        message = editingSubmission 
+        message = editingSubmission
           ? t('templates:messages.formCompleted')
           : t('templates:messages.formCompleted');
       } else if (finalStatus === 'failed') {
@@ -383,7 +383,7 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
       } else {
         message = t('templates:messages.formProcessing');
       }
-      
+
       // Nếu có callback onSubmitSuccess thì dùng và truyền message
       if (onSubmitSuccess) {
         onSubmitSuccess(message);
@@ -404,11 +404,11 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
   const onSubmit = handleSubmit((data) => {
     // Transform radio and checkbox data to checkbox format before submitting
     const transformedData = { ...data };
-    
+
     if (template && template.fields) {
       template.fields.forEach(field => {
         const value = transformedData[field.fieldName];
-        
+
         // Radio: Transform "Trung Bình" -> "Thấp ☐ Trung Bình ☒ Cao ☐"
         if (field.fieldType === 'radio' && value && field.options) {
           transformedData[field.fieldName] = field.options
@@ -419,7 +419,7 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
             })
             .join(' ');
         }
-        
+
         // Checkbox: Transform ["A", "C"] -> "A ☒ B ☐ C ☒"
         if (field.fieldType === 'checkbox' && Array.isArray(value) && field.options) {
           transformedData[field.fieldName] = field.options
@@ -432,7 +432,7 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
         }
       });
     }
-    
+
     setIsSubmitting(true);
     submitMutation.mutate(transformedData);
   });
@@ -461,7 +461,7 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
   if (templateLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-doan-500 dark:border-t-doan-400"></div>
       </div>
     );
   }
@@ -527,7 +527,7 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
           <ArrowLeft className="h-4 w-4 mr-2 transition-transform group-hover:-translate-x-1" />
           {t('templates:actions.back')}
         </button>
-        
+
         <div className="bg-[#030391] rounded-lg shadow-lg p-6 text-white">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -554,7 +554,7 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
         {/* Form Fields Card */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="p-8 space-y-8">{visibleFields.map((field, index) => (
-            <div 
+            <div
               key={field.id}
               className={`${index !== 0 ? 'pt-8 border-t border-gray-200 dark:border-gray-700' : ''}`}
             >
@@ -617,8 +617,8 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
                                   key={option.value}
                                   className={`
                                     flex items-center cursor-pointer group px-4 py-3 rounded-lg border-2 transition-all duration-200
-                                    ${isSelected 
-                                      ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/20 dark:border-blue-500' 
+                                    ${isSelected
+                                      ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/20 dark:border-blue-500'
                                       : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600'
                                     }
                                   `}
@@ -632,8 +632,8 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
                                   />
                                   <div className={`
                                     w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200
-                                    ${isSelected 
-                                      ? 'bg-blue-600 border-blue-600 dark:bg-blue-500 dark:border-blue-500' 
+                                    ${isSelected
+                                      ? 'bg-blue-600 border-blue-600 dark:bg-blue-500 dark:border-blue-500'
                                       : 'border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700'
                                     }
                                     peer-focus:ring-4 peer-focus:ring-blue-100 dark:peer-focus:ring-blue-900/50
@@ -642,11 +642,10 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
                                       <div className="w-2 h-2 bg-white rounded-full"></div>
                                     )}
                                   </div>
-                                  <span className={`ml-3 text-base font-medium transition-colors select-none ${
-                                    isSelected 
-                                      ? 'text-blue-900 dark:text-blue-100' 
+                                  <span className={`ml-3 text-base font-medium transition-colors select-none ${isSelected
+                                      ? 'text-blue-900 dark:text-blue-100'
                                       : 'text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                                  }`}>
+                                    }`}>
                                     {option.label}
                                   </span>
                                 </label>
@@ -764,8 +763,8 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
                                   key={option.value}
                                   className={`
                                     flex items-center cursor-pointer group px-4 py-3 rounded-lg border-2 transition-all duration-200
-                                    ${isSelected 
-                                      ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/20 dark:border-blue-500' 
+                                    ${isSelected
+                                      ? 'bg-blue-50 border-blue-500 dark:bg-blue-900/20 dark:border-blue-500'
                                       : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600'
                                     }
                                   `}
@@ -784,29 +783,28 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
                                   />
                                   <div className={`
                                     w-5 h-5 border-2 rounded flex items-center justify-center transition-all duration-200
-                                    ${isSelected 
-                                      ? 'bg-blue-600 border-blue-600 dark:bg-blue-500 dark:border-blue-500' 
+                                    ${isSelected
+                                      ? 'bg-blue-600 border-blue-600 dark:bg-blue-500 dark:border-blue-500'
                                       : 'border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700'
                                     }
                                     peer-focus:ring-4 peer-focus:ring-blue-100 dark:peer-focus:ring-blue-900/50
                                   `}>
                                     {isSelected && (
-                                      <svg 
-                                        className="w-3.5 h-3.5 text-white pointer-events-none" 
-                                        fill="none" 
-                                        strokeWidth="3" 
-                                        stroke="currentColor" 
+                                      <svg
+                                        className="w-3.5 h-3.5 text-white pointer-events-none"
+                                        fill="none"
+                                        strokeWidth="3"
+                                        stroke="currentColor"
                                         viewBox="0 0 24 24"
                                       >
-                                        <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round"/>
+                                        <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                                       </svg>
                                     )}
                                   </div>
-                                  <span className={`ml-3 text-base font-medium transition-colors select-none ${
-                                    isSelected 
-                                      ? 'text-blue-900 dark:text-blue-100' 
+                                  <span className={`ml-3 text-base font-medium transition-colors select-none ${isSelected
+                                      ? 'text-blue-900 dark:text-blue-100'
                                       : 'text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                                  }`}>
+                                    }`}>
                                     {option.label}
                                   </span>
                                 </label>

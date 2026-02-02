@@ -185,13 +185,12 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
             {t('paymentHistory:description')}
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 ${
-              showFilters ? 'ring-2 ring-blue-500' : ''
-            }`}
+            className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 ${showFilters ? 'ring-2 ring-blue-500' : ''
+              }`}
           >
             <Filter className="w-4 h-4 mr-2" />
             {t('paymentHistory:filters.title')}
@@ -253,7 +252,7 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
       <div className="overflow-hidden bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
         {loading ? (
           <div className="flex items-center justify-center p-12">
-            <div className="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin dark:border-blue-400"></div>
+            <div className="w-10 h-10 border-4 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400 rounded-full animate-spin"></div>
           </div>
         ) : paymentHistory.length === 0 ? (
           <div className="p-12 text-center">

@@ -1,41 +1,19 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Settings, RefreshCw } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../auth/context/AuthContext';
 import AwsS3ConfigSection from '../dashboard/components/AwsS3ConfigSection';
-import { useInvalidateSystemConfig } from '@/shared/hooks/queries/useSystemConfigQueries';
+import { useInvalidateSystemConfig } from '@/shared/hooks/queries';
 
+/**
+ * SystemConfigPage
+ * 
+ * Note: Permission check is handled by EnhancedProtectedRoute in App.tsx
+ * No need to check permission again here
+ */
 const SystemConfigPage: React.FC = () => {
     const { t } = useTranslation(['common', 'systemConfig']);
-    const navigate = useNavigate();
-    const { auth, hasPermission } = useAuth();
-    const [isCheckingPermission, setIsCheckingPermission] = React.useState(true);
     const { refetchAll } = useInvalidateSystemConfig();
     const [isRefreshing, setIsRefreshing] = React.useState(false);
-
-    useEffect(() => {
-        const checkPermission = async () => {
-            try {
-                if (!auth.user) {
-                    navigate('/login');
-                    return;
-                }
-
-                const hasAccess = hasPermission('system-config.access');
-                if (!hasAccess) {
-                    navigate('/portal');
-                }
-            } catch (error) {
-                console.error('Permission check failed:', error);
-                navigate('/portal');
-            } finally {
-                setIsCheckingPermission(false);
-            }
-        };
-
-        checkPermission();
-    }, [auth, hasPermission, navigate]);
 
     // Handle manual refresh
     const handleRefresh = async () => {
@@ -46,14 +24,6 @@ const SystemConfigPage: React.FC = () => {
             setIsRefreshing(false);
         }
     };
-
-    if (isCheckingPermission) {
-        return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
 
     return (
         <div className="p-6 space-y-6">

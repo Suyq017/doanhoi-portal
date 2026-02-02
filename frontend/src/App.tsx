@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Suspense } from 'react';
 import { Layout } from './shared';
@@ -12,7 +12,7 @@ import { OrganizationsSubDetailPage } from './features/organizations';
 // import { OrganizationMembersPage } from './features/organizations';
 import { ClassesPage } from './features/classes';
 import { PermissionsPage } from './features/permissions';
-import SystemConfigPage from './features/system-config/SystemConfigPage';
+import { SystemConfigPage } from './features/system-config';
 import { AuthProvider, AuthCallback, LoginPage, AdminLoginPage, ProtectedRoute, EnhancedProtectedRoute, AuthGuard } from './features/auth';
 import {
   PaymentCampaignsPage,
@@ -38,6 +38,9 @@ function App() {
         <Suspense fallback={<AppLoadingScreen />}>
           <Router>
             <Routes>
+              {/* Root redirect to login */}
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              
               {/* Public Routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin-doan-hoi/login" element={<AdminLoginPage />} />

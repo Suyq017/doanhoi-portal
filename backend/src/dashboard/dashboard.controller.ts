@@ -29,7 +29,7 @@ export class DashboardController {
     private readonly usersService: UsersService,
     private readonly organizationsService: OrganizationsService,
     private readonly dashboardService: DashboardService,
-  ) {}
+  ) { }
 
   @Get("stats")
   @ApiOperation({ summary: "Lấy thống kê tổng quan" })

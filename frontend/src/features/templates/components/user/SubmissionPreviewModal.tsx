@@ -68,7 +68,7 @@ const SubmissionPreviewModal: React.FC<SubmissionPreviewModalProps> = ({
           <div className="px-6 py-4 max-h-[70vh] overflow-y-auto">
             {isLoading && (
               <div className="flex flex-col items-center justify-center py-12">
-                <Loader className="h-12 w-12 text-blue-500 animate-spin mb-4" />
+                <Loader className="h-12 w-12 text-doan-500 animate-spin mb-4" />
                 <p className="text-gray-600 dark:text-gray-400">
                   {t('common:messages.loading')}
                 </p>

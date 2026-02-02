@@ -12,7 +12,7 @@ export class CtxhImportService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async importOldSystemCtxh(
     records: OldSystemCtxhRecordDto[],

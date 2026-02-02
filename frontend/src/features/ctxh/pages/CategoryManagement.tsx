@@ -1,177 +1,63 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { CtxhCategory, CreateCategoryRequest, UpdateCategoryRequest } from '../types';
-import { getErrorMessage } from '../utils';
+import { useCategoryManagement } from '../hooks';
+import { CategoryManagementHeader, ToastContainer } from '../components/shared';
 import CategoryList from '../components/category/CategoryList';
 import CategoryForm from '../components/category/CategoryForm';
 import CategoryDetailModal from '../components/category/CategoryDetailModal';
 import ConfirmDialog from '../../../shared/components/ConfirmDialog';
-import { Toast } from '../../../shared/components';
-import { useToast } from '../../../shared/hooks';
-import { useCtxhPermissions } from '../hooks';
-import { Plus } from 'lucide-react';
-import {
-  useCreateCategory,
-  useUpdateCategory,
-  useDeleteCategory,
-  useRestoreCategory,
-} from '../../../shared/hooks/queries';
 
+/**
+ * Category Management Page
+ * Refactored with separation of concerns using custom hook
+ */
 const CategoryManagement: React.FC = () => {
   const { t } = useTranslation('ctxh');
-  const ctxhPermissions = useCtxhPermissions();
-
-  // Toast notifications
-  const { toasts, hideToast, showSuccess, showError } = useToast();
-
-  // TanStack Query mutations
-  const createMutation = useCreateCategory();
-  const updateMutation = useUpdateCategory();
-  const deleteMutation = useDeleteCategory();
-  const restoreMutation = useRestoreCategory();
-
-  // State management
-  const [selectedCategory, setSelectedCategory] = useState<CtxhCategory | undefined>();
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<'delete' | 'restore' | null>(null);
-
-  // Toast wrapper for CategoryList
-  const handleShowToast = (type: 'success' | 'error' | 'info', message: string) => {
-    if (type === 'success') {
-      showSuccess(message);
-    } else if (type === 'error') {
-      showError(message);
-    }
-  };
-
-  // Form handlers
-  const handleCreateClick = () => {
-    setSelectedCategory(undefined);
-    setIsFormOpen(true);
-  };
-
-  const handleEditClick = (category: CtxhCategory) => {
-    setSelectedCategory(category);
-    setIsFormOpen(true);
-  };
-
-  const handleFormClose = () => {
-    setIsFormOpen(false);
-    setSelectedCategory(undefined);
-  };
-
-  const handleFormSave = async (data: CreateCategoryRequest | UpdateCategoryRequest) => {
-    try {
-      if (selectedCategory) {
-        // Update existing category
-        await updateMutation.mutateAsync({ id: selectedCategory.id, data: data as UpdateCategoryRequest });
-        showSuccess(t('category.updated'));
-      } else {
-        // Create new category
-        await createMutation.mutateAsync(data as CreateCategoryRequest);
-        showSuccess(t('category.created'));
-      }
-
-      setIsFormOpen(false);
-      setSelectedCategory(undefined);
-      // ✅ Cache tự động refetch, không cần refreshTrigger
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      showError(errorMessage);
-      throw error; // Re-throw to let the form handle it
-    }
-  };
-
-  // Delete handler
-  const handleDeleteClick = (category: CtxhCategory) => {
-    setSelectedCategory(category);
-    setConfirmAction('delete');
-    setIsConfirmDialogOpen(true);
-  };
-
-  // View detail handler
-  const handleViewDetailClick = (category: CtxhCategory) => {
-    setSelectedCategory(category);
-    setIsDetailModalOpen(true);
-  };
-
-  const handleConfirmAction = async () => {
-    if (!selectedCategory || !confirmAction) return;
-
-    try {
-      if (confirmAction === 'delete') {
-        await deleteMutation.mutateAsync(selectedCategory.id);
-        showSuccess(t('category.deleted'));
-      } else if (confirmAction === 'restore') {
-        await restoreMutation.mutateAsync(selectedCategory.id);
-        showSuccess(t('category.restored'));
-      }
-
-      // ✅ Cache tự động refetch
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      showError(errorMessage);
-    } finally {
-      setIsConfirmDialogOpen(false);
-      setSelectedCategory(undefined);
-      setConfirmAction(null);
-    }
-  };
-
-  const handleCancelAction = () => {
-    setIsConfirmDialogOpen(false);
-    setSelectedCategory(undefined);
-    setConfirmAction(null);
-  };
-
-  // Get confirmation dialog content
-  const getConfirmDialogContent = () => {
-    if (!selectedCategory || !confirmAction) return { title: '', message: '', variant: 'warning' as const };
-
-    if (confirmAction === 'delete') {
-      return {
-        title: t('category.delete'),
-        message: t('category.deleteConfirm') + ` "${selectedCategory.name}"?`,
-        variant: 'danger' as const
-      };
-    } else {
-      return {
-        title: t('category.restore'),
-        message: t('category.restoreConfirm') + ` "${selectedCategory.name}"?`,
-        variant: 'info' as const
-      };
-    }
-  };
-
-  const dialogContent = getConfirmDialogContent();
+  
+  const {
+    // State
+    selectedCategory,
+    isFormOpen,
+    isConfirmDialogOpen,
+    isDetailModalOpen,
+    
+    // Loading states
+    isCreating,
+    isUpdating,
+    
+    // Actions
+    handleCreateClick,
+    handleEditClick,
+    handleDeleteClick,
+    handleViewDetailClick,
+    handleFormClose,
+    handleFormSave,
+    handleConfirmAction,
+    handleCancelAction,
+    handleShowToast,
+    handleDetailModalClose,
+    
+    // Dialog content
+    dialogContent,
+    
+    // Permissions
+    permissions,
+    
+    // Toast
+    toasts,
+    hideToast
+  } = useCategoryManagement();
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {t('category.title')}
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            {t('category.subtitle')}
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0">
-          {/* Only show create button if user has create permission */}
-          {ctxhPermissions.categories.create && (
-            <button
-              onClick={handleCreateClick}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-doan-500 hover:bg-doan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-doan-500"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {t('category.create')}
-            </button>
-          )}
-        </div>
-      </div>
+      <CategoryManagementHeader
+        title={t('category.title')}
+        subtitle={t('category.subtitle')}
+        canCreate={permissions.create}
+        onCreateClick={handleCreateClick}
+        createButtonLabel={t('category.create')}
+      />
 
       {/* Category List */}
       <CategoryList
@@ -180,11 +66,7 @@ const CategoryManagement: React.FC = () => {
         onDeleteClick={handleDeleteClick}
         onViewDetailClick={handleViewDetailClick}
         showToast={handleShowToast}
-        permissions={{
-          create: ctxhPermissions.categories.create,
-          update: ctxhPermissions.categories.update,
-          delete: ctxhPermissions.categories.delete
-        }}
+        permissions={permissions}
       />
 
       {/* Category Form Modal */}
@@ -193,17 +75,14 @@ const CategoryManagement: React.FC = () => {
         category={selectedCategory}
         onSave={handleFormSave}
         onClose={handleFormClose}
-        loading={createMutation.isPending || updateMutation.isPending}
+        loading={isCreating || isUpdating}
       />
 
       {/* Category Detail Modal */}
       <CategoryDetailModal
         isOpen={isDetailModalOpen}
         category={selectedCategory}
-        onClose={() => {
-          setIsDetailModalOpen(false);
-          setSelectedCategory(undefined);
-        }}
+        onClose={handleDetailModalClose}
       />
 
       {/* Confirm Dialog */}
@@ -212,23 +91,14 @@ const CategoryManagement: React.FC = () => {
         title={dialogContent.title}
         message={dialogContent.message}
         variant={dialogContent.variant}
-        confirmText={confirmAction === 'delete' ? t('common.delete') : t('category.restore')}
-        cancelText={t('common.cancel')}
+        confirmText={t('common:actions.confirm')}
+        cancelText={t('category.cancel')}
         onConfirm={handleConfirmAction}
         onCancel={handleCancelAction}
       />
 
-      {/* Toasts */}
-      <div className="fixed top-4 right-4 z-[9999] space-y-2">
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            type={toast.type}
-            message={toast.message}
-            onClose={() => hideToast(toast.id)}
-          />
-        ))}
-      </div>
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onHide={hideToast} />
     </div>
   );
 };

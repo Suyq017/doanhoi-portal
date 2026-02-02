@@ -27,7 +27,7 @@ export class ExportService {
     // private paymentCampaignPayosConfigRepository: Repository<PaymentCampaignPayosConfig>,
     @InjectRepository(PaymentHistory)
     private paymentHistoryRepository: Repository<PaymentHistory>,
-  ) {}
+  ) { }
 
   async exportUsers(exportRequest: ExportRequestDto): Promise<Buffer> {
     const { fields, format: _format } = exportRequest;

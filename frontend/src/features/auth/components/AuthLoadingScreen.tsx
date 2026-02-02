@@ -10,7 +10,7 @@ const AuthLoadingScreen: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
             <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-doan-500 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-doan-500 dark:border-t-doan-400 mx-auto mb-4"></div>
                 <p className="text-gray-600 dark:text-gray-400 text-lg font-medium">
                     {t('auth:loading.checkingAuthentication', { defaultValue: 'Đang kiểm tra đăng nhập...' })}
                 </p>

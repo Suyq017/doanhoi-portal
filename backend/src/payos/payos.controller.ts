@@ -15,7 +15,7 @@ export class PayOSController {
   constructor(
     private readonly payosService: SimplePayosService,
     private readonly paymentHistoryService: PaymentHistoryService,
-  ) {}
+  ) { }
 
   /**
    * API endpoint để tạo link thanh toán.

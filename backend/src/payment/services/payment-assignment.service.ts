@@ -36,7 +36,7 @@ export class PaymentAssignmentService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(PaymentHistory)
     private readonly paymentHistoryRepository: Repository<PaymentHistory>,
-  ) {}
+  ) { }
 
   /**
    * Create payment assignment

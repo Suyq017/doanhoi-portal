@@ -26,7 +26,7 @@ export class ReportsService {
     private limitConfigRepository: Repository<CtxhLimitConfig>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async getStudentReportByCode(studentCode: string): Promise<StudentReportDto> {
     // First, check if student exists in users table

@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { usePermissions } from '../../../shared/hooks/usePermissions';
 
+// Cache for CTXH permissions to prevent loading flash on route changes
+let cachedCtxhPermissions: CtxhPermissions | null = null;
+
 export interface CtxhPermissions {
   // Activities permissions
   activities: {
@@ -32,38 +35,46 @@ export interface CtxhPermissions {
   loading: boolean;
 }
 
+const defaultCtxhPermissions: CtxhPermissions = {
+  activities: {
+    view: false,
+    create: false,
+    update: false,
+    delete: false,
+    manage_participants: false,
+  },
+  categories: {
+    view: false,
+    create: false,
+    update: false,
+    delete: false,
+  },
+  reports: {
+    view: false,
+    generate: false,
+    export: false,
+  },
+  config: {
+    view: false,
+    manage: false,
+  },
+  loading: true,
+};
+
 export const useCtxhPermissions = () => {
   const permissions = usePermissions();
-  const [ctxhPermissions, setCtxhPermissions] = useState<CtxhPermissions>({
-    activities: {
-      view: false,
-      create: false,
-      update: false,
-      delete: false,
-      manage_participants: false,
-    },
-    categories: {
-      view: false,
-      create: false,
-      update: false,
-      delete: false,
-    },
-    reports: {
-      view: false,
-      generate: false,
-      export: false,
-    },
-    config: {
-      view: false,
-      manage: false,
-    },
-    loading: true,
-  });
+  // Use cached permissions if available to prevent loading flash
+  const [ctxhPermissions, setCtxhPermissions] = useState<CtxhPermissions>(
+    cachedCtxhPermissions || defaultCtxhPermissions
+  );
 
   useEffect(() => {
     const checkPermissions = async () => {
       try {
-        setCtxhPermissions(prev => ({ ...prev, loading: true }));
+        // Only show loading if we don't have cached permissions
+        if (!cachedCtxhPermissions) {
+          setCtxhPermissions(prev => ({ ...prev, loading: true }));
+        }
         
         // If permissions are still loading, wait
         if (permissions.permissionsLoading) {
@@ -128,7 +139,7 @@ export const useCtxhPermissions = () => {
           permissions.hasPermission('config.manage', permissions.currentOrganizationId) ||
           permissions.hasPermission('ctxh.config.manage', permissions.currentOrganizationId);
 
-        setCtxhPermissions({
+        const newPermissions: CtxhPermissions = {
           activities: {
             view: canViewActivities,
             create: canCreateActivities,
@@ -152,7 +163,11 @@ export const useCtxhPermissions = () => {
             manage: canManageConfig,
           },
           loading: false,
-        });
+        };
+
+        // Cache the permissions
+        cachedCtxhPermissions = newPermissions;
+        setCtxhPermissions(newPermissions);
 
       } catch (error) {
         console.error('[useCtxhPermissions] Error checking permissions:', error);

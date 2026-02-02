@@ -63,7 +63,7 @@ export class DepartmentTransactionService {
     connectionPoolSize: 10,
   };
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource) { }
 
   /**
    * Thực hiện transaction cho batch processing

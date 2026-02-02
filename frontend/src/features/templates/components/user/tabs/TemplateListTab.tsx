@@ -34,11 +34,11 @@ const TemplateListTab: React.FC<TemplateListTabProps> = ({ onSelectTemplate }) =
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['templates-active', debouncedSearch, page, limit],
-    queryFn: () => getAllTemplates({ 
+    queryFn: () => getAllTemplates({
       status: 'active', // Chỉ lấy biểu mẫu active
-      search: debouncedSearch || undefined, 
-      page, 
-      limit 
+      search: debouncedSearch || undefined,
+      page,
+      limit
     }),
     placeholderData: (previousData) => previousData,
     staleTime: 5 * 60 * 1000, // 5 minutes - cache data
@@ -83,7 +83,7 @@ const TemplateListTab: React.FC<TemplateListTabProps> = ({ onSelectTemplate }) =
         {isLoading ? (
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto border-b-2 rounded-full animate-spin border-doan-600"></div>
+              <div className="w-12 h-12 mx-auto border-4 rounded-full animate-spin border-gray-200 dark:border-gray-700 border-t-doan-500 dark:border-t-doan-400"></div>
               <p className="mt-4 text-gray-600 dark:text-gray-400">{t('templates:messages.loadingTemplates')}</p>
             </div>
           </div>

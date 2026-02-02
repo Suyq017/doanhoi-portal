@@ -433,7 +433,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
       <div className="overflow-hidden bg-white border rounded-lg dark:bg-gray-800 dark:border-gray-700">
         {loading ? (
           <div className="flex items-center justify-center p-12">
-            <div className="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin dark:border-blue-400"></div>
+            <div className="w-10 h-10 border-4 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400 rounded-full animate-spin"></div>
           </div>
         ) : totalFiltered === 0 ? (
           <div className="p-12 text-center">

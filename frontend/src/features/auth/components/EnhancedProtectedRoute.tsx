@@ -1,8 +1,9 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { PermissionLoadingScreen } from './PermissionLoadingScreen';
 import { AccessDeniedScreen } from './AccessDeniedScreen';
+import { getHasInitiallyLoaded, setHasInitiallyLoaded } from '../utils/authLoadingState';
 
 interface EnhancedProtectedRouteProps {
     children: ReactNode;
@@ -20,8 +21,15 @@ export const EnhancedProtectedRoute = ({
     const { auth, hasPermission } = useAuth();
     const location = useLocation();
 
-    // Show loading screen while checking authentication
-    if (auth.isLoading) {
+    // Track when initial load completes
+    useEffect(() => {
+        if (!auth.isLoading && !auth.permissionsLoading) {
+            setHasInitiallyLoaded(true);
+        }
+    }, [auth.isLoading, auth.permissionsLoading]);
+
+    // Show loading screen while checking authentication (only on initial load)
+    if (auth.isLoading && !getHasInitiallyLoaded()) {
         return <PermissionLoadingScreen />;
     }
 
@@ -31,8 +39,8 @@ export const EnhancedProtectedRoute = ({
     }
     // Check permissions if required
     if (requiredPermissions.length > 0) {
-        // Show loading while permissions are being fetched
-        if (auth.permissionsLoading) {
+        // Show loading while permissions are being fetched (only on initial load)
+        if (auth.permissionsLoading && !getHasInitiallyLoaded()) {
             return <PermissionLoadingScreen />;
         }
 

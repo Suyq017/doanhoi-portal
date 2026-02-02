@@ -142,7 +142,7 @@ const RoleManager: React.FC<RoleManagerProps> = ({
           </div>
           {rolesLoading ? (
             <div className="flex items-center space-x-2 text-gray-500">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400"></div>
               <span>{t('users:labels.loadingRoles')}</span>
             </div>
           ) : (

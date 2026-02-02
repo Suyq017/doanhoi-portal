@@ -1,8 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class DropOrganizationPayosConfigTable1704722600000
-  implements MigrationInterface
-{
+  implements MigrationInterface {
   name = "DropOrganizationPayosConfigTable1704722600000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -201,7 +201,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
         <div className="p-6 space-y-6">
           {loading && !userDetail ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-4 border-gray-200 dark:border-gray-700 border-t-doan-500 dark:border-t-doan-400 rounded-full animate-spin"></div>
               <span className="ml-3 text-gray-500">{t('common:states.loading')}</span>
             </div>
           ) : (
@@ -289,8 +289,8 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                           {t('users:fields.gender')}
                         </label>
                         <div className="text-gray-900 dark:text-white">
-                          {(displayUser as any).gender === 'NAM' ? t('users:gender.male') : 
-                           (displayUser as any).gender === 'NU' ? t('users:gender.female') : ''}
+                          {(displayUser as any).gender === 'NAM' ? t('users:gender.male') :
+                            (displayUser as any).gender === 'NU' ? t('users:gender.female') : ''}
                         </div>
                       </div>
                     )}
@@ -371,11 +371,10 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                         <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                           {t('users:fields.isActive')}
                         </label>
-                        <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                          displayUser.isActive 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                        <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${displayUser.isActive
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                        }`}>
+                          }`}>
                           {displayUser.isActive ? 'Đang học' : 'Đã thôi học'}
                         </div>
                       </div>
@@ -389,7 +388,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('users:fields.userType')}
-                  </label>              
+                  </label>
                   <div className="inline-flex px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full">
                     {getUserTypeText(displayUser.userType)}
                   </div>
@@ -398,14 +397,14 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('users:fields.membershipStatus')}
-                  </label>              
+                  </label>
                   <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getMembershipStatusColor(displayUser.membershipStatus)}`}>
                     {getMembershipStatusText(displayUser.membershipStatus)}
                   </div>
-                </div>    
+                </div>
 
               </div>
-              
+
               {/* User Organizations */}
               <div className="space-y-4">
                 <h3 className="flex items-center text-lg font-medium text-gray-900 dark:text-white">
@@ -415,19 +414,19 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
 
                 {userOrganizations.length > 0 ? (
                   <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
-                    <div className="flex flex-wrap gap-2">                     
+                    <div className="flex flex-wrap gap-2">
                       {userOrganizations
-                      .sort((a, b) => a.level - b.level) // Sort by level: parent -> child -> grandchild
-                      .map((org) => (
-                        <span
-                          key={org.id}
-                          className="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-200"
-                        >
-                          <Building className="w-3 h-3 mr-1" />
-                          {org.name}
-                        </span>
-                      ))
-                    }
+                        .sort((a, b) => a.level - b.level) // Sort by level: parent -> child -> grandchild
+                        .map((org) => (
+                          <span
+                            key={org.id}
+                            className="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-200"
+                          >
+                            <Building className="w-3 h-3 mr-1" />
+                            {org.name}
+                          </span>
+                        ))
+                      }
                     </div>
                   </div>
                 ) : (
@@ -491,10 +490,10 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                         </div>
                       </div>
                     )}
-                  </div>            
+                  </div>
                 </div>
-              )}              
-              
+              )}
+
               {/* User Roles & Permissions */}
               <div className="space-y-4">
                 <h3 className="flex items-center text-lg font-medium text-gray-900 dark:text-white">
@@ -504,7 +503,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
 
                 {loading ? (
                   <div className="flex items-center justify-center py-8">
-                    <div className="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div>
+                    <div className="w-8 h-8 border-4 border-gray-200 dark:border-gray-700 border-t-doan-500 dark:border-t-doan-400 rounded-full animate-spin"></div>
                     <span className="ml-2 text-gray-500">{t('common:states.loading')}</span>
                   </div>
                 ) : userRoles.length > 0 ? (
@@ -553,7 +552,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                   <label className="flex items-center mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     <Calendar className="w-4 h-4 mr-1" />
                     {t('common:fields.createdAt')}
-                  </label>              
+                  </label>
                   <div className="text-gray-900 dark:text-white">
                     {new Date(displayUser.createdAt).toLocaleString('vi-VN')}
                   </div>
@@ -563,9 +562,9 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                   <label className="flex items-center mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     <Calendar className="w-4 h-4 mr-1" />
                     {t('common:fields.updatedAt')}
-                  </label>              
+                  </label>
                   <div className="text-gray-900 dark:text-white">
-                    {new Date(displayUser.updatedAt).toLocaleString('vi-VN')}              
+                    {new Date(displayUser.updatedAt).toLocaleString('vi-VN')}
                   </div>
                 </div>
               </div>

@@ -63,7 +63,7 @@ export class ImportService {
     private batchProcessingService: BatchProcessingService,
     private transactionService: TransactionService,
     private dataSource: DataSource,
-  ) {}
+  ) { }
 
   async uploadFile(file: Express.Multer.File): Promise<ImportUploadResponse> {
     if (!file) {
@@ -452,8 +452,8 @@ export class ImportService {
       importResult.failedCount > 0 ? 1 : 0, // Failed batches
       validatedData.length,
       importResult.importedCount +
-        importResult.skippedCount +
-        importResult.failedCount,
+      importResult.skippedCount +
+      importResult.failedCount,
       importResult.importedCount,
       importResult.failedCount,
       importResult.skippedCount,

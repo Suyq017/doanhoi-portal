@@ -577,8 +577,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }; 
-  
+  };
+
   const handleClose = () => {
     setFormData({
       code: '',
@@ -604,7 +604,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       trainingLevel: '',
       isActive: true,
     });
-    
+
     setRoleAssignments([]); // Reset to empty array instead of creating default assignment
     setUserOrganizations([]);
     setIsSubmitting(false);
@@ -665,7 +665,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       </div>        {/* Form */}
       {loadingUserDetail ? (
         <div className="p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-6 w-6 border-4 border-gray-200 dark:border-gray-700 border-t-doan-500 dark:border-t-doan-400"></div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -847,7 +847,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
               {t('users:titles.personalInfo')}
             </h3>
-            
+
             {/* Row 1: Class and Identity Card */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Class Combobox */}

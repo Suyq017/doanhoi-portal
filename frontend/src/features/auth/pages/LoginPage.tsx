@@ -57,9 +57,9 @@ const LoginPage: React.FC = () => {
                 className="mx-auto w-52 h-auto object-contain"
               />
             </div>
-            
+
           </div>
-          
+
           {/* Error message */}
           {error && (
             <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">

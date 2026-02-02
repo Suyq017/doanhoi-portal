@@ -21,7 +21,7 @@ export class UsersService {
     private usersRepository: Repository<User>,
     private rolesService: RolesService,
     private organizationsService: OrganizationsService,
-  ) {}
+  ) { }
   async create(createUserDto: CreateUserDto): Promise<User> {
     // Check if user with email or code already exists
     const existingUser = await this.usersRepository.findOne({

@@ -54,7 +54,7 @@ export class OrganizationImportService {
     @InjectRepository(UserOrganization)
     private userOrganizationsRepository: Repository<UserOrganization>,
     private readonly metricsService: MetricsService,
-  ) {}
+  ) { }
 
   async processUploadedFile(
     file: Express.Multer.File,

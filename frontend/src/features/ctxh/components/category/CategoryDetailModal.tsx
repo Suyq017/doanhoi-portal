@@ -18,7 +18,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
   onClose
 }) => {
   const { t } = useTranslation('ctxh');
-  
+
   const [activities, setActivities] = useState<CtxhActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,7 +36,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
   // Fetch activities for this category from backend with pagination and search
   const fetchActivities = async (page: number = currentPage, search?: string, newLimit?: number) => {
     if (!category) return;
-    
+
     setLoading(true);
     try {
       const params: ActivityQueryParams = {
@@ -45,7 +45,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
         category_id: category.id,
         search: search !== undefined ? search : searchTerm
       };
-      
+
       const response: PaginatedResponse<CtxhActivity> = await activityService.findAll(params);
       setActivities(response.data);
       setTotalPages(response.totalPages);
@@ -88,10 +88,10 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
     try {
       const d = new Date(date);
       if (isNaN(d.getTime())) return '-';
-      
+
       return d.toLocaleDateString('vi-VN', {
         day: '2-digit',
-        month: '2-digit', 
+        month: '2-digit',
         year: 'numeric'
       });
     } catch {
@@ -121,7 +121,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
         {/* Background overlay */}
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50"
           onClick={onClose}
         />
@@ -132,14 +132,14 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <h3 
+                <h3
                   className="text-lg font-medium text-gray-900 dark:text-white break-words overflow-wrap-anywhere leading-6"
                   title={`${t('category.details')}: ${category.name}`}
                 >
                   {t('category.details')}: {category.name}
                 </h3>
                 {category.description && (
-                  <p 
+                  <p
                     className="mt-1 text-sm text-gray-500 dark:text-gray-400 break-words overflow-wrap-anywhere leading-5"
                     title={category.description}
                   >
@@ -217,7 +217,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                             <tr key={activity.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                               <td className="px-6 py-4 align-top text-left" style={{ width: '30%' }}>
                                 <div className="overflow-hidden">
-                                  <div 
+                                  <div
                                     className="font-medium text-gray-900 dark:text-white break-words leading-5"
                                     style={{
                                       display: '-webkit-box',
@@ -231,7 +231,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                                   </div>
                                   {activity.description && (
                                     <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                      <div 
+                                      <div
                                         className="overflow-hidden break-words leading-4"
                                         style={{
                                           display: '-webkit-box',
@@ -265,7 +265,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 align-top text-left" style={{ width: '18%' }}>
-                                <div 
+                                <div
                                   className="break-words overflow-hidden leading-5"
                                   style={{
                                     display: '-webkit-box',
@@ -279,7 +279,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 align-top text-left" style={{ width: '19%' }}>
-                                <div 
+                                <div
                                   className="break-words overflow-hidden leading-5"
                                   style={{
                                     display: '-webkit-box',
@@ -313,7 +313,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                                   {activity.name}
                                 </div>
                                 {activity.description && (
-                                  <div 
+                                  <div
                                     className="mt-1.5 text-sm text-gray-600 dark:text-gray-400 break-words"
                                     style={{
                                       display: '-webkit-box',

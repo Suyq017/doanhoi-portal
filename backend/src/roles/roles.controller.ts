@@ -20,7 +20,7 @@ import {
 @ApiTags("roles")
 @Controller("roles")
 export class RolesController {
-  constructor(private readonly rolesService: RolesService) {}
+  constructor(private readonly rolesService: RolesService) { }
 
   @Get()
   @ApiOperation({ summary: "Get all roles" })

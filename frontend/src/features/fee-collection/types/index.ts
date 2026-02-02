@@ -1,6 +1,12 @@
 // Payment Campaign Types
 import { User } from '../../../shared/types/index'
 
+// Re-export hook types
+export * from './hooks.types';
+
+// Re-export component types
+export * from './components.types';
+
 export interface PaymentCampaign {
   id: string;
   organizationId: string;
