@@ -46,3 +46,48 @@ export class ImportOldSystemCtxhResultDto {
   @ApiProperty()
   message: string;
 }
+
+export class ValidateOldSystemCtxhDto {
+  @ApiProperty({
+    type: [OldSystemCtxhRecordDto],
+    description: "Danh sách bản ghi CTXH cần validate",
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OldSystemCtxhRecordDto)
+  records: OldSystemCtxhRecordDto[];
+}
+
+export class ValidationError {
+  @ApiProperty()
+  row: number;
+
+  @ApiProperty()
+  column: string;
+
+  @ApiProperty()
+  message: string;
+
+  @ApiProperty()
+  severity: "error" | "warning";
+}
+
+export class ValidateOldSystemCtxhResultDto {
+  @ApiProperty()
+  isValid: boolean;
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  valid: number;
+
+  @ApiProperty()
+  invalid: number;
+
+  @ApiProperty({ type: [ValidationError] })
+  errors: ValidationError[];
+
+  @ApiProperty({ type: [ValidationError] })
+  warnings: ValidationError[];
+}
