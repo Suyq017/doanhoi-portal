@@ -1,271 +1,151 @@
-# Feature: Student Reports (Báo cáo CTXH sinh viên)
+# Feature: Student Reports (Báo cáo cá nhân)
 
 ## Tổng quan
-Module hiển thị báo cáo hoạt động Công tác xã hội của sinh viên, bao gồm thống kê số giờ, danh sách hoạt động đã tham gia, và tiến độ hoàn thành theo năm học.
+Trang hiển thị báo cáo hoạt động Công tác xã hội của sinh viên, bao gồm thông tin cá nhân, tổng số ngày CTXH đã tích lũy (từ hệ thống mới và cũ), và danh sách hoạt động đã tham gia.
+
+**Lưu ý**: Tất cả sinh viên đều có thể xem báo cáo cá nhân của mình, không cần permission đặc biệt.
 
 ## Đường dẫn
 ```
 frontend/src/features/student-reports/
 ├── components/
-│   ├── ActivityHistoryTable.tsx          # Bảng lịch sử hoạt động
-│   ├── CTXHLimitCard.tsx                 # Card hiển thị limit CTXH
-│   ├── CTXHStatisticsPanel.tsx           # Panel thống kê
-│   ├── FilterBar.tsx                     # Thanh filter
-│   ├── NavigationBreadcrumb.tsx          # Breadcrumb
-│   ├── StatCard.tsx                      # Card thống kê đơn
-│   ├── StatCards.tsx                     # Grid các stat cards
-│   ├── StudentReportHeader.tsx           # Header trang
-│   └── YearSelector.tsx                  # Dropdown chọn năm học
-├── hooks/
-│   ├── useStudentReportStats.ts          # Hook lấy thống kê
-│   ├── useActivityHistory.ts             # Hook lấy lịch sử
-│   └── useAcademicYear.ts                # Hook năm học
+│   ├── StudentInfoCard.tsx               # Card thông tin sinh viên
+│   ├── CTXHSummaryCards.tsx              # Cards tổng hợp kết quả
+│   ├── ActivityTable.tsx                 # Bảng danh sách hoạt động
+│   └── ReportHeader.tsx                  # Header trang
 ├── pages/
 │   └── StudentReportsPage.tsx            # Trang chính
-├── types/
-│   └── hooks.types.ts                    # Type definitions
-└── utils/
-    ├── calculations.ts                   # Tính toán thống kê
-    └── formatters.ts                     # Format dữ liệu
+└── types/
+    └── index.ts                          # Type definitions
 ```
 
 ## Chức năng chính
 
-### 1. Xem thống kê CTXH
-- Tổng số giờ CTXH đã tích lũy
-- Số hoạt động đã tham gia
-- Tiến độ hoàn thành (% so với yêu cầu)
+### 1. Hiển thị thông tin sinh viên
+- Họ và tên
+- Mã số sinh viên (MSSV)
+- Email
+- Tổng số ngày CTXH
 
-### 2. Lịch sử hoạt động
-- Danh sách hoạt động đã đăng ký
-- Trạng thái: Đã duyệt, Chờ duyệt, Từ chối
-- Số giờ của mỗi hoạt động
+### 2. Tổng hợp kết quả
+- **Ngày hoạt động đã hoàn thành**: Số ngày CTXH từ hệ thống mới đã được chấm
+- **Ngày hoạt động trên hệ thống cũ**: Số ngày CTXH được import từ hệ thống cũ
+- **Tổng số ngày hoạt động CTXH**: Tổng cộng từ cả 2 nguồn
+- **Trạng thái**: Đạt/Chưa đạt dựa trên yêu cầu của trường
 
-### 3. Filter theo năm học
-- Chọn năm học để xem báo cáo
-- So sánh giữa các năm học
-
-### 4. Limit CTXH
-- Hiển thị giới hạn CTXH theo cấu hình
-- Cảnh báo khi gần đạt/vượt limit
+### 3. Danh sách hoạt động
+- Xem tất cả hoạt động đã tham gia
+- Thông tin: Tên hoạt động, danh mục, số ngày, trạng thái
 
 ## Types
 
 ```typescript
-// Hook result type
-interface UseStudentReportStatsResult {
-  stats: StudentReportStats | null;
-  isLoading: boolean;
-  error: Error | null;
-  refetch: () => void;
+interface StudentReportData {
+  // Thông tin sinh viên
+  studentCode: string;
+  fullName: string;
+  email: string;
+  
+  // Thống kê
+  totalDays: number;                    // Tổng số ngày CTXH
+  completedDays: number;                // Ngày đã hoàn thành (hệ thống mới)
+  oldSystemDays: number;                // Ngày từ hệ thống cũ
+  requiredDays: number;                 // Số ngày yêu cầu
+  status: '達成' | 'CHƯA_ĐẠT';         // Trạng thái
+  
+  // Danh sách hoạt động
+  activities: ActivityRecord[];
 }
 
-interface StudentReportStats {
-  totalHours: number;
-  totalActivities: number;
-  approvedActivities: number;
-  pendingActivities: number;
-  rejectedActivities: number;
-  limit: CTXHLimit | null;
-  progress: number; // percentage
-}
-
-interface CTXHLimit {
+interface ActivityRecord {
   id: string;
-  academicYear: string;
-  minHours: number;
-  maxHours: number;
-  description?: string;
-}
-
-interface ActivityHistoryItem {
-  id: string;
-  activityId: string;
   activityName: string;
-  category: string;
-  hours: number;
-  status: ParticipantStatus;
-  registeredAt: string;
-  approvedAt?: string;
-  notes?: string;
+  categoryName: string;
+  actualDays: number;                   // Số ngày được chấm
+  status: ParticipationStatus;
+  completedAt?: string;
 }
 
-type ParticipantStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-
-interface AcademicYear {
-  value: string;  // e.g., "2024-2025"
-  label: string;  // e.g., "Năm học 2024-2025"
-}
+type ParticipationStatus = 'REGISTERED' | 'COMPLETED' | 'CANCELLED';
 ```
 
 ## Components
 
-### StudentReportsPage
-- Layout chính của trang
-- Fetch data qua hooks
-- Render các sub-components
+### ReportHeader
+- Tiêu đề: "Báo cáo cá nhân"
+- Mô tả: "Dữ liệu CTXH của sinh viên"
 
-### StatCards
+### StudentInfoCard
+Card hiển thị thông tin sinh viên:
+- **Họ và tên**: Tên đầy đủ
+- **Mã số sinh viên**: MSSV
+- **Email**: Email liên hệ
+- **Tổng số ngày CTXH**: Số ngày tích lũy (màu xanh lá)
+
+### CTXHSummaryCards
 Grid 4 thẻ thống kê:
-- **Tổng số giờ**: Số giờ CTXH đã tích lũy
-- **Tổng hoạt động**: Số hoạt động đã tham gia
-- **Đã duyệt**: Số hoạt động được duyệt
-- **Chờ duyệt**: Số hoạt động đang chờ
+1. **Ngày hoạt động đã hoàn thành** (màu xanh lá)
+   - Số ngày từ hệ thống mới đã được chấm
+2. **Ngày hoạt động trên hệ thống cũ** (màu cam)
+   - Số ngày được import từ hệ thống cũ
+3. **Tổng số ngày hoạt động CTXH** (màu xanh dương)
+   - Tổng cộng = hoàn thành + hệ thống cũ
+4. **Trạng thái** (màu đỏ nếu chưa đạt, xanh nếu đạt)
+   - Hiển thị "Đạt" hoặc "Chưa đạt"
 
-### CTXHStatisticsPanel
-- Progress bar tiến độ
-- So sánh với limit năm học
-- Màu sắc theo mức độ hoàn thành
+### ActivityTable
+Bảng danh sách hoạt động với các cột:
+- **STT**: Số thứ tự
+- **Tên hoạt động**: Tên và mô tả
+- **Danh mục**: Category của hoạt động
+- **Số ngày**: Số ngày CTXH được chấm
+- **Trạng thái**: Badge trạng thái (Đã hoàn thành / Đã đăng ký / Đã hủy)
 
-### ActivityHistoryTable
-| Column | Description |
-|--------|-------------|
-| Tên hoạt động | Tên và category |
-| Số giờ | Số giờ CTXH |
-| Trạng thái | Badge trạng thái |
-| Ngày đăng ký | Thời gian đăng ký |
-| Ghi chú | Notes (nếu có) |
-
-### YearSelector
-- Dropdown chọn năm học
-- Default: Năm học hiện tại
-- Trigger refetch khi thay đổi
-
-### CTXHLimitCard
-- Min/Max giờ yêu cầu
-- Số giờ hiện tại
-- Progress visualization
-- Warning khi chưa đạt
-
-### FilterBar
-- Filter theo năm học
-- Filter theo trạng thái
-- Search theo tên hoạt động
+**Empty state**: "Chưa có hoạt động nào" khi danh sách rỗng
 
 ## API Endpoints
 
 | Method | Endpoint | Mô tả |
 |--------|----------|-------|
-| GET | `/ctxh/my-statistics` | Thống kê CTXH của user |
-| GET | `/ctxh/my-activities` | Danh sách hoạt động đã đăng ký |
-| GET | `/ctxh/limits/:academicYear` | Giới hạn CTXH theo năm học |
+| GET | `/ctxh/reports/student/:studentCode` | Lấy báo cáo CTXH của sinh viên |
+
+**Lưu ý**: Endpoint này không yêu cầu permission. Sinh viên chỉ có thể xem báo cáo của chính mình.
 
 ### Response Example
 ```json
-// GET /ctxh/my-statistics?academicYear=2024-2025
 {
-  "totalHours": 50,
-  "totalActivities": 8,
-  "approvedActivities": 6,
-  "pendingActivities": 1,
-  "rejectedActivities": 1,
-  "limit": {
-    "minHours": 60,
-    "maxHours": 100
-  }
-}
-
-// GET /ctxh/my-activities
-{
-  "data": [
-    {
-      "id": "act-1",
-      "activityName": "Hiến máu nhân đạo",
-      "category": "Xã hội",
-      "hours": 8,
-      "status": "APPROVED",
-      "registeredAt": "2024-03-15T10:00:00Z"
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 8
-  }
+  "studentCode": "SUPERADMIN001",
+  "fullName": "Super Admin",
+  "email": "admin@doanhoi.com",
+  "totalDays": 0,
+  "completedDays": 0,
+  "oldSystemDays": 0,
+  "requiredDays": 20,
+  "status": "CHƯA_ĐẠT",
+  "activities": []
 }
 ```
 
 ## Permissions
-```
-student-reports.view  # Xem báo cáo CTXH cá nhân
-```
-
-**Note**: Feature này chủ yếu dành cho sinh viên xem thông tin của bản thân, không cần nhiều permissions phức tạp.
-
-## Utility Functions
-
-### calculations.ts
-```typescript
-// Tính tiến độ hoàn thành
-export const calculateProgress = (
-  currentHours: number, 
-  minHours: number
-): number => {
-  if (minHours <= 0) return 100;
-  return Math.min(100, (currentHours / minHours) * 100);
-};
-
-// Xác định màu progress
-export const getProgressColor = (progress: number): string => {
-  if (progress >= 100) return 'green';
-  if (progress >= 70) return 'blue';
-  if (progress >= 40) return 'yellow';
-  return 'red';
-};
-```
-
-### formatters.ts
-```typescript
-// Format số giờ
-export const formatHours = (hours: number): string => {
-  return `${hours} giờ`;
-};
-
-// Format năm học
-export const formatAcademicYear = (year: string): string => {
-  return `Năm học ${year}`;
-};
-
-// Format trạng thái
-export const formatStatus = (status: ParticipantStatus): string => {
-  const statusMap = {
-    PENDING: 'Chờ duyệt',
-    APPROVED: 'Đã duyệt',
-    REJECTED: 'Từ chối',
-  };
-  return statusMap[status];
-};
-```
+**Không có permission** - Tất cả sinh viên đều có thể xem báo cáo cá nhân của mình.
 
 ## UI States
 
 ### Loading State
-- Skeleton cho stat cards
+- Skeleton cho info card
+- Skeleton cho summary cards
 - Skeleton cho table
-- Spinner cho filters
 
-### Empty State
-- Không có hoạt động nào
-- Hướng dẫn đăng ký hoạt động
+### Empty State  
+- Hiển thị "Danh sách hoạt động (0)"
+- Message: Chưa có hoạt động nào
 
 ### Error State
-- Retry button
-- Error message
-
-## Progress Visualization
-
-```
-Tiến độ CTXH: 50/60 giờ (83.3%)
-
-[████████████████████░░░░░░░░░░] 83%
-         Đã hoàn thành: 50 giờ
-         Yêu cầu tối thiểu: 60 giờ
-         Còn thiếu: 10 giờ
-```
+- Message lỗi
+- Nút "Thử lại"
 
 ## Lưu ý kỹ thuật
-- Sử dụng TanStack Query cho caching
-- Academic year từ system config
+- Đơn vị tính: **Ngày** (không phải giờ)
+- Dữ liệu gồm 2 nguồn: Hệ thống mới + Hệ thống cũ (import)
 - Responsive design cho mobile
-- Export PDF báo cáo (future)
-- Share báo cáo (future)
+- Không cache (luôn fetch mới để có dữ liệu real-time)

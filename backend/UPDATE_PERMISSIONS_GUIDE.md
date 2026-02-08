@@ -79,7 +79,6 @@ npm run verify:super-admin
 ### Permissions đã bổ sung cho super_admin:
 - ✅ `system-config.access` - Truy cập cấu hình hệ thống (AWS S3, PayOS, etc.)
 - ✅ `ctxh.import.old_system` - Nhập dữ liệu CTXH từ hệ thống cũ
-- ✅ `ctxh.reports.view` - Xem báo cáo CTXH
 - ✅ `ctxh.reports.export` - Xuất báo cáo CTXH
 
 ### Cấu trúc permissions hiện tại:

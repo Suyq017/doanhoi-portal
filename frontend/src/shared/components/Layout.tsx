@@ -283,11 +283,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }    // Filter items based on permissions
     const filteredNavigation = baseNavigation.filter(item => {
       if ('requiredPermission' in item && item.requiredPermission) {
-        // Special handling for CTXH report permission
-        if (item.requiredPermission === 'ctxh.reports.view') {
-          return ctxhPermissions.reports.view;
-        }
-
         // Regular permission check
         const hasAccess = permissions.hasPermission(item.requiredPermission, permissions.currentOrganizationId);
         return hasAccess;
