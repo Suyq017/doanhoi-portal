@@ -5,11 +5,9 @@ include:
    
   - local: '.gitlab/ci/stages/01-prepare.yml'
   - local: '.gitlab/ci/stages/04-build.yml'
-  - local: '.gitlab/ci/stages/06-push.yml'
   - local: '.gitlab/ci/stages/09-deploy-prod.yml'
 
 stages:
   - prepare
   - build
-  - push
   - deploy-prod

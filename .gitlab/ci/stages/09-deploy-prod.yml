@@ -7,7 +7,8 @@ deploy:production:
     - .rules_production_only
   stage: deploy-prod
   needs:
-    - push:images
+    - build:backend
+    - build:frontend
   when: manual
   variables:
     ENVIRONMENT: "production"

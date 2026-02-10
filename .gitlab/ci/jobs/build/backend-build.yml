@@ -19,3 +19,14 @@ build:backend:
         -t $BACKEND_IMAGE:$CI_COMMIT_REF_SLUG \
         ./backend
     - echo "✅ Backend image built successfully"
+    
+    # Push ngay sau build (vì Docker image không share được giữa các jobs)
+    - echo "📤 Pushing backend image..."
+    - docker push $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $BACKEND_IMAGE:$CI_COMMIT_REF_SLUG
+    - |
+      if [ "$CI_COMMIT_BRANCH" == "staging" ] || [ "$CI_COMMIT_BRANCH" == "main" ]; then
+        docker tag $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA $BACKEND_IMAGE:latest
+        docker push $BACKEND_IMAGE:latest
+      fi
+    - echo "✅ Backend image pushed successfully"
