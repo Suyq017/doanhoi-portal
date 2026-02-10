@@ -3,7 +3,7 @@ prepare:dependencies:
   image: node:${NODE_VERSION}-alpine
   extends:
     - .node_cache
-    - .rules: main_branches
+    - .rules_main_branches
   script:
     - echo "Installing dependencies..."
     - cd backend && npm ci --cache ../ .npm --prefer-offline

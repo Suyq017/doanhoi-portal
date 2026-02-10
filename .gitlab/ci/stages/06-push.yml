@@ -4,7 +4,7 @@ push:images:
   services:
     - docker:24.0.5-dind
   extends:
-    - .rules:main_branches
+    - .rules_main_branches
   needs:
     - build:backend
     - build:frontend

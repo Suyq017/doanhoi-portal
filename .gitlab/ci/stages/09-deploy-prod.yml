@@ -4,7 +4,7 @@ include:
 deploy:production:
   extends:                              
     - .ssh_deploy_base                   
-    - .rules:production_only
+    - .rules_production_only
   stage: deploy-prod
   needs:
     - push:images
