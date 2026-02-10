@@ -4,7 +4,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { dashboardService } from '../services/dashboardService';
-import { DashboardStats, UseDashboardStatsReturn } from '../types';
+import { UseDashboardStatsReturn } from '../types';
 
 export const DASHBOARD_STATS_QUERY_KEY = ['dashboardStats'];
 

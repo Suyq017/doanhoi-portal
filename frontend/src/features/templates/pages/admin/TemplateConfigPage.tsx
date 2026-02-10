@@ -273,7 +273,6 @@ const TemplateConfigPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      const newSelectedFields = new Set<number>();
                       state.selectedFields.clear();
                       // Force re-render by updating state
                       toggleFieldSelection(-1); // This won't actually toggle anything, just force update
@@ -384,12 +383,12 @@ interface FieldConfigCardProps {
   onToggleSelection: () => void;
   onUpdateField: (updates: Partial<ConfigureFieldDto>) => void;
   onUnmerge: () => void;
-  t: (key: string) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }
 
 const FieldConfigCard: React.FC<FieldConfigCardProps> = ({
   field,
-  index,
+  index: _index,
   isSelected,
   isMapped,
   onToggleSelection,
