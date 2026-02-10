@@ -569,7 +569,7 @@ const FieldConfigCard: React.FC<FieldConfigCardProps> = ({
 interface FieldOptionsEditorProps {
   field: ConfigureFieldDto;
   onUpdateField: (updates: Partial<ConfigureFieldDto>) => void;
-  t: (key: string) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }
 
 const FieldOptionsEditor: React.FC<FieldOptionsEditorProps> = ({ field, onUpdateField, t }) => {

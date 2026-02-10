@@ -10,15 +10,6 @@ export const useDashboardStats = () => {
     });
 };
 
-export const useOrganizationStats = () => {
-    return useQuery({
-        queryKey: ['organization-stats'],
-        queryFn: () => dashboardService.getOrganizationStats(),
-        staleTime: 5 * 60 * 1000,
-        gcTime: 10 * 60 * 1000,
-    });
-};
-
 export const useRecentActivities = () => {
     return useQuery({
         queryKey: ['recent-activities'],
