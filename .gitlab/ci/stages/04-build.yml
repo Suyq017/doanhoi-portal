@@ -1,0 +1,3 @@
+include:
+  - local: '.gitlab/ci/jobs/build/backend-build.yml'
+  - local: '.gitlab/ci/jobs/build/frontend-build.yml'

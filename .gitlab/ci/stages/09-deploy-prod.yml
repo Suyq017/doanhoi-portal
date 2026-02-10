@@ -1,0 +1,52 @@
+include:
+  - local: '.gitlab/ci/templates/ssh-deploy.yml'
+
+deploy:production:
+  extends:                              
+    - .ssh_deploy_base                   
+    - .rules:production_only
+  stage: deploy-prod
+  needs:
+    - push:images
+  when: manual
+  variables:
+    ENVIRONMENT: "production"
+    COMPOSE_FILE: "docker-compose.prod.yml"
+    SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
+    DEPLOY_USER: $PRODUCTION_USER
+    DEPLOY_SERVER: $PRODUCTION_SERVER
+    DEPLOY_PATH: $DEPLOY_PATH
+  script:
+    - echo "🚀 Deploying to PRODUCTION version $CI_COMMIT_SHORT_SHA..."
+    - scp ${COMPOSE_FILE} ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/docker-compose.yml
+    - |
+      ssh ${DEPLOY_USER}@${DEPLOY_SERVER} << ENDSSH
+        cd ${DEPLOY_PATH}
+        
+        # Backup current version
+        echo "📦 Backing up current version..."
+        docker-compose config | grep "image:" > .previous-images.txt || true
+        
+        echo "🔐 Logging into Registry..."
+        docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+        
+        echo "⬇️ Pulling new version..."
+        export TAG=$CI_COMMIT_SHORT_SHA
+        export CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE
+        
+        docker-compose pull
+        
+        echo "🔄 Rolling update with zero downtime..."
+        docker-compose up -d --remove-orphans --scale backend=2
+        sleep 30
+        docker-compose up -d --remove-orphans --scale backend=1
+        
+        echo "✅ Deployment completed"
+        docker-compose ps
+        
+        echo "🧹 Cleanup old images..."
+        docker image prune -f --filter "until=24h"
+      ENDSSH
+  environment:
+    name: production
+    url: https://doanhoi.hcmut.edu.vn
