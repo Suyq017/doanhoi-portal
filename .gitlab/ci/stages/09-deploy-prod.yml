@@ -4,12 +4,16 @@ include:
 deploy:production:
   extends:                              
     - .ssh_deploy_base                   
-    - .rules_production_only
   stage: deploy-prod
   needs:
     - build:backend
     - build:frontend
-  when: manual
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+    - if: $CI_COMMIT_BRANCH == "dev"
+      when: manual
+      allow_failure: true    # Cho phép skip trên dev
   variables:
     ENVIRONMENT: "production"
     COMPOSE_FILE: "docker-compose.prod.yml"
