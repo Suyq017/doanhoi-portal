@@ -25,7 +25,7 @@ deploy:production:
     - echo "🚀 Deploying to PRODUCTION version $CI_COMMIT_SHORT_SHA..."
     - scp ${COMPOSE_FILE} ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/docker-compose.yml
     - |
-      ssh ${DEPLOY_USER}@${DEPLOY_SERVER} << 'ENDSSH'
+      ssh ${DEPLOY_USER}@${DEPLOY_SERVER} << ENDSSH
         set -e
         cd ${DEPLOY_PATH}
         
@@ -34,11 +34,11 @@ deploy:production:
         docker compose config | grep "image:" > .previous-images.txt || true
         
         echo "🔐 Logging into Registry..."
-        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+        echo "${CI_REGISTRY_PASSWORD}" | docker login -u "${CI_REGISTRY_USER}" --password-stdin "${CI_REGISTRY}"
         
         echo "⬇️ Pulling new version..."
-        export TAG=$CI_COMMIT_SHORT_SHA
-        export CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE
+        export TAG=${CI_COMMIT_SHORT_SHA}
+        export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
         
         docker compose pull
         
