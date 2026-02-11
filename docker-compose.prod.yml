@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  # Database PostgreSQL
+  # Database PostgreSQL (with pgvector for RAG)
   postgres:
-    image: postgres:15
+    image: pgvector/pgvector:pg15
     container_name: doanhoi-postgres-prod
     environment:
       POSTGRES_DB: doanhoi
@@ -13,6 +13,7 @@ services:
       - "2682:5432"
     volumes:
       - doanhoi_postgres_data:/var/lib/postgresql/data
+      - ./backend/scripts/init-pgvector.sql:/docker-entrypoint-initdb.d/01-init-pgvector.sql:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
