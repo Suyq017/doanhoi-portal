@@ -48,6 +48,7 @@
     "ctxh:clear-vectors": "node scripts/clear-ctxh-embeddings.js",
     "check:models": "ts-node -r tsconfig-paths/register src/scripts/check-model-status.ts",
     "migrate:embeddings": "ts-node -r tsconfig-paths/register src/scripts/migrate-embeddings.ts",
+    "generate:testset": "ts-node scripts/generate-testset.ts",
     "models:health": "curl -X GET http://localhost:9200/api/ctxh-chat/health/models"
   },
   "dependencies": {
