@@ -24,8 +24,6 @@ deploy:production:
   script:
     - echo "🚀 Deploying to PRODUCTION version $CI_COMMIT_SHORT_SHA..."
     - scp ${COMPOSE_FILE} ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/docker-compose.yml
-    - ssh ${DEPLOY_USER}@${DEPLOY_SERVER} "mkdir -p ${DEPLOY_PATH}/backend/scripts"
-    - scp backend/scripts/init-pgvector.sql ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/backend/scripts/init-pgvector.sql
     - |
       ssh ${DEPLOY_USER}@${DEPLOY_SERVER} << ENDSSH
         set -e
@@ -42,25 +40,16 @@ deploy:production:
         export TAG=${CI_COMMIT_SHORT_SHA}
         export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
         
-        docker compose pull
+        docker compose -f docker-compose.yml pull
         
         echo "🔄 Deploying..."
-        docker compose up -d --remove-orphans
-        
-        echo "⏳ Waiting for PostgreSQL to be healthy..."
-        sleep 10
-        
-        echo "🔧 Ensuring pgvector extension is enabled..."
-        docker exec doanhoi-postgres-prod psql -U postgres -d doanhoi -c "CREATE EXTENSION IF NOT EXISTS vector;" || true
-        
-        echo "🔄 Restarting backend to apply schema..."
-        docker compose restart backend
+        docker compose -f docker-compose.yml up -d --remove-orphans
         
         echo "⏳ Waiting for services to be healthy..."
-        sleep 15
+        sleep 20
         
         echo "✅ Deployment completed"
-        docker compose ps
+        docker compose -f docker-compose.yml ps
         
         echo "🧹 Cleanup old images..."
         docker image prune -f --filter "until=24h"

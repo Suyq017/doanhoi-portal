@@ -22,8 +22,8 @@ export {
 
 // Pages
 export {
-    TemplateListPage,
-    TemplateUploadPage,
-    TemplateConfigPage,
-    FormsPage,
+  TemplateListPage,
+  TemplateUploadPage,
+  TemplateConfigPage,
+  FormsPage,
 } from './pages';

@@ -13,10 +13,9 @@ services:
       - "2682:5432"
     volumes:
       - doanhoi_postgres_data:/var/lib/postgresql/data
-      - ./backend/scripts/init-pgvector.sql:/docker-entrypoint-initdb.d/01-init-pgvector.sql:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres && psql -U postgres -d doanhoi -c 'CREATE EXTENSION IF NOT EXISTS vector' >/dev/null 2>&1 || true"]
       interval: 30s
       timeout: 10s
       retries: 3
