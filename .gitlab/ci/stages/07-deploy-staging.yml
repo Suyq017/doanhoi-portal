@@ -17,10 +17,10 @@ deploy:staging:
   variables:
     ENVIRONMENT: "staging"
     COMPOSE_FILE: "docker-compose.prod.yml"
-    SSH_PRIVATE_KEY: "$SSH_STAGING_KEY"
     DEPLOY_USER: "ec2-user"
     DEPLOY_SERVER: "$STAGING_SERVER"
     DEPLOY_PATH: "/home/ec2-user/doanhoi-portal"
+    SSH_STAGING_KEY: "$SSH_STAGING_KEY"
 
   # --- PHẦN QUAN TRỌNG ĐÃ SỬA ---
   before_script:
