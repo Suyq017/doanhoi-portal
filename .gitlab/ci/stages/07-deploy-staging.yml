@@ -56,4 +56,4 @@ deploy:staging:
       ENDSSH
   environment:
     name: staging
-    url: http://ec2-13-250-113-191.ap-southeast-1.compute.amazonaws.com
+    url: http://ec2-52-90-100-205.compute-1.amazonaws.com
