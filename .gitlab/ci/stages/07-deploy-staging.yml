@@ -23,6 +23,9 @@ deploy:staging:
     DEPLOY_PATH: "/home/ec2-user/doanhoi-portal"
   script:
     - echo "🚀 Deploying to STAGING version $CI_COMMIT_SHORT_SHA..."
+    - echo "🔍 Debug - Testing SSH connection..."
+    - ssh-add -l
+    - ssh -vvv -o ConnectTimeout=10 ${DEPLOY_USER}@${DEPLOY_SERVER} "echo 'SSH OK'" 2>&1 | head -80
     - scp ${COMPOSE_FILE} ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/docker-compose.yml
     - |
       ssh ${DEPLOY_USER}@${DEPLOY_SERVER} << ENDSSH
