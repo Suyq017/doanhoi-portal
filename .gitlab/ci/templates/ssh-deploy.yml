@@ -4,8 +4,12 @@
     - echo "Setting up SSH..."
     - apk add --no-cache openssh-client curl
     - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
     - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+    - chmod 600 ~/.ssh/deploy_key
+    - ssh-add ~/.ssh/deploy_key
+    - rm -f ~/.ssh/deploy_key
     - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
   retry:
     max: 2
