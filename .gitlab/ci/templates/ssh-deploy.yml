@@ -6,7 +6,7 @@
     - eval $(ssh-agent -s)
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+    - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/deploy_key
     - chmod 600 ~/.ssh/deploy_key
     - ssh-add ~/.ssh/deploy_key
     - rm -f ~/.ssh/deploy_key
