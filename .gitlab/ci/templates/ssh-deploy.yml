@@ -6,10 +6,13 @@
     - eval $(ssh-agent -s)
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
+    - echo "🔍 Debug - Checking which key is set:"
     - |
       if [ -n "$SSH_STAGING_KEY" ]; then
+        echo "✅ Using SSH_STAGING_KEY"
         echo "$SSH_STAGING_KEY" | base64 -d > ~/.ssh/deploy_key
       else
+        echo "✅ Using SSH_PRIVATE_KEY"
         echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/deploy_key
       fi
     - chmod 600 ~/.ssh/deploy_key
