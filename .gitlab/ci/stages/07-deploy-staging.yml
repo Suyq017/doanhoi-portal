@@ -2,8 +2,8 @@ include:
   - local: '.gitlab/ci/templates/ssh-deploy.yml'
 
 deploy:staging:
-  extends:                      
-    - .ssh_deploy_base           
+  extends:
+    - .ssh_deploy_base
   stage: deploy-staging
   needs:
     - build:backend
@@ -17,56 +17,48 @@ deploy:staging:
   variables:
     ENVIRONMENT: "staging"
     COMPOSE_FILE: "docker-compose.prod.yml"
-    # Mapping biến: Đảm bảo SSH_STAGING_KEY chứa chuỗi Base64 (LS0t...)
-    SSH_PRIVATE_KEY: $SSH_STAGING_KEY
+    SSH_PRIVATE_KEY: "$SSH_STAGING_KEY"
     DEPLOY_USER: "ec2-user"
-    DEPLOY_SERVER: $STAGING_SERVER
+    DEPLOY_SERVER: "$STAGING_SERVER"
     DEPLOY_PATH: "/home/ec2-user/doanhoi-portal"
-  
-  # 👇 THÊM PHẦN NÀY ĐỂ DEBUG VÀ FIX LỖI SSH 👇
+
+  # --- PHẦN QUAN TRỌNG ĐÃ SỬA ---
   before_script:
-    - echo "🔍 Đang cài đặt SSH Client..."
     - apk add --no-cache openssh-client curl bash
-    
-    - echo "🔍 Khởi động SSH Agent..."
     - eval $(ssh-agent -s)
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
-
-    - echo "🔍 DEBUG: Kiểm tra 10 ký tự đầu của Key (Để xem là Base64 hay PlainText)..."
-    # Lệnh này sẽ in ra 10 chữ cái đầu. 
-    # Nếu thấy 'LS0tLS...' -> Là Base64 (Đúng).
-    # Nếu thấy '-----BEGIN' -> Là Text thường (Sai nếu dùng code giải mã bên dưới).
-    - echo "$SSH_PRIVATE_KEY" | head -c 10
-    - echo "" # Xuống dòng cho đẹp log
-
-    - echo "🔑 Đang giải mã Base64 và thêm vào Agent..."
-    # Dòng này sửa lỗi libcrypto/invalid format bằng cách giải mã Base64
-    - echo "$SSH_PRIVATE_KEY" | base64 -d | ssh-add -
+    # Dùng nháy đơn bao quanh lệnh có ký tự đặc biệt để tránh lỗi YAML
+    - 'echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config'
     
-    - echo "✅ SSH Key added successfully!"
+    # DEBUG: Kiểm tra xem biến có phải Base64 không (in 10 ký tự đầu)
+    - echo "Check Key Format:"
+    - echo "$SSH_PRIVATE_KEY" | head -c 10
+    
+    # GIẢI MÃ BASE64 VÀ ADD KEY (Quan trọng nhất)
+    - echo "$SSH_PRIVATE_KEY" | base64 -d | ssh-add -
 
   script:
     - echo "🚀 Deploying to STAGING version $CI_COMMIT_SHORT_SHA..."
-    # Test kết nối thử trước khi chạy lệnh copy
-    - ssh -T ${DEPLOY_USER}@${DEPLOY_SERVER} || echo "⚠️ Kết nối SSH Test thất bại, nhưng sẽ thử tiếp..."
     
-    - scp ${COMPOSE_FILE} ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/docker-compose.yml
+    # Copy file docker-compose lên server
+    - scp $COMPOSE_FILE $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH/docker-compose.yml
+    
+    # SSH vào server và chạy lệnh
     - |
-      ssh ${DEPLOY_USER}@${DEPLOY_SERVER} << ENDSSH
+      ssh $DEPLOY_USER@$DEPLOY_SERVER << ENDSSH
         set -e
-        cd ${DEPLOY_PATH}
+        cd $DEPLOY_PATH
         
         echo "📦 Backing up current version..."
         docker compose config | grep "image:" > .previous-images.txt || true
         
         echo "🔐 Logging into Registry..."
-        echo "${CI_REGISTRY_PASSWORD}" | docker login -u "${CI_REGISTRY_USER}" --password-stdin "${CI_REGISTRY}"
+        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
         
         echo "⬇️ Pulling new version..."
-        export TAG=${CI_COMMIT_SHORT_SHA}
-        export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
+        export TAG=$CI_COMMIT_SHORT_SHA
+        export CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE
         
         docker compose -f docker-compose.yml pull
         
@@ -82,6 +74,7 @@ deploy:staging:
         echo "🧹 Cleanup old images..."
         docker image prune -f --filter "until=24h"
       ENDSSH
+
   environment:
     name: staging
     url: http://ec2-52-90-100-205.compute-1.amazonaws.com
