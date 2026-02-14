@@ -27,8 +27,9 @@ deploy:staging:
   script:
     - echo "🚀 Deploying to STAGING version $CI_COMMIT_SHORT_SHA..."
     
-    # Copy file docker-compose lên server
+    # Copy file docker-compose và prometheus config lên server
     - scp $COMPOSE_FILE $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH/docker-compose.yml
+    - scp prometheus.prod.yml $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH/prometheus.prod.yml
     
     # SSH vào server và chạy lệnh
     - |

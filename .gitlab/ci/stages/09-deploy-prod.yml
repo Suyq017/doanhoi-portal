@@ -24,6 +24,7 @@ deploy:production:
   script:
     - echo "🚀 Deploying to PRODUCTION version $CI_COMMIT_SHORT_SHA..."
     - scp ${COMPOSE_FILE} ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/docker-compose.yml
+    - scp prometheus.prod.yml ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/prometheus.prod.yml
     - |
       ssh ${DEPLOY_USER}@${DEPLOY_SERVER} << ENDSSH
         set -e
