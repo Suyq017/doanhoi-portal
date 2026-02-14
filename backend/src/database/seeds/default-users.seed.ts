@@ -33,7 +33,7 @@ export const seedDefaultUsers = async (dataSource: DataSource) => {
       userType: UserType.STAFF,
       membershipStatus: MembershipStatus.BOTH,
       authProvider: AuthProvider.LOCAL,
-      roleName: "super_admin",
+      roleName: "Super Admin",
       isSystemUser: true,
     },
   ];
@@ -136,6 +136,32 @@ export const seedDefaultUsers = async (dataSource: DataSource) => {
       }
     } else {
       console.log(`User already exists: ${userData.email}`);
+
+      // Kiểm tra và gắn role nếu chưa có
+      const existingUserRole = await userRoleRepository.findOne({
+        where: { userId: existingUser.id },
+      });
+
+      if (!existingUserRole) {
+        const role = await roleRepository.findOne({
+          where: { name: userData.roleName },
+        });
+
+        if (role) {
+          const userRole = userRoleRepository.create({
+            userId: existingUser.id,
+            roleId: role.id,
+            organizationId: userData.isSystemUser ? null : defaultOrg.id,
+            isActive: true,
+          });
+          await userRoleRepository.save(userRole);
+          console.log(`✅ Assigned role "${userData.roleName}" to existing user: ${userData.email}`);
+        } else {
+          console.log(`⚠️ Role "${userData.roleName}" not found, cannot assign to: ${userData.email}`);
+        }
+      } else {
+        console.log(`✅ User ${userData.email} already has a role assigned`);
+      }
     }
   }
 
