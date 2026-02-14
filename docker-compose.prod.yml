@@ -30,7 +30,7 @@ services:
     image: ${CI_REGISTRY_IMAGE}/backend:${TAG:-latest}
     container_name: doanhoi-backend-prod
     env_file:
-      - .env.production
+      - .env
     environment:
       NODE_ENV: production
       DB_HOST: postgres
