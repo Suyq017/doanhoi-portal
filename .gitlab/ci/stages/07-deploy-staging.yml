@@ -21,21 +21,8 @@ deploy:staging:
     DEPLOY_SERVER: "$STAGING_SERVER"
     DEPLOY_PATH: "/home/ec2-user/doanhoi-portal"
 
-  # --- PHẦN QUAN TRỌNG ĐÃ SỬA ---
-  before_script:
-    - apk add --no-cache openssh-client curl bash
-    - eval $(ssh-agent -s)
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    # Dùng nháy đơn bao quanh lệnh có ký tự đặc biệt để tránh lỗi YAML
-    - 'echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config'
-    
-    # DEBUG: Kiểm tra xem biến có phải Base64 không (in 10 ký tự đầu)
-    - echo "Check Key Format:"
-    - echo "$SSH_PRIVATE_KEY" | head -c 10
-    
-    # GIẢI MÃ BASE64 VÀ ADD KEY (Quan trọng nhất)
-    - echo "$SSH_PRIVATE_KEY" | base64 -d | ssh-add -
+  # before_script được kế thừa từ .ssh_deploy_base (ssh-deploy.yml)
+  # Template sẽ tự động dùng SSH_STAGING_KEY nếu có, fallback sang SSH_PRIVATE_KEY
 
   script:
     - echo "🚀 Deploying to STAGING version $CI_COMMIT_SHORT_SHA..."
