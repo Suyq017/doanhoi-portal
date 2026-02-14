@@ -111,14 +111,14 @@ const ClassesPage: React.FC = () => {
     // Entity service - use real service or dummy based on feature flag
     entityService: USE_NEW_CLASS_IMPORT_SYSTEM ? {
       // Dummy service for client-side processing (required by interface but not used)
-      getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL}/classes/template`,
+      getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL || '/api'}/classes/template`,
       uploadImportFile: async () => ({ sessionId: 'dummy' } as any),
       validateImportData: async () => ({} as any),
       executeImport: async () => ({} as any),
       getImportStatus: async () => ({} as any),
     } : {
       // Real server-side service
-      getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL}/classes/template`,
+      getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL || '/api'}/classes/template`,
       uploadImportFile: classService.uploadImportFile.bind(classService),
       validateImportData: classService.validateImportData.bind(classService),
       executeImport: classService.executeImport.bind(classService),

@@ -56,11 +56,12 @@ export interface PaymentStatusResponse {
 }
 
 class PaymentService {
-  private baseUrl = '/api/payment';
+  private baseUrl = '/payment';
 
   // PayOS Service Methods
   async createPaymentLink(data: CreatePaymentLinkRequest): Promise<CreatePaymentLinkResponse> {
-    const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/api/payment/create-payment-link`, {
+    const backendUrl = import.meta.env.VITE_BACKEND_API_URL || '/api';
+    const response = await fetch(`${backendUrl}/payment/create-payment-link`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -76,7 +77,8 @@ class PaymentService {
   }
 
   async checkPaymentStatus(orderCode: string): Promise<PaymentStatusResponse> {
-    const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/api/payment/check-status/${orderCode}`);
+    const backendUrl = import.meta.env.VITE_BACKEND_API_URL || '/api';
+    const response = await fetch(`${backendUrl}/payment/check-status/${orderCode}`);
     
     if (!response.ok) {
       throw new Error('Không thể kiểm tra trạng thái thanh toán');

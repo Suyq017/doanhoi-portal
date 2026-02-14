@@ -1,6 +1,6 @@
 import { apiClient } from '../../../shared/services/apiClient';
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL || '/api';
 
 export interface LoginRequest {
   email: string;

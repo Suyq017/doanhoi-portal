@@ -69,7 +69,7 @@ const PaymentHistoryTab: React.FC<PaymentHistoryTabProps> = ({ campaign }) => {
         status: filters.status
       });
 
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/api/payment-admin/payment-history/${campaign.id}?${params}`);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL || '/api'}/payment-admin/payment-history/${campaign.id}?${params}`);
       const result = await response.json();
 
       if (result.success) {

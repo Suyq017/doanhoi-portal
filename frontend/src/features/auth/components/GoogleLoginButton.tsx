@@ -15,7 +15,7 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess, onErro
 
     try {
       // Redirect to backend Google OAuth endpoint
-      const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
+      const backendUrl = import.meta.env.VITE_BACKEND_API_URL || '/api';
       window.location.href = `${backendUrl}/auth/google`;
       // Call onSuccess callback if provided
       onSuccess?.();

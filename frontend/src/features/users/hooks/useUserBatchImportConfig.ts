@@ -20,7 +20,7 @@ export const useUserBatchImportConfig = (params: UseUserBatchImportConfigParams 
         columns: userColumns(t),
         acceptedFileTypes: ['.xlsx', '.xls'],
         maxFileSize: 10 * 1024 * 1024, // 10MB
-        templateUrl: `${import.meta.env.VITE_BACKEND_API_URL}/users/template`,
+        templateUrl: `${import.meta.env.VITE_BACKEND_API_URL || '/api'}/users/template`,
         templateFileName: 'users_import_template.xlsx',
         previewRowCount: 10,
         allowPartialImport: true,
@@ -49,7 +49,7 @@ export const useUserBatchImportConfig = (params: UseUserBatchImportConfigParams 
         columns: userColumns(t),
         acceptedFileTypes: ['.xlsx', '.xls'],
         maxFileSize: 50 * 1024 * 1024, // 50MB for large files
-        templateUrl: `${import.meta.env.VITE_BACKEND_API_URL}/users/template`,
+        templateUrl: `${import.meta.env.VITE_BACKEND_API_URL || '/api'}/users/template`,
         templateFileName: 'users_import_template.xlsx',
         previewRowCount: 20, // More preview rows for large files
         allowPartialImport: true,

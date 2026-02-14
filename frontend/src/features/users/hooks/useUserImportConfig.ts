@@ -15,7 +15,7 @@ export const useUserImportConfig = (params: UseUserImportConfigParams = {}) => {
 
     return useImportConfig({
         entityName: 'users', entityService: {
-            getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL}/users/template`,
+            getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL || '/api'}/users/template`,
             uploadImportFile: userService.uploadImportFile.bind(userService),
             validateImportData: userService.validateImportData.bind(userService),
             executeImport: userService.executeImport.bind(userService),
