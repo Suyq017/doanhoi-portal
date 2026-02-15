@@ -68,22 +68,22 @@ class PaymentService {
       },
       body: JSON.stringify(data)
     });
-    
+
     if (!response.ok) {
       throw new Error('Không thể tạo link thanh toán');
     }
-    
+
     return response.json();
   }
 
   async checkPaymentStatus(orderCode: string): Promise<PaymentStatusResponse> {
     const backendUrl = import.meta.env.VITE_BACKEND_API_URL || '/api';
     const response = await fetch(`${backendUrl}/payment/check-status/${orderCode}`);
-    
+
     if (!response.ok) {
       throw new Error('Không thể kiểm tra trạng thái thanh toán');
     }
-    
+
     return response.json();
   }
 
@@ -118,11 +118,11 @@ class PaymentService {
         }
       });
     }
-    
-    const url = queryParams.toString() 
+
+    const url = queryParams.toString()
       ? `${this.baseUrl}/history?${queryParams.toString()}`
       : `${this.baseUrl}/history`;
-    
+
     const response = await apiClient.get<{
       transactions: any[];
       total: number;

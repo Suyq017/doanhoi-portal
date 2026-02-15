@@ -82,7 +82,7 @@ else
     print_warning "⚠️ Backend có thể vẫn đang khởi động..."
 fi
 
-# Kiểm tra Frontend
+# Kiểm tra Frontends
 if curl -f http://localhost:2680 > /dev/null 2>&1; then
     print_status "✅ Frontend đã sẵn sàng tại port 2680"
 else
