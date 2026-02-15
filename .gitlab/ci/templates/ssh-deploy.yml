@@ -6,18 +6,8 @@
     - eval $(ssh-agent -s)
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo "🔍 Debug - Checking which key to use for environment: $ENVIRONMENT"
-    - |
-      if [ "$ENVIRONMENT" = "production" ]; then
-        echo "✅ Using SSH_PRIVATE_KEY (production)"
-        echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/deploy_key
-      elif [ -n "$SSH_STAGING_KEY" ]; then
-        echo "✅ Using SSH_STAGING_KEY (staging)"
-        echo "$SSH_STAGING_KEY" | base64 -d > ~/.ssh/deploy_key
-      else
-        echo "✅ Using SSH_PRIVATE_KEY (fallback)"
-        echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/deploy_key
-      fi
+    - echo "🔍 Using SSH key for environment - $ENVIRONMENT"
+    - echo "$DEPLOY_SSH_KEY" | base64 -d > ~/.ssh/deploy_key
     - chmod 600 ~/.ssh/deploy_key
     - ssh-add ~/.ssh/deploy_key
     - rm -f ~/.ssh/deploy_key

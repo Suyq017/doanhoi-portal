@@ -17,7 +17,7 @@ deploy:production:
   variables:
     ENVIRONMENT: "production"
     COMPOSE_FILE: "docker-compose.prod.yml"
-    SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
+    DEPLOY_SSH_KEY: $SSH_PRIVATE_KEY
     DEPLOY_USER: $PRODUCTION_USER
     DEPLOY_SERVER: $PRODUCTION_SERVER
     DEPLOY_PATH: $DEPLOY_PATH

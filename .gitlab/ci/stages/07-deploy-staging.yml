@@ -17,6 +17,7 @@ deploy:staging:
   variables:
     ENVIRONMENT: "staging"
     COMPOSE_FILE: "docker-compose.prod.yml"
+    DEPLOY_SSH_KEY: $SSH_STAGING_KEY
     DEPLOY_USER: "ec2-user"
     DEPLOY_SERVER: "$STAGING_SERVER"
     DEPLOY_PATH: "/home/ec2-user/doanhoi-portal"
