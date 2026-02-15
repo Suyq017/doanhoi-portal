@@ -58,8 +58,20 @@ deploy:staging:
         echo "✅ Deployment completed"
         docker compose -f docker-compose.yml ps
         
-        echo "🧹 Cleanup old images..."
-        docker image prune -f --filter "until=24h"
+        echo "🧹 Cleanup old Docker images..."
+        # Xóa tất cả images từ registry mà KHÔNG được container nào đang dùng
+        docker images --format '{{.ID}} {{.Repository}}' | grep '$CI_REGISTRY_IMAGE' | while read id repo; do
+          if ! docker ps --format '{{.Image}}' | grep -q "\$(docker inspect --format='{{index .RepoDigests 0}}' \$id 2>/dev/null || echo \$id)"; then
+            docker rmi \$id 2>/dev/null || true
+          fi
+        done
+        # Xóa dangling images (không tag)
+        docker image prune -f
+        # Xóa build cache cũ
+        docker builder prune -f --filter "until=72h" 2>/dev/null || true
+        
+        echo "📊 Disk usage after cleanup:"
+        docker system df
       ENDSSH
 
   environment:
