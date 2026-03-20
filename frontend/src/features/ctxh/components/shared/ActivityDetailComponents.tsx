@@ -84,11 +84,13 @@ interface ActivitySummaryProps {
         location: string;
         timePeriod: string;
         totalDays: string;
+        maxParticipants: string;
         description: string;
         noOrganization: string;
         noLocation: string;
         noTimePeriod: string;
         days: string;
+        unlimited: string;
         unknown: string;
     };
 }
@@ -103,6 +105,7 @@ export const ActivitySummary: React.FC<ActivitySummaryProps> = ({
     const startDate = activity.startDate || (activity as any).start_date;
     const endDate = activity.endDate || (activity as any).end_date;
     const totalDays = activity.totalDays || (activity as any).total_days;
+    const maxParticipants = activity.maxParticipants || (activity as any).max_participants;
 
     return (
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 max-w-full overflow-hidden">
@@ -131,6 +134,10 @@ export const ActivitySummary: React.FC<ActivitySummaryProps> = ({
                     <SummaryField
                         label={labels.totalDays}
                         value={totalDays ? `${formatNumber(totalDays)} ${labels.days}` : labels.unknown}
+                    />
+                    <SummaryField
+                        label={labels.maxParticipants}
+                        value={maxParticipants ? formatNumber(maxParticipants) : labels.unlimited}
                     />
                 </div>
 

@@ -80,6 +80,156 @@ export class ParticipationService {
     });
   }
 
+  async findPendingByActivity(
+    activityId: string,
+  ): Promise<ParticipationResponseDto[]> {
+    const participations = await this.participationRepository
+      .createQueryBuilder("participation")
+      .where("participation.activity_id = :activityId", { activityId })
+      .andWhere("participation.deleted_at IS NULL")
+      .andWhere("participation.status = :status", {
+        status: ParticipationStatus.PENDING,
+      })
+      .orderBy("participation.created_at", "DESC")
+      .getMany();
+
+    const studentCodes = [...new Set(participations.map((p) => p.student_code))];
+    const userMap = new Map();
+
+    if (studentCodes.length > 0) {
+      const users = await this.userRepository
+        .createQueryBuilder("user")
+        .where("user.code IN (:...codes)", { codes: studentCodes })
+        .getMany();
+
+      users.forEach((user) => {
+        userMap.set(user.code, user);
+      });
+    }
+
+    return participations.map((p) => {
+      const user = userMap.get(p.student_code);
+      return plainToClass(
+        ParticipationResponseDto,
+        {
+          ...p,
+          student_code: p.student_code,
+          student: {
+            id: user?.id || null,
+            student_code: p.student_code,
+            full_name:
+              user?.familyName && user?.givenName
+                ? `${user.familyName} ${user.givenName}`.trim()
+                : null,
+            email: user?.email || null,
+          },
+        },
+        { excludeExtraneousValues: true },
+      );
+    });
+  }
+
+  async registerSelf(
+    activityId: string,
+    userId: string,
+  ): Promise<ParticipationResponseDto> {
+    const activity = await this.activityRepository.findOne({
+      where: { id: activityId, deleted_at: IsNull() },
+    });
+
+    if (!activity) {
+      throw new NotFoundException(
+        `Hoạt động với ID ${activityId} không tồn tại`,
+      );
+    }
+
+    if (activity.status !== ActivityStatus.ACTIVE) {
+      throw new BadRequestException(
+        `Chỉ có thể đăng ký khi hoạt động ở trạng thái ACTIVE. Trạng thái hiện tại: ${activity.status}`,
+      );
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ["id", "code", "familyName", "givenName", "email"],
+    });
+
+    if (!user?.code) {
+      throw new BadRequestException("Không tìm thấy mã số sinh viên hợp lệ");
+    }
+
+    const existingParticipation = await this.participationRepository.findOne({
+      where: {
+        activity_id: activityId,
+        student_id: user.id,
+        deleted_at: IsNull(),
+      },
+    });
+
+    if (existingParticipation) {
+      throw new BadRequestException("Bạn đã đăng ký tham gia hoạt động này");
+    }
+
+    await this.validateCapacity(activityId, activity.max_participants ?? null);
+
+    const status = activity.requires_approval
+      ? ParticipationStatus.PENDING
+      : ParticipationStatus.APPROVED;
+
+    const participation = this.participationRepository.create({
+      activity_id: activityId,
+      student_code: user.code,
+      student_id: user.id,
+      status,
+      created_by: userId,
+    });
+
+    const savedParticipation = await this.participationRepository.save(participation);
+
+    return plainToClass(
+      ParticipationResponseDto,
+      {
+        ...savedParticipation,
+        student_code: user.code,
+        student: {
+          id: user.id,
+          student_code: user.code,
+          full_name: `${user.familyName} ${user.givenName}`.trim(),
+          email: user.email,
+        },
+      },
+      { excludeExtraneousValues: true },
+    );
+  }
+
+  async cancelSelfRegistration(activityId: string, userId: string): Promise<void> {
+    const participation = await this.participationRepository.findOne({
+      where: {
+        activity_id: activityId,
+        student_id: userId,
+        deleted_at: IsNull(),
+      },
+      order: { created_at: "DESC" },
+    });
+
+    if (!participation) {
+      throw new NotFoundException("Không tìm thấy đăng ký tham gia");
+    }
+
+    if (participation.status !== ParticipationStatus.PENDING) {
+      throw new BadRequestException(
+        "Chỉ có thể hủy khi đăng ký đang ở trạng thái chờ duyệt",
+      );
+    }
+
+    await this.participationRepository.update(participation.id, {
+      deleted_by: userId,
+      deleted_at: new Date(),
+      updated_by: userId,
+      updated_at: new Date(),
+    });
+  }
+
   async addStudent(
     activityId: string,
     studentCode: string,
@@ -130,12 +280,14 @@ export class ParticipationService {
       );
     }
 
+    await this.validateCapacity(activityId, activity.max_participants ?? null);
+
     // Create participation with validated user information
     const participation = this.participationRepository.create({
       activity_id: activityId,
       student_code: studentCode,
       student_id: user.id, // Now we have the user ID
-      status: ParticipationStatus.REGISTERED,
+      status: ParticipationStatus.APPROVED,
       created_by: createdBy,
     });
 
@@ -210,6 +362,8 @@ export class ParticipationService {
           continue;
         }
 
+        await this.validateCapacity(activityId, activity.max_participants ?? null);
+
         // BACKEND VALIDATION: Check if student exists in users table
         const user = await this.userRepository.findOne({
           where: { code: studentCode },
@@ -229,7 +383,7 @@ export class ParticipationService {
           activity_id: activityId,
           student_code: studentCode,
           student_id: user.id, // Now we have the user ID
-          status: ParticipationStatus.REGISTERED,
+          status: ParticipationStatus.APPROVED,
           created_by: createdBy,
         });
 
@@ -351,6 +505,116 @@ export class ParticipationService {
       deleted_by: deletedBy,
       deleted_at: new Date(),
     });
+  }
+
+  async approveParticipation(
+    activityId: string,
+    participationId: string,
+    approvedBy: string,
+  ): Promise<ParticipationResponseDto> {
+    const activity = await this.activityRepository.findOne({
+      where: { id: activityId, deleted_at: IsNull() },
+    });
+
+    if (!activity) {
+      throw new NotFoundException(
+        `Hoạt động với ID ${activityId} không tồn tại`,
+      );
+    }
+
+    if (!activity.requires_approval) {
+      throw new BadRequestException(
+        "Hoạt động này không bật chế độ xét duyệt đăng ký",
+      );
+    }
+
+    const participation = await this.participationRepository.findOne({
+      where: {
+        id: participationId,
+        activity_id: activityId,
+        deleted_at: IsNull(),
+      },
+    });
+
+    if (!participation) {
+      throw new NotFoundException("Không tìm thấy đăng ký cần duyệt");
+    }
+
+    if (participation.status !== ParticipationStatus.PENDING) {
+      throw new BadRequestException("Chỉ có thể duyệt đơn ở trạng thái chờ duyệt");
+    }
+
+    await this.validateCapacity(activityId, activity.max_participants ?? null);
+
+    await this.participationRepository.update(participation.id, {
+      status: ParticipationStatus.APPROVED,
+      updated_by: approvedBy,
+      updated_at: new Date(),
+    });
+
+    const updatedParticipation = await this.participationRepository.findOne({
+      where: { id: participation.id },
+    });
+
+    return plainToClass(ParticipationResponseDto, updatedParticipation, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  async approveParticipationsBatch(
+    activityId: string,
+    participationIds: string[],
+    approvedBy: string,
+  ): Promise<{
+    successful: { participation_id: string }[];
+    failed: { participation_id: string; error: string }[];
+    total: number;
+  }> {
+    const results = {
+      successful: [],
+      failed: [],
+      total: participationIds.length,
+    };
+
+    for (const participationId of participationIds) {
+      try {
+        await this.approveParticipation(activityId, participationId, approvedBy);
+        results.successful.push({ participation_id: participationId });
+      } catch (error) {
+        results.failed.push({
+          participation_id: participationId,
+          error: error.message,
+        });
+      }
+    }
+
+    return results;
+  }
+
+  private async validateCapacity(
+    activityId: string,
+    maxParticipants: number | null,
+  ): Promise<void> {
+    if (maxParticipants === null || maxParticipants === undefined) {
+      return;
+    }
+
+    const approvedCount = await this.participationRepository
+      .createQueryBuilder("participation")
+      .where("participation.activity_id = :activityId", { activityId })
+      .andWhere("participation.deleted_at IS NULL")
+      .andWhere("participation.status IN (:...approvedStatuses)", {
+        approvedStatuses: [
+          ParticipationStatus.APPROVED,
+          ParticipationStatus.COMPLETED,
+          ParticipationStatus.REGISTERED,
+        ],
+      })
+      .getCount();
+
+    if (approvedCount >= maxParticipants) {
+      throw new BadRequestException("Hoạt động đã đủ số lượng sinh viên tham gia");
+    }
   }
 
   /**

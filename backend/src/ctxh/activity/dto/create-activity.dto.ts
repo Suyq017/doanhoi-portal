@@ -5,6 +5,8 @@ import {
   IsUUID,
   IsDateString,
   IsNumber,
+  IsInt,
+  IsBoolean,
   IsEnum,
   Min,
 } from "class-validator";
@@ -82,6 +84,34 @@ export class CreateActivityDto {
   @IsOptional()
   @IsString()
   location?: string;
+
+  @ApiPropertyOptional({
+    description: "Hoạt động có yêu cầu xét duyệt đăng ký tham gia hay không",
+    example: false,
+    default: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === "true" || value === true) return true;
+    if (value === "false" || value === false) return false;
+    return value;
+  })
+  @IsBoolean()
+  requires_approval?: boolean;
+
+  @ApiPropertyOptional({
+    description: "Số lượng sinh viên tối đa có thể tham gia (null = không giới hạn)",
+    example: 200,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === null || value === undefined || value === "") return undefined;
+    return parseInt(value, 10);
+  })
+  @IsInt({ message: "Số lượng tối đa phải là số nguyên" })
+  @Min(0, { message: "Số lượng tối đa phải lớn hơn hoặc bằng 0" })
+  max_participants?: number;
 
   @ApiPropertyOptional({
     description: "Trạng thái hoạt động",

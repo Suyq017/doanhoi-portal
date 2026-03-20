@@ -76,6 +76,7 @@
     "closePhonetic": "Đóng",
     "confirm": "Xác nhận",
     "confirmPhonetic": "Xác nhận",
+    "reject": "Hủy đăng ký",
     "submit": "Gửi",
     "submitPhonetic": "Gửi",
     "search": "Tìm kiếm",
@@ -117,7 +118,7 @@
     "assigning": "Đang gán...",
     "assigningPhonetic": "Đang gán",
     "adding": "Đang thêm...",
-    "grading": "Đang chấm điểm...",
+    "grading": "Đang chấm ngày CTXH...",
     "filtered": "đã lọc"
   },
   "messages": {
