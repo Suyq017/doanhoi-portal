@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, IsNull } from "typeorm";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { CtxhActivity } from "../../entities/ctxh-activity.entity";
 import { CtxhCategory } from "../../entities/ctxh-category.entity";
 import {
@@ -17,6 +18,14 @@ import { CreateActivityDto } from "./dto/create-activity.dto";
 import { UpdateActivityDto } from "./dto/update-activity.dto";
 import { ActivityResponseDto } from "./dto/activity-response.dto";
 import { OrganizationsService } from "../../organizations/organizations.service";
+import {
+  ActivityCreatedEvent,
+  ActivityUpdatedEvent,
+  ActivityDeletedEvent,
+  ActivityRestoredEvent,
+  ActivityStatusChangedEvent,
+  ACTIVITY_EVENTS,
+} from "./events/activity.events";
 
 interface FindAllOptions {
   page: number;
@@ -42,6 +51,7 @@ export class ActivitiesService {
     @InjectRepository(Organization)
     private organizationRepository: Repository<Organization>,
     private organizationsService: OrganizationsService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   async create(
@@ -109,6 +119,12 @@ export class ActivitiesService {
     });
 
     const savedActivity = await this.activityRepository.save(activity);
+
+    // 🔥 Emit event — CtxhVectorSyncService sẽ đẩy job embedding vào BullMQ
+    this.eventEmitter.emit(
+      ACTIVITY_EVENTS.CREATED,
+      new ActivityCreatedEvent(savedActivity.id, savedActivity.name, createdBy),
+    );
 
     return this.findOne(savedActivity.id);
   }
@@ -584,11 +600,31 @@ export class ActivitiesService {
       }
     }
 
+    // Lưu trạng thái cũ trước khi update để phát hiện status_changed
+    const oldStatus = activity.status;
+    const changedFields = Object.keys(updateActivityDto);
+
     await this.activityRepository.update(id, {
       ...updateActivityDto,
       updated_by: updatedBy,
       updated_at: new Date(),
     });
+
+    // 🔥 Emit STATUS_CHANGED nếu status thay đổi
+    if (updateActivityDto.status && updateActivityDto.status !== oldStatus) {
+      this.eventEmitter.emit(
+        ACTIVITY_EVENTS.STATUS_CHANGED,
+        new ActivityStatusChangedEvent(id, activity.name, oldStatus, updateActivityDto.status),
+      );
+    }
+
+    // 🔥 Emit UPDATED nếu có field nội dung thay đổi
+    if (changedFields.length > 0) {
+      this.eventEmitter.emit(
+        ACTIVITY_EVENTS.UPDATED,
+        new ActivityUpdatedEvent(id, activity.name, changedFields, updatedBy),
+      );
+    }
 
     return this.findOne(id);
   }
@@ -616,6 +652,12 @@ export class ActivitiesService {
       deleted_by: deletedBy,
       deleted_at: new Date(),
     });
+
+    // 🔥 Emit event — xóa vector embedding khỏi store
+    this.eventEmitter.emit(
+      ACTIVITY_EVENTS.DELETED,
+      new ActivityDeletedEvent(id, activity.name, deletedBy),
+    );
 
     return { message: "Xóa hoạt động thành công" };
   }
@@ -655,6 +697,12 @@ export class ActivitiesService {
       updated_by: updatedBy,
       updated_at: new Date(),
     });
+
+    // 🔥 Emit event — re-embed activity đã phục hồi
+    this.eventEmitter.emit(
+      ACTIVITY_EVENTS.RESTORED,
+      new ActivityRestoredEvent(id, activity.name, updatedBy),
+    );
 
     return this.findOne(id);
   }

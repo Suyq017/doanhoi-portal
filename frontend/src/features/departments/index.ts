@@ -21,13 +21,9 @@ export {
 // Types
 export type {
   Department,
-  DepartmentPermissions,
-  UseDepartmentPageOptions,
+  DepartmentPagePermissions,
   UseDepartmentPageReturn,
-  UseDepartmentModalsOptions,
   UseDepartmentModalsReturn,
-  UseDepartmentImportOptions,
-  UseDepartmentImportReturn,
 } from './types';
 
 // Components (for external use if needed)

@@ -89,4 +89,11 @@ export class ChatResponseDto {
     required: false,
   })
   confidence?: number;
+
+  @ApiProperty({
+    description: '[Evaluation mode only] Full text of retrieved documents for RAGAS evaluation',
+    type: [String],
+    required: false,
+  })
+  contexts?: string[];
 }

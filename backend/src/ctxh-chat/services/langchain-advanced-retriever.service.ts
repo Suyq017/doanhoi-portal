@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Document } from '@langchain/core/documents';
 import { LangChainVectorStoreService } from './langchain-vector-store.service';
 import { LangChainConfig } from '../config/langchain.config';
+import { ActivityStatus } from '@/entities/ctxh-activity.entity';
 
 /**
  * Hybrid search result
@@ -28,6 +29,26 @@ export class LangChainAdvancedRetrieverService {
     private readonly vectorStoreService: LangChainVectorStoreService,
   ) {
     this.initMultiQueryRetriever();
+  }
+
+  private normalizeActivityStatus(status: unknown): ActivityStatus | undefined {
+    if (!status || typeof status !== 'string') {
+      return undefined;
+    }
+
+    const normalized = status.toUpperCase();
+    if (Object.values(ActivityStatus).includes(normalized as ActivityStatus)) {
+      return normalized as ActivityStatus;
+    }
+
+    return undefined;
+  }
+
+  private filterOutDraftDocuments(documents: Document[]): Document[] {
+    return documents.filter(doc => {
+      const status = this.normalizeActivityStatus(doc.metadata?.status);
+      return status !== ActivityStatus.DRAFT;
+    });
   }
 
   /**
@@ -82,15 +103,22 @@ export class LangChainAdvancedRetrieverService {
     try {
       const retriever = await this.getMultiQueryRetriever();
       const results = await retriever.invoke(query);
+      const nonDraftResults = this.filterOutDraftDocuments(results);
       
       // Deduplicate and limit results
-      const uniqueDocs = this.deduplicateResults(results, k);
+      const uniqueDocs = this.deduplicateResults(nonDraftResults, k);
+      
+      // Ensure all docs have a score in metadata (multi-query doesn't provide scores, so use default)
+      const withScores = uniqueDocs.map((doc, index) => ({
+        ...doc,
+        metadata: { ...doc.metadata, score: doc.metadata?.score || 0.9 - (index * 0.1) },
+      }));
       
       this.logger.debug(
-        `Multi-query search: ${results.length} -> ${uniqueDocs.length} unique documents`,
+        `Multi-query search: ${results.length} -> ${nonDraftResults.length} non-draft -> ${uniqueDocs.length} unique documents`,
       );
       
-      return uniqueDocs;
+      return withScores;
     } catch (error) {
       this.logger.error('Multi-query search failed', error);
       // Fallback to simple similarity search
@@ -142,10 +170,11 @@ export class LangChainAdvancedRetrieverService {
           query,
           { k: k * 2, fetchK: k * 4, lambda: 0.5 },
         );
+        const nonDraftMmrResults = this.filterOutDraftDocuments(mmrResults);
 
-        mmrResults.forEach((doc, index) => {
+        nonDraftMmrResults.forEach((doc, index) => {
           // Assign decreasing scores based on rank
-          const score = (1 - index / mmrResults.length) * weights.mmr;
+          const score = (1 - index / nonDraftMmrResults.length) * weights.mmr;
           allResults.push({
             document: doc,
             score,
@@ -198,7 +227,10 @@ export class LangChainAdvancedRetrieverService {
     const ranked = Array.from(docScores.values())
       .sort((a, b) => b.totalScore - a.totalScore)
       .slice(0, k)
-      .map(({ doc }) => doc);
+      .map(({ doc, totalScore }) => ({
+        ...doc,
+        metadata: { ...doc.metadata, score: totalScore },
+      }));
 
     return ranked;
   }

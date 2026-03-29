@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader } from 'lucide-react';
+
+
 
 // Loading State
 export const LoadingState: React.FC = () => {

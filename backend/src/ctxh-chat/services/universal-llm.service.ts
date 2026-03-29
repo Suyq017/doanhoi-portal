@@ -18,7 +18,7 @@ export class UniversalLLMService implements OnModuleInit {
 
   constructor(private readonly configService: ConfigService) {
     this.useLocalModel =
-      this.configService.get('USE_LOCAL_MODEL', 'false') === 'true';
+      this.configService.get('USE_LOCAL_MODEL') === 'true';
   }
 
   async onModuleInit(): Promise<void> {
@@ -42,15 +42,14 @@ export class UniversalLLMService implements OnModuleInit {
   private async initializeOllamaLLM(): Promise<void> {
     const baseUrl = this.configService.get(
       'OLLAMA_BASE_URL',
-      'http://localhost:11434',
     );
-    this.modelName = this.configService.get('OLLAMA_LLM_MODEL', 'qwen2.5:7b');
+    this.modelName = this.configService.get('OLLAMA_LLM_MODEL');
     const numCtx = parseInt(
-      this.configService.get('OLLAMA_NUM_CTX', '4096'),
+      this.configService.get('OLLAMA_NUM_CTX'),
       10,
     );
     const temperature = parseFloat(
-      this.configService.get('RAG_TEMPERATURE', '0.7'),
+      this.configService.get('RAG_TEMPERATURE'),
     );
 
     this.llm = new ChatOllama({
@@ -70,12 +69,12 @@ export class UniversalLLMService implements OnModuleInit {
    */
   private async initializeGeminiLLM(): Promise<void> {
     const apiKey = this.configService.get('GEMINI_API_KEY');
-    this.modelName = this.configService.get('GEMINI_MODEL', 'gemini-2.0-flash');
+    this.modelName = this.configService.get('GEMINI_MODEL');
     const temperature = parseFloat(
-      this.configService.get('RAG_TEMPERATURE', '0.7'),
+      this.configService.get('RAG_TEMPERATURE'),
     );
     const maxOutputTokens = parseInt(
-      this.configService.get('RAG_MAX_OUTPUT_TOKENS', '2048'),
+      this.configService.get('RAG_MAX_OUTPUT_TOKENS'),
       10,
     );
 

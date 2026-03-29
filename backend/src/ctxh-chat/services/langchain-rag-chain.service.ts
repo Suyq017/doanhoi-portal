@@ -8,6 +8,7 @@ import { LangChainVectorStoreService } from './langchain-vector-store.service';
 import { LangChainMemoryService } from './langchain-memory.service';
 import { LangChainConfig } from '../config/langchain.config';
 import { CTXH_RAG_PROMPT, STANDALONE_QUESTION_PROMPT } from '../prompts/ctxh-chat.prompts';
+import { ActivityStatus } from '@/entities/ctxh-activity.entity';
 
 /**
  * RAG Response structure
@@ -26,6 +27,9 @@ export interface RAGChainOptions {
   k?: number;
   useMMR?: boolean;
   includeHistory?: boolean;
+  currentDate?: string;       // YYYY-MM-DD, e.g. "2026-03-01"
+  currentDayOfWeek?: string;  // e.g. "Thứ Bảy"
+  currentDatetime?: string;   // e.g. "01/03/2026, 14:30"
 }
 
 /**
@@ -92,19 +96,81 @@ export class LangChainRagChainService implements OnModuleInit {
    */
   private buildRAGChain(): RunnableSequence {
     const ragConfig = LangChainConfig.getRAGConfig(this.configService);
-    const retriever = this.vectorStoreService.getRetriever(ragConfig.topK);
 
     return RunnableSequence.from([
       RunnablePassthrough.assign({
-        context: async (input: { question: string; chat_history: string }) => {
-          const docs = await retriever.invoke(input.question);
-          return this.formatDocumentsAsContext(docs);
+        context: async (input: { question: string; chat_history: string; current_date?: string }) => {
+          const { question, current_date } = input;
+
+          // Detect time-status queries and apply date filter accordingly
+          const statusFilter = this.detectStatusFilter(question);
+
+          let docs: Document[];
+          if (statusFilter !== 'all' && current_date) {
+            // Use date-aware retrieval for time-based questions
+            docs = await this.vectorStoreService.similaritySearchWithDateFilter(
+              question,
+              ragConfig.topK,
+              current_date,
+              statusFilter,
+            );
+          } else {
+            // Default retrieval still enforces ActivityStatus runtime filtering.
+            docs = await this.vectorStoreService.similaritySearchWithDateFilter(
+              question,
+              ragConfig.topK,
+              current_date,
+              'all',
+            );
+          }
+
+          return this.formatDocumentsAsContext(docs, current_date);
         },
       }),
       CTXH_RAG_PROMPT,
       this.llm,
       new StringOutputParser(),
     ]);
+  }
+
+  private normalizeActivityStatus(status: unknown): ActivityStatus | undefined {
+    if (!status || typeof status !== 'string') {
+      return undefined;
+    }
+
+    const normalized = status.toUpperCase();
+    if (Object.values(ActivityStatus).includes(normalized as ActivityStatus)) {
+      return normalized as ActivityStatus;
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Detect the status filter type from the user's question
+   */
+  private detectStatusFilter(question: string): 'ongoing' | 'upcoming' | 'ended' | 'all' {
+    const q = question.toLowerCase();
+    if (
+      q.includes('đang diễn ra') || q.includes('đang có') || q.includes('hiện tại') ||
+      q.includes('hôm nay') || q.includes('đang mở') || q.includes('đang tổ chức') ||
+      q.includes('hiện đang') || q.includes('đang hoạt động') || q.includes('đang xảy ra')
+    ) {
+      return 'ongoing';
+    }
+    if (
+      q.includes('sắp tới') || q.includes('sắp diễn ra') || q.includes('sắp có') ||
+      q.includes('sắp mở') || q.includes('tới đây') || q.includes('upcoming')
+    ) {
+      return 'upcoming';
+    }
+    if (
+      q.includes('đã kết thúc') || q.includes('đã qua') || q.includes('đã diễn ra') ||
+      q.includes('đã có') || q.includes('trước đây') || q.includes('đã hết')
+    ) {
+      return 'ended';
+    }
+    return 'all';
   }
 
   /**
@@ -132,7 +198,14 @@ export class LangChainRagChainService implements OnModuleInit {
     }
 
     const startTime = Date.now();
-    const { k = 5, useMMR = false, includeHistory = true } = options;
+    const {
+      k = 5,
+      useMMR = false,
+      includeHistory = true,
+      currentDate = new Date().toISOString().split('T')[0],
+      currentDayOfWeek = new Date().toLocaleDateString('vi-VN', { weekday: 'long' }),
+      currentDatetime = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+    } = options;
 
     try {
       // Get chat history if session exists
@@ -171,6 +244,9 @@ export class LangChainRagChainService implements OnModuleInit {
       const response = await this.ragChain.invoke({
         question: processedQuestion,
         chat_history: chatHistory,
+        current_date: currentDate,
+        current_day_of_week: currentDayOfWeek,
+        current_datetime: currentDatetime,
       });
 
       // Save interaction to memory
@@ -202,7 +278,12 @@ export class LangChainRagChainService implements OnModuleInit {
       await this.initializeChains();
     }
 
-    const { includeHistory = true } = options;
+    const {
+      includeHistory = true,
+      currentDate = new Date().toISOString().split('T')[0],
+      currentDayOfWeek = new Date().toLocaleDateString('vi-VN', { weekday: 'long' }),
+      currentDatetime = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+    } = options;
 
     try {
       // Get chat history
@@ -215,6 +296,9 @@ export class LangChainRagChainService implements OnModuleInit {
       const stream = await this.ragChain.stream({
         question,
         chat_history: chatHistory,
+        current_date: currentDate,
+        current_day_of_week: currentDayOfWeek,
+        current_datetime: currentDatetime,
       });
 
       let fullResponse = '';
@@ -235,29 +319,70 @@ export class LangChainRagChainService implements OnModuleInit {
 
   /**
    * Format documents as context string
+   * @param docs - retrieved documents
+   * @param currentDate - ISO date string (YYYY-MM-DD) for computing real-time activity status
    */
-  private formatDocumentsAsContext(docs: Document[]): string {
+  private formatDocumentsAsContext(docs: Document[], currentDate?: string): string {
     if (docs.length === 0) {
       return 'Không có thông tin CTXH liên quan trong cơ sở dữ liệu.';
     }
 
+    const today = currentDate ? new Date(currentDate) : new Date();
+    // Normalize to date-only (midnight) to avoid time-of-day comparison issues
+    today.setHours(0, 0, 0, 0);
+
     return docs
       .map((doc, index) => {
         const metadata = doc.metadata || {};
-        const startDate = metadata.startDate 
-          ? new Date(metadata.startDate).toLocaleDateString('vi-VN')
-          : 'N/A';
-        const endDate = metadata.endDate
-          ? new Date(metadata.endDate).toLocaleDateString('vi-VN')
-          : 'N/A';
+        const activityStatus = this.normalizeActivityStatus(metadata.status);
+
+        // Parse start/end dates for real-time status computation
+        const startRaw = metadata.startDate ? new Date(metadata.startDate) : null;
+        const endRaw = metadata.endDate ? new Date(metadata.endDate) : null;
+        if (startRaw) startRaw.setHours(0, 0, 0, 0);
+        if (endRaw) endRaw.setHours(0, 0, 0, 0);
+
+        const startDateVN = startRaw ? startRaw.toLocaleDateString('vi-VN') : 'N/A';
+        const endDateVN = endRaw ? endRaw.toLocaleDateString('vi-VN') : 'N/A';
+
+        // Compute status shown to LLM using both ActivityStatus and date bounds.
+        let realtimeStatus: string;
+        if (activityStatus === ActivityStatus.CANCELLED) {
+          realtimeStatus = 'Đã hủy';
+        } else if (activityStatus === ActivityStatus.COMPLETED) {
+          realtimeStatus = 'Đã hoàn thành';
+        } else if (!startRaw || !endRaw) {
+          realtimeStatus = 'Không rõ';
+        } else if (today < startRaw) {
+          realtimeStatus = 'Sắp diễn ra';
+        } else if (today > endRaw) {
+          realtimeStatus = 'Đã kết thúc';
+        } else {
+          realtimeStatus = 'Đang diễn ra';
+        }
+
+        const isRecruiting =
+          activityStatus === ActivityStatus.ACTIVE &&
+          (realtimeStatus === 'Đang diễn ra' || realtimeStatus === 'Sắp diễn ra');
+
+        const activityStatusText = activityStatus || metadata.status || 'N/A';
+        const recruitmentStatus = isRecruiting
+          ? 'Còn tuyển thành viên'
+          : 'Không còn tuyển thành viên';
+
+        // Also provide ISO dates so LLM can verify independently
+        const startISO = startRaw ? startRaw.toISOString().split('T')[0] : 'N/A';
+        const endISO = endRaw ? endRaw.toISOString().split('T')[0] : 'N/A';
 
         return `[Nguồn ${index + 1}]
 Hoạt động: ${metadata.activityName || 'N/A'}
 Tổ chức: ${metadata.organizationName || 'N/A'}
-Thời gian: ${startDate} - ${endDate}
+      ActivityStatus: ${activityStatusText}
+Thời gian: ${startDateVN} - ${endDateVN} (ISO: ${startISO} đến ${endISO})
 Địa điểm: ${metadata.location || 'N/A'}
 Số ngày CTXH: ${metadata.totalDays || 'N/A'} ngày
-Trạng thái: ${metadata.status || 'N/A'}
+Trạng thái (tính đến ${currentDate || today.toISOString().split('T')[0]}): ${realtimeStatus}
+      Trạng thái tuyển thành viên: ${recruitmentStatus}
 Nội dung: ${doc.pageContent}
 Link đăng ký: ${metadata.registrationLink || 'Liên hệ tổ chức'}
 ---`;

@@ -11,4 +11,4 @@ export * from './ctxhKeys';
 export * from './usePaymentAssignmentQueries';
 export * from './useRoleQueries';
 export * from './useSystemConfigQueries';
-export * from './useDashboardQueries';
+export { useDashboardStats, useRecentActivities, useS3Statistics } from './useDashboardQueries';

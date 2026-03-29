@@ -30,7 +30,7 @@ export class LangChainConfig {
       // Use Ollama Qwen2.5:7b
       const baseUrl = configService.get('OLLAMA_BASE_URL');
       const model = configService.get('OLLAMA_LLM_MODEL');
-      const numCtx = parseInt(configService.get('OLLAMA_NUM_CTX'), 10);
+      const numCtx = parseInt(configService.get('OLLAMA_NUM_CTX'));
       const temperature = parseFloat(configService.get('RAG_TEMPERATURE'));
 
       return new ChatOllama({
@@ -50,7 +50,7 @@ export class LangChainConfig {
         model: configService.get('RAG_CHAT_MODEL'),
         apiKey,
         temperature: parseFloat(configService.get('RAG_TEMPERATURE')),
-        maxOutputTokens: parseInt(configService.get('RAG_MAX_OUTPUT_TOKENS'), 10),
+        maxOutputTokens: parseInt(configService.get('RAG_MAX_OUTPUT_TOKENS')),
       });
     }
   }
@@ -120,7 +120,7 @@ export class LangChainConfig {
    */
   static getRAGConfig(configService: ConfigService) {
     return {
-      topK: configService.get<number>('RAG_TOP_K', 5),
+      topK: configService.get<number>('RAG_TOP_K'),
       similarityThreshold: configService.get<number>('RAG_SIMILARITY_THRESHOLD'),
       useMultiQuery: configService.get<boolean>('RAG_USE_MULTI_QUERY'),
       enableMemory: configService.get<boolean>('RAG_ENABLE_MEMORY'),
