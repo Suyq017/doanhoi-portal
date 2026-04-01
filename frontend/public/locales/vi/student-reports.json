@@ -31,7 +31,7 @@
     "title": "Danh sách hoạt động",
     "name": "Tên hoạt động",
     "category": "Danh mục",
-    "startDate": "Ngày chấm điểm",
+    "startDate": "Ngày chấm CTXH",
     "endDate": "Ngày kết thúc",
     "actualDays": "Số ngày thực tế",
     "status": "Trạng thái",

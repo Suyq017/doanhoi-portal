@@ -199,9 +199,13 @@ export const useCreateActivity = () => {
       return await activityService.create(data);
     },
     onSuccess: () => {
-      queryClient.refetchQueries({
+      queryClient.invalidateQueries({
         queryKey: ctxhKeys.activities(),
-        type: 'active',
+      });
+
+      // Mark category lists stale so next visit always fetches new activity counts
+      queryClient.invalidateQueries({
+        queryKey: ctxhKeys.categories(),
       });
     },
   });
@@ -218,10 +222,14 @@ export const useUpdateActivity = () => {
       return await activityService.update(id, data);
     },
     onSuccess: (updatedActivity) => {
-      // Refetch lists
-      queryClient.refetchQueries({
+      // Ensure activity list data is refreshed whether query is active or inactive
+      queryClient.invalidateQueries({
         queryKey: ctxhKeys.activities(),
-        type: 'active',
+      });
+
+      // Category counts can change when updating activity/category
+      queryClient.invalidateQueries({
+        queryKey: ctxhKeys.categories(),
       });
 
       // Update detail cache
@@ -243,9 +251,13 @@ export const useDeleteActivity = () => {
       return await activityService.delete(id);
     },
     onSuccess: () => {
-      queryClient.refetchQueries({
+      queryClient.invalidateQueries({
         queryKey: ctxhKeys.activities(),
-        type: 'active',
+      });
+
+      // Activity count per category decreases after deletion
+      queryClient.invalidateQueries({
+        queryKey: ctxhKeys.categories(),
       });
     },
   });

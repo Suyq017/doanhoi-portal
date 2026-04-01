@@ -85,6 +85,20 @@ export class ActivityResponseDto {
   location?: string;
 
   @ApiProperty({
+    description: "Hoạt động có yêu cầu xét duyệt đăng ký tham gia hay không",
+    example: false,
+  })
+  @Expose()
+  requires_approval: boolean;
+
+  @ApiPropertyOptional({
+    description: "Số lượng sinh viên tối đa có thể tham gia (null = không giới hạn)",
+    example: 200,
+  })
+  @Expose()
+  max_participants?: number;
+
+  @ApiProperty({
     description: "Trạng thái hoạt động",
     enum: ActivityStatus,
     example: ActivityStatus.ACTIVE,

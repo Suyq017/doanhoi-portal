@@ -55,7 +55,6 @@ export const seedRoles = async (dataSource: DataSource) => {
         "ctxh.activities.update",
         "ctxh.activities.delete",
         "ctxh.activities.manage_participants",
-        "ctxh.reports.view",
         "ctxh.reports.export",
         "ctxh.config.manage",
         "ctxh.import.old_system",
@@ -69,6 +68,10 @@ export const seedRoles = async (dataSource: DataSource) => {
         "payment-campaigns.view_reports",
         "payment-campaigns.export",
         "my-payments.access",
+        // Template permissions
+        "templates.access",
+        "templates.admin.access",
+        "templates.manage",
       ],
     },
   ];
@@ -79,12 +82,13 @@ export const seedRoles = async (dataSource: DataSource) => {
       relations: ["permissions"],
     });
 
-    if (!existingRole) {
-      // Get permissions for this role
-      const permissions = await permissionRepository.find({
-        where: roleData.permissionCodes.map((code) => ({ code })),
-      });
+    // Lấy tất cả permissions theo code
+    const permissions = await permissionRepository.find({
+      where: roleData.permissionCodes.map((code) => ({ code })),
+    });
 
+    if (!existingRole) {
+      // Tạo role mới
       const role = roleRepository.create({
         name: roleData.name,
         description: roleData.description,
@@ -94,10 +98,22 @@ export const seedRoles = async (dataSource: DataSource) => {
 
       await roleRepository.save(role);
       console.log(
-        `Created role: ${roleData.name} with ${permissions.length} permissions`,
+        `✅ Created role: ${roleData.name} with ${permissions.length} permissions`,
       );
     } else {
-      console.log(`Role already exists: ${roleData.name}`);
+      // Cập nhật permissions cho role đã tồn tại
+      const currentCodes = existingRole.permissions.map((p) => p.code).sort();
+      const targetCodes = permissions.map((p) => p.code).sort();
+
+      if (JSON.stringify(currentCodes) !== JSON.stringify(targetCodes)) {
+        existingRole.permissions = permissions;
+        await roleRepository.save(existingRole);
+        console.log(
+          `🔄 Updated role: ${roleData.name} — ${currentCodes.length} → ${permissions.length} permissions`,
+        );
+      } else {
+        console.log(`✅ Role already up-to-date: ${roleData.name} (${permissions.length} permissions)`);
+      }
     }
   }
 

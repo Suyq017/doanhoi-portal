@@ -98,7 +98,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
           {/* Content */}
           <div className="p-6">
-            <p className="text-sm text-gray-600 dark:text-gray-400 break-words overflow-wrap-anywhere">
+            <p className="text-sm text-gray-600 dark:text-gray-400 break-words overflow-wrap-anywhere whitespace-pre-line leading-relaxed">
               {message}
             </p>
 

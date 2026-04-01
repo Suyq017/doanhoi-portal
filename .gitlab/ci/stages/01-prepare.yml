@@ -1,0 +1,15 @@
+prepare:dependencies:
+  stage: prepare
+  image: node:${NODE_VERSION}-alpine
+  extends:
+    - .node_cache
+    - .rules_main_branches
+  script:
+    - echo "Installing dependencies..."
+    - cd backend && npm ci --cache ../ .npm --prefer-offline
+    - cd ../frontend && npm ci --cache ../.npm --prefer-offline
+  artifacts:
+    paths:
+      - backend/node_modules/
+      - frontend/node_modules/
+    expire_in: 1 hour

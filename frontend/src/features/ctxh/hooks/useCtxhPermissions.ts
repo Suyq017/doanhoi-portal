@@ -119,9 +119,8 @@ export const useCtxhPermissions = () => {
           permissions.hasPermission('ctxh.categories.delete', permissions.currentOrganizationId);
 
         // Reports permissions - DON'T include hasCtxhAccess
-        const canViewReports = 
-          permissions.hasPermission('reports.view', permissions.currentOrganizationId) ||
-          permissions.hasPermission('ctxh.reports.view', permissions.currentOrganizationId);
+        // Everyone can view their own reports, no permission check needed
+        const canViewReports = true;
         
         const canGenerateReports = 
           permissions.hasPermission('reports.generate', permissions.currentOrganizationId) ||

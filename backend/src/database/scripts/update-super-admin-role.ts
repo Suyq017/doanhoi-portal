@@ -139,7 +139,6 @@ async function updateSuperAdminRole() {
       "ctxh.activities.update",
       "ctxh.activities.delete",
       "ctxh.activities.manage_participants",
-      "ctxh.reports.view",
       "ctxh.reports.export",
       "ctxh.config.manage",
       "ctxh.import.old_system", // CTXH import from old system

@@ -1,0 +1,19 @@
+.ssh_deploy_base:
+  image: alpine:3.19
+  before_script:
+    - echo "Setting up SSH..."
+    - apk add --no-cache openssh-client curl
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "🔍 Using SSH key for environment - $ENVIRONMENT"
+    - echo "$DEPLOY_SSH_KEY" | base64 -d > ~/.ssh/deploy_key
+    - chmod 600 ~/.ssh/deploy_key
+    - ssh-add ~/.ssh/deploy_key
+    - rm -f ~/.ssh/deploy_key
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure

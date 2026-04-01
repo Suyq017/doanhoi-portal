@@ -1,0 +1,80 @@
+include:
+  - local: '.gitlab/ci/templates/ssh-deploy.yml'
+
+deploy:staging:
+  extends:
+    - .ssh_deploy_base
+  stage: deploy-staging
+  needs:
+    - build:backend
+    - build:frontend
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+      when: manual
+    - if: $CI_COMMIT_BRANCH == "dev"
+      when: manual
+      allow_failure: true
+  variables:
+    ENVIRONMENT: "staging"
+    COMPOSE_FILE: "docker-compose.prod.yml"
+    DEPLOY_SSH_KEY: $SSH_STAGING_KEY
+    DEPLOY_USER: "ec2-user"
+    DEPLOY_SERVER: "$STAGING_SERVER"
+    DEPLOY_PATH: "/home/ec2-user/doanhoi-portal"
+
+  # before_script được kế thừa từ .ssh_deploy_base (ssh-deploy.yml)
+  # Template sẽ tự động dùng SSH_STAGING_KEY nếu có, fallback sang SSH_PRIVATE_KEY
+
+  script:
+    - echo "🚀 Deploying to STAGING version $CI_COMMIT_SHORT_SHA..."
+    
+    # Copy file docker-compose và prometheus config lên server
+    - scp $COMPOSE_FILE $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH/docker-compose.yml
+    - scp prometheus.prod.yml $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH/prometheus.prod.yml
+    
+    # SSH vào server và chạy lệnh
+    - |
+      ssh $DEPLOY_USER@$DEPLOY_SERVER << ENDSSH
+        set -e
+        cd $DEPLOY_PATH
+        
+        echo "📦 Backing up current version..."
+        docker compose config | grep "image:" > .previous-images.txt || true
+        
+        echo "🔐 Logging into Registry..."
+        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+        
+        echo "⬇️ Pulling new version..."
+        export TAG=$CI_COMMIT_SHORT_SHA
+        export CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE
+        
+        docker compose -f docker-compose.yml pull
+        
+        echo "🔄 Deploying..."
+        docker compose -f docker-compose.yml up -d --remove-orphans
+        
+        echo "⏳ Waiting for services to be healthy..."
+        sleep 20
+        
+        echo "✅ Deployment completed"
+        docker compose -f docker-compose.yml ps
+        
+        echo "🧹 Cleanup old Docker images..."
+        # Xóa tất cả images từ registry mà KHÔNG được container nào đang dùng
+        docker images --format '{{.ID}} {{.Repository}}' | grep '$CI_REGISTRY_IMAGE' | while read id repo; do
+          if ! docker ps --format '{{.Image}}' | grep -q "\$(docker inspect --format='{{index .RepoDigests 0}}' \$id 2>/dev/null || echo \$id)"; then
+            docker rmi \$id 2>/dev/null || true
+          fi
+        done
+        # Xóa dangling images (không tag)
+        docker image prune -f
+        # Xóa build cache cũ
+        docker builder prune -f --filter "until=72h" 2>/dev/null || true
+        
+        echo "📊 Disk usage after cleanup:"
+        docker system df
+      ENDSSH
+
+  environment:
+    name: staging
+    url: http://ec2-52-90-100-205.compute-1.amazonaws.com

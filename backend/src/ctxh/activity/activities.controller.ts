@@ -34,6 +34,7 @@ import { CreateActivityDto } from "./dto/create-activity.dto";
 import { UpdateActivityDto } from "./dto/update-activity.dto";
 import { AddStudentDto } from "./dto/add-student.dto";
 import { GradeParticipantsDto } from "./dto/grade-participants.dto";
+import { ApproveParticipantsDto } from "./dto/approve-participants.dto";
 
 @ApiTags("CTXH Activities")
 @ApiBearerAuth()
@@ -316,6 +317,98 @@ export class ActivitiesController {
   @RequirePermissions("ctxh.activities.view")
   getParticipants(@Param("id") id: string) {
     return this.participationService.findByActivity(id);
+  }
+
+  @Get(":id/participants/pending")
+  @ApiOperation({
+    summary: "Lấy danh sách đăng ký chờ duyệt",
+    description:
+      "Lấy danh sách sinh viên đang ở trạng thái chờ duyệt tham gia hoạt động",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Lấy danh sách chờ duyệt thành công",
+  })
+  @RequirePermissions(
+    "ctxh.activities.update",
+    "ctxh.activities.manage_participants",
+  )
+  getPendingParticipants(@Param("id") id: string) {
+    return this.participationService.findPendingByActivity(id);
+  }
+
+  @Post(":id/register")
+  @ApiOperation({
+    summary: "Sinh viên tự đăng ký tham gia hoạt động",
+    description:
+      "Đăng ký tham gia hoạt động. Nếu hoạt động cần xét duyệt sẽ tạo đơn chờ duyệt, ngược lại vào danh sách tham gia ngay.",
+  })
+  @ApiResponse({ status: 201, description: "Đăng ký thành công" })
+  @ApiResponse({ status: 400, description: "Không thể đăng ký" })
+  @RequirePermissions("ctxh.activities.view")
+  registerSelf(@Param("id") id: string, @Request() req) {
+    return this.participationService.registerSelf(id, req.user.id);
+  }
+
+  @Delete(":id/register")
+  @ApiOperation({
+    summary: "Sinh viên hủy đăng ký đang chờ duyệt",
+    description:
+      "Chỉ cho phép hủy khi đăng ký còn ở trạng thái chờ duyệt (PENDING)",
+  })
+  @ApiResponse({ status: 200, description: "Hủy đăng ký thành công" })
+  @ApiResponse({ status: 400, description: "Không thể hủy đăng ký" })
+  @RequirePermissions("ctxh.activities.view")
+  async cancelSelfRegistration(@Param("id") id: string, @Request() req) {
+    await this.participationService.cancelSelfRegistration(id, req.user.id);
+    return { message: "Hủy đăng ký thành công" };
+  }
+
+  @Post(":id/participants/:participationId/approve")
+  @ApiOperation({
+    summary: "Duyệt một đơn đăng ký tham gia",
+    description:
+      "Duyệt đơn đăng ký ở trạng thái chờ duyệt và chuyển sang đã duyệt",
+  })
+  @ApiResponse({ status: 200, description: "Duyệt thành công" })
+  @ApiResponse({ status: 400, description: "Không thể duyệt đăng ký" })
+  @RequirePermissions(
+    "ctxh.activities.update",
+    "ctxh.activities.manage_participants",
+  )
+  approveParticipant(
+    @Param("id") id: string,
+    @Param("participationId") participationId: string,
+    @Request() req,
+  ) {
+    return this.participationService.approveParticipation(
+      id,
+      participationId,
+      req.user.id,
+    );
+  }
+
+  @Post(":id/participants/approve-batch")
+  @ApiOperation({
+    summary: "Duyệt hàng loạt đơn đăng ký tham gia",
+    description:
+      "Duyệt nhiều đơn đăng ký chờ duyệt trong một lần thao tác",
+  })
+  @ApiResponse({ status: 200, description: "Duyệt hàng loạt thành công" })
+  @RequirePermissions(
+    "ctxh.activities.update",
+    "ctxh.activities.manage_participants",
+  )
+  approveParticipantsBatch(
+    @Param("id") id: string,
+    @Body() approveDto: ApproveParticipantsDto,
+    @Request() req,
+  ) {
+    return this.participationService.approveParticipationsBatch(
+      id,
+      approveDto.participation_ids,
+      req.user.id,
+    );
   }
 
   @Post(":id/participants/batch")

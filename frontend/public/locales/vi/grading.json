@@ -1,6 +1,6 @@
 {
   "import": {
-    "title": "Nhập kết quả chấm điểm",
+    "title": "Nhập kết quả chấm ngày CTXH",
     "instructions": "Tải xuống tệp mẫu có danh sách sinh viên, điền điểm và tải lên để cập nhật vào hệ thống",
     "step1": "Tải tệp mẫu tại đây với danh sách sinh viên",
     "step2": "Điền điểm và ghi chú cho từng sinh viên", 

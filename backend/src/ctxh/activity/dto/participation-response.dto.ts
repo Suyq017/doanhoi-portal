@@ -52,7 +52,7 @@ export class ParticipationResponseDto {
   @ApiProperty({
     description: "Trạng thái tham gia",
     enum: ParticipationStatus,
-    example: ParticipationStatus.REGISTERED,
+    example: ParticipationStatus.APPROVED,
   })
   @Expose()
   status: ParticipationStatus;

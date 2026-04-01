@@ -199,7 +199,6 @@ const EditRoleModal: React.FC<EditRoleModalProps> = ({
                 { id: '63', code: 'ctxh.config.manage', name: 'Quản lý cấu hình CTXH', category: 'ctxh', context: 'organization', isActive: true, sortOrder: 11, createdAt: '', updatedAt: '' },
 
                 // Reports permissions (Báo cáo cá nhân)
-                { id: '61', code: 'ctxh.reports.view', name: 'Xem báo cáo cá nhân', category: 'reports', context: 'organization', isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
                 { id: '62', code: 'ctxh.reports.export', name: 'Xuất báo cáo cá nhân', category: 'reports', context: 'organization', isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
 
                 // Permissions permissions

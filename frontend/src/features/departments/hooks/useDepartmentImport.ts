@@ -17,7 +17,7 @@ export const useDepartmentImport = (options: UseDepartmentImportOptions = {}) =>
   const { importConfig, isImportModalOpen, openImportModal, closeImportModal } = useImportConfig({
     entityName: 'departments',
     entityService: {
-      getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL}/departments/template`,
+      getTemplate: () => `${import.meta.env.VITE_BACKEND_API_URL || '/api'}/departments/template`,
       uploadImportFile: departmentService.uploadImportFile.bind(departmentService),
       validateImportData: departmentService.validateImportData.bind(departmentService),
       executeImport: departmentService.executeImport.bind(departmentService),

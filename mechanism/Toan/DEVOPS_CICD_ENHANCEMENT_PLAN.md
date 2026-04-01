@@ -198,6 +198,43 @@ secret_detection:
     - if: $CI_COMMIT_BRANCH =~ /^(dev|staging|main)$/
 
 # ============================================
+# STAGE 4: BUILD DOCKER IMAGES
+# ============================================
+build_backend:
+  stage: build
+  needs: ["test_backend"]
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - |
+      docker build \
+        --cache-from $BACKEND_IMAGE:latest \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        -f ./backend/Dockerfile.prod \
+        -t $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA \
+        -t $BACKEND_IMAGE:$CI_COMMIT_REF_SLUG \
+        ./backend
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^(dev|staging|main)$/
+
+build_frontend:
+  stage: build
+  needs: ["test_frontend"]
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - |
+      docker build \
+        --cache-from $FRONTEND_IMAGE:latest \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        -f ./frontend/Dockerfile.prod \
+        -t $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA \
+        -t $FRONTEND_IMAGE:$CI_COMMIT_REF_SLUG \
+        ./frontend
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^(dev|staging|main)$/
+
+# ============================================
 # STAGE 5: IMAGE SECURITY SCANNING (sau khi build Docker images)
 # ============================================
 
@@ -234,43 +271,6 @@ container_scan_frontend:
     reports:
       container_scanning: gl-container-scanning-frontend.json
   allow_failure: true  # Đổi thành false khi muốn block nếu có HIGH/CRITICAL
-  rules:
-    - if: $CI_COMMIT_BRANCH =~ /^(dev|staging|main)$/
-
-# ============================================
-# STAGE 4: BUILD DOCKER IMAGES
-# ============================================
-build_backend:
-  stage: build
-  needs: ["test_backend"]
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-  script:
-    - |
-      docker build \
-        --cache-from $BACKEND_IMAGE:latest \
-        --build-arg BUILDKIT_INLINE_CACHE=1 \
-        -f ./backend/Dockerfile.prod \
-        -t $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA \
-        -t $BACKEND_IMAGE:$CI_COMMIT_REF_SLUG \
-        ./backend
-  rules:
-    - if: $CI_COMMIT_BRANCH =~ /^(dev|staging|main)$/
-
-build_frontend:
-  stage: build
-  needs: ["test_frontend"]
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-  script:
-    - |
-      docker build \
-        --cache-from $FRONTEND_IMAGE:latest \
-        --build-arg BUILDKIT_INLINE_CACHE=1 \
-        -f ./frontend/Dockerfile.prod \
-        -t $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA \
-        -t $FRONTEND_IMAGE:$CI_COMMIT_REF_SLUG \
-        ./frontend
   rules:
     - if: $CI_COMMIT_BRANCH =~ /^(dev|staging|main)$/
 
@@ -544,6 +544,713 @@ notify_failure:
     - if: $CI_COMMIT_BRANCH =~ /^(dev|staging|main)$/
       when: on_failure
 ```
+
+---
+
+#### 1.2. Cấu Trúc Thư Mục CI/CD Chuyên Nghiệp
+
+**Tại sao nên tách file?**
+
+| Vấn đề | Monolithic (1 file) | Modular (nhiều file) |
+|--------|---------------------|----------------------|
+| Độ dài file | ❌ 1000+ dòng | ✅ 50-200 dòng/file |
+| Conflict khi merge | ❌ Cao | ✅ Thấp |
+| Tái sử dụng | ❌ Khó | ✅ Dễ dàng |
+| Maintainability | ❌ Khó debug | ✅ Dễ tìm lỗi |
+| Team collaboration | ❌ Blocking | ✅ Parallel work |
+
+**Cấu trúc thư mục đề xuất:**
+
+```
+doanhoi-portal/
+├── .gitlab-ci.yml                    # File chính (orchestrator)
+├── .gitlab/
+│   ├── ci/
+│   │   ├── variables.yml             # Biến global
+│   │   ├── cache.yml                 # Cache configuration
+│   │   ├── rules.yml                 # Reusable rules
+│   │   │
+│   │   ├── stages/
+│   │   │   ├── 01-prepare.yml       # Stage prepare
+│   │   │   ├── 02-test.yml          # Stage test
+│   │   │   ├── 03-security-code.yml # Stage security-code
+│   │   │   ├── 04-build.yml         # Stage build
+│   │   │   ├── 05-security-image.yml# Stage security-image
+│   │   │   ├── 06-push.yml          # Stage push
+│   │   │   ├── 07-deploy-staging.yml# Stage deploy-staging
+│   │   │   ├── 08-integration-test.yml# Stage integration-test
+│   │   │   ├── 09-deploy-prod.yml   # Stage deploy-prod
+│   │   │   ├── 10-rollback.yml      # Stage rollback
+│   │   │   └── 11-notify.yml        # Stage notify
+│   │   │
+│   │   ├── jobs/
+│   │   │   ├── test/
+│   │   │   │   ├── backend-test.yml
+│   │   │   │   └── frontend-test.yml
+│   │   │   ├── security/
+│   │   │   │   ├── sast.yml
+│   │   │   │   ├── dependency-scan.yml
+│   │   │   │   ├── secret-detection.yml
+│   │   │   │   └── container-scan.yml
+│   │   │   └── build/
+│   │   │       ├── backend-build.yml
+│   │   │       └── frontend-build.yml
+│   │   │
+│   │   └── templates/
+│   │       ├── docker-build.yml      # Template cho build Docker
+│   │       ├── ssh-deploy.yml        # Template SSH setup (chỉ before_script + retry)
+│   │       └── health-check.yml      # Template cho health check
+│   │
+│   └── scripts/
+│       ├── deploy.sh                 # Deploy script
+│       ├── health-check.sh           # Health check script
+│       └── rollback.sh               # Rollback script
+```
+
+---
+
+#### 1.3. Implementation Files
+
+##### File chính: `.gitlab-ci.yml`
+
+```yaml
+# .gitlab-ci.yml - MAIN ORCHESTRATOR
+# Chỉ include các file cần thiết, không chứa logic
+
+include:
+  # Global configs
+  - local: '.gitlab/ci/variables.yml'
+  - local: '.gitlab/ci/cache.yml'
+  - local: '.gitlab/ci/rules.yml'
+  
+  # Stages
+  - local: '.gitlab/ci/stages/01-prepare.yml'
+  - local: '.gitlab/ci/stages/02-test.yml'
+  - local: '.gitlab/ci/stages/03-security-code.yml'
+  - local: '.gitlab/ci/stages/04-build.yml'
+  - local: '.gitlab/ci/stages/05-security-image.yml'
+  - local: '.gitlab/ci/stages/06-push.yml'
+  - local: '.gitlab/ci/stages/07-deploy-staging.yml'
+  - local: '.gitlab/ci/stages/08-integration-test.yml'
+  - local: '.gitlab/ci/stages/09-deploy-prod.yml'
+  - local: '.gitlab/ci/stages/10-rollback.yml'
+  - local: '.gitlab/ci/stages/11-notify.yml'
+
+# Define stages order
+stages:
+  - prepare
+  - test
+  - security-code
+  - build
+  - security-image
+  - push
+  - deploy-staging
+  - integration-test
+  - deploy-prod
+  - rollback
+  - notify
+```
+
+---
+
+##### `.gitlab/ci/variables.yml` - Global Variables
+
+```yaml
+# .gitlab/ci/variables.yml
+variables:
+  # Docker images
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/frontend
+  
+  # Docker settings
+  DOCKER_BUILDKIT: "1"
+  COMPOSE_DOCKER_CLI_BUILD: "1"
+  DOCKER_DRIVER: overlay2
+  
+  # Security scan thresholds
+  SAST_EXCLUDED_PATHS: "node_modules,dist,coverage"
+  SECRET_DETECTION_HISTORIC_SCAN: "false"
+  
+  # Node settings
+  NODE_VERSION: "20.17"
+  NPM_CONFIG_CACHE: ".npm"
+  
+  # Deployment settings
+  DEPLOY_TIMEOUT: "300"
+  HEALTH_CHECK_RETRIES: "5"
+  HEALTH_CHECK_INTERVAL: "10"
+```
+
+---
+
+##### `.gitlab/ci/cache.yml` - Cache Configuration
+
+```yaml
+# .gitlab/ci/cache.yml
+.node_cache:
+  cache:
+    key: 
+      files:
+        - backend/package-lock.json
+        - frontend/package-lock.json
+      prefix: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - backend/node_modules/
+      - frontend/node_modules/
+      - .npm/
+    policy: pull-push
+
+.docker_cache:
+  cache:
+    key: docker-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .docker-cache/
+    policy: pull-push
+```
+
+---
+
+##### `.gitlab/ci/rules.yml` - Reusable Rules
+
+```yaml
+# .gitlab/ci/rules.yml
+.rules:
+  # Run on MR, dev, staging, main
+  main_branches:
+    rules:
+      - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      - if: $CI_COMMIT_BRANCH =~ /^(dev|staging|main)$/
+
+  # Run only on staging branch
+  staging_only:
+    rules:
+      - if: $CI_COMMIT_BRANCH == "staging"
+
+  # Run only on main branch
+  production_only:
+    rules:
+      - if: $CI_COMMIT_BRANCH == "main"
+
+  # Manual job
+  manual:
+    rules:
+      - if: $CI_COMMIT_BRANCH =~ /^(dev|staging|main)$/
+        when: manual
+      - when: never
+```
+
+---
+
+##### `.gitlab/ci/stages/01-prepare.yml` - Prepare Stage
+
+```yaml
+# .gitlab/ci/stages/01-prepare.yml
+prepare:dependencies:
+  stage: prepare
+  image: node:${NODE_VERSION}-alpine
+  extends:
+    - .node_cache
+    - .rules:main_branches
+  script:
+    - echo "📦 Installing dependencies..."
+    - cd backend && npm ci --cache ../.npm --prefer-offline
+    - cd ../frontend && npm ci --cache ../.npm --prefer-offline
+  artifacts:
+    paths:
+      - backend/node_modules/
+      - frontend/node_modules/
+    expire_in: 1 hour
+```
+
+---
+
+##### `.gitlab/ci/stages/02-test.yml` - Test Stage
+
+```yaml
+# .gitlab/ci/stages/02-test.yml
+include:
+  - local: '.gitlab/ci/jobs/test/backend-test.yml'
+  - local: '.gitlab/ci/jobs/test/frontend-test.yml'
+```
+
+**`.gitlab/ci/jobs/test/backend-test.yml`:**
+
+```yaml
+# .gitlab/ci/jobs/test/backend-test.yml
+test:backend:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  extends:
+    - .rules:main_branches
+  needs: 
+    - prepare:dependencies
+  before_script:
+    - cd backend
+  script:
+    - echo "🧪 Running backend tests..."
+    - npm run lint
+    - npm run test -- --coverage --passWithNoTests
+  coverage: /All files[^|]*\|[^|]*\s+([\d\.]+)/
+  artifacts:
+    reports:
+      junit: backend/coverage/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: backend/coverage/cobertura-coverage.xml
+    paths:
+      - backend/coverage/
+    expire_in: 1 week
+    when: always
+```
+
+**`.gitlab/ci/jobs/test/frontend-test.yml`:**
+
+```yaml
+# .gitlab/ci/jobs/test/frontend-test.yml
+test:frontend:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  extends:
+    - .rules:main_branches
+  needs:
+    - prepare:dependencies
+  before_script:
+    - cd frontend
+  script:
+    - echo "🧪 Running frontend tests..."
+    - npm run lint
+    # - npm run test -- --coverage  # Uncomment when tests available
+  artifacts:
+    paths:
+      - frontend/coverage/
+    expire_in: 1 week
+    when: always
+```
+
+---
+
+##### `.gitlab/ci/stages/03-security-code.yml` - Security Code Stage
+
+```yaml
+# .gitlab/ci/stages/03-security-code.yml
+include:
+  - local: '.gitlab/ci/jobs/security/sast.yml'
+  - local: '.gitlab/ci/jobs/security/dependency-scan.yml'
+  - local: '.gitlab/ci/jobs/security/secret-detection.yml'
+```
+
+**`.gitlab/ci/jobs/security/sast.yml`:**
+
+```yaml
+# .gitlab/ci/jobs/security/sast.yml
+sast:
+  stage: security-code
+  image: registry.gitlab.com/gitlab-org/security-products/sast:latest
+  extends:
+    - .rules:main_branches
+  allow_failure: false
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
+    paths:
+      - gl-sast-report.json
+    expire_in: 1 week
+```
+
+**`.gitlab/ci/jobs/security/dependency-scan.yml`:**
+
+```yaml
+# .gitlab/ci/jobs/security/dependency-scan.yml
+security:dependency-scan:
+  stage: security-code
+  image: node:${NODE_VERSION}-alpine
+  extends:
+    - .rules:main_branches
+  needs:
+    - prepare:dependencies
+  script:
+    - echo "🔍 Scanning dependencies for vulnerabilities..."
+    - cd backend && npm audit --audit-level=high || echo "⚠️ Backend vulnerabilities found"
+    - cd ../frontend && npm audit --audit-level=high || echo "⚠️ Frontend vulnerabilities found"
+  artifacts:
+    paths:
+      - backend/npm-audit.json
+      - frontend/npm-audit.json
+    expire_in: 1 week
+  allow_failure: true  # Set to false in production
+```
+
+**`.gitlab/ci/jobs/security/secret-detection.yml`:**
+
+```yaml
+# .gitlab/ci/jobs/security/secret-detection.yml
+security:secret-detection:
+  stage: security-code
+  image: registry.gitlab.com/gitlab-org/security-products/secrets:latest
+  extends:
+    - .rules:main_branches
+  allow_failure: false
+  artifacts:
+    reports:
+      secret_detection: gl-secret-detection-report.json
+```
+
+---
+
+##### `.gitlab/ci/stages/04-build.yml` - Build Stage
+
+```yaml
+# .gitlab/ci/stages/04-build.yml
+include:
+  - local: '.gitlab/ci/jobs/build/backend-build.yml'
+  - local: '.gitlab/ci/jobs/build/frontend-build.yml'
+```
+
+**`.gitlab/ci/jobs/build/backend-build.yml`:**
+
+```yaml
+# .gitlab/ci/jobs/build/backend-build.yml
+build:backend:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  extends:
+    - .rules:main_branches
+  needs:
+    - test:backend
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "🔨 Building backend image..."
+    - |
+      docker build \
+        --cache-from $BACKEND_IMAGE:latest \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --build-arg NODE_ENV=production \
+        -f ./backend/Dockerfile.prod \
+        -t $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA \
+        -t $BACKEND_IMAGE:$CI_COMMIT_REF_SLUG \
+        ./backend
+    - echo "✅ Backend image built successfully"
+```
+
+**`.gitlab/ci/jobs/build/frontend-build.yml`:**
+
+```yaml
+# .gitlab/ci/jobs/build/frontend-build.yml
+build:frontend:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  extends:
+    - .rules:main_branches
+  needs:
+    - test:frontend
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "🔨 Building frontend image..."
+    - |
+      docker build \
+        --cache-from $FRONTEND_IMAGE:latest \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --build-arg NODE_ENV=production \
+        -f ./frontend/Dockerfile.prod \
+        -t $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA \
+        -t $FRONTEND_IMAGE:$CI_COMMIT_REF_SLUG \
+        ./frontend
+    - echo "✅ Frontend image built successfully"
+```
+
+---
+
+##### `.gitlab/ci/stages/05-security-image.yml` - Security Image Stage
+
+```yaml
+# .gitlab/ci/stages/05-security-image.yml
+include:
+  - local: '.gitlab/ci/jobs/security/container-scan.yml'
+```
+
+**`.gitlab/ci/jobs/security/container-scan.yml`:**
+
+```yaml
+# .gitlab/ci/jobs/security/container-scan.yml
+.container_scan_template:
+  stage: security-image
+  image: 
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  extends:
+    - .rules:main_branches
+  script:
+    - echo "🔍 Scanning ${IMAGE_NAME} for vulnerabilities..."
+    - trivy image --exit-code 0 --severity LOW,MEDIUM --no-progress ${IMAGE_NAME}:$CI_COMMIT_SHORT_SHA
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL --no-progress ${IMAGE_NAME}:$CI_COMMIT_SHORT_SHA
+    - echo "✅ Container scan completed"
+  allow_failure: true
+
+security:scan-backend:
+  extends: .container_scan_template
+  needs:
+    - build:backend
+  variables:
+    IMAGE_NAME: $BACKEND_IMAGE
+  artifacts:
+    reports:
+      container_scanning: gl-container-scanning-backend.json
+
+security:scan-frontend:
+  extends: .container_scan_template
+  needs:
+    - build:frontend
+  variables:
+    IMAGE_NAME: $FRONTEND_IMAGE
+  artifacts:
+    reports:
+      container_scanning: gl-container-scanning-frontend.json
+```
+
+---
+
+##### `.gitlab/ci/stages/06-push.yml` - Push Stage
+
+```yaml
+# .gitlab/ci/stages/06-push.yml
+push:images:
+  stage: push
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  extends:
+    - .rules:main_branches
+  needs:
+    - build:backend
+    - build:frontend
+    - security:scan-backend
+    - security:scan-frontend
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "📤 Pushing images to registry..."
+    
+    # Push backend
+    - docker push $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $BACKEND_IMAGE:$CI_COMMIT_REF_SLUG
+    
+    # Push frontend
+    - docker push $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $FRONTEND_IMAGE:$CI_COMMIT_REF_SLUG
+    
+    # Tag as latest for staging/main branches
+    - |
+      if [ "$CI_COMMIT_BRANCH" == "staging" ] || [ "$CI_COMMIT_BRANCH" == "main" ]; then
+        echo "🏷️ Tagging as latest..."
+        docker tag $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA $BACKEND_IMAGE:latest
+        docker tag $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA $FRONTEND_IMAGE:latest
+        docker push $BACKEND_IMAGE:latest
+        docker push $FRONTEND_IMAGE:latest
+      fi
+    
+    - echo "✅ Images pushed successfully"
+```
+
+---
+
+##### `.gitlab/ci/templates/ssh-deploy.yml` - SSH Deploy Template
+
+> **Thiết kế:** Template chỉ chứa **SSH setup chung** (`before_script` + `image` + `retry`).  
+> Mỗi deploy job tự định nghĩa `script:` riêng vì staging (simple deploy) và production (backup + rolling update + cleanup) có logic **khác nhau**.
+
+```yaml
+# .gitlab/ci/templates/ssh-deploy.yml
+# Template chỉ chứa SSH setup chung - mỗi job tự định nghĩa script riêng
+.ssh_deploy_base:
+  image: alpine:latest
+  before_script:
+    - echo "🔧 Setting up SSH..."
+    - apk add --no-cache openssh-client curl
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+```
+
+---
+
+##### `.gitlab/ci/stages/07-deploy-staging.yml` - Deploy Staging
+
+```yaml
+# .gitlab/ci/stages/07-deploy-staging.yml
+include:
+  - local: '.gitlab/ci/templates/ssh-deploy.yml'
+
+deploy:staging:
+  extends:                              # ⚠️ Dùng list để extends nhiều template
+    - .ssh_deploy_base                   # SSH setup + retry từ template
+    - .rules:staging_only
+  stage: deploy-staging
+  needs:
+    - push:images
+  variables:
+    ENVIRONMENT: "staging"
+    COMPOSE_FILE: "docker-compose.staging.yml"
+    SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY_STAGING
+    DEPLOY_USER: $STAGING_USER
+    DEPLOY_SERVER: $STAGING_SERVER
+    DEPLOY_PATH: $STAGING_DEPLOY_PATH
+  script:                                # Script riêng cho staging (simple deploy)
+    - echo "🎭 Deploying to STAGING environment..."
+    - scp ${COMPOSE_FILE} ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/docker-compose.yml
+    - |
+      ssh ${DEPLOY_USER}@${DEPLOY_SERVER} << ENDSSH
+        cd ${DEPLOY_PATH}
+        
+        echo "🔐 Logging into Registry..."
+        docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+        
+        echo "⬇️ Pulling version $CI_COMMIT_SHORT_SHA..."
+        export TAG=$CI_COMMIT_SHORT_SHA
+        export CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE
+        
+        docker-compose pull
+        docker-compose up -d --remove-orphans
+        
+        echo "⏳ Waiting for services to be healthy..."
+        sleep 30
+        
+        echo "✅ Staging deployment completed"
+        docker-compose ps
+      ENDSSH
+  environment:
+    name: staging
+    url: https://staging.doanhoi.hcmut.edu.vn
+    on_stop: stop:staging
+
+stop:staging:
+  extends:                              # ⚠️ Fix: dùng list thay vì 2 extends riêng
+    - .ssh_deploy_base
+    - .rules:manual
+  stage: deploy-staging
+  variables:
+    ENVIRONMENT: "staging"
+    SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY_STAGING
+    DEPLOY_USER: $STAGING_USER
+    DEPLOY_SERVER: $STAGING_SERVER
+    DEPLOY_PATH: $STAGING_DEPLOY_PATH
+  script:
+    - |
+      ssh ${DEPLOY_USER}@${DEPLOY_SERVER} << ENDSSH
+        cd ${DEPLOY_PATH}
+        docker-compose down
+        echo "✅ Staging environment stopped"
+      ENDSSH
+  environment:
+    name: staging
+    action: stop
+```
+
+---
+
+##### `.gitlab/ci/stages/09-deploy-prod.yml` - Deploy Production
+
+```yaml
+# .gitlab/ci/stages/09-deploy-prod.yml
+include:
+  - local: '.gitlab/ci/templates/ssh-deploy.yml'
+
+deploy:production:
+  extends:                              # ⚠️ Fix: dùng list thay vì 2 extends riêng
+    - .ssh_deploy_base                   # SSH setup + retry từ template
+    - .rules:production_only
+  stage: deploy-prod
+  needs:
+    - push:images
+  when: manual  # Manual approval required
+  variables:
+    ENVIRONMENT: "production"
+    COMPOSE_FILE: "docker-compose.prod.yml"
+    SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
+    DEPLOY_USER: $PRODUCTION_USER
+    DEPLOY_SERVER: $PRODUCTION_SERVER
+    DEPLOY_PATH: $DEPLOY_PATH
+  script:
+    - echo "🚀 Deploying to PRODUCTION version $CI_COMMIT_SHORT_SHA..."
+    - scp ${COMPOSE_FILE} ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/docker-compose.yml
+    - |
+      ssh ${DEPLOY_USER}@${DEPLOY_SERVER} << ENDSSH
+        cd ${DEPLOY_PATH}
+        
+        # Backup current version
+        echo "📦 Backing up current version..."
+        docker-compose config | grep "image:" > .previous-images.txt || true
+        
+        echo "🔐 Logging into Registry..."
+        docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+        
+        echo "⬇️ Pulling new version..."
+        export TAG=$CI_COMMIT_SHORT_SHA
+        export CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE
+        
+        docker-compose pull
+        
+        echo "🔄 Rolling update with zero downtime..."
+        docker-compose up -d --remove-orphans --scale backend=2
+        sleep 30
+        docker-compose up -d --remove-orphans --scale backend=1
+        
+        echo "✅ Deployment completed"
+        docker-compose ps
+        
+        echo "🧹 Cleanup old images..."
+        docker image prune -f --filter "until=24h"
+      ENDSSH
+  environment:
+    name: production
+    url: https://doanhoi.hcmut.edu.vn
+```
+
+---
+
+#### 1.4. Lợi Ích Cấu Trúc Modular
+
+| Aspect | Benefit |
+|--------|---------|
+| **Maintainability** | ✅ Mỗi file 50-200 dòng, dễ đọc và sửa |
+| **Collaboration** | ✅ Team có thể làm việc song song trên các file khác nhau |
+| **Reusability** | ✅ Template có thể tái sử dụng cho nhiều dự án |
+| **Testing** | ✅ Dễ dàng test từng job riêng biệt |
+| **Git Diff** | ✅ Git diff rõ ràng, dễ review MR |
+| **Troubleshooting** | ✅ Nhanh chóng xác định job nào fail |
+| **Scalability** | ✅ Dễ dàng thêm stages/jobs mới |
+
+---
+
+#### 1.5. Migration Plan từ Monolithic sang Modular
+
+**Tuần 1:**
+1. Tạo cấu trúc thư mục `.gitlab/ci/`
+2. Di chuyển variables sang `variables.yml`
+3. Di chuyển cache config sang `cache.yml`
+
+**Tuần 2:**
+4. Tách stage prepare và test
+5. Test pipeline trên branch riêng
+
+**Tuần 3:**
+6. Tách các security và build stages
+7. Deploy staging để test
+
+**Tuần 4:**
+8. Tách deploy và rollback stages
+9. Full production deployment
 
 ---
 

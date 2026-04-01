@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  # Database PostgreSQL
+  # Database PostgreSQL (with pgvector for RAG)
   postgres:
-    image: postgres:15
+    image: pgvector/pgvector:pg15
     container_name: doanhoi-postgres-prod
     environment:
       POSTGRES_DB: doanhoi
@@ -15,7 +15,7 @@ services:
       - doanhoi_postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres && psql -U postgres -d doanhoi -c 'CREATE EXTENSION IF NOT EXISTS vector' >/dev/null 2>&1 || true"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -30,7 +30,7 @@ services:
     image: ${CI_REGISTRY_IMAGE}/backend:${TAG:-latest}
     container_name: doanhoi-backend-prod
     env_file:
-      - .env.production
+      - .env
     environment:
       NODE_ENV: production
       DB_HOST: postgres

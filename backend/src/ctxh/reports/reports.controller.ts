@@ -34,7 +34,6 @@ export class ReportsController {
     status: 404,
     description: "Không tìm thấy sinh viên với mã số này",
   })
-  @RequirePermissions("ctxh.reports.view")
   getStudentReport(@Param("studentCode") studentCode: string) {
     return this.reportsService.getStudentReportByCode(studentCode);
   }
@@ -42,7 +41,6 @@ export class ReportsController {
   @Get("system")
   @ApiOperation({ summary: "Lấy báo cáo tổng quan hệ thống CTXH" })
   @ApiResponse({ status: 200, description: "Lấy báo cáo thành công" })
-  @RequirePermissions("ctxh.reports.view")
   getSystemReport() {
     return this.reportsService.getSystemReport();
   }

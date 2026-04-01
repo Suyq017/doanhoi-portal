@@ -1,0 +1,35 @@
+build:backend:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  extends:
+    - .rules_main_branches
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    # Pull image latest làm cache source (nếu chưa có thì bỏ qua)
+    - echo "📥 Pulling cache image..."
+    - docker pull $BACKEND_IMAGE:latest || true
+    - echo "🔨 Building backend image..."
+    - |
+      docker build \
+        --cache-from $BACKEND_IMAGE:latest \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --build-arg NODE_ENV=production \
+        -f ./backend/Dockerfile.prod \
+        -t $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA \
+        -t $BACKEND_IMAGE:$CI_COMMIT_REF_SLUG \
+        ./backend
+    - echo "✅ Backend image built successfully"
+    
+    # Push ngay sau build (vì Docker image không share được giữa các jobs)
+    - echo "📤 Pushing backend image..."
+    - docker push $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $BACKEND_IMAGE:$CI_COMMIT_REF_SLUG
+    - |
+      if [ "$CI_COMMIT_BRANCH" == "staging" ] || [ "$CI_COMMIT_BRANCH" == "main" ]; then
+        docker tag $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA $BACKEND_IMAGE:latest
+        docker push $BACKEND_IMAGE:latest
+      fi
+    - echo "✅ Backend image pushed successfully"

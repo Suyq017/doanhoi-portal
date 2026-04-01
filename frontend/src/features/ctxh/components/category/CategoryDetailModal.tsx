@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Search } from 'lucide-react';
+import { X, Search, ChevronDown, Eye } from 'lucide-react';
 import { CtxhCategory, CtxhActivity, ActivityQueryParams, PaginatedResponse } from '../../types';
 import { activityService } from '../../services';
-import { getErrorMessage, debounce } from '../../utils';
+import { organizationService } from '../../../../shared/services';
+import { Organization } from '../../../../shared/types/organization';
+import { getErrorMessage } from '../../utils';
 import { Pagination } from '../../../../shared/components';
 
 interface CategoryDetailModalProps {
@@ -18,6 +21,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
   onClose
 }) => {
   const { t } = useTranslation('ctxh');
+  const navigate = useNavigate();
 
   const [activities, setActivities] = useState<CtxhActivity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,14 +31,75 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
 
-  // Debounced search function
-  const debouncedSearch = debounce((term: string) => {
-    setCurrentPage(1);
-    fetchActivities(1, term);
-  }, 300);
+  // Filter states
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loadingOrganizations, setLoadingOrganizations] = useState(false);
+
+  // Combobox states
+  const [statusSearch, setStatusSearch] = useState('');
+  const [organizationSearch, setOrganizationSearch] = useState('');
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [organizationDropdownOpen, setOrganizationDropdownOpen] = useState(false);
+
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const organizationSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const statusOptions = [
+    { value: 'DRAFT', label: t('activity.statusOptions.DRAFT') },
+    { value: 'ACTIVE', label: t('activity.statusOptions.ACTIVE') },
+    { value: 'COMPLETED', label: t('activity.statusOptions.COMPLETED') },
+    { value: 'CANCELLED', label: t('activity.statusOptions.CANCELLED') }
+  ];
+
+  const filteredStatuses = statusOptions.filter(status =>
+    status.label.toLowerCase().includes(statusSearch.toLowerCase())
+  );
+
+  const getSelectedStatusName = () => {
+    const status = statusOptions.find(s => s.value === selectedStatus);
+    return status ? status.label : t('activity.allStatuses');
+  };
+
+  const getSelectedOrganizationName = () => {
+    const organization = organizations.find(o => o.id === selectedOrganizationId);
+    return organization ? organization.name : t('activity.allOrganizations');
+  };
+
+  const loadOrganizations = async (search?: string) => {
+    try {
+      setLoadingOrganizations(true);
+      const response = await organizationService.searchCtxhActivityViewableOrganizations({
+        page: 1,
+        limit: 20,
+        search: search || undefined
+      });
+      setOrganizations(response.data);
+    } catch (error) {
+      console.error('Failed to load organizations:', error);
+    } finally {
+      setLoadingOrganizations(false);
+    }
+  };
+
+  const handleOrganizationSearch = (term: string) => {
+    if (organizationSearchTimeoutRef.current) {
+      clearTimeout(organizationSearchTimeoutRef.current);
+    }
+    organizationSearchTimeoutRef.current = setTimeout(() => {
+      loadOrganizations(term);
+    }, 300);
+  };
 
   // Fetch activities for this category from backend with pagination and search
-  const fetchActivities = async (page: number = currentPage, search?: string, newLimit?: number) => {
+  const fetchActivities = async (
+    page: number = currentPage,
+    search?: string,
+    newLimit?: number,
+    status?: string,
+    organizationId?: string
+  ) => {
     if (!category) return;
 
     setLoading(true);
@@ -43,7 +108,9 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
         page,
         limit: newLimit !== undefined ? newLimit : limit,
         category_id: category.id,
-        search: search !== undefined ? search : searchTerm
+        search: search !== undefined ? search : searchTerm,
+        status: status !== undefined ? status as any : (selectedStatus as any || undefined),
+        organization_id: organizationId !== undefined ? organizationId : (selectedOrganizationId || undefined)
       };
 
       const response: PaginatedResponse<CtxhActivity> = await activityService.findAll(params);
@@ -63,23 +130,98 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
 
   useEffect(() => {
     if (isOpen && category) {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = null;
+      }
       setCurrentPage(1);
       setSearchTerm('');
-      fetchActivities(1, '');
+      setSelectedStatus('');
+      setSelectedOrganizationId('');
+      setStatusSearch('');
+      setOrganizationSearch('');
+      setStatusDropdownOpen(false);
+      setOrganizationDropdownOpen(false);
+      fetchActivities(1, '', undefined, '', '');
     }
   }, [isOpen, category]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.status-combobox')) {
+        setStatusDropdownOpen(false);
+        setStatusSearch('');
+      }
+      if (!target.closest('.organization-combobox')) {
+        setOrganizationDropdownOpen(false);
+        setOrganizationSearch('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      if (organizationSearchTimeoutRef.current) {
+        clearTimeout(organizationSearchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle search input changes
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    debouncedSearch(value);
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      setCurrentPage(1);
+      fetchActivities(1, value, undefined, selectedStatus, selectedOrganizationId);
+    }, 700);
+  };
+
+  const handleStatusChange = (status: string) => {
+    setSelectedStatus(status);
+    setStatusDropdownOpen(false);
+    setStatusSearch('');
+    setCurrentPage(1);
+    fetchActivities(1, searchTerm, undefined, status, selectedOrganizationId);
+  };
+
+  const handleOrganizationChange = (organizationId: string) => {
+    setSelectedOrganizationId(organizationId);
+    setOrganizationDropdownOpen(false);
+    setOrganizationSearch('');
+    setCurrentPage(1);
+    fetchActivities(1, searchTerm, undefined, selectedStatus, organizationId);
+  };
+
+  const handleViewActivityDetail = (activity: CtxhActivity) => {
+    if (!category) return;
+
+    navigate(`/portal/ctxh/activities/${activity.id}`, {
+      state: {
+        from: 'category-detail',
+        category,
+      },
+    });
   };
 
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    fetchActivities(page);
+    fetchActivities(page, searchTerm, undefined, selectedStatus, selectedOrganizationId);
   };
 
   // Format date
@@ -158,8 +300,8 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
 
           {/* Content */}
           <div className="px-4 sm:px-6 py-4 flex-1 overflow-y-auto">
-            {/* Search */}
-            <div className="mb-4">
+            {/* Filters */}
+            <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className="relative">
                 <Search className="absolute w-5 h-5 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
                 <input
@@ -169,6 +311,141 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                   onChange={handleSearchInputChange}
                   className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
+              </div>
+
+              {/* Organization Filter */}
+              <div className="relative organization-combobox">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={t('activity.allOrganizations')}
+                    value={organizationDropdownOpen ? organizationSearch : getSelectedOrganizationName()}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setOrganizationSearch(value);
+                      if (!organizationDropdownOpen) setOrganizationDropdownOpen(true);
+                      handleOrganizationSearch(value);
+                    }}
+                    onFocus={() => {
+                      setOrganizationDropdownOpen(true);
+                      setOrganizationSearch('');
+                      if (organizations.length === 0) {
+                        loadOrganizations();
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setOrganizationDropdownOpen(false), 200);
+                    }}
+                    className="w-full py-2 px-3 pr-10 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newState = !organizationDropdownOpen;
+                      setOrganizationDropdownOpen(newState);
+                      if (newState && organizations.length === 0) {
+                        loadOrganizations();
+                      }
+                    }}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+
+                  {organizationDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
+                      {loadingOrganizations ? (
+                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-center">
+                          {t('activity.loading')}
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleOrganizationChange('')}
+                            className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${!selectedOrganizationId ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}
+                          >
+                            {t('activity.allOrganizations')}
+                          </button>
+                          {organizations.length > 0 ? (
+                            organizations.map((organization) => (
+                              <button
+                                key={organization.id}
+                                type="button"
+                                onClick={() => handleOrganizationChange(organization.id)}
+                                className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${selectedOrganizationId === organization.id ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}
+                              >
+                                {organization.name}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                              {t('activity.form.noResults')}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status Filter */}
+              <div className="relative status-combobox">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={t('activity.allStatuses')}
+                    value={statusDropdownOpen ? statusSearch : getSelectedStatusName()}
+                    onChange={(e) => {
+                      setStatusSearch(e.target.value);
+                      if (!statusDropdownOpen) setStatusDropdownOpen(true);
+                    }}
+                    onFocus={() => {
+                      setStatusDropdownOpen(true);
+                      setStatusSearch('');
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setStatusDropdownOpen(false), 200);
+                    }}
+                    className="w-full py-2 px-3 pr-10 border border-gray-300 rounded-md dark:border-gray-600 focus:ring-2 focus:ring-doan-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+
+                  {statusDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-60 overflow-auto">
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange('')}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${!selectedStatus ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}
+                      >
+                        {t('activity.allStatuses')}
+                      </button>
+                      {filteredStatuses.length > 0 ? (
+                        filteredStatuses.map((status) => (
+                          <button
+                            key={status.value}
+                            type="button"
+                            onClick={() => handleStatusChange(status.value)}
+                            className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none ${selectedStatus === status.value ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}
+                          >
+                            {status.label}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                          {t('activity.form.noResults')}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -207,6 +484,9 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                           </th>
                           <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400 align-top" style={{ width: '19%' }}>
                             {t('activity.unit')}
+                          </th>
+                          <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-400 align-top" style={{ width: '10%' }}>
+                            {t('category.actions')}
                           </th>
                         </tr>
                       </thead>
@@ -292,6 +572,15 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                                   {activity.organization?.name || 'Chưa có thông tin tổ chức'}
                                 </div>
                               </td>
+                              <td className="px-6 py-4 align-top text-right" style={{ width: '10%' }}>
+                                <button
+                                  onClick={() => handleViewActivityDetail(activity)}
+                                  className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1"
+                                  title={t('category.viewDetails')}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              </td>
                             </tr>
                           );
                         })}
@@ -328,9 +617,18 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                                   </div>
                                 )}
                               </div>
-                              <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${statusInfo.class}`}>
-                                {statusInfo.text}
-                              </span>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${statusInfo.class}`}>
+                                  {statusInfo.text}
+                                </span>
+                                <button
+                                  onClick={() => handleViewActivityDetail(activity)}
+                                  className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1"
+                                  title={t('category.viewDetails')}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
 
                             {/* Divider */}
@@ -396,7 +694,7 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
                   onLimitChange={(newLimit) => {
                     setLimit(newLimit);
                     setCurrentPage(1);
-                    fetchActivities(1, undefined, newLimit);
+                    fetchActivities(1, searchTerm, newLimit, selectedStatus, selectedOrganizationId);
                   }}
                   showLimitSelector
                 />

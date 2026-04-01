@@ -1,8 +1,5 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-
-
-
 // Loading State
 export const LoadingState: React.FC = () => {
     const { t } = useTranslation(['templates']);

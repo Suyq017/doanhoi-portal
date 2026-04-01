@@ -9,7 +9,7 @@ class ApiClient {
     reject: (reason?: any) => void;
   }> = [];
   constructor() {
-    this.baseURL = import.meta.env.VITE_BACKEND_API_URL || '';
+    this.baseURL = import.meta.env.VITE_BACKEND_API_URL || '/api';
   }
 
   private processQueue(error: any, token: string | null = null) {
@@ -112,7 +112,7 @@ class ApiClient {
         data: errorData,
         statusText: response.statusText
       };
-      
+
       throw error;
     }
 
@@ -172,7 +172,7 @@ class ApiClient {
   async uploadFile<T>(endpoint: string, formData: FormData): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     const token = authService.getAccessToken();
-    
+
     // Prepare headers - only add Authorization, let browser set Content-Type for FormData
     const headers: Record<string, string> = {};
     if (token) {

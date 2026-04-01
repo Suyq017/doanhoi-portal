@@ -142,7 +142,6 @@ async function verifySuperAdminPermissions() {
             "ctxh.activities.update",
             "ctxh.activities.delete",
             "ctxh.activities.manage_participants",
-            "ctxh.reports.view",
             "ctxh.reports.export",
             "ctxh.config.manage",
             "ctxh.import.old_system",

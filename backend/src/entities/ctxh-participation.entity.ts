@@ -12,6 +12,9 @@ import { User } from "./user.entity";
 import { CtxhActivity } from "./ctxh-activity.entity";
 
 export enum ParticipationStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  // Legacy value kept for backward compatibility with old data/scripts
   REGISTERED = "REGISTERED",
   COMPLETED = "COMPLETED",
   CANCELLED = "CANCELLED",
@@ -37,7 +40,7 @@ export class CtxhParticipation {
   @Column({
     type: "enum",
     enum: ParticipationStatus,
-    default: ParticipationStatus.REGISTERED,
+    default: ParticipationStatus.APPROVED,
   })
   status: ParticipationStatus;
 

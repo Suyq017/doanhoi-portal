@@ -7,7 +7,7 @@ import {
   PaginatedResponse
 } from '../../../features/fee-collection/types';
 
-const API_BASE = '/api/payment/assignments';
+const API_BASE = '/payment/assignments';
 
 class PaymentAssignmentService {
   // CRUD Operations
@@ -47,7 +47,7 @@ class PaymentAssignmentService {
   }
 
   async getAssignmentsByUser(userId: string): Promise<ApiResponse<PaymentAssignment[]>> {
-    const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}${API_BASE}/${userId}`);
+    const response = await fetch(`${API_BASE}/${userId}`);
     if (!response.ok) {
       throw new Error('Failed to fetch user assignments');
     }

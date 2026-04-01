@@ -31,14 +31,25 @@ export type { Template, TemplateStatus, ConfigureFieldDto, TemplateSubmission } 
 // Hooks
 export * from './hooks';
 
-// Admin components
-export * from './components/admin';
+// Admin components - exclude TemplateListFilters to avoid conflict with type of same name
+export {
+  LoadingState,
+  FullPageLoading,
+  ErrorState,
+  TemplateListHeader,
+  TemplateListFilters as TemplateListFiltersComponent,
+  TemplateTable,
+  TemplateEmptyState,
+  UploadHeader,
+  FileDropzone,
+  UploadInstructions,
+} from './components/admin';
 
 // Pages
 export {
-    TemplateListPage,
-    TemplateUploadPage,
-    TemplateConfigPage,
-    FormsPage,
+  TemplateListPage,
+  TemplateUploadPage,
+  TemplateConfigPage,
+  FormsPage,
 } from './pages';
 

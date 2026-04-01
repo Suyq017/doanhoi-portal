@@ -1,0 +1,76 @@
+include:
+  - local: '.gitlab/ci/templates/ssh-deploy.yml'
+
+deploy:production:
+  extends:                              
+    - .ssh_deploy_base                   
+  stage: deploy-prod
+  needs:
+    - build:backend
+    - build:frontend
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+    - if: $CI_COMMIT_BRANCH == "dev"
+      when: manual
+      allow_failure: true    # Cho phép skip trên dev
+  variables:
+    ENVIRONMENT: "production"
+    COMPOSE_FILE: "docker-compose.prod.yml"
+    DEPLOY_SSH_KEY: $SSH_PRIVATE_KEY
+    DEPLOY_USER: $PRODUCTION_USER
+    DEPLOY_SERVER: $PRODUCTION_SERVER
+    DEPLOY_PATH: $DEPLOY_PATH
+  script:
+    - echo "🚀 Deploying to PRODUCTION version $CI_COMMIT_SHORT_SHA..."
+    - scp ${COMPOSE_FILE} ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/docker-compose.yml
+    - scp prometheus.prod.yml ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/prometheus.prod.yml
+    - |
+      ssh ${DEPLOY_USER}@${DEPLOY_SERVER} << ENDSSH
+        set -e
+        cd ${DEPLOY_PATH}
+        
+        # Backup current version
+        echo "📦 Backing up current version..."
+        docker compose config | grep "image:" > .previous-images.txt || true
+        
+        echo "🔐 Logging into Registry..."
+        echo "${CI_REGISTRY_PASSWORD}" | docker login -u "${CI_REGISTRY_USER}" --password-stdin "${CI_REGISTRY}"
+        
+        echo "⬇️ Pulling new version..."
+        export TAG=${CI_COMMIT_SHORT_SHA}
+        export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE}
+        
+        docker compose -f docker-compose.yml pull
+        
+        echo "🔄 Deploying..."
+        docker compose -f docker-compose.yml up -d --remove-orphans
+        
+        echo "⏳ Waiting for services to be healthy..."
+        sleep 20
+        
+        echo "✅ Deployment completed"
+        docker compose -f docker-compose.yml ps
+        
+        echo "🧹 Cleanup old Docker images..."
+        # Lấy danh sách image IDs đang được container sử dụng
+        USED_IMAGES=\$(docker ps --format '{{.Image}}' | sort -u)
+        
+        # Xóa tất cả images từ registry mà KHÔNG được container nào đang dùng
+        docker images --format '{{.ID}} {{.Repository}}:{{.Tag}}' | grep '${CI_REGISTRY_IMAGE}' | while read id repotag; do
+          if ! echo "\$USED_IMAGES" | grep -q "\$repotag"; then
+            echo "  Removing unused: \$repotag"
+            docker rmi \$id 2>/dev/null || true
+          fi
+        done
+        # Xóa dangling images (không tag)
+        docker image prune -f
+        # Xóa build cache cũ
+        docker builder prune -f --filter "until=72h" 2>/dev/null || true
+        
+        echo "📊 Disk usage after cleanup:"
+        docker system df
+      ENDSSH
+  environment:
+    name: production
+    url: https://doanhoi.hcmut.edu.vn

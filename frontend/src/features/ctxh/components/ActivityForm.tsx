@@ -51,6 +51,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     categoryId: '',
     organizationId: '',
     status: ActivityStatus.DRAFT,
+    requiresApproval: false,
+    maxParticipants: '',
     startDate: '', // Now stores datetime (YYYY-MM-DDTHH:mm)
     endDate: '', // Now stores datetime (YYYY-MM-DDTHH:mm)
     totalDays: '',
@@ -67,29 +69,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [organizationList, setOrganizationList] = useState<any[]>([]);
   const { isSuperAdmin } = usePermissions();
-  // Debug log for create button visibility (must be after all hooks and state declarations)
-  useEffect(() => {
-    console.log('[ActivityForm] ========== FORM LOAD DEBUG ==========');
-    console.log('[ActivityForm] isOpen:', isOpen);
-    console.log('[ActivityForm] activity (editing?):', activity);
-    console.log('[ActivityForm] isSuperAdmin:', isSuperAdmin());
-    console.log('[ActivityForm] userOrganization:', userOrganization);
-    console.log('[ActivityForm] organizationList:', organizationList);
-    console.log('[ActivityForm] organizationLoading:', organizationLoading);
-    console.log('[ActivityForm] formData.organizationId:', formData.organizationId);
-    
-    if (!isSuperAdmin()) {
-      console.log('[ActivityForm] ⚠️ Not super admin');
-      if (!userOrganization) {
-        console.log('[ActivityForm] ❌ No organization found for user - CREATE WILL BE DISABLED');
-      } else {
-        console.log('[ActivityForm] ✅ User organization found:', userOrganization.name);
-      }
-    } else {
-      console.log('[ActivityForm] ✅ Super admin - can select organization');
-    }
-    console.log('[ActivityForm] =======================================');
-  }, [isOpen, userOrganization, organizationList, organizationLoading, formData.organizationId]);
 
   useEffect(() => {
     // Nếu là super admin thì lấy danh sách tổ chức từ cache và lọc bỏ cấp 3 (chi đoàn/chi hội)
@@ -102,12 +81,13 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
       });
       setOrganizationList(filteredOrgs);
     }
-  }, [isSuperAdmin, cachedOrganizations]);
+  }, [cachedOrganizations]);
   const [fieldValidation, setFieldValidation] = useState({
     name: { isValid: true, message: '' },
     categoryId: { isValid: true, message: '' },
     organizationId: { isValid: true, message: '' },
     totalDays: { isValid: true, message: '' },
+    maxParticipants: { isValid: true, message: '' },
     startDate: { isValid: true, message: '' },
     endDate: { isValid: true, message: '' },
     location: { isValid: true, message: '' }
@@ -193,6 +173,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         message: formData.organizationId === '' ? t('activity.validation.organizationRequired') : ''
       },
       totalDays: preservedTotalDaysValidation,
+      maxParticipants: { isValid: true, message: '' },
       startDate: { isValid: true, message: '' },
       endDate: { isValid: true, message: '' },
       location: { isValid: true, message: '' }
@@ -212,6 +193,17 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     // Check totalDays format validation
     if (!newFieldValidation.totalDays.isValid) {
       isValid = false;
+    }
+
+    if (formData.maxParticipants !== '') {
+      const maxParticipantsValue = Number(formData.maxParticipants);
+      if (!Number.isInteger(maxParticipantsValue) || maxParticipantsValue < 0) {
+        newFieldValidation.maxParticipants = {
+          isValid: false,
+          message: t('activity.validation.maxParticipantsInvalid')
+        };
+        isValid = false;
+      }
     }
 
     // Check if total days is required for ACTIVE status
@@ -348,16 +340,11 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
 
   // Load user organization when modal opens (only for create mode)
   useEffect(() => {
-    console.log('[ActivityForm] useEffect for loading organization triggered');
-    console.log('[ActivityForm] isOpen:', isOpen, 'activity:', activity, 'isSuperAdmin:', isSuperAdmin());
-    
     if (isOpen && !activity) {
-      console.log('[ActivityForm] Loading user organization for CREATE mode...');
       loadUserOrganization();
     } else if (isOpen && activity) {
       // Edit mode: set organization from activity data
       const activityOrg = (activity as any).organization;
-      console.log('[ActivityForm] EDIT mode - setting organization from activity:', activityOrg);
       if (activityOrg) {
         setUserOrganization(activityOrg);
       }
@@ -413,6 +400,9 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         categoryId: (activity as any).category_id || '', // API uses category_id
         organizationId: (activity as any).organization_id || '', // API uses organization_id
         status: activity.status || ActivityStatus.DRAFT,
+        requiresApproval: !!(activity as any).requires_approval || !!activity.requiresApproval,
+        maxParticipants: ((activity as any).max_participants ?? activity.maxParticipants ?? '')
+          .toString(),
         startDate: formatDatetimeLocal((activity as any).start_date),
         endDate: formatDatetimeLocal((activity as any).end_date),
         totalDays: (activity as any).total_days?.toString() || '',
@@ -430,6 +420,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         categoryId: '',
         organizationId: '', // Will be auto-set from loadUserOrganization
         status: ActivityStatus.DRAFT,
+        requiresApproval: false,
+        maxParticipants: '',
         startDate: '', // Now stores datetime (YYYY-MM-DDTHH:mm)
         endDate: '', // Now stores datetime (YYYY-MM-DDTHH:mm)
         totalDays: '',
@@ -458,17 +450,12 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
 
   // Load user's organization for CTXH activity creation
   const loadUserOrganization = async () => {
-    // This function is only called in CREATE mode (from useEffect)
-    console.log('[ActivityForm] loadUserOrganization() called');
     try {
       setOrganizationLoading(true);
-      console.log('[ActivityForm] Calling organizationService.getUserPrimaryOrganization()...');
       const response = await organizationService.getUserPrimaryOrganization();
-      console.log('[ActivityForm] getUserPrimaryOrganization response:', response);
       
       if (response.organization) {
         // User has an active organization
-        console.log('[ActivityForm] ✅ Organization found:', response.organization.name);
         setUserOrganization(response.organization);
         setFormData(prev => ({
           ...prev,
@@ -486,7 +473,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
       showError(t('activity.form.loadOrganizationError'));
     } finally {
       setOrganizationLoading(false);
-      console.log('[ActivityForm] Organization loading finished');
     }
   };
 
@@ -516,6 +502,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         end_date: formData.endDate || undefined, // Backend expects end_date (as date string)
         total_days: formData.totalDays ? parseFloat(formData.totalDays) : undefined, // Backend expects total_days
         location: formData.location?.trim() || undefined, // Backend expects location
+        requires_approval: formData.requiresApproval,
+        max_participants: formData.maxParticipants === '' ? null : parseInt(formData.maxParticipants, 10),
         ...(activity && { status: formData.status }) // Only include status for updates
       };
 
@@ -545,8 +533,10 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    const newFormData = { ...formData, [field]: value };
+  const handleInputChange = (field: string, value: string | boolean) => {
+    const normalizedValue = field === 'requiresApproval' ? Boolean(value) : value;
+    const newFormData = { ...formData, [field]: normalizedValue };
+    const stringValue = typeof value === 'string' ? value : '';
     setFormData(newFormData);
 
     // Clear field validation errors when user makes changes
@@ -573,11 +563,31 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
 
     if (field === 'totalDays') {
       // Validate totalDays immediately when user types
-      const validation = validateTotalDays(value);
+      const validation = validateTotalDays(stringValue);
       setFieldValidation(prev => ({
         ...prev,
         totalDays: validation
       }));
+    }
+
+    if (field === 'maxParticipants') {
+      if (value === '') {
+        setFieldValidation(prev => ({
+          ...prev,
+          maxParticipants: { isValid: true, message: '' }
+        }));
+      } else {
+        const maxParticipantsValue = Number(value);
+        setFieldValidation(prev => ({
+          ...prev,
+          maxParticipants: {
+            isValid: Number.isInteger(maxParticipantsValue) && maxParticipantsValue >= 0,
+            message: Number.isInteger(maxParticipantsValue) && maxParticipantsValue >= 0
+              ? ''
+              : t('activity.validation.maxParticipantsInvalid')
+          }
+        }));
+      }
     }
 
     if (field === 'location' && fieldValidation.location && !fieldValidation.location.isValid) {
@@ -638,8 +648,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     }
 
     // Always validate totalDays day limit (for all statuses)
-    if (field === 'totalDays' && value && formData.organizationId) {
-      const totalDaysValue = parseFloat(value);
+    if (field === 'totalDays' && stringValue && formData.organizationId) {
+      const totalDaysValue = parseFloat(stringValue);
       
       if (totalDaysValue >= 0.5) {
         // Check day limit asynchronously
@@ -685,10 +695,10 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     // Re-validate active fields when they change and status is ACTIVE
     if (formData.status === ActivityStatus.ACTIVE) {
       if (field === 'totalDays') {
-        const totalDaysValue = parseFloat(value);
+        const totalDaysValue = parseFloat(stringValue);
         
         // First check basic validation
-        if (!value || totalDaysValue < 0.5) {
+        if (!stringValue || totalDaysValue < 0.5) {
           setFieldValidation(prev => ({
             ...prev,
             totalDays: {
@@ -1147,6 +1157,54 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
               <p className="mt-1 text-xs text-gray-500">
                 {t('activity.form.totalDaysHelp')}
               </p>
+            </div>
+
+            {/* Registration settings */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="requiresApproval" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('activity.form.registrationMode')}
+                </label>
+                <select
+                  id="requiresApproval"
+                  value={formData.requiresApproval ? 'approval' : 'auto'}
+                  onChange={(e) => handleInputChange('requiresApproval', e.target.value === 'approval')}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="auto">{t('activity.form.registrationAutoApprove')}</option>
+                  <option value="approval">{t('activity.form.registrationRequireApproval')}</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  {t('activity.form.registrationModeHelp')}
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('activity.form.maxParticipants')}
+                </label>
+                <input
+                  type="number"
+                  id="maxParticipants"
+                  min="0"
+                  step="1"
+                  value={formData.maxParticipants}
+                  onChange={(e) => handleInputChange('maxParticipants', e.target.value)}
+                  className={`w-full border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 ${!fieldValidation.maxParticipants.isValid
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                    : 'border-gray-300'
+                    }`}
+                  placeholder={t('activity.form.maxParticipantsPlaceholder')}
+                />
+                {!fieldValidation.maxParticipants.isValid && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {fieldValidation.maxParticipants.message}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  {t('activity.form.maxParticipantsHelp')}
+                </p>
+              </div>
             </div>
 
             {/* Actions */}

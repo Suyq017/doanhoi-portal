@@ -10,6 +10,8 @@ export enum ActivityStatus {
 }
 
 export enum ParticipationStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
   REGISTERED = 'REGISTERED',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED'
@@ -59,6 +61,8 @@ export interface CtxhActivity extends BaseEntity {
   name: string;
   description?: string;
   location?: string; // Add location field
+  requiresApproval?: boolean;
+  maxParticipants?: number | null;
   categoryId: string;
   organizationId: string;
   startDate?: string; // Keep camelCase for frontend
@@ -81,6 +85,8 @@ export interface CreateActivityRequest {
   name: string;
   description?: string;
   location?: string; // Add location field
+  requiresApproval?: boolean;
+  maxParticipants?: number | null;
   categoryId: string;
   organizationId: string;
   startDate?: string;
@@ -92,6 +98,8 @@ export interface UpdateActivityRequest {
   name?: string;
   description?: string;
   location?: string; // Add location field
+  requiresApproval?: boolean;
+  maxParticipants?: number | null;
   startDate?: string;
   endDate?: string;
   totalDays?: number;

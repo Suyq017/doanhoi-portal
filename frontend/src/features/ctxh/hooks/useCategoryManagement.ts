@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../../shared/hooks';
 import { useCtxhPermissions } from './useCtxhPermissions';
@@ -24,6 +25,8 @@ import {
 export const useCategoryManagement = (): UseCategoryManagementReturn => {
     const { t } = useTranslation('ctxh');
     const ctxhPermissions = useCtxhPermissions();
+    const location = useLocation();
+    const navigate = useNavigate();
 
     // Toast notifications
     const { toasts, hideToast, showSuccess, showError } = useToast();
@@ -40,6 +43,17 @@ export const useCategoryManagement = (): UseCategoryManagementReturn => {
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [confirmAction, setConfirmAction] = useState<ConfirmActionType>(null);
+
+    useEffect(() => {
+        const navState = location.state as { openCategoryDetail?: CtxhCategory } | null;
+        if (navState?.openCategoryDetail) {
+            setSelectedCategory(navState.openCategoryDetail);
+            setIsDetailModalOpen(true);
+
+            // Clear navigation state after consuming to prevent reopening on re-render
+            navigate(location.pathname, { replace: true, state: null });
+        }
+    }, [location.pathname, location.state, navigate]);
 
     // Action handlers
     const handleCreateClick = () => {

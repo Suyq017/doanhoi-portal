@@ -15,7 +15,7 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess, onErro
 
     try {
       // Redirect to backend Google OAuth endpoint
-      const backendUrl = import.meta.env.VITE_BACKEND_API_URL;
+      const backendUrl = import.meta.env.VITE_BACKEND_API_URL || '/api';
       window.location.href = `${backendUrl}/auth/google`;
       // Call onSuccess callback if provided
       onSuccess?.();
@@ -41,10 +41,10 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess, onErro
       ) : (
         <div className="flex items-center">
           <img
-              src="\assets\google-color.svg"
-              alt={t('auth:form.logoAlt', { defaultValue: 'Đoàn Hội BK logo' })}
-              className="w-5 h-5 mr-2"
-            />
+            src="\assets\google-color.svg"
+            alt={t('auth:form.logoAlt', { defaultValue: 'Đoàn Hội BK logo' })}
+            className="w-5 h-5 mr-2"
+          />
           {t('auth:form.buttons.signInWithGoogle')}
         </div>
       )}

@@ -28,9 +28,25 @@ const parseCtxhOldSystemFile = async (
 
         onProgress?.(80);
 
-        // Parse data (skip header row)
+        // Auto-detect if first row is header or data
+        let startRow = 0;
+        if (jsonData.length > 0) {
+          const firstRow = jsonData[0];
+          const firstCell = String(firstRow[0] || '').trim().toLowerCase();
+          
+          // Check if first row looks like a header
+          // Headers usually contain text like "mssv", "mã số", "sinh viên", "số ngày", etc.
+          const headerKeywords = ['mssv', 'mã số', 'sinh viên', 'code', 'student'];
+          const isHeader = headerKeywords.some(keyword => firstCell.includes(keyword)) ||
+                          !/^\d{7,10}$/.test(firstCell); // If not a valid student code, likely a header
+          
+          // Only skip first row if it's actually a header
+          startRow = isHeader ? 1 : 0;
+        }
+
+        // Parse data (skip header row if detected)
         const records: OldSystemCtxhRecord[] = [];
-        for (let i = 1; i < jsonData.length; i++) {
+        for (let i = startRow; i < jsonData.length; i++) {
           const row = jsonData[i];
           
           // Skip empty rows
@@ -60,123 +76,210 @@ const parseCtxhOldSystemFile = async (
 };
 
 /**
- * Validate CTXH old system records
+ * Validate CTXH old system records with backend API
+ * Now checks if students exist in database before import
  */
 const validateCtxhOldSystemData = async (
   data: OldSystemCtxhRecord[],
   onProgress?: (progress: { current: number; total: number; percentage: number }) => void
 ): Promise<ClientValidationResult> => {
-  const errors: ValidationError[] = [];
-  const warnings: ValidationError[] = [];
-  const validRecords: OldSystemCtxhRecord[] = [];
-  const seenStudentCodes = new Set<string>();
+  const VALIDATION_CHUNK_SIZE = 500; // Validate 500 records at a time
+  
+  try {
+    // If data is small enough, validate in one request
+    if (data.length <= VALIDATION_CHUNK_SIZE) {
+      onProgress?.({
+        current: 0,
+        total: 1,
+        percentage: 0
+      });
 
-  for (let i = 0; i < data.length; i++) {
-    const record = data[i];
-    const rowNumber = i + 2; // +2 because Excel is 1-indexed and we skip header
+      // Client-side format validation first
+      const clientErrors: ValidationError[] = [];
+      const seenStudentCodes = new Set<string>();
 
-    // Update progress
-    if (onProgress && i % 10 === 0) {
-      onProgress({
-        current: i + 1,
+      for (let i = 0; i < data.length; i++) {
+        const record = data[i];
+        const rowNumber = i + 2;
+        let hasError = false;
+
+        // Validate student code format
+        if (!record.studentCode) {
+          clientErrors.push({
+            row: rowNumber,
+            column: 'MSSV',
+            message: 'MSSV không được để trống',
+            severity: 'error'
+          });
+          hasError = true;
+        } else if (!/^\d{7,10}$/.test(record.studentCode)) {
+          clientErrors.push({
+            row: rowNumber,
+            column: 'MSSV',
+            message: 'MSSV phải có 7-10 chữ số',
+            severity: 'error'
+          });
+          hasError = true;
+        }
+
+        // Validate days
+        if (record.days === undefined || record.days === null || isNaN(record.days)) {
+          clientErrors.push({
+            row: rowNumber,
+            column: 'Số ngày',
+            message: 'Số ngày không hợp lệ',
+            severity: 'error'
+          });
+          hasError = true;
+        } else if (record.days < 0) {
+          clientErrors.push({
+            row: rowNumber,
+            column: 'Số ngày',
+            message: 'Số ngày phải là số dương',
+            severity: 'error'
+          });
+          hasError = true;
+        }
+
+        // Check for duplicates in file
+        if (!hasError && record.studentCode && seenStudentCodes.has(record.studentCode)) {
+          clientErrors.push({
+            row: rowNumber,
+            column: 'MSSV',
+            message: `MSSV "${record.studentCode}" bị trùng lặp trong file`,
+            severity: 'error'
+          });
+        } else if (record.studentCode) {
+          seenStudentCodes.add(record.studentCode);
+        }
+      }
+
+      // If there are client-side errors, return immediately
+      if (clientErrors.length > 0) {
+        return {
+          isValid: false,
+          data: [],
+          errors: clientErrors,
+          warnings: [],
+          summary: {
+            total: data.length,
+            valid: 0,
+            invalid: clientErrors.length,
+            duplicates: 0
+          }
+        };
+      }
+
+      // Call backend to validate with database
+      const result = await ctxhImportApi.validateOldSystem({ records: data });
+
+      onProgress?.({
+        current: 1,
+        total: 1,
+        percentage: 100
+      });
+
+      return {
+        isValid: result.isValid,
+        data: result.isValid ? data : [],
+        errors: result.errors,
+        warnings: result.warnings,
+        summary: {
+          total: result.total,
+          valid: result.valid,
+          invalid: result.invalid,
+          duplicates: 0
+        }
+      };
+    }
+
+    // Split data into chunks for large datasets
+    const chunks: OldSystemCtxhRecord[][] = [];
+    for (let i = 0; i < data.length; i += VALIDATION_CHUNK_SIZE) {
+      chunks.push(data.slice(i, i + VALIDATION_CHUNK_SIZE));
+    }
+
+    const allErrors: ValidationError[] = [];
+    const allWarnings: ValidationError[] = [];
+    let totalValid = 0;
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const chunkStartIndex = i * VALIDATION_CHUNK_SIZE;
+      const currentBatch = i + 1;
+
+      onProgress?.({
+        current: currentBatch,
+        total: chunks.length,
+        percentage: Math.round((currentBatch / chunks.length) * 100)
+      });
+
+      try {
+        const result = await ctxhImportApi.validateOldSystem({ records: chunk });
+
+        // Adjust row numbers for errors/warnings
+        const adjustedErrors = result.errors.map(error => ({
+          ...error,
+          row: error.row + chunkStartIndex
+        }));
+
+        const adjustedWarnings = result.warnings.map(warning => ({
+          ...warning,
+          row: warning.row + chunkStartIndex
+        }));
+
+        allErrors.push(...adjustedErrors);
+        allWarnings.push(...adjustedWarnings);
+        totalValid += result.valid;
+      } catch (error) {
+        console.error(`Validation chunk ${i + 1} failed:`, error);
+        allErrors.push({
+          row: chunkStartIndex + 2,
+          column: 'Hệ thống',
+          message: `Lỗi validate batch ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          severity: 'error'
+        });
+      }
+    }
+
+    onProgress?.({
+      current: chunks.length,
+      total: chunks.length,
+      percentage: 100
+    });
+
+    return {
+      isValid: allErrors.length === 0,
+      data: allErrors.length === 0 ? data : [],
+      errors: allErrors,
+      warnings: allWarnings,
+      summary: {
         total: data.length,
-        percentage: Math.round(((i + 1) / data.length) * 100)
-      });
-    }
-
-    let hasError = false;
-
-    // Validate student code
-    if (!record.studentCode) {
-      errors.push({
-        row: rowNumber,
-        column: 'MSSV',
-        message: 'MSSV không được để trống',
+        valid: totalValid,
+        invalid: allErrors.length,
+        duplicates: 0
+      }
+    };
+  } catch (error) {
+    console.error('Validation failed:', error);
+    return {
+      isValid: false,
+      data: [],
+      errors: [{
+        row: 0,
+        column: 'Hệ thống',
+        message: `Lỗi validation: ${error instanceof Error ? error.message : 'Unknown error'}`,
         severity: 'error'
-      });
-      hasError = true;
-    } else if (!/^\d{7,10}$/.test(record.studentCode)) {
-      errors.push({
-        row: rowNumber,
-        column: 'MSSV',
-        message: 'MSSV phải có 7-10 chữ số',
-        severity: 'error'
-      });
-      hasError = true;
-    }
-
-    // Validate days
-    if (record.days === undefined || record.days === null || isNaN(record.days)) {
-      errors.push({
-        row: rowNumber,
-        column: 'Số ngày',
-        message: 'Số ngày không hợp lệ',
-        severity: 'error'
-      });
-      hasError = true;
-    } else if (record.days < 0) {
-      errors.push({
-        row: rowNumber,
-        column: 'Số ngày',
-        message: 'Số ngày phải là số dương',
-        severity: 'error'
-      });
-      hasError = true;
-    } else if (record.days > 365) {
-      warnings.push({
-        row: rowNumber,
-        column: 'Số ngày',
-        message: 'Số ngày lớn hơn 365 (có thể không hợp lệ)',
-        severity: 'warning'
-      });
-    }
-
-    // Check for decimal precision (should be 0.5 increments)
-    if (!hasError && record.days % 0.5 !== 0) {
-      warnings.push({
-        row: rowNumber,
-        column: 'Số ngày',
-        message: 'Số ngày nên là bội số của 0.5 (ví dụ: 0.5, 1, 1.5, 2, ...)',
-        severity: 'warning'
-      });
-    }
-
-    // Check for duplicates
-    if (record.studentCode && seenStudentCodes.has(record.studentCode)) {
-      warnings.push({
-        row: rowNumber,
-        column: 'MSSV',
-        message: `MSSV "${record.studentCode}" bị trùng lặp trong file`,
-        severity: 'warning'
-      });
-    } else if (record.studentCode) {
-      seenStudentCodes.add(record.studentCode);
-    }
-
-    if (!hasError) {
-      validRecords.push(record);
-    }
+      }],
+      warnings: [],
+      summary: {
+        total: data.length,
+        valid: 0,
+        invalid: data.length,
+        duplicates: 0
+      }
+    };
   }
-
-  // Final progress
-  onProgress?.({
-    current: data.length,
-    total: data.length,
-    percentage: 100
-  });
-
-  return {
-    isValid: errors.length === 0,
-    data: validRecords,
-    errors,
-    warnings,
-    summary: {
-      total: data.length,
-      valid: validRecords.length,
-      invalid: errors.length,
-      duplicates: Array.from(seenStudentCodes).length < data.length ? data.length - Array.from(seenStudentCodes).length : 0
-    }
-  };
 };
 
 /**
