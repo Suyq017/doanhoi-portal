@@ -17,6 +17,7 @@ import { LangChainMemoryService } from './services/langchain-memory.service';
 import { LangChainRagChainService } from './services/langchain-rag-chain.service';
 import { LangChainAdvancedRetrieverService } from './services/langchain-advanced-retriever.service';
 import { LangChainIngestionService } from './services/langchain-ingestion.service';
+import { CtxhFilterExtractionService } from './services/ctxh-filter-extraction.service';
 
 // Vector Auto-Ingestion Pipeline
 import { CtxhVectorSyncService } from './services/ctxh-vector-sync.service';
@@ -48,6 +49,7 @@ import { VECTOR_QUEUE } from './constants/vector-queue.constants';
     LangChainRagChainService,
     LangChainAdvancedRetrieverService,
     LangChainIngestionService,
+    CtxhFilterExtractionService,
     // Vector Auto-Ingestion Pipeline
     CtxhVectorSyncService,
     VectorIngestionProcessor, // Worker với concurrency: 1 per job type
@@ -62,6 +64,7 @@ import { VECTOR_QUEUE } from './constants/vector-queue.constants';
     LangChainRagChainService,
     LangChainAdvancedRetrieverService,
     LangChainIngestionService,
+    CtxhFilterExtractionService,
     // Vector Auto-Ingestion Pipeline
     CtxhVectorSyncService,
   ],

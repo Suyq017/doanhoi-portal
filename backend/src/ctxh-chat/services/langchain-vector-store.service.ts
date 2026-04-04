@@ -11,6 +11,7 @@ import {
 import { PoolConfig } from 'pg';
 import { Client } from 'pg';
 import { ActivityStatus } from '@/entities/ctxh-activity.entity';
+import { MetadataFilters } from '../dto/filter-extraction.dto';
 
 /**
  * LangChain Vector Store Service
@@ -253,6 +254,301 @@ export class LangChainVectorStoreService implements OnModuleInit {
     );
 
     return filtered.slice(0, k);
+  }
+
+  /**
+   * Perform similarity search with **pre-retrieval** metadata filters.
+   *
+   * Instead of fetching K*3 candidates and filtering in memory,
+   * this method pushes filter predicates into the SQL WHERE clause
+   * so pgvector only ranks vectors that already match the metadata.
+   *
+   * Falls back to the regular `similaritySearchWithDateFilter`
+   * when the filters are empty.
+   *
+   * @param query  Natural-language search query
+   * @param filters  Structured metadata filters from the extraction service
+   * @param k  Maximum documents to return
+   * @param currentDate  ISO YYYY-MM-DD for date computations
+   */
+  async similaritySearchWithMetadataFilters(
+    query: string,
+    filters: MetadataFilters,
+    k: number = 5,
+    currentDate?: string,
+  ): Promise<Document[]> {
+    await this.ensureInitialized();
+
+    try {
+      // 1. Embed the query
+      const queryEmbedding = await this.embeddings.embedQuery(query);
+      const embeddingStr = `[${queryEmbedding.join(',')}]`;
+
+      // 2. Build dynamic WHERE clauses
+      const conditions: string[] = [];
+      const params: any[] = [embeddingStr]; // $1 = query vector
+      let paramIndex = 2;
+
+      // Always exclude DRAFT activities
+      conditions.push(`metadata->>'status' != 'DRAFT'`);
+
+      // --- Status (ongoing / upcoming / ended) ---
+      if (filters.status && filters.status.length > 0) {
+        const statusConditions = this.buildStatusConditions(
+          filters.status,
+          currentDate,
+          params,
+          paramIndex,
+        );
+        if (statusConditions.clause) {
+          conditions.push(statusConditions.clause);
+          paramIndex = statusConditions.nextIndex;
+        }
+      }
+
+      // --- Category ---
+      if (filters.category && filters.category.length > 0) {
+        const placeholders = filters.category.map((cat) => {
+          params.push(cat);
+          return `$${paramIndex++}`;
+        });
+        conditions.push(
+          `metadata->>'categoryName' IN (${placeholders.join(', ')})`,
+        );
+      }
+
+      // --- Organization keywords (ILIKE) ---
+      if (filters.organizationKeywords && filters.organizationKeywords.length > 0) {
+        const orgClauses = filters.organizationKeywords.map((kw) => {
+          params.push(`%${kw}%`);
+          return `metadata->>'organizationName' ILIKE $${paramIndex++}`;
+        });
+        conditions.push(`(${orgClauses.join(' OR ')})`);
+      }
+
+      // --- Location (ILIKE) ---
+      if (filters.location && filters.location.length > 0) {
+        const locClauses: string[] = [];
+        filters.location.forEach((loc) => {
+          // Identify synonyms based on the normalized location string
+          const synonyms = [loc]; // Always include the base string
+          const locLower = loc.toLowerCase();
+          
+          if (locLower.includes('cơ sở 1') || locLower.includes('cs1')) {
+            synonyms.push('cơ sở 1', 'lý thường kiệt', 'ltk', 'quận 10', 'q10', 'cs1');
+          } else if (locLower.includes('cơ sở 2') || locLower.includes('cs2')) {
+            synonyms.push('cơ sở 2', 'dĩ an', 'thủ đức', 'làng đại học', 'cs2');
+          }
+
+          synonyms.forEach((syn) => {
+            params.push(`%${syn}%`);
+            locClauses.push(`metadata->>'location' ILIKE $${paramIndex++}`);
+          });
+        });
+        
+        if (locClauses.length > 0) {
+          conditions.push(`(${locClauses.join(' OR ')})`);
+        }
+      }
+
+      // --- Date range ---
+      if (filters.dateRange) {
+        const dateClause = this.buildDateRangeCondition(
+          filters.dateRange,
+          currentDate,
+          params,
+          paramIndex,
+        );
+        if (dateClause.clause) {
+          conditions.push(dateClause.clause);
+          paramIndex = dateClause.nextIndex;
+        }
+      }
+
+      // 3. Compose full SQL
+      const whereSQL =
+        conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+      params.push(k); // last param = LIMIT
+      const limitParam = `$${paramIndex}`;
+
+      // Priority Boost: Substract distance (increase similarity) if the activity starts or ends exactly today
+      let orderByStr = `embedding <=> $1::vector`;
+      let scoreStr = `1 - (embedding <=> $1::vector)`;
+
+      if (currentDate) {
+        // Boost by 0.15 if starts today, 0.10 if ends today (since lower pgvector distance = better)
+        orderByStr = `
+          (embedding <=> $1::vector) - (
+            CASE 
+              WHEN (metadata->>'startDate')::date = '${currentDate}'::date THEN 0.15
+              WHEN (metadata->>'endDate')::date = '${currentDate}'::date THEN 0.10
+              ELSE 0 
+            END
+          )
+        `;
+        scoreStr = `
+          1 - (embedding <=> $1::vector) + (
+            CASE 
+              WHEN (metadata->>'startDate')::date = '${currentDate}'::date THEN 0.15
+              WHEN (metadata->>'endDate')::date = '${currentDate}'::date THEN 0.10
+              ELSE 0 
+            END
+          )
+        `;
+      }
+
+      const sql = `
+        SELECT
+          id,
+          content_text,
+          metadata,
+          ${scoreStr} AS similarity_score
+        FROM ctxh_embeddings
+        ${whereSQL}
+        ORDER BY ${orderByStr}
+        LIMIT ${limitParam}
+      `;
+
+      this.logger.debug(
+        `Metadata-filtered SQL (${conditions.length} conditions, k=${k})`,
+      );
+
+      // 4. Execute
+      const client = new Client({
+        host: this.dbConfig.host,
+        port: this.dbConfig.port,
+        database: this.dbConfig.database,
+        user: this.dbConfig.user,
+        password: this.dbConfig.password,
+      });
+
+      try {
+        await client.connect();
+        const result = await client.query(sql, params);
+
+        const documents: Document[] = result.rows.map((row: any) => {
+          const metadata =
+            typeof row.metadata === 'string'
+              ? JSON.parse(row.metadata)
+              : row.metadata;
+
+          return new Document({
+            pageContent: row.content_text,
+            metadata: {
+              ...metadata,
+              score: parseFloat(row.similarity_score),
+            },
+          });
+        });
+
+        this.logger.debug(
+          `Metadata-filtered search returned ${documents.length} documents`,
+        );
+
+        return documents;
+      } finally {
+        await client.end();
+      }
+    } catch (error) {
+      this.logger.error('Metadata-filtered search failed, falling back', error);
+      // Graceful fallback to un-filtered search
+      return this.similaritySearchWithDateFilter(
+        query,
+        k,
+        currentDate,
+        'all',
+      );
+    }
+  }
+
+  // ─── Private helpers for SQL clause building ──────────────────────────
+
+  /**
+   * Build WHERE clause fragment for status-based filtering
+   * using metadata startDate / endDate and ActivityStatus.
+   */
+  private buildStatusConditions(
+    statuses: string[],
+    currentDate: string | undefined,
+    params: any[],
+    paramIndex: number,
+  ): { clause: string; nextIndex: number } {
+    if (!currentDate) {
+      return { clause: '', nextIndex: paramIndex };
+    }
+
+    params.push(currentDate);
+    const dateParam = `$${paramIndex++}`;
+
+    const parts: string[] = [];
+
+    for (const s of statuses) {
+      switch (s) {
+        case 'ongoing':
+          // ACTIVE + startDate <= today <= endDate
+          parts.push(
+            `(metadata->>'status' = 'ACTIVE' AND (metadata->>'startDate')::date <= ${dateParam}::date AND (metadata->>'endDate')::date >= ${dateParam}::date)`,
+          );
+          break;
+        case 'upcoming':
+          // ACTIVE + startDate > today
+          parts.push(
+            `(metadata->>'status' = 'ACTIVE' AND (metadata->>'startDate')::date > ${dateParam}::date)`,
+          );
+          break;
+        case 'ended':
+          // COMPLETED/CANCELLED, or ACTIVE with endDate < today
+          parts.push(
+            `(metadata->>'status' IN ('COMPLETED','CANCELLED') OR (metadata->>'status' = 'ACTIVE' AND (metadata->>'endDate')::date < ${dateParam}::date))`,
+          );
+          break;
+      }
+    }
+
+    if (parts.length === 0) {
+      return { clause: '', nextIndex: paramIndex };
+    }
+
+    return {
+      clause: `(${parts.join(' OR ')})`,
+      nextIndex: paramIndex,
+    };
+  }
+
+  /**
+   * Build WHERE clause fragment for date-range overlap filtering.
+   * An activity "overlaps" a range if activity.startDate <= range.end
+   * AND activity.endDate >= range.start.
+   */
+  private buildDateRangeCondition(
+    dateRange: NonNullable<MetadataFilters['dateRange']>,
+    currentDate: string | undefined,
+    params: any[],
+    paramIndex: number,
+  ): { clause: string; nextIndex: number } {
+    const start = dateRange.startDate;
+    const end = dateRange.endDate;
+
+    if (!start && !end) {
+      return { clause: '', nextIndex: paramIndex };
+    }
+
+    const parts: string[] = [];
+
+    if (start) {
+      params.push(start);
+      parts.push(`(metadata->>'endDate')::date >= $${paramIndex++}::date`);
+    }
+    if (end) {
+      params.push(end);
+      parts.push(`(metadata->>'startDate')::date <= $${paramIndex++}::date`);
+    }
+
+    return {
+      clause: parts.join(' AND '),
+      nextIndex: paramIndex,
+    };
   }
 
   /**

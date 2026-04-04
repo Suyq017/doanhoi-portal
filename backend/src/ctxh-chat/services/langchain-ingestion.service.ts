@@ -21,22 +21,6 @@ export interface IngestionResult {
 }
 
 /**
- * Activity data for ingestion
- */
-interface ActivityData {
-  id: string;
-  name: string;
-  description: string;
-  location: string;
-  startDate: Date;
-  endDate: Date;
-  totalDays: number;
-  status: string;
-  organizationName: string;
-  registrationLink?: string;
-}
-
-/**
  * LangChain Ingestion Service
  * Handles data ingestion pipeline using LangChain vector store
  */
@@ -75,7 +59,7 @@ export class LangChainIngestionService {
     try {
       // Get all activities
       const activities = await this.activityRepository.find({
-        relations: ['organization'],
+        relations: ['organization', 'category'],
       });
       result.totalActivities = activities.length;
 
@@ -144,7 +128,7 @@ export class LangChainIngestionService {
     try {
       const activities = await this.activityRepository.find({
         where: { updated_at: MoreThan(since) },
-        relations: ['organization'],
+        relations: ['organization', 'category'],
       });
       result.totalActivities = activities.length;
 
@@ -183,7 +167,7 @@ export class LangChainIngestionService {
   async processActivity(activityId: string): Promise<void> {
     const activity = await this.activityRepository.findOne({
       where: { id: activityId },
-      relations: ['organization'],
+      relations: ['organization', 'category'],
     });
 
     if (!activity) {
@@ -281,6 +265,7 @@ export class LangChainIngestionService {
           activityId: activity.id,
           activityName: activity.name,
           organizationName: activity.organization?.name || 'N/A',
+          categoryName: activity.category?.name || 'N/A',
           startDate: activity.start_date?.toISOString(),
           endDate: activity.end_date?.toISOString(),
           totalDays: activity.total_days,
@@ -301,6 +286,7 @@ export class LangChainIngestionService {
       `Mô tả: ${activity.description || 'Không có mô tả'}`,
       `Tổ chức: ${activity.organization?.name || 'N/A'}`,
       `Địa điểm: ${activity.location || 'N/A'}`,
+      `Danh mục: ${activity.category?.name || 'N/A'}`,
       `Thời gian: ${this.formatDate(activity.start_date)} - ${this.formatDate(activity.end_date)}`,
       `Số ngày CTXH: ${activity.total_days || 0} ngày`,
       `Trạng thái: ${activity.status || 'N/A'}`,

@@ -9,6 +9,7 @@ import { LangChainMemoryService } from './langchain-memory.service';
 import { LangChainConfig } from '../config/langchain.config';
 import { CTXH_RAG_PROMPT, STANDALONE_QUESTION_PROMPT } from '../prompts/ctxh-chat.prompts';
 import { ActivityStatus } from '@/entities/ctxh-activity.entity';
+import { CtxhFilterExtractionService } from './ctxh-filter-extraction.service';
 
 /**
  * RAG Response structure
@@ -49,6 +50,7 @@ export class LangChainRagChainService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly vectorStoreService: LangChainVectorStoreService,
     private readonly memoryService: LangChainMemoryService,
+    private readonly filterExtractionService: CtxhFilterExtractionService,
   ) {}
 
   async onModuleInit() {
@@ -95,42 +97,87 @@ export class LangChainRagChainService implements OnModuleInit {
    * Build the main RAG chain
    */
   private buildRAGChain(): RunnableSequence {
-    const ragConfig = LangChainConfig.getRAGConfig(this.configService);
-
     return RunnableSequence.from([
-      RunnablePassthrough.assign({
-        context: async (input: { question: string; chat_history: string; current_date?: string }) => {
-          const { question, current_date } = input;
-
-          // Detect time-status queries and apply date filter accordingly
-          const statusFilter = this.detectStatusFilter(question);
-
-          let docs: Document[];
-          if (statusFilter !== 'all' && current_date) {
-            // Use date-aware retrieval for time-based questions
-            docs = await this.vectorStoreService.similaritySearchWithDateFilter(
-              question,
-              ragConfig.topK,
-              current_date,
-              statusFilter,
-            );
-          } else {
-            // Default retrieval still enforces ActivityStatus runtime filtering.
-            docs = await this.vectorStoreService.similaritySearchWithDateFilter(
-              question,
-              ragConfig.topK,
-              current_date,
-              'all',
-            );
-          }
-
-          return this.formatDocumentsAsContext(docs, current_date);
-        },
-      }),
       CTXH_RAG_PROMPT,
       this.llm,
       new StringOutputParser(),
     ]);
+  }
+
+  /**
+   * Rewrite question if there's chat history (for contextual understanding)
+   */
+  private async processQuestion(question: string, chatHistory: string): Promise<string> {
+    if (chatHistory && chatHistory.length > 0) {
+      try {
+        const processedQuestion = await this.questionRewriteChain.invoke({
+          question,
+          chat_history: chatHistory,
+        });
+        this.logger.debug(`Rewritten question: ${processedQuestion}`);
+        return processedQuestion;
+      } catch (error) {
+        this.logger.warn('Question rewrite failed, using original', error);
+      }
+    }
+    return question;
+  }
+
+  /**
+   * Extract filters and retrieve relevant documents
+   */
+  private async retrieveDocuments(
+    question: string,
+    currentDate: string,
+    topK: number,
+    useMMR: boolean,
+  ): Promise<Document[]> {
+    // 1. Extract structured metadata filters via LLM
+    let filters = await this.filterExtractionService.extractFilters(
+      question,
+      currentDate,
+    );
+
+    // 2. Resolve relative date expressions ("hôm nay", "tuần này") into concrete bounds
+    if (filters.dateRange && currentDate) {
+      filters = this.filterExtractionService.resolveDateRange(
+        filters,
+        currentDate,
+      );
+    }
+
+    this.logger.debug(
+      `Extracted filters: ${JSON.stringify(filters)}`,
+    );
+
+    let docs: Document[];
+
+    if (this.filterExtractionService.isEmpty(filters)) {
+      // No meaningful filters — fall back to standard search
+      if (useMMR) {
+        docs = await this.vectorStoreService.maxMarginalRelevanceSearch(
+          question,
+          { k: topK, fetchK: topK * 4, lambda: 0.5 },
+        );
+      } else {
+        docs = await this.vectorStoreService.similaritySearchWithDateFilter(
+          question,
+          topK,
+          currentDate,
+          'all',
+        );
+      }
+    } else {
+      // Use pre-filtered vector search
+      docs = await this.vectorStoreService.similaritySearchWithMetadataFilters(
+        question,
+        filters,
+        topK,
+        currentDate,
+      );
+    }
+
+    return docs;
   }
 
   private normalizeActivityStatus(status: unknown): ActivityStatus | undefined {
@@ -146,32 +193,7 @@ export class LangChainRagChainService implements OnModuleInit {
     return undefined;
   }
 
-  /**
-   * Detect the status filter type from the user's question
-   */
-  private detectStatusFilter(question: string): 'ongoing' | 'upcoming' | 'ended' | 'all' {
-    const q = question.toLowerCase();
-    if (
-      q.includes('đang diễn ra') || q.includes('đang có') || q.includes('hiện tại') ||
-      q.includes('hôm nay') || q.includes('đang mở') || q.includes('đang tổ chức') ||
-      q.includes('hiện đang') || q.includes('đang hoạt động') || q.includes('đang xảy ra')
-    ) {
-      return 'ongoing';
-    }
-    if (
-      q.includes('sắp tới') || q.includes('sắp diễn ra') || q.includes('sắp có') ||
-      q.includes('sắp mở') || q.includes('tới đây') || q.includes('upcoming')
-    ) {
-      return 'upcoming';
-    }
-    if (
-      q.includes('đã kết thúc') || q.includes('đã qua') || q.includes('đã diễn ra') ||
-      q.includes('đã có') || q.includes('trước đây') || q.includes('đã hết')
-    ) {
-      return 'ended';
-    }
-    return 'all';
-  }
+
 
   /**
    * Build chain for rewriting contextual questions
@@ -215,35 +237,19 @@ export class LangChainRagChainService implements OnModuleInit {
       }
 
       // Rewrite question if there's chat history (for contextual understanding)
-      let processedQuestion = question;
-      if (chatHistory && chatHistory.length > 0) {
-        try {
-          processedQuestion = await this.questionRewriteChain.invoke({
-            question,
-            chat_history: chatHistory,
-          });
-          this.logger.debug(`Rewritten question: ${processedQuestion}`);
-        } catch (error) {
-          this.logger.warn('Question rewrite failed, using original', error);
-          processedQuestion = question;
-        }
-      }
+      const processedQuestion = await this.processQuestion(question, chatHistory);
 
-      // Get source documents
-      let sources: Document[];
-      if (useMMR) {
-        sources = await this.vectorStoreService.maxMarginalRelevanceSearch(
-          processedQuestion,
-          { k, fetchK: k * 4, lambda: 0.5 },
-        );
-      } else {
-        sources = await this.vectorStoreService.similaritySearch(processedQuestion, k);
-      }
+      // Get source documents using unified pipeline (with filters)
+      const sources = await this.retrieveDocuments(processedQuestion, currentDate, k, useMMR);
+
+      // Format documents as context string
+      const formattedContext = this.formatDocumentsAsContext(sources, currentDate);
 
       // Run RAG chain
       const response = await this.ragChain.invoke({
         question: processedQuestion,
         chat_history: chatHistory,
+        context: formattedContext,
         current_date: currentDate,
         current_day_of_week: currentDayOfWeek,
         current_datetime: currentDatetime,
@@ -279,6 +285,8 @@ export class LangChainRagChainService implements OnModuleInit {
     }
 
     const {
+      k = 5,
+      useMMR = false,
       includeHistory = true,
       currentDate = new Date().toISOString().split('T')[0],
       currentDayOfWeek = new Date().toLocaleDateString('vi-VN', { weekday: 'long' }),
@@ -292,10 +300,20 @@ export class LangChainRagChainService implements OnModuleInit {
         chatHistory = await this.memoryService.getFormattedHistory(sessionId);
       }
 
+      // Rewrite question if there's chat history
+      const processedQuestion = await this.processQuestion(question, chatHistory);
+
+      // Get source documents using unified pipeline (with filters)
+      const sources = await this.retrieveDocuments(processedQuestion, currentDate, k, useMMR);
+
+      // Format documents as context string
+      const formattedContext = this.formatDocumentsAsContext(sources, currentDate);
+
       // Stream from chain
       const stream = await this.ragChain.stream({
-        question,
+        question: processedQuestion,
         chat_history: chatHistory,
+        context: formattedContext,
         current_date: currentDate,
         current_day_of_week: currentDayOfWeek,
         current_datetime: currentDatetime,

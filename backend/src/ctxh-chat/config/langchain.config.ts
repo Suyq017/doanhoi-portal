@@ -27,10 +27,10 @@ export class LangChainConfig {
     const useLocalModel = this.isUsingLocalModel(configService);
 
     if (useLocalModel) {
-      // Use Ollama Qwen2.5:7b
+      // Use Ollama Qwen
       const baseUrl = configService.get('OLLAMA_BASE_URL');
       const model = configService.get('OLLAMA_LLM_MODEL');
-      const numCtx = parseInt(configService.get('OLLAMA_NUM_CTX'));
+      const numCtx = parseInt(configService.get('OLLAMA_NUM_CTX'), 10);
       const temperature = parseFloat(configService.get('RAG_TEMPERATURE'));
 
       return new ChatOllama({
@@ -50,7 +50,7 @@ export class LangChainConfig {
         model: configService.get('RAG_CHAT_MODEL'),
         apiKey,
         temperature: parseFloat(configService.get('RAG_TEMPERATURE')),
-        maxOutputTokens: parseInt(configService.get('RAG_MAX_OUTPUT_TOKENS')),
+        maxOutputTokens: parseInt(configService.get('RAG_MAX_OUTPUT_TOKENS'), 10),
       });
     }
   }
