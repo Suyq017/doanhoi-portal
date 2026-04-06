@@ -99,6 +99,13 @@ export class AuthController {
     return this.authService.getUserPermissions(userId, organizationId);
   }
 
+  @Get("google")
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: "Initiate Google OAuth flow" })
+  async googleAuth() {
+    // This route is handled by GoogleAuthGuard, which redirects to Google
+  }
+
   @Get("google/callback")
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: "Google OAuth callback" })

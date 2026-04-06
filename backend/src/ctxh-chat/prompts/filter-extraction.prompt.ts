@@ -26,15 +26,13 @@ Ngày hiện tại (dùng làm mốc): {current_date}
 • "đã kết thúc / đã qua / đã diễn ra / trước đây / đã hết" → ended
 
 ═══════════════════════════════════════
- BẢNG ÁNH XẠ DANH MỤC (category)
+ DANH SÁCH DANH MỤC HỢP LỆ VÀ BẢNG ÁNH XẠ (category)
 ═══════════════════════════════════════
-• "tuyên dương / khen thưởng" → "Các danh hiệu tuyên dương khen thưởng sinh viên"
-• "mái ấm / nhà mở / làng trẻ em / người già / trẻ mồ côi" → "Hoạt động Công tác xã hội (tình nguyện) tại mái ấm, nhà mở, làng trẻ em, khu điều dưỡng cho người già…"
-• "hiến máu / hiến tiểu cầu" → "Hiến máu tình nguyện"
-• "việc làm / career / tuyển dụng" → "Ngày hội việc làm"
-• "môi trường xanh / cơn lốc hóa học / thi học thuật" → "Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)"
-• "hội trại / xuân tình nguyện / ngày hội" → "Chương trình Hội trại, ngày hội"
-• "dọn dẹp / vệ sinh / dọn kho / phòng thí nghiệm / môi trường" → "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)"
+Danh sách danh mục có sẵn:
+{category_list}
+
+Từ khóa tham khảo (Không nhất thiết phải giống i đúc toàn bộ):
+{category_keyword_map}
 
 ═══════════════════════════════════════
  TỔ CHỨC (organizationKeywords & organizationLevel)
@@ -44,13 +42,20 @@ Cấp trường (parent):
 Cấp khoa (child):
   "Liên chi đoàn Khoa X", "Liên chi hội Khoa X", "CLB X"
 Nếu user nói "khoa Máy tính" → organizationKeywords: ["Máy tính"], organizationLevel: "child"
-Nếu user nói "Đoàn trường" → organizationKeywords: ["Đoàn trường"], organizationLevel: "parent"
+Nếu user nói "Đoàn trường" hoặc "Hội sinh viên" → organizationKeywords: ["Đoàn trường"] hoặc ["Hội sinh viên"], organizationLevel: "parent"
 
 ═══════════════════════════════════════
- ĐỊA ĐIỂM (location)
+ ĐỊA ĐIỂM (locationRaw)
 ═══════════════════════════════════════
-• "cơ sở 1 / CS1 / Lý Thường Kiệt" → "Cơ sở 1"
-• "cơ sở 2 / CS2 / Dĩ An / Thủ Đức" → "Cơ sở 2"
+Nhận dạng địa điểm khi câu hỏi có các từ: "ở", "tại", "địa điểm", "chỗ nào"
+Trích xuất NGUYÊN VĂN cụm địa điểm từ câu hỏi, không diễn giải lại.
+
+Ví dụ:
+- "ở ktx khu B"           → locationRaw: ["ktx khu B"]
+- "tại cơ sở 1"           → locationRaw: ["cơ sở 1"]
+- "ở bách khoa cs 1"      → locationRaw: ["cs 1"]
+- "tại hội trường A4"     → locationRaw: ["hội trường A4"]
+- Không đề cập địa điểm  → (bỏ qua locationRaw)
 
 ═══════════════════════════════════════
  THỜI GIAN (dateRange)
@@ -65,7 +70,7 @@ Nếu user nói "Đoàn trường" → organizationKeywords: ["Đoàn trường"
  VÍ DỤ
 ═══════════════════════════════════════
 Câu hỏi: "Có hoạt động dọn dẹp nào đang mở ở cơ sở 1 không?"
-→ status: ["ongoing"], category: ["Công tác xã hội"], location: ["Cơ sở 1"]
+→ status: ["ongoing"], category: ["Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)"], locationRaw: ["cơ sở 1"]
 
 Câu hỏi: "Hoạt động hiến máu sắp tới của khoa Máy tính"
 → status: ["upcoming"], category: ["Hiến máu tình nguyện"], organizationKeywords: ["Máy tính"], organizationLevel: "child"
@@ -79,7 +84,8 @@ Câu hỏi: "Liệt kê tất cả hoạt động"
 QUY TẮC BẮT BUỘC:
 1. Chỉ trích xuất filter khi câu hỏi đề cập TRỰC TIẾP. Không suy đoán.
 2. Nếu câu hỏi quá chung chung (ví dụ "hoạt động nào?"), trả về object rỗng {{}}.
-3. Trả về ĐÚNG tên danh mục/địa điểm đã chuẩn hóa, KHÔNG trả về từ gốc.`,
+3. Trả về ĐÚNG tên danh mục đã chuẩn hóa. Đối với địa điểm, trả về NGUYÊN VĂN (locationRaw), KHÔNG chuẩn hóa.
+4. Category values MUST come from the provided list only. If no category clearly matches -> return empty array. No inference, no semantic similarity, no new names.`,
   ],
   ['human', '{question}'],
 ]);

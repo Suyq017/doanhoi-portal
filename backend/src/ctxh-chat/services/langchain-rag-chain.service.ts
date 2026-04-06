@@ -31,6 +31,7 @@ export interface RAGChainOptions {
   currentDate?: string;       // YYYY-MM-DD, e.g. "2026-03-01"
   currentDayOfWeek?: string;  // e.g. "Thứ Bảy"
   currentDatetime?: string;   // e.g. "01/03/2026, 14:30"
+  userOrg?: string;           // Optional organization string, e.g. "Khoa Máy tính"
 }
 
 /**
@@ -227,6 +228,7 @@ export class LangChainRagChainService implements OnModuleInit {
       currentDate = new Date().toISOString().split('T')[0],
       currentDayOfWeek = new Date().toLocaleDateString('vi-VN', { weekday: 'long' }),
       currentDatetime = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      userOrg,
     } = options;
 
     try {
@@ -245,6 +247,11 @@ export class LangChainRagChainService implements OnModuleInit {
       // Format documents as context string
       const formattedContext = this.formatDocumentsAsContext(sources, currentDate);
 
+      // Format userOrgInstruction
+      const userOrgInstruction = userOrg
+        ? `\nNếu người dùng thuộc tổ chức "${userOrg}", hãy ưu tiên đề cập các hoạt động của tổ chức này lên trên cùng nếu có trong context.`
+        : '';
+
       // Run RAG chain
       const response = await this.ragChain.invoke({
         question: processedQuestion,
@@ -253,6 +260,7 @@ export class LangChainRagChainService implements OnModuleInit {
         current_date: currentDate,
         current_day_of_week: currentDayOfWeek,
         current_datetime: currentDatetime,
+        user_org_instruction: userOrgInstruction,
       });
 
       // Save interaction to memory
@@ -291,6 +299,7 @@ export class LangChainRagChainService implements OnModuleInit {
       currentDate = new Date().toISOString().split('T')[0],
       currentDayOfWeek = new Date().toLocaleDateString('vi-VN', { weekday: 'long' }),
       currentDatetime = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      userOrg,
     } = options;
 
     try {
@@ -309,6 +318,11 @@ export class LangChainRagChainService implements OnModuleInit {
       // Format documents as context string
       const formattedContext = this.formatDocumentsAsContext(sources, currentDate);
 
+      // Format userOrgInstruction
+      const userOrgInstruction = userOrg
+        ? `\nNếu người dùng thuộc tổ chức "${userOrg}", hãy ưu tiên đề cập các hoạt động của tổ chức này lên trên cùng nếu có trong context.`
+        : '';
+
       // Stream from chain
       const stream = await this.ragChain.stream({
         question: processedQuestion,
@@ -317,6 +331,7 @@ export class LangChainRagChainService implements OnModuleInit {
         current_date: currentDate,
         current_day_of_week: currentDayOfWeek,
         current_datetime: currentDatetime,
+        user_org_instruction: userOrgInstruction,
       });
 
       let fullResponse = '';

@@ -4,6 +4,8 @@ import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { LangChainConfig } from '../config/langchain.config';
 import { MetadataFilterSchema, MetadataFilters } from '../dto/filter-extraction.dto';
 import { FILTER_EXTRACTION_PROMPT } from '../prompts/filter-extraction.prompt';
+import { getCategoryListString, getCategoryKeywordMapString, VALID_CATEGORIES } from '../config/category.config';
+
 
 /**
  * Service that uses an LLM with structured output to extract
@@ -78,13 +80,24 @@ export class CtxhFilterExtractionService implements OnModuleInit {
       const result = await chain.invoke({
         question,
         current_date: dateStr,
-      });
+        category_list: getCategoryListString(),
+        category_keyword_map: getCategoryKeywordMapString(),
+      }) as MetadataFilters;
+
+      // Layer 3 Validation: Ensure all parsed categories match our explicit list
+      if (result.category && result.category.length > 0) {
+        result.category = result.category.filter(c => VALID_CATEGORIES.includes(c as any));
+        if (result.category.length === 0) {
+          delete result.category;
+        }
+      }
 
       this.logger.debug(
         `Extracted filters for "${question.slice(0, 60)}…": ${JSON.stringify(result)}`,
       );
 
-      return result as MetadataFilters;
+      return result;
+
     } catch (error) {
       this.logger.warn(
         `Filter extraction failed, returning empty filters: ${error.message}`,
@@ -147,7 +160,7 @@ export class CtxhFilterExtractionService implements OnModuleInit {
       (!filters.category || filters.category.length === 0) &&
       (!filters.organizationKeywords || filters.organizationKeywords.length === 0) &&
       !filters.organizationLevel &&
-      (!filters.location || filters.location.length === 0) &&
+      (!filters.locationRaw || filters.locationRaw.length === 0) &&
       !filters.dateRange
     );
   }

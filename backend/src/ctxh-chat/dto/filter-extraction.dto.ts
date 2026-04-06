@@ -1,5 +1,5 @@
 import { z } from 'zod';
-
+import { VALID_CATEGORIES } from '../config/category.config';
 /**
  * Zod schema describing the structured metadata filters
  * that an LLM extracts from a Vietnamese natural-language question.
@@ -30,17 +30,10 @@ export const MetadataFilterSchema = z.object({
    * Examples: "Công tác xã hội", "Hiến máu tình nguyện"
    */
   category: z
-    .array(z.string())
+    .array(z.enum(VALID_CATEGORIES))
     .optional()
     .describe(
-      'Danh mục hoạt động CTXH. Áp dụng bảng ánh xạ: ' +
-      '"tuyên dương / khen thưởng" -> "Các danh hiệu tuyên dương khen thưởng sinh viên", ' +
-      '"mái ấm / nhà mở / làng trẻ em / người già" -> "Hoạt động Công tác xã hội (tình nguyện) tại mái ấm, nhà mở, làng trẻ em, khu điều dưỡng cho người già…", ' +
-      '"hiến máu" -> "Hiến máu tình nguyện", ' +
-      '"việc làm / job fair" -> "Ngày hội việc làm", ' +
-      '"môi trường xanh / cơn lốc hóa học / cuộc thi học thuật" -> "Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)", ' +
-      '"hội trại / ngày hội" -> "Chương trình Hội trại, ngày hội", ' +
-      '"dọn dẹp / vệ sinh / dọn kho / phòng thí nghiệm / môi trường" -> "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)". ' +
+      'Danh mục hoạt động CTXH. Tính năng trích xuất danh mục. Trả về đúng tên danh mục đã định sẵn. ' +
       'Trả về tên danh mục chính xác, không trả về từ khóa gốc.',
     ),
 
@@ -74,18 +67,14 @@ export const MetadataFilterSchema = z.object({
     ),
 
   /**
-   * Normalized location strings.
-   * "cơ sở 1 / CS1" → "Cơ sở 1"
-   * "cơ sở 2 / CS2" → "Cơ sở 2"
+   * Raw location strings extracted directly from text.
    */
-  location: z
+  locationRaw: z
     .array(z.string())
     .optional()
     .describe(
-      'Địa điểm đã chuẩn hóa: ' +
-      '"cơ sở 1 / CS1 / Lý Thường Kiệt" -> "Cơ sở 1", ' +
-      '"cơ sở 2 / CS2 / Dĩ An / Thủ Đức" -> "Cơ sở 2". ' +
-      'Trả về dạng chuẩn hóa, không trả về từ khóa gốc.',
+      'Trích xuất NGUYÊN VĂN cụm địa điểm từ câu hỏi, không diễn giải lại. ' +
+      'Ví dụ: "ở ktx khu B" -> ["ktx khu B"], "tại cơ sở 1" -> ["cơ sở 1"]. ',
     ),
 
   /**

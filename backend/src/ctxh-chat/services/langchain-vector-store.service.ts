@@ -12,6 +12,7 @@ import { PoolConfig } from 'pg';
 import { Client } from 'pg';
 import { ActivityStatus } from '@/entities/ctxh-activity.entity';
 import { MetadataFilters } from '../dto/filter-extraction.dto';
+import { getSearchTermsForLocation } from '../constants/location.constants';
 
 /**
  * LangChain Vector Store Service
@@ -327,23 +328,18 @@ export class LangChainVectorStoreService implements OnModuleInit {
       }
 
       // --- Location (ILIKE) ---
-      if (filters.location && filters.location.length > 0) {
+      if (filters.locationRaw && filters.locationRaw.length > 0) {
         const locClauses: string[] = [];
-        filters.location.forEach((loc) => {
-          // Identify synonyms based on the normalized location string
-          const synonyms = [loc]; // Always include the base string
-          const locLower = loc.toLowerCase();
-          
-          if (locLower.includes('cơ sở 1') || locLower.includes('cs1')) {
-            synonyms.push('cơ sở 1', 'lý thường kiệt', 'ltk', 'quận 10', 'q10', 'cs1');
-          } else if (locLower.includes('cơ sở 2') || locLower.includes('cs2')) {
-            synonyms.push('cơ sở 2', 'dĩ an', 'thủ đức', 'làng đại học', 'cs2');
+        filters.locationRaw.forEach((loc) => {
+          const searchTerms = getSearchTermsForLocation(loc);
+          if (searchTerms.length > 0) {
+            const aliasClauses: string[] = [];
+            searchTerms.forEach((term) => {
+              params.push(`%${term}%`);
+              aliasClauses.push(`metadata->>'location' ILIKE $${paramIndex++}`);
+            });
+            locClauses.push(`(${aliasClauses.join(' OR ')})`);
           }
-
-          synonyms.forEach((syn) => {
-            params.push(`%${syn}%`);
-            locClauses.push(`metadata->>'location' ILIKE $${paramIndex++}`);
-          });
         });
         
         if (locClauses.length > 0) {

@@ -43,6 +43,7 @@ QUY TẮC QUAN TRỌNG - PHẢI TUÂN THỦ TUYỆT ĐỐI:
 - Trả lời trực tiếp, ngắn gọn, tự nhiên.
 - Liệt kê thông tin chi tiết một cách rõ ràng.
 - Ghi rõ trạng thái thời gian của hoạt động so với ngày {current_date}.
+{user_org_instruction}
 
 Context từ cơ sở dữ liệu:
 {context}
