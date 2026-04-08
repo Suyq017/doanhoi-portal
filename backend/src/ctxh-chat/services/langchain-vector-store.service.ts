@@ -308,6 +308,8 @@ export class LangChainVectorStoreService implements OnModuleInit {
       }
 
       // --- Category ---
+      // Tạm thời vô hiệu hóa filter category theo yêu cầu
+      /*
       if (filters.category && filters.category.length > 0) {
         const placeholders = filters.category.map((cat) => {
           params.push(cat);
@@ -317,6 +319,7 @@ export class LangChainVectorStoreService implements OnModuleInit {
           `metadata->>'categoryName' IN (${placeholders.join(', ')})`,
         );
       }
+      */
 
       // --- Organization keywords (ILIKE) ---
       if (filters.organizationKeywords && filters.organizationKeywords.length > 0) {

@@ -80,17 +80,17 @@ export class CtxhFilterExtractionService implements OnModuleInit {
       const result = await chain.invoke({
         question,
         current_date: dateStr,
-        category_list: getCategoryListString(),
-        category_keyword_map: getCategoryKeywordMapString(),
+        // category_list: getCategoryListString(),
+        // category_keyword_map: getCategoryKeywordMapString(),
       }) as MetadataFilters;
 
       // Layer 3 Validation: Ensure all parsed categories match our explicit list
-      if (result.category && result.category.length > 0) {
-        result.category = result.category.filter(c => VALID_CATEGORIES.includes(c as any));
-        if (result.category.length === 0) {
-          delete result.category;
-        }
-      }
+      // if (result.category && result.category.length > 0) {
+      //   result.category = result.category.filter(c => VALID_CATEGORIES.includes(c as any));
+      //   if (result.category.length === 0) {
+      //     delete result.category;
+      //   }
+      // }
 
       this.logger.debug(
         `Extracted filters for "${question.slice(0, 60)}…": ${JSON.stringify(result)}`,
@@ -157,7 +157,7 @@ export class CtxhFilterExtractionService implements OnModuleInit {
   isEmpty(filters: MetadataFilters): boolean {
     return (
       (!filters.status || filters.status.length === 0) &&
-      (!filters.category || filters.category.length === 0) &&
+      // (!filters.category || filters.category.length === 0) &&
       (!filters.organizationKeywords || filters.organizationKeywords.length === 0) &&
       !filters.organizationLevel &&
       (!filters.locationRaw || filters.locationRaw.length === 0) &&

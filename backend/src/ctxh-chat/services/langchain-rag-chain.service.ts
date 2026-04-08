@@ -1,13 +1,19 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { RunnableSequence, RunnablePassthrough } from '@langchain/core/runnables';
+import { RunnableSequence } from '@langchain/core/runnables';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { Document } from '@langchain/core/documents';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { LangChainVectorStoreService } from './langchain-vector-store.service';
 import { LangChainMemoryService } from './langchain-memory.service';
 import { LangChainConfig } from '../config/langchain.config';
-import { CTXH_RAG_PROMPT, STANDALONE_QUESTION_PROMPT } from '../prompts/ctxh-chat.prompts';
+import { CTXH_RAG_PROMPT } from '../prompts/ctxh-chat.prompts';
+import { ROUTER_AGENT_PROMPT } from '../prompts/router-agent.prompt';
+import { RETRIEVAL_VERIFIER_PROMPT } from '../prompts/retrieval-verifier.prompt';
+import { TOOL_SELECTOR_PROMPT } from '../prompts/tool-selector.prompt';
+import { RouterOutput, RouterOutputSchema } from '../dto/router-output.dto';
+import { VerifierOutputSchema } from '../dto/verifier-output.dto';
+import { RAG_TOOLS, RAG_TOOL_NAMES, RagToolName } from '../tools/rag-tools';
 import { ActivityStatus } from '@/entities/ctxh-activity.entity';
 import { CtxhFilterExtractionService } from './ctxh-filter-extraction.service';
 
@@ -19,6 +25,8 @@ export interface RAGResponse {
   sources: Document[];
   responseTime: number;
   sessionId?: string;
+  /** Intent detected by the Router Agent — useful for debugging and analytics */
+  intent?: RouterOutput['intent'];
 }
 
 /**
@@ -34,6 +42,23 @@ export interface RAGChainOptions {
   userOrg?: string;           // Optional organization string, e.g. "Khoa Máy tính"
 }
 
+/** Polite rejection for truly off-topic requests (CHITCHAT) */
+const CHITCHAT_REJECTION =
+  'Xin lỗi, tôi chỉ hỗ trợ câu hỏi về hoạt động Công tác xã hội tại Trường Đại học Bách khoa - Đại học Quốc gia TP.HCM.';
+
+/** Friendly greeting response for GREETING intent */
+const GREETING_RESPONSE = [
+  'Xin chào bạn! 👋 Tôi là trợ lý ảo chuyên tư vấn về các hoạt động **Công tác Xã hội (CTXH)** tại Đại học Bách Khoa TP.HCM.',
+  '',
+  'Tôi có thể giúp bạn:',
+  '• 🔍 **Tìm kiếm hoạt động CTXH** theo thời gian, địa điểm, danh mục (hiến máu, tình nguyện, hội trại,...)',
+  '• 📋 **Tra cứu thông tin chi tiết**: thời gian, địa điểm, số ngày CTXH được tính',
+  '• 🏫 **Tìm hoạt động theo tổ chức/khoa** (ví dụ: hoạt động của Liên chi đoàn Khoa Máy tính)',
+  '• 📅 **Kiểm tra trạng thái**: đang mở đăng ký, sắp diễn ra, đã kết thúc',
+  '',
+  'Hãy đặt câu hỏi cho tôi nhé! 😊',
+].join('\n');
+
 /**
  * LangChain RAG Chain Service
  * Core RAG implementation using LangChain.js
@@ -44,7 +69,6 @@ export class LangChainRagChainService implements OnModuleInit {
   private readonly logger = new Logger(LangChainRagChainService.name);
   private llm: BaseChatModel;
   private ragChain: RunnableSequence;
-  private questionRewriteChain: RunnableSequence;
   private initialized = false;
 
   constructor(
@@ -82,9 +106,7 @@ export class LangChainRagChainService implements OnModuleInit {
 
       // Build main RAG chain
       this.ragChain = this.buildRAGChain();
-
-      // Build question rewrite chain for contextual questions
-      this.questionRewriteChain = this.buildQuestionRewriteChain();
+      // Router Agent runs per-request via routeQuestion() — no chain to pre-build.
 
       this.initialized = true;
       this.logger.log('LangChain RAG chains initialized successfully');
@@ -106,22 +128,49 @@ export class LangChainRagChainService implements OnModuleInit {
   }
 
   /**
-   * Rewrite question if there's chat history (for contextual understanding)
+   * Router Agent: combines question rewriting + intent classification in one LLM call.
+   *
+   * Replaces the old `processQuestion()` + `buildQuestionRewriteChain()` pair.
+   * Returns both a standalone rewritten question AND an intent label so the
+   * caller can short-circuit the expensive retrieval path for CHITCHAT queries.
+   *
+   * Optimised for Qwen running on Ollama:
+   *  - Uses `withStructuredOutput` (Zod) — avoids brittle JSON string parsing.
+   *  - Prompt includes `/no_think` to suppress Qwen's reasoning block output.
+   *  - Falls back gracefully: on error, treats the question as RAG_QUERY unchanged.
    */
-  private async processQuestion(question: string, chatHistory: string): Promise<string> {
-    if (chatHistory && chatHistory.length > 0) {
-      try {
-        const processedQuestion = await this.questionRewriteChain.invoke({
-          question,
-          chat_history: chatHistory,
-        });
-        this.logger.debug(`Rewritten question: ${processedQuestion}`);
-        return processedQuestion;
-      } catch (error) {
-        this.logger.warn('Question rewrite failed, using original', error);
-      }
+  private async routeQuestion(
+    question: string,
+    chatHistory: string,
+  ): Promise<RouterOutput> {
+    try {
+      const structuredLlm = this.llm.withStructuredOutput(RouterOutputSchema, {
+        name: 'route_question',
+      });
+
+      const chain = ROUTER_AGENT_PROMPT.pipe(structuredLlm);
+
+      const result = await chain.invoke({
+        question,
+        chat_history: chatHistory,
+      }) as RouterOutput;
+
+      this.logger.debug(
+        `[RouterAgent] intent=${result.intent} | rewritten="${result.rewrittenQuestion.slice(0, 80)}"`,
+      );
+
+      return result;
+    } catch (error) {
+      // Graceful degradation: if the router fails (e.g. malformed JSON from model),
+      // treat as RAG_QUERY with the original question so the user still gets an answer.
+      this.logger.warn(
+        `[RouterAgent] Failed to route question, falling back to RAG_QUERY: ${error?.message}`,
+      );
+      return {
+        rewrittenQuestion: question,
+        intent: 'RAG_QUERY',
+      };
     }
-    return question;
   }
 
   /**
@@ -181,6 +230,167 @@ export class LangChainRagChainService implements OnModuleInit {
     return docs;
   }
 
+  /**
+   * Dynamic Tool Selection (Phase 3 — Option A: Lightweight bindTools).
+   *
+   * Asks the LLM to select ONE search tool from {search_with_filters,
+   * search_semantic, search_diverse} by calling `llm.bindTools(RAG_TOOLS)`.
+   * We parse the resulting `tool_calls[0].name` and execute the matching
+   * VectorStore method ourselves — no AgentExecutor, no loop.
+   *
+   * Tool routing:
+   *  search_with_filters → retrieveDocuments()   (filter extraction + SQL WHERE)
+   *  search_semantic     → similaritySearchWithDateFilter() (no filter extraction)
+   *  search_diverse      → maxMarginalRelevanceSearch() (MMR, diverse results)
+   *
+   * Fallback hierarchy (graceful degradation):
+   *  1. No tool_call returned → retrieveDocuments() with useMMR flag (old logic)
+   *  2. bindTools() / invoke() throws → retrieveDocuments() with useMMR flag
+   *
+   * Optimised for Qwen / Ollama:
+   *  - /no_think in TOOL_SELECTOR_PROMPT prevents reasoning block pollution.
+   *  - Tool descriptions carry the selection examples (prompt is minimal).
+   *  - Fallback ensures correctness even when model ignores tool calling.
+   */
+  private async selectAndExecuteTool(
+    question: string,
+    currentDate: string,
+    topK: number,
+    useMMR: boolean,
+  ): Promise<Document[]> {
+    try {
+      // Bind all 3 search tools to a dedicated LLM call
+      const llmWithTools = this.llm.bindTools([...RAG_TOOLS]);
+      const chain = TOOL_SELECTOR_PROMPT.pipe(llmWithTools);
+
+      const result = await chain.invoke({
+        question,
+        current_date: currentDate,
+      });
+
+      // Parse which tool the LLM selected
+      const toolCalls = (result as any).tool_calls as Array<{ name: string; args: Record<string, any> }> | undefined;
+      const selectedTool = toolCalls?.[0]?.name as RagToolName | undefined;
+
+      this.logger.debug(`[ToolSelector] Selected: ${selectedTool ?? 'none — using fallback'}`);
+
+      switch (selectedTool) {
+        // ── search_with_filters: LLM extracts metadata filters then runs SQL-filtered search ─
+        case RAG_TOOL_NAMES.FILTERED_SEARCH:
+          return this.retrieveDocuments(question, currentDate, topK, false);
+
+        // ── search_semantic: pure embedding similarity, skips filter extraction ──────────
+        case RAG_TOOL_NAMES.SEMANTIC_SEARCH:
+          return this.vectorStoreService.similaritySearchWithDateFilter(
+            question,
+            topK,
+            currentDate,
+            'all',
+          );
+
+        // ── search_diverse: MMR for variety when user wants broad overview ───────────
+        case RAG_TOOL_NAMES.DIVERSE_SEARCH:
+          return this.vectorStoreService.maxMarginalRelevanceSearch(
+            question,
+            { k: topK, fetchK: topK * 4, lambda: 0.5 },
+          );
+
+        // ── Fallback: model returned no tool call ──────────────────────────────────
+        default:
+          this.logger.warn('[ToolSelector] No tool call in response — falling back to retrieveDocuments()');
+          return this.retrieveDocuments(question, currentDate, topK, useMMR);
+      }
+    } catch (error) {
+      // Graceful degradation: bindTools / invoke failure must never crash the pipeline.
+      this.logger.warn(
+        `[ToolSelector] Tool selection failed — falling back to retrieveDocuments(): ${error?.message}`,
+      );
+      return this.retrieveDocuments(question, currentDate, topK, useMMR);
+    }
+  }
+
+  /**
+   * Retrieve-Then-Verify: wraps retrieveDocuments() with an LLM-driven fallback.
+   *
+   * Strategy (per Phase 2 design decisions):
+   *  - Insufficient threshold : docs.length === 0
+   *  - When insufficient      : Verifier LLM proposes a stripped-down semantic query;
+   *                             we re-run similaritySearchWithDateFilter (no hard filters)
+   *                             and merge the results, deduplicating by activityId.
+   *  - When sufficient        : Pass-through, no extra LLM call (zero added latency).
+   *
+   * Optimised for Qwen / Ollama:
+   *  - Verifier uses withStructuredOutput + /no_think prompt.
+   *  - Falls back gracefully: if the verifier itself fails, the original (empty)
+   *    docs array is returned so the generation step can respond "no info found".
+   */
+  private async retrieveDocumentsWithVerification(
+    question: string,
+    currentDate: string,
+    topK: number,
+    useMMR: boolean,
+  ): Promise<Document[]> {
+    // ── Dynamic Tool Selection (Phase 3) then Verify (Phase 2) ────────────
+    const docs = await this.selectAndExecuteTool(question, currentDate, topK, useMMR);
+
+    // ── Fast-path: results exist → skip verifier entirely ─────────────────────
+    if (docs.length > 0) {
+      this.logger.debug(
+        `[Verifier] Primary retrieval returned ${docs.length} docs — skipping verification`,
+      );
+      return docs;
+    }
+
+    // ── Verifier LLM call: propose a simplified fallback query ─────────────────
+    this.logger.warn(
+      `[Verifier] Primary retrieval returned 0 docs — invoking verifier LLM for "${question.slice(0, 60)}…"`,
+    );
+
+    try {
+      const structuredLlm = this.llm.withStructuredOutput(VerifierOutputSchema, {
+        name: 'verify_retrieval',
+      });
+
+      const verifierResult = await RETRIEVAL_VERIFIER_PROMPT.pipe(structuredLlm).invoke({
+        question,
+      });
+
+      this.logger.debug(
+        `[Verifier] verdict=${verifierResult.verdict} | supplementQuery="${verifierResult.supplementQuery}"`,
+      );
+
+      // ── Semantic fallback search ───────────────────────────────────────────────
+      if (verifierResult.verdict === 'NEEDS_SUPPLEMENT' && verifierResult.supplementQuery) {
+        const fallbackQuery = verifierResult.supplementQuery;
+
+        const supplementDocs = await this.vectorStoreService.similaritySearchWithDateFilter(
+          fallbackQuery,
+          topK,
+          currentDate,
+          'all',
+        );
+
+        this.logger.debug(
+          `[Verifier] Fallback semantic search returned ${supplementDocs.length} docs`,
+        );
+
+        // Deduplicate by activityId (primary docs is empty here, but guard anyway)
+        const seen = new Set(docs.map((d) => d.metadata?.activityId).filter(Boolean));
+        const newDocs = supplementDocs.filter((d) => !seen.has(d.metadata?.activityId));
+
+        return [...docs, ...newDocs].slice(0, topK);
+      }
+    } catch (error) {
+      // Graceful degradation: verifier failure must never crash the pipeline.
+      // Return the original empty array so generation can say "no info found".
+      this.logger.warn(
+        `[Verifier] Verifier LLM failed — returning empty docs: ${error?.message}`,
+      );
+    }
+
+    return docs; // empty array — generation will respond "no information found"
+  }
+
   private normalizeActivityStatus(status: unknown): ActivityStatus | undefined {
     if (!status || typeof status !== 'string') {
       return undefined;
@@ -196,17 +406,6 @@ export class LangChainRagChainService implements OnModuleInit {
 
 
 
-  /**
-   * Build chain for rewriting contextual questions
-   */
-  private buildQuestionRewriteChain(): RunnableSequence {
-    return RunnableSequence.from([
-      RunnablePassthrough.assign({}),
-      STANDALONE_QUESTION_PROMPT,
-      this.llm,
-      new StringOutputParser(),
-    ]);
-  }
 
   /**
    * Invoke RAG chain with a question
@@ -232,29 +431,65 @@ export class LangChainRagChainService implements OnModuleInit {
     } = options;
 
     try {
-      // Get chat history if session exists
+      // ── Step 1: Load chat history ──────────────────────────────────────────
       let chatHistory = '';
       if (sessionId && includeHistory) {
         chatHistory = await this.memoryService.getFormattedHistory(sessionId);
       }
 
-      // Rewrite question if there's chat history (for contextual understanding)
-      const processedQuestion = await this.processQuestion(question, chatHistory);
+      // ── Step 2: Router Agent — rewrite + classify intent ───────────────────
+      const routerOutput = await this.routeQuestion(question, chatHistory);
+      const { rewrittenQuestion, intent } = routerOutput;
 
-      // Get source documents using unified pipeline (with filters)
-      const sources = await this.retrieveDocuments(processedQuestion, currentDate, k, useMMR);
+      // ── Step 3: GREETING — friendly intro, no retrieval needed ───────────────
+      if (intent === 'GREETING') {
+        this.logger.debug('[RouterAgent] GREETING intent — returning intro response');
+        if (sessionId) {
+          await this.memoryService.saveInteraction(sessionId, question, GREETING_RESPONSE);
+        }
+        return {
+          response: GREETING_RESPONSE,
+          sources: [],
+          responseTime: Date.now() - startTime,
+          sessionId,
+          intent,
+        };
+      }
 
-      // Format documents as context string
+      // ── Step 4: CHITCHAT early-exit (no retrieval needed) ────────────────────
+      if (intent === 'CHITCHAT') {
+        this.logger.debug('[RouterAgent] CHITCHAT intent — skipping retrieval');
+        if (sessionId) {
+          await this.memoryService.saveInteraction(sessionId, question, CHITCHAT_REJECTION);
+        }
+        return {
+          response: CHITCHAT_REJECTION,
+          sources: [],
+          responseTime: Date.now() - startTime,
+          sessionId,
+          intent,
+        };
+      }
+
+      // ── Step 4: DOC_QUERY falls through to RAG (Phase 1 decision) ──────────
+      // Future: route DOC_QUERY to a dedicated FAQ handler.
+      if (intent === 'DOC_QUERY') {
+        this.logger.debug('[RouterAgent] DOC_QUERY intent — falling through to RAG pipeline');
+      }
+
+      // ── Step 5: Retrieve documents (with Retrieve-Then-Verify) ──────────
+      const sources = await this.retrieveDocumentsWithVerification(rewrittenQuestion, currentDate, k, useMMR);
+
+      // ── Step 6: Format context ─────────────────────────────────────────────
       const formattedContext = this.formatDocumentsAsContext(sources, currentDate);
 
-      // Format userOrgInstruction
       const userOrgInstruction = userOrg
         ? `\nNếu người dùng thuộc tổ chức "${userOrg}", hãy ưu tiên đề cập các hoạt động của tổ chức này lên trên cùng nếu có trong context.`
         : '';
 
-      // Run RAG chain
+      // ── Step 7: Generate response ──────────────────────────────────────────
       const response = await this.ragChain.invoke({
-        question: processedQuestion,
+        question: rewrittenQuestion,
         chat_history: chatHistory,
         context: formattedContext,
         current_date: currentDate,
@@ -273,6 +508,7 @@ export class LangChainRagChainService implements OnModuleInit {
         sources,
         responseTime: Date.now() - startTime,
         sessionId,
+        intent,
       };
     } catch (error) {
       this.logger.error('RAG chain invocation failed', error);
@@ -303,29 +539,54 @@ export class LangChainRagChainService implements OnModuleInit {
     } = options;
 
     try {
-      // Get chat history
+      // ── Step 1: Load chat history ──────────────────────────────────────────
       let chatHistory = '';
       if (sessionId && includeHistory) {
         chatHistory = await this.memoryService.getFormattedHistory(sessionId);
       }
 
-      // Rewrite question if there's chat history
-      const processedQuestion = await this.processQuestion(question, chatHistory);
+      // ── Step 2: Router Agent — rewrite + classify intent ───────────────────
+      const routerOutput = await this.routeQuestion(question, chatHistory);
+      const { rewrittenQuestion, intent } = routerOutput;
 
-      // Get source documents using unified pipeline (with filters)
-      const sources = await this.retrieveDocuments(processedQuestion, currentDate, k, useMMR);
+      // ── Step 3: GREETING — friendly intro, no retrieval needed (stream) ──────
+      if (intent === 'GREETING') {
+        this.logger.debug('[RouterAgent] GREETING intent — returning intro response (stream)');
+        yield GREETING_RESPONSE;
+        if (sessionId) {
+          await this.memoryService.saveInteraction(sessionId, question, GREETING_RESPONSE);
+        }
+        return;
+      }
 
-      // Format documents as context string
+      // ── Step 4: CHITCHAT early-exit — yield single token then return ──────────
+      if (intent === 'CHITCHAT') {
+        this.logger.debug('[RouterAgent] CHITCHAT intent — skipping retrieval (stream)');
+        yield CHITCHAT_REJECTION;
+        if (sessionId) {
+          await this.memoryService.saveInteraction(sessionId, question, CHITCHAT_REJECTION);
+        }
+        return;
+      }
+
+      // ── Step 4: DOC_QUERY falls through to RAG (Phase 1 decision) ──────────
+      if (intent === 'DOC_QUERY') {
+        this.logger.debug('[RouterAgent] DOC_QUERY intent — falling through to RAG pipeline (stream)');
+      }
+
+      // ── Step 5: Retrieve documents (with Retrieve-Then-Verify) ──────────
+      const sources = await this.retrieveDocumentsWithVerification(rewrittenQuestion, currentDate, k, useMMR);
+
+      // ── Step 6: Format context ─────────────────────────────────────────────
       const formattedContext = this.formatDocumentsAsContext(sources, currentDate);
 
-      // Format userOrgInstruction
       const userOrgInstruction = userOrg
         ? `\nNếu người dùng thuộc tổ chức "${userOrg}", hãy ưu tiên đề cập các hoạt động của tổ chức này lên trên cùng nếu có trong context.`
         : '';
 
-      // Stream from chain
+      // ── Step 7: Stream response ────────────────────────────────────────────
       const stream = await this.ragChain.stream({
-        question: processedQuestion,
+        question: rewrittenQuestion,
         chat_history: chatHistory,
         context: formattedContext,
         current_date: currentDate,

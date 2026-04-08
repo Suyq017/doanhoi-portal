@@ -26,15 +26,6 @@ Ngày hiện tại (dùng làm mốc): {current_date}
 • "đã kết thúc / đã qua / đã diễn ra / trước đây / đã hết" → ended
 
 ═══════════════════════════════════════
- DANH SÁCH DANH MỤC HỢP LỆ VÀ BẢNG ÁNH XẠ (category)
-═══════════════════════════════════════
-Danh sách danh mục có sẵn:
-{category_list}
-
-Từ khóa tham khảo (Không nhất thiết phải giống i đúc toàn bộ):
-{category_keyword_map}
-
-═══════════════════════════════════════
  TỔ CHỨC (organizationKeywords & organizationLevel)
 ═══════════════════════════════════════
 Cấp trường (parent):
@@ -70,10 +61,10 @@ Ví dụ:
  VÍ DỤ
 ═══════════════════════════════════════
 Câu hỏi: "Có hoạt động dọn dẹp nào đang mở ở cơ sở 1 không?"
-→ status: ["ongoing"], category: ["Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)"], locationRaw: ["cơ sở 1"]
+→ status: ["ongoing"], locationRaw: ["cơ sở 1"]
 
 Câu hỏi: "Hoạt động hiến máu sắp tới của khoa Máy tính"
-→ status: ["upcoming"], category: ["Hiến máu tình nguyện"], organizationKeywords: ["Máy tính"], organizationLevel: "child"
+→ status: ["upcoming"], organizationKeywords: ["Máy tính"], organizationLevel: "child"
 
 Câu hỏi: "Cho tôi biết các hoạt động CTXH hôm nay"
 → status: ["ongoing"], dateRange: {{ isToday: true }}
@@ -84,8 +75,7 @@ Câu hỏi: "Liệt kê tất cả hoạt động"
 QUY TẮC BẮT BUỘC:
 1. Chỉ trích xuất filter khi câu hỏi đề cập TRỰC TIẾP. Không suy đoán.
 2. Nếu câu hỏi quá chung chung (ví dụ "hoạt động nào?"), trả về object rỗng {{}}.
-3. Trả về ĐÚNG tên danh mục đã chuẩn hóa. Đối với địa điểm, trả về NGUYÊN VĂN (locationRaw), KHÔNG chuẩn hóa.
-4. Category values MUST come from the provided list only. If no category clearly matches -> return empty array. No inference, no semantic similarity, no new names.`,
+3. Đối với địa điểm, trả về NGUYÊN VĂN (locationRaw), KHÔNG chuẩn hóa.`,
   ],
   ['human', '{question}'],
 ]);

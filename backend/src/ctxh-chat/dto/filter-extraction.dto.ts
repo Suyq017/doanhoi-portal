@@ -29,13 +29,13 @@ export const MetadataFilterSchema = z.object({
    * Exact category names after Vietnamese synonym mapping.
    * Examples: "Công tác xã hội", "Hiến máu tình nguyện"
    */
-  category: z
-    .array(z.enum(VALID_CATEGORIES))
-    .optional()
-    .describe(
-      'Danh mục hoạt động CTXH. Tính năng trích xuất danh mục. Trả về đúng tên danh mục đã định sẵn. ' +
-      'Trả về tên danh mục chính xác, không trả về từ khóa gốc.',
-    ),
+  // category: z
+  //   .array(z.enum(VALID_CATEGORIES))
+  //   .optional()
+  //   .describe(
+  //     'Danh mục hoạt động CTXH. Tính năng trích xuất danh mục. Trả về đúng tên danh mục đã định sẵn. ' +
+  //     'Trả về tên danh mục chính xác, không trả về từ khóa gốc.',
+  //   ),
 
   /**
    * Free-text keyword(s) to match against organizationName via ILIKE.
