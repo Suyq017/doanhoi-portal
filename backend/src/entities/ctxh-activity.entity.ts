@@ -48,6 +48,12 @@ export class CtxhActivity {
   @Column({ type: "varchar", length: 500, nullable: true })
   location: string;
 
+  @Column({ type: "boolean", default: false })
+  requires_approval: boolean;
+
+  @Column({ type: "integer", nullable: true })
+  max_participants: number;
+
   @Column({
     type: "enum",
     enum: ActivityStatus,

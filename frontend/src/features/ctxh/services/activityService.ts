@@ -24,6 +24,8 @@ export class ActivityService {
       organizationId: activity.organization_id,
       totalDays: activity.total_days,
       location: activity.location, // Add location field mapping
+      requiresApproval: activity.requires_approval,
+      maxParticipants: activity.max_participants,
       createdAt: activity.created_at,
       updatedAt: activity.updated_at,
       createdBy: activity.created_by,
@@ -60,6 +62,16 @@ export class ActivityService {
     if ('totalDays' in data && data.totalDays) {
       transformed.total_days = data.totalDays;
       delete transformed.totalDays;
+    }
+
+    if ('requiresApproval' in data) {
+      transformed.requires_approval = (data as any).requiresApproval;
+      delete transformed.requiresApproval;
+    }
+
+    if ('maxParticipants' in data) {
+      transformed.max_participants = (data as any).maxParticipants;
+      delete transformed.maxParticipants;
     }
     
     return transformed;
@@ -131,6 +143,36 @@ export class ActivityService {
   // Add single student manually by student code
   async addStudent(activityId: string, data: AddStudentRequest): Promise<ParticipationResponse> {
     return apiClient.post<ParticipationResponse>(`${this.basePath}/${activityId}/participants`, data);
+  }
+
+  // Student self registration
+  async registerSelf(activityId: string): Promise<ParticipationResponse> {
+    return apiClient.post<ParticipationResponse>(`${this.basePath}/${activityId}/register`);
+  }
+
+  // Student cancels pending registration
+  async cancelSelfRegistration(activityId: string): Promise<{ message: string }> {
+    return apiClient.delete<{ message: string }>(`${this.basePath}/${activityId}/register`);
+  }
+
+  // Manager gets pending registration list
+  async getPendingParticipants(activityId: string): Promise<ParticipationResponse[]> {
+    return apiClient.get<ParticipationResponse[]>(`${this.basePath}/${activityId}/participants/pending`);
+  }
+
+  // Manager approves one pending registration
+  async approveParticipant(activityId: string, participationId: string): Promise<ParticipationResponse> {
+    return apiClient.post<ParticipationResponse>(`${this.basePath}/${activityId}/participants/${participationId}/approve`);
+  }
+
+  // Manager approves multiple pending registrations
+  async approveParticipantsBatch(
+    activityId: string,
+    participationIds: string[],
+  ): Promise<{ successful: { participation_id: string }[]; failed: { participation_id: string; error: string }[]; total: number }> {
+    return apiClient.post(`${this.basePath}/${activityId}/participants/approve-batch`, {
+      participation_ids: participationIds,
+    });
   }
 
   // Upload Excel file with student list

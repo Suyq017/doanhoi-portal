@@ -28,10 +28,8 @@ interface SimpleImportModalProps {
  * SimpleImportModal - Simplified import modal for Classes and Organizations
  * 
  * Key differences from ImportModal:
- * - Only shows valid records in preview table (no error rows)
- * - Disables import button if any validation errors exist
+ * - Keeps import button disabled when validation errors exist
  * - Shows error/warning summary at bottom of preview
- * - Cleaner, simpler UI focused on valid data
  * - Increased preview limit to 20 records per page
  */
 const SimpleImportModal = ({
@@ -352,19 +350,61 @@ const SimpleImportModal = ({
         }
     };
 
+    const getCellValue = (item: any, key: string): any => {
+        if (!item || typeof item !== 'object') return undefined;
+        if (item[key] !== undefined && item[key] !== null) return item[key];
+
+        const fallbackKeyMap: Record<string, string[]> = {
+            studentCode: ['student_code', 'studentId', 'student_id', 'code'],
+            name: ['fullName', 'full_name', 'studentName', 'student_name'],
+            email: ['studentEmail', 'student_email', 'mail']
+        };
+
+        const candidates = fallbackKeyMap[key] || [];
+        for (const candidate of candidates) {
+            if (item[candidate] !== undefined && item[candidate] !== null) {
+                return item[candidate];
+            }
+        }
+
+        return undefined;
+    };
+
     const getDisplayRows = () => {
         const validation = state.clientValidation || state.serverValidation;
         if (!validation) return [];
 
-        // Get only valid records
         let rows: any[] = [];
-        
+
         if (state.clientValidation) {
-            // For client-side validation, use validation.data which contains only valid records
-            // (createValidationResult returns data: validData, previewData: allData)
-            rows = state.clientValidation.data || [];
+            if (Array.isArray(state.clientValidation.previewData) && state.clientValidation.previewData.length > 0) {
+                rows = state.clientValidation.previewData.map((row: any, index: number) => {
+                    const rowNumber = (typeof row._rowIndex === 'number' && row._rowIndex > 0)
+                        ? row._rowIndex
+                        : index + 1;
+
+                    const rowErrors = (state.clientValidation?.errors || []).filter((error: any) => {
+                        return typeof error === 'object' && typeof error.row === 'number' && error.row === rowNumber;
+                    });
+
+                    const rowWarnings = (state.clientValidation?.warnings || []).filter((warning: any) => {
+                        return typeof warning === 'object' && typeof warning.row === 'number' && warning.row === rowNumber;
+                    });
+
+                    return {
+                        ...row,
+                        _rowIndex: rowNumber,
+                        _errors: rowErrors,
+                        _warnings: rowWarnings
+                    };
+                });
+            } else if (state.clientData) {
+                rows = state.clientData.map((row: any, index: number) => ({
+                    ...row,
+                    _rowIndex: index + 1
+                }));
+            }
         } else if (state.serverValidation) {
-            // For server-side validation, use previewData (assume it's filtered)
             rows = state.serverValidation.previewData || [];
         }
 
@@ -384,11 +424,13 @@ const SimpleImportModal = ({
         const validation = state.clientValidation || state.serverValidation;
         if (!validation) return 0;
 
-        // Count only valid records
         let totalRows = 0;
         if (state.clientValidation) {
-            // validation.data contains only valid records
-            totalRows = (state.clientValidation.data || []).length;
+            if (Array.isArray(state.clientValidation.previewData) && state.clientValidation.previewData.length > 0) {
+                totalRows = state.clientValidation.previewData.length;
+            } else {
+                totalRows = (state.clientData || []).length;
+            }
         } else if (state.serverValidation) {
             totalRows = (state.serverValidation.previewData || []).length;
         }
@@ -400,11 +442,13 @@ const SimpleImportModal = ({
         const validation = state.clientValidation || state.serverValidation;
         if (!validation) return { start: 0, end: 0, total: 0 };
 
-        // Count only valid records
         let totalRows = 0;
         if (state.clientValidation) {
-            // validation.data contains only valid records
-            totalRows = (state.clientValidation.data || []).length;
+            if (Array.isArray(state.clientValidation.previewData) && state.clientValidation.previewData.length > 0) {
+                totalRows = state.clientValidation.previewData.length;
+            } else {
+                totalRows = (state.clientData || []).length;
+            }
         } else if (state.serverValidation) {
             totalRows = (state.serverValidation.previewData || []).length;
         }
@@ -631,7 +675,7 @@ const SimpleImportModal = ({
                     </div>
                 </div>
 
-                {/* Preview Table - Only Valid Records */}
+                {/* Preview Table - Show all records with status */}
                 <div className="overflow-hidden border rounded-lg">
                     <div className="overflow-auto max-h-96">
                         <table className="min-w-full">
@@ -657,25 +701,42 @@ const SimpleImportModal = ({
                             </thead>
                             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                                 {displayRows.map((item: any, index: number) => {
-                                    const rowNumber = showAllRows ? index + 1 : getCurrentRowRange().start + index;
+                                    const rowNumber = item._rowIndex || (showAllRows ? index + 1 : getCurrentRowRange().start + index);
+                                    const hasErrors = item.hasErrors || item._hasError || (item._errors && item._errors.length > 0);
+                                    const hasWarnings = item.hasWarnings || (item._warnings && item._warnings.length > 0);
 
                                     return (
                                         <tr
                                             key={index}
-                                            className="transition-colors bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                            className={`transition-colors ${hasErrors
+                                                ? 'bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20'
+                                                : hasWarnings
+                                                    ? 'bg-yellow-50 dark:bg-yellow-900/10 hover:bg-yellow-100 dark:hover:bg-yellow-900/20'
+                                                    : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                                }`}
                                         >
                                             <td className="px-4 py-3 font-mono text-sm text-gray-500 dark:text-gray-400">
                                                 {rowNumber}
                                             </td>
                                             {config.columns.map(col => (
                                                 <td key={col.key} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                                    {renderCellValue(item[col.key], col.type)}
+                                                    {renderCellValue(getCellValue(item, col.key), col.type)}
                                                 </td>
                                             ))}
                                             <td className="px-4 py-3 text-center">
-                                                <div className="flex items-center justify-center">
-                                                    <CheckCircle className="w-4 h-4 text-green-500" />
-                                                </div>
+                                                {hasErrors ? (
+                                                    <div className="flex items-center justify-center">
+                                                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                                                    </div>
+                                                ) : hasWarnings ? (
+                                                    <div className="flex items-center justify-center">
+                                                        <AlertCircle className="w-4 h-4 text-yellow-500" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center justify-center">
+                                                        <CheckCircle className="w-4 h-4 text-green-500" />
+                                                    </div>
+                                                )}
                                             </td>
                                         </tr>
                                     );

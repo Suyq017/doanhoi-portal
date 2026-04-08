@@ -6,17 +6,30 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, IsNull } from "typeorm";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { CtxhActivity } from "../../entities/ctxh-activity.entity";
 import { CtxhCategory } from "../../entities/ctxh-category.entity";
 import {
   CtxhLimitConfig,
   LimitConfigStatus,
 } from "../../entities/ctxh-limit-config.entity";
+import {
+  CtxhParticipation,
+  ParticipationStatus,
+} from "../../entities/ctxh-participation.entity";
 import { Organization } from "../../entities/organization.entity";
 import { CreateActivityDto } from "./dto/create-activity.dto";
 import { UpdateActivityDto } from "./dto/update-activity.dto";
 import { ActivityResponseDto } from "./dto/activity-response.dto";
 import { OrganizationsService } from "../../organizations/organizations.service";
+import {
+  ActivityCreatedEvent,
+  ActivityUpdatedEvent,
+  ActivityDeletedEvent,
+  ActivityRestoredEvent,
+  ActivityStatusChangedEvent,
+  ACTIVITY_EVENTS,
+} from "./events/activity.events";
 
 interface FindAllOptions {
   page: number;
@@ -39,9 +52,12 @@ export class ActivitiesService {
     private categoryRepository: Repository<CtxhCategory>,
     @InjectRepository(CtxhLimitConfig)
     private limitConfigRepository: Repository<CtxhLimitConfig>,
+    @InjectRepository(CtxhParticipation)
+    private participationRepository: Repository<CtxhParticipation>,
     @InjectRepository(Organization)
     private organizationRepository: Repository<Organization>,
     private organizationsService: OrganizationsService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   async create(
@@ -103,12 +119,29 @@ export class ActivitiesService {
       }
     }
 
+    if (
+      createActivityDto.max_participants !== undefined &&
+      createActivityDto.max_participants !== null &&
+      createActivityDto.max_participants < 0
+    ) {
+      throw new BadRequestException(
+        "Số lượng sinh viên tối đa phải lớn hơn hoặc bằng 0",
+      );
+    }
+
     const activity = this.activityRepository.create({
       ...createActivityDto,
+      requires_approval: createActivityDto.requires_approval ?? false,
       created_by: createdBy,
     });
 
     const savedActivity = await this.activityRepository.save(activity);
+
+    // 🔥 Emit event — CtxhVectorSyncService sẽ đẩy job embedding vào BullMQ
+    this.eventEmitter.emit(
+      ACTIVITY_EVENTS.CREATED,
+      new ActivityCreatedEvent(savedActivity.id, savedActivity.name, createdBy),
+    );
 
     return this.findOne(savedActivity.id);
   }
@@ -244,10 +277,10 @@ export class ActivitiesService {
       queryBuilder.andWhere("activity.status = :status", { status });
     }
 
-    // Filter by search term if provided (search in name and description)
+    // Filter by search term if provided (search in name, description, location, and organization name)
     if (search && search.trim()) {
       queryBuilder.andWhere(
-        "(LOWER(activity.name) LIKE LOWER(:search) OR LOWER(activity.description) LIKE LOWER(:search))",
+        "(LOWER(activity.name) LIKE LOWER(:search) OR LOWER(activity.description) LIKE LOWER(:search) OR LOWER(activity.location) LIKE LOWER(:search) OR LOWER(organization.name) LIKE LOWER(:search))",
         { search: `%${search.trim()}%` },
       );
     }
@@ -409,6 +442,8 @@ export class ActivitiesService {
       name: activity.name,
       description: activity.description,
       location: activity.location, // Add location field
+      requires_approval: activity.requires_approval,
+      max_participants: activity.max_participants,
       category_id: activity.category_id,
       category: activity.category,
       organization_id: activity.organization_id,
@@ -500,6 +535,8 @@ export class ActivitiesService {
       name: activity.name,
       description: activity.description,
       location: activity.location, // Add location field
+      requires_approval: activity.requires_approval,
+      max_participants: activity.max_participants,
       category_id: activity.category_id,
       category: activity.category,
       organization_id: activity.organization_id,
@@ -584,11 +621,62 @@ export class ActivitiesService {
       }
     }
 
+    // Lưu trạng thái cũ trước khi update để phát hiện status_changed
+    const oldStatus = activity.status;
+    const changedFields = Object.keys(updateActivityDto);
+    if (
+      updateActivityDto.max_participants !== undefined &&
+      updateActivityDto.max_participants !== null
+    ) {
+      if (updateActivityDto.max_participants < 0) {
+        throw new BadRequestException(
+          "Số lượng sinh viên tối đa phải lớn hơn hoặc bằng 0",
+        );
+      }
+
+      const approvedParticipantsCount = await this.participationRepository
+        .createQueryBuilder("participation")
+        .where("participation.activity_id = :activityId", { activityId: id })
+        .andWhere("participation.deleted_at IS NULL")
+        .andWhere("participation.status IN (:...approvedStatuses)", {
+          approvedStatuses: [
+            ParticipationStatus.APPROVED,
+            ParticipationStatus.COMPLETED,
+            ParticipationStatus.REGISTERED,
+          ],
+        })
+        .getCount();
+
+      if (updateActivityDto.max_participants < approvedParticipantsCount) {
+        throw new BadRequestException(
+          `Số lượng tối đa phải lớn hơn hoặc bằng số sinh viên đã tham gia hiện tại (${approvedParticipantsCount})`,
+        );
+      }
+    }
+
     await this.activityRepository.update(id, {
       ...updateActivityDto,
+      requires_approval:
+        updateActivityDto.requires_approval ?? activity.requires_approval,
       updated_by: updatedBy,
       updated_at: new Date(),
     });
+
+    // 🔥 Emit STATUS_CHANGED nếu status thay đổi
+    if (updateActivityDto.status && updateActivityDto.status !== oldStatus) {
+      this.eventEmitter.emit(
+        ACTIVITY_EVENTS.STATUS_CHANGED,
+        new ActivityStatusChangedEvent(id, activity.name, oldStatus, updateActivityDto.status),
+      );
+    }
+
+    // 🔥 Emit UPDATED nếu có field nội dung thay đổi
+    if (changedFields.length > 0) {
+      this.eventEmitter.emit(
+        ACTIVITY_EVENTS.UPDATED,
+        new ActivityUpdatedEvent(id, activity.name, changedFields, updatedBy),
+      );
+    }
 
     return this.findOne(id);
   }
@@ -616,6 +704,12 @@ export class ActivitiesService {
       deleted_by: deletedBy,
       deleted_at: new Date(),
     });
+
+    // 🔥 Emit event — xóa vector embedding khỏi store
+    this.eventEmitter.emit(
+      ACTIVITY_EVENTS.DELETED,
+      new ActivityDeletedEvent(id, activity.name, deletedBy),
+    );
 
     return { message: "Xóa hoạt động thành công" };
   }
@@ -655,6 +749,12 @@ export class ActivitiesService {
       updated_by: updatedBy,
       updated_at: new Date(),
     });
+
+    // 🔥 Emit event — re-embed activity đã phục hồi
+    this.eventEmitter.emit(
+      ACTIVITY_EVENTS.RESTORED,
+      new ActivityRestoredEvent(id, activity.name, updatedBy),
+    );
 
     return this.findOne(id);
   }

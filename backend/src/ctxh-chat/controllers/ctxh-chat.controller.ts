@@ -17,6 +17,9 @@ import { LangChainRagChainService } from '../services/langchain-rag-chain.servic
 import { LangChainIngestionService } from '../services/langchain-ingestion.service';
 import { LangChainVectorStoreService } from '../services/langchain-vector-store.service';
 import { LangChainMemoryService } from '../services/langchain-memory.service';
+import { UniversalEmbeddingsService } from '../services/universal-embeddings.service';
+import { UniversalLLMService } from '../services/universal-llm.service';
+import { CtxhVectorSyncService } from '../services/ctxh-vector-sync.service';
 import { ChatRequestDto, ChatResponseDto } from '../dto';
 import type { Request } from 'express';
 
@@ -30,6 +33,9 @@ export class CtxhChatController {
     private readonly memoryService: LangChainMemoryService,
     private readonly ingestionService: LangChainIngestionService,
     private readonly vectorStoreService: LangChainVectorStoreService,
+    private readonly universalEmbeddingsService: UniversalEmbeddingsService,
+    private readonly universalLLMService: UniversalLLMService,
+    private readonly vectorSyncService: CtxhVectorSyncService,
   ) {}
 
   // ========== RAG CHAT ENDPOINTS ==========
@@ -47,7 +53,17 @@ export class CtxhChatController {
   ): Promise<ChatResponseDto> {
     const userId = (request as any).user?.id;
     const sessionId = chatRequestDto.sessionId || `session_${userId}_${Date.now()}`;
-    
+
+    // Lấy thời gian thực (GMT+7)
+    const now = new Date();
+    const currentDate = now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }); // YYYY-MM-DD
+    const currentDayOfWeek = now.toLocaleDateString('vi-VN', { weekday: 'long', timeZone: 'Asia/Ho_Chi_Minh' });
+    const currentDatetime = now.toLocaleString('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit',
+    });
+
     const response = await this.ragChainService.invoke(
       chatRequestDto.message,
       sessionId,
@@ -55,6 +71,9 @@ export class CtxhChatController {
         k: 5,
         useMMR: false,
         includeHistory: true,
+        currentDate,
+        currentDayOfWeek,
+        currentDatetime,
       }
     );
 
@@ -69,12 +88,16 @@ export class CtxhChatController {
         activityName: doc.metadata?.activityName,
         organizationName: doc.metadata?.organizationName,
         content: doc.pageContent.substring(0, 200) + '...',
-        similarityScore: doc.metadata?.score || 0,
+        similarityScore: doc.metadata?.score ?? 0,
       })),
       responseTime: response.responseTime,
       timestamp: new Date(),
       followUpSuggestions,
       confidence: this.calculateConfidence(response.sources.length),
+      // Include full context text for RAGAS evaluation
+      ...(chatRequestDto.evaluation_mode && {
+        contexts: response.sources.map(doc => doc.pageContent),
+      }),
     };
   }
 
@@ -90,15 +113,26 @@ export class CtxhChatController {
   ): Observable<MessageEvent> {
     const userId = (request as any).user?.id;
     const sessionId = chatRequestDto.sessionId || `session_${userId}_${Date.now()}`;
-    
+
+    // Lấy thời gian thực (GMT+7)
+    const now = new Date();
+    const currentDate = now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const currentDayOfWeek = now.toLocaleDateString('vi-VN', { weekday: 'long', timeZone: 'Asia/Ho_Chi_Minh' });
+    const currentDatetime = now.toLocaleString('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit',
+    });
+
     return new Observable(observer => {
       (async () => {
         try {
           const chunks: string[] = [];
-          
+
           for await (const chunk of this.ragChainService.stream(
             chatRequestDto.message,
             sessionId,
+            { currentDate, currentDayOfWeek, currentDatetime },
           )) {
             chunks.push(chunk);
             observer.next({
@@ -188,7 +222,7 @@ export class CtxhChatController {
   // ========== DATA INGESTION ENDPOINTS ==========
 
   @Post('ingestion/full')
-  @UseGuards() // Bỏ authentication cho ingestion endpoints
+  //@UseGuards() // Bỏ authentication cho ingestion endpoints
   @ApiOperation({ summary: 'Run full ingestion pipeline for all activities' })
   @ApiResponse({
     status: 200,
@@ -259,6 +293,25 @@ export class CtxhChatController {
     return this.ingestionService.getIngestionStats();
   }
 
+  // ========== QUEUE ENDPOINTS (Auto-ingestion pipeline) ==========
+
+  @Get('ingestion/queue-status')
+  @UseGuards()
+  @ApiOperation({ summary: 'Get BullMQ queue stats (waiting/active/completed/failed/delayed)' })
+  @ApiResponse({ status: 200, description: 'Queue statistics from Redis' })
+  async getQueueStatus() {
+    return this.vectorSyncService.getQueueStatus();
+  }
+
+  @Post('ingestion/force-sync-all')
+  @UseGuards()
+  @ApiOperation({ summary: 'Add a full re-index job to the BullMQ queue' })
+  @ApiResponse({ status: 201, description: 'Full sync job queued' })
+  async forceSyncAll() {
+    await this.vectorSyncService.forceSyncAll();
+    return { message: 'Full sync job added to queue', queueName: 'vectorize_queue' };
+  }
+
   // ========== HEALTH CHECK ENDPOINTS ==========
 
   @Get('health')
@@ -283,6 +336,33 @@ export class CtxhChatController {
     return {
       status: this.vectorStoreService.isInitialized() ? 'healthy' : 'not initialized',
       initialized: this.vectorStoreService.isInitialized(),
+    };
+  }
+
+  @Get('health/models')
+  @UseGuards() // Bỏ authentication
+  @ApiOperation({ summary: 'Health check for AI models (Ollama/Gemini)' })
+  @ApiResponse({
+    status: 200,
+    description: 'AI models health status',
+  })
+  async checkModelsHealth() {
+    const embeddingsHealth = await this.universalEmbeddingsService.healthCheck();
+    const llmHealth = await this.universalLLMService.healthCheck();
+    const isLocalModel = this.universalEmbeddingsService.isUsingLocalModel();
+
+    return {
+      status: embeddingsHealth && llmHealth ? 'healthy' : 'unhealthy',
+      modelType: isLocalModel ? 'Ollama (Local)' : 'Gemini (Cloud)',
+      embeddings: {
+        healthy: embeddingsHealth,
+        model: this.universalEmbeddingsService.getModelName(),
+        dimension: this.universalEmbeddingsService.getDimension(),
+      },
+      llm: {
+        healthy: llmHealth,
+        model: this.universalLLMService.getModelName(),
+      },
     };
   }
 

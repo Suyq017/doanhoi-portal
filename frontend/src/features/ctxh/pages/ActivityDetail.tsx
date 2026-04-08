@@ -104,11 +104,13 @@ const ActivityDetail: React.FC = () => {
           location: t('activity.location'),
           timePeriod: t('activity.timePeriod'),
           totalDays: t('activity.totalDays'),
+          maxParticipants: t('activity.maxParticipants'),
           description: t('activity.description'),
           noOrganization: t('activity.noOrganizationInfo'),
           noLocation: t('activity.noLocation'),
           noTimePeriod: t('activity.noTimePeriod'),
           days: t('activity.days'),
+          unlimited: t('activity.unlimited'),
           unknown: t('common:labels.unknown')
         }}
       />

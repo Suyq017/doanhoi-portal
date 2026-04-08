@@ -1,6 +1,9 @@
 import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import { EventEmitterModule } from "@nestjs/event-emitter";
+import { BullModule } from "@nestjs/bull";
+import { ScheduleModule } from "@nestjs/schedule";
 import { UsersModule } from "./users/users.module";
 import { OrganizationsModule } from "./organizations/organizations.module";
 import { AuthModule } from "./auth/auth.module";
@@ -23,15 +26,33 @@ import { TemplatesModule } from "./templates/templates.module";
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    EventEmitterModule.forRoot({
+      wildcard: true,
+      delimiter: '.',
+      maxListeners: 20,
+      verboseMemoryLeak: true,
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('REDIS_HOST'),
+          port: configService.get<number>('REDIS_PORT'),
+          password: configService.get('REDIS_PASSWORD'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: "postgres",
-        host: configService.get("DB_HOST", "localhost"),
-        port: configService.get("DB_PORT", 9000),
-        username: configService.get("DB_USERNAME", "postgres"),
-        password: configService.get("DB_PASSWORD", "password"),
-        database: configService.get("DB_NAME", "doanhoi"),
+        host: configService.get("DB_HOST"),
+        port: configService.get("DB_PORT"),
+        username: configService.get("DB_USERNAME"),
+        password: configService.get("DB_PASSWORD"),
+        database: configService.get("DB_NAME"),
         entities: [__dirname + "/**/*.entity{.ts,.js}"],
         synchronize: true,
         logging: configService.get("NODE_ENV") === "development",

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsUUID, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ChatRequestDto {
@@ -27,4 +27,13 @@ export class ChatRequestDto {
   @IsOptional()
   @IsUUID()
   userId?: string;
+
+  @ApiProperty({
+    description: 'Enable evaluation mode — returns full retrieved document text for RAGAS evaluation',
+    example: false,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  evaluation_mode?: boolean;
 }

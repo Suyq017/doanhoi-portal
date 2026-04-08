@@ -1,0 +1,3080 @@
+[
+  {
+    "question": "Hoạt động dọn xưởng nào sẽ diễn ra trong tháng 2 tại ĐHBK?",
+    "ground_truth": "Hoạt động '[BDCN] DỌN XƯỞNG SAU TẾT', do Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp tổ chức, diễn ra từ 16-02-2025 đến 22-02-2025.",
+    "metadata": {
+      "ma_ctxh": "BD25CTX0001",
+      "ten_ctxh": "[BDCN] DỌN XƯỞNG SAU TẾT",
+      "noi_dung": "[BDCN] DỌN XƯỞNG SAU TẾT",
+      "organization": {
+        "id": "17568d1e-ba64-4941-bb0a-64b8f2f0e3f2",
+        "name": "Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp",
+        "code": "LIEN_CHI_DOAN_BD"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "5",
+      "thoi_gian_thuc_hien": "16-02-2025 -> 22-02-2025",
+      "ngay_mod_duyet": "3"
+    }
+  },
+  {
+    "question": "Tháng 5 có hoạt động công tác xã hội nào của Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp không?",
+    "ground_truth": "Có, hoạt động [BDCN] HỖ TRỢ LỄ TỐT NGHIỆP 25/4/2025.",
+    "metadata": {
+      "ma_ctxh": "BD25CTX0002",
+      "ten_ctxh": "[BDCN] HỖ TRỢ LỄ TỐT NGHIỆP 25/4/2025",
+      "noi_dung": "[BDCN] HỖ TRỢ LỄ TỐT NGHIỆP 25/4/2025",
+      "organization": {
+        "id": "17568d1e-ba64-4941-bb0a-64b8f2f0e3f2",
+        "name": "Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp",
+        "code": "LIEN_CHI_DOAN_BD"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "11-05-2025 -> 17-05-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp có hoạt động hội trại nào trong tháng 3 không?",
+    "ground_truth": "Có, hoạt động '[BDCN] CTV TVTS 3/3/2025' là chương trình Hội trại, ngày hội, diễn ra từ 16-03-2025 đến 30-03-2025.",
+    "metadata": {
+      "ma_ctxh": "BD25HTR0001",
+      "ten_ctxh": "[BDCN] CTV TVTS 3/3/2025",
+      "noi_dung": "[BDCN] CTV TVTS 3/3/2025",
+      "organization": {
+        "id": "17568d1e-ba64-4941-bb0a-64b8f2f0e3f2",
+        "name": "Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp",
+        "code": "LIEN_CHI_DOAN_BD"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "16-03-2025 -> 30-03-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Có hoạt động hội trại nào trong tháng 4 không?",
+    "ground_truth": "Có, hoạt động CTV TVTS 3/3/25.",
+    "metadata": {
+      "ma_ctxh": "BD25HTR0002",
+      "ten_ctxh": "CTV TVTS 3/3/25",
+      "noi_dung": "CTV TVTS 3/3/25",
+      "organization": {
+        "id": "17568d1e-ba64-4941-bb0a-64b8f2f0e3f2",
+        "name": "Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp",
+        "code": "LIEN_CHI_DOAN_BD"
+      },
+      "dia_diem": "DHBK",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "06-04-2025 -> 30-04-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Hoạt động hội trại HỖ TRỢ TVTS 19.7.2025 của Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp diễn ra khi nào?",
+    "ground_truth": "Hoạt động này diễn ra từ 27-07-2025 đến 30-08-2025.",
+    "metadata": {
+      "ma_ctxh": "BD25HTR0003",
+      "ten_ctxh": "[BDCN] HỖ TRỢ TVTS 19.7.2025",
+      "noi_dung": "[BDCN] HỖ TRỢ TVTS 19.7.2025",
+      "organization": {
+        "id": "17568d1e-ba64-4941-bb0a-64b8f2f0e3f2",
+        "name": "Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp",
+        "code": "LIEN_CHI_DOAN_BD"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "27-07-2025 -> 30-08-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Hoạt động '[BDCN] HỖ TRỢ TVTS 19.7.2025' thuộc về khoa/tổ chức nào và diễn ra ở đâu?",
+    "ground_truth": "Hoạt động này thuộc Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp và diễn ra tại ĐHBK.",
+    "metadata": {
+      "ma_ctxh": "BD25HTR0004",
+      "ten_ctxh": "[BDCN] HỖ TRỢ TVTS 19.7.2025",
+      "noi_dung": "[BDCN] HỖ TRỢ TVTS 19.7.2025",
+      "organization": {
+        "id": "17568d1e-ba64-4941-bb0a-64b8f2f0e3f2",
+        "name": "Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp",
+        "code": "LIEN_CHI_DOAN_BD"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "27-07-2025 -> 30-08-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động công tác xã hội nào trong tháng 1/2025 không?",
+    "ground_truth": "Có hoạt động 'Cộng tác viên hỗ trợ tổ chức hội thảo giới thiệu chương trình Daikin Nextgen' tại Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt, diễn ra từ 06-01-2025 đến 14-01-2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0001",
+      "ten_ctxh": "CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC HỘI THẢO GIỚI THIỆU CHƯƠNG TRÌNH DAIKIN NEXTGEN",
+      "noi_dung": "CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC HỘI THẢO GIỚI THIỆU CHƯƠNG TRÌNH DAIKIN NEXTGEN",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "06-01-2025 -> 14-01-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động hỗ trợ văn phòng nào sắp diễn ra không?",
+    "ground_truth": "Có, hoạt động CTV HỖ TRỢ VPĐ KHOA CƠ KHÍ tại Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt, diễn ra từ 25-01-2025 đến 04-02-2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0002",
+      "ten_ctxh": "CTV HỖ TRỢ VPĐ KHOA CƠ KHÍ",
+      "noi_dung": "CTV HỖ TRỢ VPĐ KHOA CƠ KHÍ",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "7",
+      "thoi_gian_thuc_hien": "25-01-2025 -> 04-02-2025",
+      "ngay_mod_duyet": "7"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ dọn dẹp bộ môn Công nghệ Nhiệt Lạnh diễn ra ở đâu và khi nào?",
+    "ground_truth": "Hoạt động này diễn ra tại Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt, từ 26/01/2025 đến 01/02/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0003",
+      "ten_ctxh": "CỘNG TÁC VIÊN HỖ TRỢ DỌN DẸP BỘ MÔN CÔNG NGHỆ NHIỆT LẠNH 11 12",
+      "noi_dung": "CỘNG TÁC VIÊN HỖ TRỢ DỌN DẸP BỘ MÔN CÔNG NGHỆ NHIỆT LẠNH 11 12",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "26-01-2025 -> 01-02-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ lễ bàn giao phòng thí nghiệm HVAC do đơn vị nào tổ chức?",
+    "ground_truth": "Hoạt động này do Liên chi đoàn Khoa Cơ khí tổ chức.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0004",
+      "ten_ctxh": "CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC SỰ KIỆN LỄ BÀN GIAO PHÒNG THÍ NGHIỆM GIẢI PHÁP HVAC VÀ HỘI THẢO ĐÀO TẠO HVAC VÀ GIỚI THIỆU FRESHER PROGRAM TỪ CÔNG TY PANASONIC",
+      "noi_dung": "CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC SỰ KIỆN LỄ BÀN GIAO PHÒNG THÍ NGHIỆM GIẢI PHÁP HVAC VÀ HỘI THẢO ĐÀO TẠO HVAC VÀ GIỚI THIỆU FRESHER PROGRAM TỪ CÔNG TY PANASONIC",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC SỰ KIỆN LỄ BÀN GIAO PHÒNG THÍ NGHIỆM GIẢI PHÁP HVAC VÀ HỘI THẢO ĐÀO TẠO HVAC VÀ GIỚI THIỆU FRESHER PROGRAM TỪ CÔNG TY PANASONIC",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "26-01-2025 -> 01-02-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động công tác xã hội nào ở Tòa B11 trong tháng 2/2025 không?",
+    "ground_truth": "Có, hoạt động 'CTV HỖ TRỢ VĂN NGHỆ NGÀY HỘI KỸ THUẬT 2024'.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0005",
+      "ten_ctxh": "CTV HỖ TRỢ VĂN NGHỆ NGÀY HỘI KỸ THUẬT 2024",
+      "noi_dung": "CTV HỖ TRỢ VĂN NGHỆ NGÀY HỘI KỸ THUẬT 2024",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Tòa B11, 268 Lý Thường Kiệt, Phường 14, Quận 10, Thành phố Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "06-02-2025 -> 15-02-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động 'CTV HỖ TRỢ DỌN DẸP PHÒNG BỘ MÔN Kỹ thuật Hệ thống Công nghiệp' thuộc loại công tác xã hội nào và do liên chi đoàn nào tổ chức?",
+    "ground_truth": "Đây là Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….), do Liên chi đoàn Khoa Cơ khí tổ chức.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0006",
+      "ten_ctxh": "CTV HỖ TRỢ DỌN DẸP PHÒNG BỘ MÔN Kỹ thuật Hệ thống Công nghiệp",
+      "noi_dung": "* Thời gian: 14 giờ - 17 giờ, Thứ Sáu ngày 17/01/2025.\r\n* Địa điểm: Phòng Bộ môn Kỹ thuật Hệ thống Công nghiệp, Trường Đại học Bách Khoa ĐHQG-HCM, cơ sở Lý Thường Kiệt.",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Phòng Bộ môn Kỹ thuật Hệ thống Công nghiệp, Trường Đại học Bách Khoa ĐHQG-HCM, cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "18-02-2025 -> 21-02-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có tổ chức hoạt động dọn dẹp phòng thí nghiệm nào không?",
+    "ground_truth": "Có, hoạt động CTV HỖ TRỢ DỌN DẸP PHÒNG THÍ NGHIỆM 710H1 VÀ TỔ CHỨC LỄ NHẬN TÀI TRỢ TỪ CÔNG TY TNHH JABIL VIỆT NAM.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0007",
+      "ten_ctxh": "CTV HỖ TRỢ DỌN DẸP PHÒNG THÍ NGHIỆM 710H1 VÀ TỔ CHỨC LỄ NHẬN TÀI TRỢ TỪ CÔNG TY TNHH JABIL VIỆT NAM",
+      "noi_dung": "* Thời gian: 13h00-17h00, ngày 5/11/2024\r\n* Địa điểm: H1-710, Trường Đại học Bách khoa, cơ sở Dĩ An.",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "H1-710, Trường Đại học Bách khoa, cơ sở Dĩ An.",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "24-02-2025 -> 28-02-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Hoạt động dọn dẹp phòng bộ môn của Khoa Cơ khí sẽ diễn ra vào thời gian nào?",
+    "ground_truth": "Hoạt động sẽ diễn ra từ 07 giờ - 11 giờ, Thứ Tư ngày 26/02/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0008",
+      "ten_ctxh": "CTV HỖ TRỢ DỌN DẸP, SẮP XẾP PHÒNG BỘ MÔN KTHTCN CS DĨ AN",
+      "noi_dung": "* Thời gian: 07 giờ - 11 giờ, Thứ Tư ngày 26/02/2025.\r\n* Địa điểm: Phòng Bộ môn Kỹ thuật Hệ thống Công nghiệp (407 H1), Trường Đại học Bách Khoa ĐHQG-HCM, cơ sở Dĩ An.",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Phòng Bộ môn Kỹ thuật Hệ thống Công nghiệp (407 H1), Trường Đại học Bách Khoa ĐHQG-HCM, cơ sở Dĩ An",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "27-02-2025 -> 02-03-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Hoạt động dọn vệ sinh phòng thí nghiệm của Khoa Cơ khí kéo dài bao nhiêu ngày?",
+    "ground_truth": "Hoạt động kéo dài 2 ngày.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0009",
+      "ten_ctxh": "CTV THAM GIA DỌN VỆ SINH PHÒNG THÍ NGHIỆM THIẾT KẾ VÀ GIA CÔNG TIÊN TIẾN",
+      "noi_dung": "CTV THAM GIA DỌN VỆ SINH PHÒNG THÍ NGHIỆM THIẾT KẾ VÀ GIA CÔNG TIÊN TIẾN",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "08-03-2025 -> 15-03-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Tháng 3 năm 2025 có hoạt động công tác xã hội nào ở cơ sở Lý Thường Kiệt không?",
+    "ground_truth": "Có, hoạt động Dọn vệ sinh PTN 201-C1 và 201X-C1 của Liên chi đoàn Khoa Cơ khí.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0010",
+      "ten_ctxh": "Dọn vệ sinh PTN 201-C1 và 201X-C1",
+      "noi_dung": "Dọn vệ sinh PTN 201-C1 và 201X-C1",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "PTN 201-C1 và 201X-C1, cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "23-03-2025 -> 26-03-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Hoạt động Hỗ trợ dọn dẹp PTN Đo lường của Khoa Cơ khí diễn ra ở đâu và khi nào?",
+    "ground_truth": "Hoạt động diễn ra tại 202 B11, cơ sở Lý Thường Kiệt, từ 08-04-2025 đến 15-04-2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0011",
+      "ten_ctxh": "Hỗ trợ dọn dẹp PTN Đo lường - Khoa Cơ khí",
+      "noi_dung": "Dọn dẹp PTN Đo lường 202 B11 từ 25/3 đến 27/3",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "202 B11, cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "08-04-2025 -> 15-04-2025",
+      "ngay_mod_duyet": "3"
+    }
+  },
+  {
+    "question": "Hoạt động dọn dẹp phòng thí nghiệm bộ môn Chế Tạo Máy ở cơ sở Lý Thường Kiệt diễn ra khi nào và thuộc Liên chi đoàn nào?",
+    "ground_truth": "Hoạt động 'Làm vệ sinh, sắp xếp, vận chuyển máy móc trang thiết bị PTN bộ môn Chế Tạo Máy' tại 104C1, Cơ sở Lý Thường Kiệt, diễn ra từ 15-05-2025 đến 22-05-2025 và thuộc Liên chi đoàn Khoa Cơ khí.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0012",
+      "ten_ctxh": "Làm vệ sinh, sắp xếp, vận chuyển máy móc trang thiết bị PTN bộ môn Chế Tạo Máy",
+      "noi_dung": "Làm vệ sinh, sắp xếp, vận chuyển máy móc trang thiết bị PTN bộ môn Chế Tạo Máy",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "104C1, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "15-05-2025 -> 22-05-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động dọn vệ sinh nào không?",
+    "ground_truth": "Có, hoạt động Dọn vệ sinh xưởng C1 vào ngày 28 tháng 06 năm 2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0013",
+      "ten_ctxh": "Dọn vệ sinh xưởng C1 vào ngày 28 tháng 06 năm 2025",
+      "noi_dung": "Dọn vệ sinh xưởng C1 vào ngày 28 tháng 06 năm 2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "10-07-2025 -> 17-07-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động dọn vệ sinh nào diễn ra vào tháng 7/2025 không?",
+    "ground_truth": "Có, hoạt động 'CTV DỌN VỆ SINH VĂN PHÒNG ĐOÀN THANH NIÊN - LIÊN CHI HỘI SINH VIÊN KHOA CƠ KHÍ' diễn ra tại cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh, từ ngày 14/07/2025 đến 21/07/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0014",
+      "ten_ctxh": "CTV DỌN VỆ SINH VĂN PHÒNG ĐOÀN THANH NIÊN - LIÊN CHI HỘI SINH VIÊN KHOA CƠ KHÍ",
+      "noi_dung": "CTV DỌN VỆ SINH VĂN PHÒNG ĐOÀN THANH NIÊN - LIÊN CHI HỘI SINH VIÊN KHOA CƠ KHÍ",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "14-07-2025 -> 21-07-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động 'Tân Trang Bộ Môn Công Nghệ Nhiệt Lạnh (Tòa nhà B5) - Đợt 2' diễn ra khi nào và ở đâu?",
+    "ground_truth": "Hoạt động diễn ra từ Thứ Năm (19.06.2025) tới hết Chủ Nhật (22.06.2025), mỗi ngày từ 09h00 tới 18h00, tại cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0015",
+      "ten_ctxh": "Tân Trang Bộ Môn Công Nghệ Nhiệt Lạnh (Tòa nhà B5) - Đợt 2",
+      "noi_dung": "Tân Trang Bộ Môn Công Nghệ Nhiệt Lạnh (Tòa nhà B5) - Đợt 2\r\nThời gian: từ Thứ Năm (19.06.2025) tới hết Chủ Nhật (22.06.2025) với mỗi ngày bắt đầu từ 09h00 tới 18h00",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "04-08-2025 -> 04-09-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động công tác xã hội dọn dẹp nào sắp diễn ra không?",
+    "ground_truth": "Có hoạt động 'Tân Trang Bộ Môn Công Nghệ Nhiệt Lạnh (Tòa nhà B5) - Đợt 1' tại cơ sở Lý Thường Kiệt, diễn ra từ Chủ Nhật (15.06.2025) tới hết Thứ Tư (18.06.2025).",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0016",
+      "ten_ctxh": "Tân Trang Bộ Môn Công Nghệ Nhiệt Lạnh (Tòa nhà B5) - Đợt 1",
+      "noi_dung": "Tân Trang Bộ Môn Công Nghệ Nhiệt Lạnh (Tòa nhà B5) - Đợt 1\r\nThời gian: từ Chủ Nhật (15.06.2025) tới hết Thứ Tư (18.06.2025) với mỗi ngày bắt đầu từ 09h00 tới 18h00",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "04-08-2025 -> 04-09-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Hoạt động dọn dẹp phòng thí nghiệm của Liên chi đoàn Khoa Cơ khí diễn ra khi nào và ở đâu?",
+    "ground_truth": "Hoạt động Dọn vệ sinh PTN 201-C1 và 201X-C1 diễn ra từ 8h-11h ngày 11/7/2025 tại Phòng 201-C1 và 201X-C1, cơ sở 1, P. Diên Hồng.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0017",
+      "ten_ctxh": "Dọn vệ sinh PTN 201-C1 và 201X-C1",
+      "noi_dung": "Thời gian: 8h-11h ngày 11/7/2025\r\nĐịa điểm: Phòng 201-C1 và 201X-C1\r\nĐơn vị tổ chức: BM Kỹ thuật Hệ thống Công nghiệp",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "05-08-2025 -> 05-09-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Có hoạt động công tác xã hội nào diễn ra vào chủ nhật ngày 13/07/2025 không?",
+    "ground_truth": "Có, hoạt động 'Vệ sinh PTN công nghệ thiết kế và gia công tiên tiến Khoa Cơ khí' của Liên chi đoàn Khoa Cơ khí, diễn ra từ 13h - 17h tại Trường ĐH Bách Khoa - Cơ Sở 1- Phòng thí nghiệm thiết kế và gia công tiên tiến.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0018",
+      "ten_ctxh": "Vệ sinh PTN công nghệ thiết kế và gia công tiên tiến Khoa Cơ khí",
+      "noi_dung": "Thời gian: 13h -17h, chủ nhật ngày 13/07/2025\r\nĐịa điểm: Trường ĐH Bách Khoa - Cơ Sở 1- Phòng thí nghiệm thiết kế và gia công tiên tiến.",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "07-08-2025 -> 09-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động công tác xã hội dọn dẹp phòng thí nghiệm của Liên chi đoàn Khoa Cơ khí sẽ diễn ra vào ngày nào và ở đâu?",
+    "ground_truth": "Hoạt động 'Sắp xếp, vận chuyển bàn ghế của PTN bộ môn Chế Tạo Máy và PTN Thủy lực' sẽ diễn ra từ 8h00-16h00 ngày 21/07/25 tại 104C1, Cơ sở 1.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0019",
+      "ten_ctxh": "Sắp xếp, vận chuyển bàn ghế của PTN bộ môn Chế Tạo Máy và PTN Thủy lực (Trung Tâm Bảo dưỡng công nghiệp)",
+      "noi_dung": "Sắp xếp, vận chuyển bàn ghế của PTN bộ môn Chế Tạo Máy và PTN Thủy lực (Trung Tâm Bảo dưỡng công nghiệp)\r\nThời gian: 8h00-16h00 ngày 21/07/25\r\nĐịa điểm: 104C1, Cơ sở 1",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "07-08-2025 -> 09-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động công tác xã hội nào về dọn dẹp phòng thí nghiệm đang diễn ra không?",
+    "ground_truth": "Có, đó là hoạt động 'Sắp xếp, vận chuyển máy móc trang thiết bị PTN bộ môn Chế Tạo Máy' diễn ra vào ngày 25/07/25 tại 104C1, Cơ sở 1.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0020",
+      "ten_ctxh": "Sắp xếp, vận chuyển máy móc trang thiết bị PTN bộ môn Chế Tạo Máy",
+      "noi_dung": "Tên hoạt động: Sắp xếp, vận chuyển máy móc trang thiết bị PTN bộ môn Chế Tạo Máy\r\nThời gian: 8h00-16h00 ngày 25/07/25\r\nĐịa điểm: 104C1, Cơ sở 1",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "07-08-2025 -> 09-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động 'Dọn vệ sinh PTN 201-C1 và 201X-C1' diễn ra khi nào và ở đâu?",
+    "ground_truth": "Hoạt động diễn ra từ 8h-12h ngày 7/8/2025 tại Phòng 201-C1 và 201X-C1, cơ sở 1, P. Diên Hồng.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0021",
+      "ten_ctxh": "Dọn vệ sinh PTN 201-C1 và 201X-C1",
+      "noi_dung": "Thời gian: 8h-12h ngày 7/8/2025\r\nĐịa điểm: Phòng 201-C1 và 201X-C1\r\nĐơn vị tổ chức: BM Kỹ thuật Hệ thống Công nghiệp",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "07-08-2025 -> 09-09-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động công tác xã hội nào liên quan đến dọn dẹp phòng không?",
+    "ground_truth": "Có, hoạt động 'CỘNG TÁC VIÊN DỌN DẸP PHÒNG 103C1' tại phòng 103 xưởng C1, cơ sở 1.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0022",
+      "ten_ctxh": "CỘNG TÁC VIÊN DỌN DẸP PHÒNG 103C1",
+      "noi_dung": "1. Địa điểm: phòng 103 xưởng C1 trường Đại học Bách khoa Thành phố Hồ Chí Minh - cơ sở 1\r\n2. Giám sát chính: Lê Phước Hòa\r\n3. Thông tin liên lạc: 0389923266\r\n4. Ngày hoạt động: 27/07/2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "08-08-2025 -> 12-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động dọn dẹp vệ sinh văn phòng của khoa Cơ khí diễn ra khi nào?",
+    "ground_truth": "Hoạt động diễn ra từ 8h-16h30 thứ 6 ngày 1/8/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0023",
+      "ten_ctxh": "DỌN DẸP VỆ SINH VĂN PHÒNG SAU CHIẾN DỊCH MÙA HÈ XANH 2025",
+      "noi_dung": "Thời gian: 8h-16h30 thứ 6 ngày 1/8/2025\r\nĐịa điểm: 104 B11 - cơ sở 1\r\nĐơn vị tổ chức: Ban Chấp hành Liên Chi hội Sinh viên khoa Cơ khí",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "08-08-2025 -> 12-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Có hoạt động công tác xã hội nào của Khoa Cơ khí liên quan đến dọn dẹp phòng thí nghiệm không?",
+    "ground_truth": "Có, hoạt động 'HỖ TRỢ DI DỜI PHÒNG THÍ NGHIỆM 104C1 KHOA CƠ KHÍ' diễn ra tại cơ sở 1, P. Diên Hồng.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0024",
+      "ten_ctxh": "HỖ TRỢ DI DỜI PHÒNG THÍ NGHIỆM 104C1 KHOA CƠ KHÍ",
+      "noi_dung": "1. Địa điểm: xưởng C1 trường Đại học Bách khoa Thành phố Hồ Chí Minh - cơ sở 1\r\n2. Giám sát chính: Lê Phước Hòa\r\n3. Thông tin liên lạc: 0389923266\r\n4. Ngày hoạt động: 08/08/2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "11-08-2025 -> 13-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động 'Dọn dẹp xưởng C3' thuộc về khoa/tổ chức nào?",
+    "ground_truth": "Hoạt động này thuộc về Liên chi đoàn Khoa Cơ khí.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0025",
+      "ten_ctxh": "DỌN DẸP XƯỞNG C3",
+      "noi_dung": "Tên hoạt động: Dọn dẹp xưởng C3\r\nThời gian: 8h-05/08/2025\r\nĐịa điểm: C3\r\nĐơn vị tổ chức: Bộ môn Máy Xây dựng và Nâng chuyển",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "12-08-2025 -> 13-09-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Hoạt động 'TỔ CHỨC DỌN VỆ SINH VĂN PHÒNG ĐOÀN THANH NIÊN - LIÊN CHI HỘI SINH VIÊN KHOA CƠ KHÍ' thuộc về đơn vị nào?",
+    "ground_truth": "Liên chi đoàn Khoa Cơ khí.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0026",
+      "ten_ctxh": "TỔ CHỨC DỌN VỆ SINH VĂN PHÒNG ĐOÀN THANH NIÊN - LIÊN CHI HỘI SINH VIÊN KHOA CƠ KHÍ",
+      "noi_dung": "TỔ CHỨC DỌN VỆ SINH VĂN PHÒNG ĐOÀN THANH NIÊN - LIÊN CHI HỘI SINH VIÊN KHOA CƠ KHÍ",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "18-08-2025 -> 18-09-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động công tác xã hội nào diễn ra trong khoảng tháng 8 đến tháng 9 năm 2025 không?",
+    "ground_truth": "Có, hoạt động HỖ TRỢ XƯỞNG C1 ngày 01/08/2025 tại cơ sở 1, P. Diên Hồng, nội dung hỗ trợ dọn dẹp, sắp xếp xưởng.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0027",
+      "ten_ctxh": "HỖ TRỢ XƯỞNG C1 ngày 01/08/2025",
+      "noi_dung": "hỗ trợ dọn dẹp, sắp xếp xưởng",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "21-08-2025 -> 22-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động sắp xếp bàn ghế ở hành lang xưởng C1 kéo dài bao lâu?",
+    "ground_truth": "Hoạt động đó kéo dài 1 ngày.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0028",
+      "ten_ctxh": "SẮP XẾP BÀN, GHẾ KHU VỰC HÀNH LANG XƯỞNG C1, TÒA B11 NGÀY 01/08/2025",
+      "noi_dung": "hành lang xưởng C1, hành lang tòa B11 trường Đại học Bách khoa Thành phố Hồ Chí Minh - cơ sở 1",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "21-08-2025 -> 22-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động HỖ TRỢ DI DỜI PHÒNG THÍ NGHIỆM NGÀY 01/08/2025 kéo dài bao lâu?",
+    "ground_truth": "1 ngày.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0029",
+      "ten_ctxh": "HỖ TRỢ DI DỜI PHÒNG THÍ NGHIỆM NGÀY 01/08/2025",
+      "noi_dung": "xưởng C1 trường Đại học Bách khoa Thành phố Hồ Chí Minh - cơ sở 1",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "21-08-2025 -> 22-09-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động công tác xã hội nào liên quan đến dọn dẹp, hỗ trợ xưởng ở cơ sở 1 không?",
+    "ground_truth": "Có, hoạt động HỖ TRỢ XƯỞNG C1 NGÀY 16/08/2025 tại cơ sở 1, P. Diên Hồng.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0030",
+      "ten_ctxh": "HỖ TRỢ XƯỞNG C1 NGÀY 16/08/2025",
+      "noi_dung": "HỖ TRỢ XƯỞNG C1 NGÀY 16/08/2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "26-08-2025 -> 26-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Tháng 9 này có hoạt động công tác xã hội nào ở cơ sở 1 liên quan đến dọn dẹp phòng thí nghiệm không?",
+    "ground_truth": "Có, hoạt động HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP của Liên chi đoàn Khoa Cơ khí, diễn ra tại phòng 101 tòa B11, từ 01/09/2025 đến 02/10/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0031",
+      "ten_ctxh": "HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP 22 - 24 -25/8/2025",
+      "noi_dung": "1. Địa điểm: phòng 101 tòa B11 Trường Đại học Bách khoa - ĐHQG-HCM - cơ sở 1\r\n2. Ngày hoạt động: 22 - 24 - 25/08/2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "01-09-2025 -> 02-10-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Hoạt động di dời thiết bị và dọn dẹp phòng thí nghiệm của Khoa Cơ khí sẽ bao gồm những công việc gì?",
+    "ground_truth": "Hoạt động bao gồm hỗ trợ sắp xếp PTN thủy lực, hỗ trợ Bộ môn KT Dệt may di dời máy, và hỗ trợ di dời máy ở xưởng C1.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0032",
+      "ten_ctxh": "CÁC HOẠT ĐỘNG DI DỜI THIẾT BỊ VÀ DỌN DẸP PHÒNG THÍ NGHIỆM THUỘC KHOA CƠ KHÍ NGÀY 17.09.2025",
+      "noi_dung": "\"Bao gồm:\r\n1/ Hỗ trợ sắp xếp PTN thủy lực\r\n2/ Hỗ trợ Bộ môn KT Dệt may di dời máy\r\n3/ Hỗ trợ di dời máy ở xưởng C1\"",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "24-09-2025 -> 24-10-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Có hoạt động nào hỗ trợ di dời máy móc cho Bộ môn Kỹ thuật Dệt May không?",
+    "ground_truth": "Có, đó là hoạt động HỖ TRỢ BỘ MÔN KỸ THUẬT DỆT MAY DI DỜI MÁY 24.09.2025, do Liên chi đoàn Khoa Cơ khí tổ chức tại Phòng 102-B11 trường Đại học Bách khoa Thành phố Hồ Chí Minh - cơ sở 1.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0033",
+      "ten_ctxh": "HỖ TRỢ BỘ MÔN KỸ THUẬT DỆT MAY DI DỜI MÁY 24.09.2025",
+      "noi_dung": "Địa điểm: Phòng 102-B11 trường Đại học Bách khoa Thành phố Hồ Chí Minh - cơ sở 1",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "26-09-2025 -> 26-10-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Cho mình hỏi hoạt động 'CTV hỗ trợ di dời máy xưởng hàn sang C1' của khoa nào và diễn ra khi nào vậy?",
+    "ground_truth": "Hoạt động này thuộc Liên chi đoàn Khoa Cơ khí và diễn ra từ 06-10-2025 đến 06-11-2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0034",
+      "ten_ctxh": "CTV hỗ trợ di dời máy xưởng hàn sang C1",
+      "noi_dung": "CTV hỗ trợ di dời máy xưởng hàn sang C1",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "06-10-2025 -> 06-11-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động công tác xã hội nào diễn ra trong tháng 10 năm 2025 không?",
+    "ground_truth": "Có, đó là hoạt động HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP 27.09.2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0035",
+      "ten_ctxh": "HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP 27.09.2025",
+      "noi_dung": "HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP 27.09.2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "phòng 101 tòa B11 trường Đại học Bách khoa Thành phố Hồ Chí Minh - cơ sở 1",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "06-10-2025 -> 06-11-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động công tác xã hội nào sắp tới không?",
+    "ground_truth": "Có, hoạt động 'VỆ SINH PHÒNG THÍ NGHIỆM THIẾT KẾ VÀ GIA CÔNG TIÊN TIẾN 07.09.2025' diễn ra từ 07/10/2025 đến 07/11/2025 tại cơ sở 1, P. Diên Hồng, thời lượng 1 ngày.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0036",
+      "ten_ctxh": "VỆ SINH PHÒNG THÍ NGHIỆM THIẾT KẾ VÀ GIA CÔNG TIÊN TIẾN 07.09.2025",
+      "noi_dung": "9h -15h, chủ nhật ngày 07/09/2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "07-10-2025 -> 07-11-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động tổng vệ sinh xưởng thực hành dệt may diễn ra ở đâu và do đơn vị nào tổ chức?",
+    "ground_truth": "Hoạt động diễn ra tại Xưởng thực hành dệt may (P102-B11), Trường Đại học Bách khoa (cơ sở 268 Lý Thường Kiệt) và do Liên chi đoàn Khoa Cơ khí tổ chức.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0037",
+      "ten_ctxh": "Tham gia Tổng vệ sinh Xưởng thực hành Dệt May ngày 11.09.2025",
+      "noi_dung": "Tên hoạt động: Tham gia Tổng vệ sinh Xưởng thực hành Dệt May ngày 11.09.2025\r\nThời gian: 08g30 - 14g30, ngày 11/9/2025\r\nĐịa điểm: Xưởng thực hành dệt may (P102-B11), Trường Đại học Bách khoa (cơ sở 268 Lý Thường Kiệt)\r\nĐơn vị tổ chức: Bộ môn Kỹ thuật Dệt may, Khoa Cơ khí\r\nNgười phụ trách (kèm SĐT): Thầy Võ Đình Khải (0344919404)",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "13-10-2025 -> 13-11-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Hoạt động HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP THÁNG 10.2025 thuộc loại hoạt động nào và do khoa nào tổ chức?",
+    "ground_truth": "Đây là Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….) do Liên chi đoàn Khoa Cơ khí tổ chức.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0038",
+      "ten_ctxh": "HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP THÁNG 10.2025",
+      "noi_dung": "HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP tháng 10.2025 (sáng và chiều)\r\ncó di chuyển nặng nhọc (thùng đồ án, luận văn)",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "17-10-2025 -> 17-11-2025",
+      "ngay_mod_duyet": "3"
+    }
+  },
+  {
+    "question": "Hoạt động công tác xã hội dọn dẹp, di dời máy móc của Liên chi đoàn Khoa Cơ khí diễn ra khi nào?",
+    "ground_truth": "Hoạt động \"Cộng tác viên Di dời máy móc thí nghiệm sửa chửa Xưởng Thực hành Dệt May\" của Liên chi đoàn Khoa Cơ khí diễn ra từ 08g00 - 12g00 ngày 17/9/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0039",
+      "ten_ctxh": "Cộng tác viên Di dời máy móc thí nghiệm sửa chửa Xưởng Thực hành Dệt May 17/9/2025",
+      "noi_dung": "Thời gian: 08g00 - 12g00, ngày 17/9/2025\r\nĐịa điểm: Xưởng thực hành dệt may (P102-B11), Trường Đại học Bách khoa (cơ sở 268 Lý Thường Kiệt)",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "29-11-2025 -> 31-12-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Hoạt động 'HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP THÁNG 10.2025' kéo dài bao nhiêu ngày?",
+    "ground_truth": "Hoạt động này kéo dài 3 ngày.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0040",
+      "ten_ctxh": "HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP THÁNG 10.2025",
+      "noi_dung": "đợt cập nhật bổ sung các bạn còn lại",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "02-12-2025 -> 31-12-2025",
+      "ngay_mod_duyet": "3"
+    }
+  },
+  {
+    "question": "Hoạt động tình nguyện hỗ trợ Bộ môn Thiết kế máy di dời bàn ghế thuộc về khoa/tổ chức nào?",
+    "ground_truth": "Hoạt động này thuộc về Liên chi đoàn Khoa Cơ khí.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0041",
+      "ten_ctxh": "TNV HỖ TRỢ BỘ MÔN THIẾT KẾ MÁY DI DỜI BÀN GHẾ",
+      "noi_dung": "TNV tham gia hỗ trợ Bộ môn Thiết kế máy di dời bàn ghế ngày 24.11.2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "19-12-2025 -> 31-12-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động công tác xã hội nào liên quan đến dọn dẹp phòng thí nghiệm không?",
+    "ground_truth": "Có, hoạt động 'TNV HỖ TRỢ DỌN DẸP, SẮP XẾP BỘ MÔN KTHTCN CS2 - 15/12/2025' diễn ra tại cơ sở 2, P. Đông Hòa từ 19-12-2025 đến 31-12-2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0042",
+      "ten_ctxh": "TNV HỖ TRỢ DỌN DẸP, SẮP XẾP BỘ MÔN KTHTCN CS2 - 15/12/2025",
+      "noi_dung": "TNV tham gia hỗ trợ Bộ môn dọn dẹp, sắp xếp PTN ở Cơ sở 2, tạo môi trường sạch sẽ, an toàn cho việc học và nâng cao nhận thức về lao động",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 2, P. Đông Hòa",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "19-12-2025 -> 31-12-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động dọn dẹp kho bãi nào không?",
+    "ground_truth": "Có, hoạt động TNV THAM GIA HỖ TRỢ DI DỜI, SẮP XẾP THIẾT BỊ Ở XƯỞNG CƠ KHÍ C1 NGÀY 08 - 09/12/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25CTX0043",
+      "ten_ctxh": "TNV THAM GIA HỖ TRỢ DI DỜI, SẮP XẾP THIẾT BỊ Ở XƯỞNG CƠ KHÍ C1 NGÀY 08 - 09/12/2025",
+      "noi_dung": "TNV tham gia hỗ trợ xưởng C1 di dời, sắp xếp thiết bị trong các ngày 08, 09/12/2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "27-12-2025 -> 31-12-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Hoạt động Đêm hội trăng rằm do Liên chi đoàn Khoa Cơ khí tổ chức kéo dài trong bao nhiêu ngày?",
+    "ground_truth": "Hoạt động kéo dài 2 ngày.",
+    "metadata": {
+      "ma_ctxh": "CK25DHT0002",
+      "ten_ctxh": "TỔ CHỨC HOẠT ĐỘNG TRUNG THU 2025 TẠI TRƯỜNG TIỂU HỌC DƯƠNG VĂN LỊCH - XÃ HIỆP PHƯỚC - TP.HCM NGÀY 04.10.2025",
+      "noi_dung": "“TÔ TRĂNG VÀNG – VẼ HẠNH PHÚC” 2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Đêm hội trăng rằm (Trung thu)",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "27-11-2025 -> 31-12-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Lễ phát động cuộc thi Robot Cơ khí 2025 của Khoa Cơ khí diễn ra khi nào và ở đâu?",
+    "ground_truth": "Lễ phát động cuộc thi \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 của Liên chi đoàn Khoa Cơ khí diễn ra vào ngày 18/08/2025 tại cơ sở 1, P. Diên Hồng.",
+    "metadata": {
+      "ma_ctxh": "CK25HTH0001",
+      "ten_ctxh": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - LỄ PHÁT ĐỘNG",
+      "noi_dung": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - LỄ PHÁT ĐỘNG",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "18-08-2025 -> 18-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động thi robot nào không?",
+    "ground_truth": "Có, đó là cuộc thi 'MECHANICAL ENGINEERING ROBOT CONTEST' 2025 - WORKSHOP ROBOT 1.",
+    "metadata": {
+      "ma_ctxh": "CK25HTH0002",
+      "ten_ctxh": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - WORKSHOP ROBOT 1",
+      "noi_dung": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - WORKSHOP ROBOT 1",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "18-08-2025 -> 18-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Tháng 8/2025 có cuộc thi học thuật nào ở cơ sở 2 không?",
+    "ground_truth": "Có hoạt động \"TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - WORKSHOP ROBOT 2\" của Liên chi đoàn Khoa Cơ khí.",
+    "metadata": {
+      "ma_ctxh": "CK25HTH0003",
+      "ten_ctxh": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - WORKSHOP ROBOT 2",
+      "noi_dung": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - WORKSHOP ROBOT 2",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 2, P. Đông Hòa",
+      "loai_hoat_dong": "Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "18-08-2025 -> 18-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có tổ chức cuộc thi robot nào không?",
+    "ground_truth": "Có, đó là cuộc thi \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - VÒNG SƠ LOẠI, diễn ra từ 18/08/2025 đến 18/09/2025 tại cơ sở 2, P. Đông Hòa.",
+    "metadata": {
+      "ma_ctxh": "CK25HTH0004",
+      "ten_ctxh": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - VÒNG SƠ LOẠI",
+      "noi_dung": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - VÒNG SƠ LOẠI",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 2, P. Đông Hòa",
+      "loai_hoat_dong": "Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "18-08-2025 -> 18-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có tổ chức cuộc thi học thuật nào trong tháng 8 hoặc tháng 9 năm 2025 không?",
+    "ground_truth": "Có, cuộc thi \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - VÒNG BẢNG.",
+    "metadata": {
+      "ma_ctxh": "CK25HTH0005",
+      "ten_ctxh": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - VÒNG BẢNG",
+      "noi_dung": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - VÒNG BẢNG",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Địa điểm: Trung tâm hội chợ và Triễn lãm Sài Gòn (SECC)",
+      "loai_hoat_dong": "Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "18-08-2025 -> 18-09-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Hoạt động \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 được tổ chức ở đâu và do khoa nào phụ trách?",
+    "ground_truth": "Hoạt động này diễn ra tại Trung tâm hội chợ và Triễn lãm Sài Gòn (SECC) và thuộc Liên chi đoàn Khoa Cơ khí.",
+    "metadata": {
+      "ma_ctxh": "CK25HTH0006",
+      "ten_ctxh": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - VÒNG BÁN KẾT VÀ CHUNG KẾT",
+      "noi_dung": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - VÒNG BÁN KẾT VÀ CHUNG KẾT",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Địa điểm: Trung tâm hội chợ và Triễn lãm Sài Gòn (SECC)",
+      "loai_hoat_dong": "Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "18-08-2025 -> 18-09-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động hỗ trợ tổ chức sự kiện nào trong tháng 12 không?",
+    "ground_truth": "Có, hoạt động 'CTV hỗ trợ tổ chức Hội thảo “Dệt may 4.0: Hành trình tối ưu quy trình và nâng cao chất lượng bền vững”' diễn ra từ 11/12/2025 đến 31/12/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25HTH0007",
+      "ten_ctxh": "CTV hỗ trợ tổ chức Hội thảo “Dệt may 4.0: Hành trình tối ưu quy trình và nâng cao chất lượng bền vững”",
+      "noi_dung": "bao gồm:\r\n- hỗ trợ tổ chức, lễ tân – hậu cần, điều phối chương trình ngày 04/10/2025\r\n- hỗ trợ hậu cần, kỹ thuật, chuẩn bị sân khấu – trang thiết bị, điều phối chương trình chung kết ngày 15/11/2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "11-12-2025 -> 31-12-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động CTXH nào diễn ra trong tháng 1 năm 2025 không?",
+    "ground_truth": "Có, hoạt động CTV HỖ TRỢ SÂN CHƠI KHOA HỌC diễn ra từ ngày 6 đến ngày 13 tháng 1 năm 2025.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0001",
+      "ten_ctxh": "CTV HỖ TRỢ SÂN CHƠI KHOA HỌC",
+      "noi_dung": "CTV HỖ TRỢ SÂN CHƠI KHOA HỌC",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "06-01-2025 -> 13-01-2025",
+      "ngay_mod_duyet": "2.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động hội trại nào kéo dài 5 ngày không?",
+    "ground_truth": "Có, hoạt động CTV HỖ TRỢ HẬU CẦN TỔ CHỨC HỘI TRẠI có thời lượng 5 ngày, diễn ra từ 07-01-2025 đến 15-01-2025.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0002",
+      "ten_ctxh": "CTV HỖ TRỢ HẬU CẦN TỔ CHỨC HỘI TRẠI",
+      "noi_dung": "CTV HỖ TRỢ HẬU CẦN TỔ CHỨC HỘI TRẠI",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "5",
+      "thoi_gian_thuc_hien": "07-01-2025 -> 15-01-2025",
+      "ngay_mod_duyet": "5"
+    }
+  },
+  {
+    "question": "Hoạt động 'CTV HỖ TRỢ TỔ CHỨC WORKSHOP BUỔI 1 VÀ BUỔI 2' thuộc khoa/tổ chức nào và diễn ra ở đâu?",
+    "ground_truth": "Hoạt động này thuộc Liên chi đoàn Khoa Cơ khí và diễn ra tại Trường Đại học Bách Khoa Cơ sở Dĩ An.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0003",
+      "ten_ctxh": "CTV HỖ TRỢ TỔ CHỨC WORKSHOP BUỔI 1 VÀ BUỔI 2",
+      "noi_dung": "CTV HỖ TRỢ TỔ CHỨC WORKSHOP BUỔI 1 VÀ BUỔI 2",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Dĩ An",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "07-01-2025 -> 15-01-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ cuộc thi 'Vòng đời mới cho sản phẩm tái chế' sẽ diễn ra khi nào và do tổ chức nào phụ trách?",
+    "ground_truth": "Hoạt động này sẽ diễn ra từ ngày 25/01/2025 đến 01/02/2025 và do Liên chi đoàn Khoa Cơ khí phụ trách.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0004",
+      "ten_ctxh": "Cộng tác viên hỗ trợ Vòng chung kết Cuộc thi “Vòng đời mới cho sản phẩm tái chế”",
+      "noi_dung": "Cộng tác viên hỗ trợ Vòng chung kết Cuộc thi\r\n“Vòng đời mới cho sản phẩm tái chế”",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "25-01-2025 -> 01-02-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Có hoạt động nào cần cộng tác viên hỗ trợ lễ trao học bổng Nguyễn Văn Lân do Liên chi đoàn Khoa Cơ khí tổ chức không?",
+    "ground_truth": "Có, hoạt động 'Cộng tác viên hỗ trợ Lễ trao học bổng Nguyễn Văn Lân' diễn ra từ 25-01-2025 đến 01-02-2025 tại Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0005",
+      "ten_ctxh": "Cộng tác viên hỗ trợ Lễ trao học bổng Nguyễn Văn Lân",
+      "noi_dung": "Cộng tác viên hỗ trợ Lễ trao học bổng Nguyễn Văn Lân",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "25-01-2025 -> 01-02-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Hoạt động CTV HỖ TRỢ HỘI NGHỊ ICRESM 2024 HỘI TRƯỜNG B4 thuộc về tổ chức nào và kéo dài bao nhiêu ngày?",
+    "ground_truth": "Hoạt động này thuộc Liên chi đoàn Khoa Cơ khí và kéo dài 3 ngày.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0006",
+      "ten_ctxh": "CTV HỖ TRỢ HỘI NGHỊ ICRESM 2024 HỘI TRƯỜNG B4",
+      "noi_dung": "CTV HỖ TRỢ HỘI NGHỊ ICRESM 2024 HỘI TRƯỜNG B4",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "26-01-2025 -> 01-02-2025",
+      "ngay_mod_duyet": "2.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động nào hỗ trợ giải cầu lông sắp tới không?",
+    "ground_truth": "Có, hoạt động Cộng tác viên hỗ trợ tổ chức giải cầu lông HRE Badminton lần 2 năm 2024.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0007",
+      "ten_ctxh": "CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC GIẢI CẦU LÔNG HRE BADMINTON LẦN 2 NĂM 2024",
+      "noi_dung": "CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC GIẢI CẦU LÔNG HRE BADMINTON LẦN 2 NĂM 2024",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "27-01-2025 -> 04-02-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động nào liên quan đến hội nghị quốc tế không?",
+    "ground_truth": "Có, đó là hoạt động CTV HỖ TRỢ HỘI NGHỊ HỘO THẢO QUỐC TẾ LOGISTICS VÀ QUẢN LÝ CHUỖI CUNG ỨNG HCMUT-KMOU LẦN 3 - NĂM 2024.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0008",
+      "ten_ctxh": "CTV HỖ TRỢ HỘI NGHỊ HỘI THẢO QUỐC TẾ LOGISTICS VÀ QUẢN LÝ CHUỖI CUNG ỨNG HCMUT-KMOU LẦN 3 - NĂM 2024",
+      "noi_dung": "CTV HỖ TRỢ HỘI NGHỊ HỘI THẢO QUỐC TẾ LOGISTICS VÀ QUẢN LÝ CHUỖI CUNG ỨNG HCMUT-KMOU LẦN 3 - NĂM 2024",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "13-02-2025 -> 20-02-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Hoạt động hội trại nào của Liên chi đoàn Khoa Cơ khí kéo dài 2 ngày?",
+    "ground_truth": "Đó là hoạt động CTV HỖ TRỢ TỔ CHỨC PORT MANAGEMENT IN MODERN AGE: A LOGISTICS PERSPECTIVE.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0009",
+      "ten_ctxh": "CTV HỖ TRỢ TỔ CHỨC PORT MANAGEMENT IN MODERN AGE: A LOGISTICS PERSPECTIVE",
+      "noi_dung": "CTV HỖ TRỢ TỔ CHỨC PORT MANAGEMENT IN MODERN AGE: A LOGISTICS PERSPECTIVE",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "13-02-2025 -> 20-02-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động hội trại, ngày hội nào trong tháng 3 không?",
+    "ground_truth": "Có, đó là hoạt động \"CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC HỘI THẢO \"DR ENERGY RECOVERY VENTILATOR\", TRAO TẶNG THIẾT BỊ VÀ HỌC BỔNG DR FAN\" diễn ra đến ngày 08-03-2025.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0010",
+      "ten_ctxh": "CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC HỘI THẢO \"DR ENERGY RECOVERY VENTILATOR\", TRAO TẶNG THIẾT BỊ VÀ HỌC BỔNG DR FAN",
+      "noi_dung": "CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC HỘI THẢO \"DR ENERGY RECOVERY VENTILATOR\", TRAO TẶNG THIẾT BỊ VÀ HỌC BỔNG DR FAN",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "26-02-2025 -> 08-03-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Chương trình 'Sinh viên tham gia BK Youth Awards - khoa Cơ khí' sẽ được tổ chức ở đâu?",
+    "ground_truth": "Chương trình này sẽ được tổ chức tại Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0011",
+      "ten_ctxh": "Sinh viên tham gia chương trình BK Youth Awards - khoa Cơ khí",
+      "noi_dung": "Sinh viên tham gia chương trình BK Youth Awards - khoa Cơ khí",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "26-02-2025 -> 08-03-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Cho mình hỏi về hoạt động SV CƠ KHÍ THAM DỰ LỄ KHỞI ĐỘNG THÁNG THANH NIÊN 28/02/2025, nó diễn ra ở đâu và khi nào vậy?",
+    "ground_truth": "Hoạt động diễn ra tại Hội trường B4 – Trường Đại học Bách khoa – ĐHQG-HCM – cơ sở Lý Thường Kiệt, từ 07g30 - 10g00 ngày 28/02/2025 (thứ Sáu).",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0012",
+      "ten_ctxh": "SV CƠ KHÍ THAM DỰ LỄ KHỞI ĐỘNG THÁNG THANH NIÊN 28/02/2025",
+      "noi_dung": "- Thời gian: 07g30 - 10g00 ngày 28/02/2025 (thứ Sáu).\r\n- Địa điểm: Hội trường B4 – Trường Đại học Bách khoa – ĐHQG-HCM – cơ sở Lý Thường Kiệt.",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Hội trường B4 – Trường Đại học Bách khoa – ĐHQG-HCM – cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "04-03-2025 -> 08-03-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ tuyển sinh của Khoa Cơ khí diễn ra khi nào và ở đâu?",
+    "ground_truth": "Hoạt động CỘNG TÁC VIÊN HỖ TRỢ BỘ MÔN CÔNG NGHỆ NHIỆT LẠNH TẠI NGÀY HỘI TƯ VẤN TUYỂN SINH 2025 sẽ diễn ra từ 08-03-2025 đến 15-03-2025 tại Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0013",
+      "ten_ctxh": "CỘNG TÁC VIÊN HỖ TRỢ BỘ MÔN CÔNG NGHỆ NHIỆT LẠNH TẠI NGÀY HỘI TƯ VẤN TUYỂN SINH 2025",
+      "noi_dung": "CỘNG TÁC VIÊN HỖ TRỢ BỘ MÔN CÔNG NGHỆ NHIỆT LẠNH TẠI NGÀY HỘI TƯ VẤN TUYỂN SINH 2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "08-03-2025 -> 15-03-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ tổ chức hội thảo về các giải pháp làm sạch không khí của Khoa Cơ khí sẽ diễn ra khi nào và ở đâu?",
+    "ground_truth": "Hoạt động 'CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC HỘI THẢO \"CÁC GIẢI PHÁP LÀM SẠCH KHÔNG KHÍ\" VÀ LỄ TRAO HỌC BỔNG AIR FILTECH' sẽ diễn ra từ 08-03-2025 đến 15-03-2025 tại Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0014",
+      "ten_ctxh": "CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC HỘI THẢO \"CÁC GIẢI PHÁP LÀM SẠCH KHÔNG KHÍ\" VÀ LỄ TRAO HỌC BỔNG AIR FILTECH",
+      "noi_dung": "CỘNG TÁC VIÊN HỖ TRỢ TỔ CHỨC HỘI THẢO \"CÁC GIẢI PHÁP LÀM SẠCH KHÔNG KHÍ\" VÀ LỄ TRAO HỌC BỔNG AIR FILTECH",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Trường Đại học Bách Khoa Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "08-03-2025 -> 15-03-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động hội trại nào không?",
+    "ground_truth": "Có, hoạt động TẾT SINH VIÊN KHOA CƠ KHÍ “MẦM XUÂN”.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0015",
+      "ten_ctxh": "TẾT SINH VIÊN KHOA CƠ KHÍ “MẦM XUÂN”.",
+      "noi_dung": "Từ 18h00 đến 21h00 ngày 31/12/2024.\r\nPhòng 114 tòa BK.B6, Trường Đại học Bách khoa - ĐHQG HCM, cơ sở Dĩ An.\r\nĐội Xung Kích Khoa Cơ Khí - CK GEAR Team.",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Phòng 114 tòa BK.B6, Trường Đại học Bách khoa - ĐHQG HCM, cơ sở Dĩ An.",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "13-03-2025 -> 16-03-2025",
+      "ngay_mod_duyet": "2.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động hội trại nào trong tháng 3/2025 không?",
+    "ground_truth": "Có, HOẠT ĐỘNG ĐÓN TÂN SINH VIÊN NHÓM NGÀNH KTHTCN 2024 diễn ra từ 23/03/2025 đến 26/03/2025 tại cơ sở Dĩ An, Bình Dương.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0016",
+      "ten_ctxh": "HOẠT ĐỘNG ĐÓN TÂN SINH VIÊN NHÓM NGÀNH KTHTCN 2024",
+      "noi_dung": "chuỗi hoạt động chào mừng tân sinh viên nhóm ngành KTHTCN khóa 2024",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Dĩ An, Bình Dương",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "23-03-2025 -> 26-03-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Có hoạt động hội trại nào kéo dài 3 ngày không?",
+    "ground_truth": "Có, đó là hoạt động HỖ TRỢ TỔ CHỨC BK FAMILY DAY 2025 của Liên chi đoàn Khoa Cơ khí.",
+    "metadata": {
+      "ma_ctxh": "CK25HTR0017",
+      "ten_ctxh": "HỖ TRỢ TỔ CHỨC BK FAMILY DAY 2025",
+      "noi_dung": "1. Địa điểm: Cơ sở Lý Thường Kiệt\r\n2. Ngày hoạt động: 28/06/2025\r\n3. Công việc: Chuẩn bị vật tư, đứng trạm trò chơi, tổ chức các trò chơi cho các bé.",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "21-08-2025 -> 21-09-2025",
+      "ngay_mod_duyet": "3"
+    }
+  },
+  {
+    "question": "Hoạt động HỖ TRỢ HỘI NGHỊ SINH VIÊN KHOA CƠ KHÍ 2024-2025 diễn ra khi nào và ở đâu?",
+    "ground_truth": "Hoạt động này sẽ diễn ra từ ngày 29-03-2025 đến 01-04-2025 tại Hội trường A5 - Cơ sở Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0001",
+      "ten_ctxh": "HỖ TRỢ HỘI NGHỊ SINH VIÊN KHOA CƠ KHÍ 2024-2025",
+      "noi_dung": "Sinh viên tham gia hỗ trợ tổ chức Hội nghị SV cấp khoa năm học 2024-2025 cùng với BCH Đoàn Khoa Cơ khí\r\nSáng ngày 29/03/2025, Hội trường A5",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Hội trường A5 - Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "29-03-2025 -> 01-04-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động nào đã diễn ra trong tháng 3 không?",
+    "ground_truth": "Có hoạt động SINH VIÊN CƠ KHÍ THAM GIA NGÀY ĐOÀN VIÊN 2025, diễn ra vào 07g30 - 11g30 ngày 23/3/2025 tại Hội trường B4 – Trường Đại học Bách khoa – ĐHQG-HCM – cơ sở Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0002",
+      "ten_ctxh": "SINH VIÊN CƠ KHÍ THAM GIA NGÀY ĐOÀN VIÊN 2025",
+      "noi_dung": "- Thời gian: 07g30 - 11g30 ngày 23/3/2025 (Chủ nhật).\r\n- Địa điểm: Hội trường B4 – Trường Đại học Bách khoa – ĐHQG-HCM – cơ sở Lý Thường Kiệt.\r\n(Căn cứ Kế hoạch số 07-KH/ĐTN ngày 10/3/2025 của Ban Thường vụ Đoàn Trường Đại học Bách khoa)",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Hội trường B4 – Trường Đại học Bách khoa – ĐHQG-HCM – cơ sở Lý Thường Kiệt.",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "03-04-2025 -> 10-04-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Hoạt động TỔ CÔNG TÁC HỖ TRỢ TỔ CHỨC HỘI NGHỊ SINH VIÊN KHOA CƠ KHÍ NH 2024-2025 diễn ra ở đâu và khi nào?",
+    "ground_truth": "Hoạt động diễn ra tại Hội trường A5 - Cơ sở Lý Thường Kiệt, từ 04-04-2025 đến 10-04-2025.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0003",
+      "ten_ctxh": "TỔ CÔNG TÁC HỖ TRỢ TỔ CHỨC HỘI NGHỊ SINH VIÊN KHOA CƠ KHÍ NH 2024-2025",
+      "noi_dung": "Tổ Công tác trực thuộc Ban Chấp hành Đoàn - Hội Khoa Cơ khí, nhiệm vụ hỗ trợ BCN Khoa tổ chức Hội nghị sinh viên",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Hội trường A5 - Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "04-04-2025 -> 10-04-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ hội thảo về van lạnh công nghiệp của Parker Hannifin diễn ra vào ngày nào và ở đâu?",
+    "ground_truth": "Hoạt động diễn ra vào ngày 03/04/2025 (chuẩn bị) và 04/04/2025 (diễn ra) tại Hội trường B11, Khoa Cơ khí, Trường Đại học Bách khoa - DHQG-HCM.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0004",
+      "ten_ctxh": "Hỗ Trợ Tổ Chức Hội Thảo Van Lạnh Công Nghiệp Parker Hannifin 04.04.2025",
+      "noi_dung": "Tên hoạt động: Hội thảo Van lạnh Công nghiệp Parker Hannifin\r\nThời gian: chuẩn bị (13h00 - 17h00, Thứ Năm, 03/04/2025) và diễn ra (07h30 - 12h00, Thứ Sáu, 04/04/2025)\r\nĐịa điểm: Hội trường B11, Khoa Cơ khí, Trường Đại học Bách khoa - DHQG-HCM\r\nĐơn vị tổ chức: Bộ môn Công nghệ Nhiệt lạnh, Khoa Cơ khí, Trường Đại học Bách khoa - DHQG-HCM\r\nNgười phụ trách (kèm SĐT): Ngô Tấn Hoàng Khoa 0395449864",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Hội trường B11, Khoa Cơ khí, Trường Đại học Bách khoa - DHQG-HCM",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "08-04-2025 -> 15-04-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động kỷ niệm 26 năm thành lập Bộ môn KTHTCN cần hỗ trợ những gì?",
+    "ground_truth": "Hoạt động 'CTV HỖ TRỢ CHƯƠNG TRÌNH KỶ NIỆM 26 NĂM THÀNH LẬP BỘ MÔN KTHTCN' cần tình nguyện viên hỗ trợ hậu cần, tiết mục văn nghệ, media, truyền thông.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0005",
+      "ten_ctxh": "CTV HỖ TRỢ CHƯƠNG TRÌNH KỶ NIỆM 26 NĂM THÀNH LẬP BỘ MÔN KTHTCN",
+      "noi_dung": "CTV hỗ trợ hậu cần, tiết mục văn nghệ, media, truyền thông",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Hội trường B4 – Trường Đại học Bách khoa – ĐHQG-HCM – cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "15-04-2025 -> 22-04-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động nào trong tháng 4 năm 2025 không?",
+    "ground_truth": "Có, hoạt động 'BTC CHƯƠNG TRÌNH KỶ NIỆM 26 NĂM THÀNH LẬP BỘ MÔN KTHTCN' diễn ra từ ngày 15/04/2025 đến 18/04/2025 tại Hội trường B4.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0006",
+      "ten_ctxh": "BTC CHƯƠNG TRÌNH KỶ NIỆM 26 NĂM THÀNH LẬP BỘ MÔN KTHTCN",
+      "noi_dung": "BTC quản lý các phần việc của chương trình",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Hội trường B4 – Trường Đại học Bách khoa – ĐHQG-HCM – cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "15-04-2025 -> 18-04-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động nào hỗ trợ đón học sinh THPT tham quan trường không?",
+    "ground_truth": "Có hoạt động Hỗ Trợ Đón Đoàn HS Các Trường THPT Đến Tham Quan Trường Đại Học Bách Khoa - DHQG-HCM Vào Ngày 12.04 và 13.04, diễn ra tại cơ sở Lý Thường Kiệt từ ngày 17/04/2025 đến 24/04/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0007",
+      "ten_ctxh": "Hỗ Trợ Đón Đoàn HS Các Trường THPT Đến Tham Quan Trường Đại Học Bách Khoa - DHQG-HCM Vào Ngày 12.04 và 13.04",
+      "noi_dung": "Hỗ Trợ Đón Đoàn Học Sinh Các Trường THPT Đến Tham Quan Trường Đại Học Bách Khoa - DHQG-HCM Vào Ngày 12.04 và 13.04",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "17-04-2025 -> 24-04-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có tổ chức hoạt động nào hỗ trợ hội thảo Panasonic trong tháng 5 không?",
+    "ground_truth": "Có, hoạt động Sinh Viên Tham Gia Hỗ Trợ Tổ Chức Hội Thảo Panasonic Fresher Program 2025 19.04.2025 tại cơ sở Lý Thường Kiệt, quận 10.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0008",
+      "ten_ctxh": "Sinh Viên Tham Gia Hỗ Trợ Tổ Chức Hội Thảo Panasonic Fresher Program 2025 19.04.2025",
+      "noi_dung": "Sinh Viên Tham Gia Hỗ Trợ Tổ Chức Hội Thảo Panasonic Fresher Program 2025 19.04.2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "05-05-2025 -> 12-05-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Hoạt động 'TỔ CHỨC WORKSHOP “LEAN FUNDAMENTAL\"' do liên chi đoàn nào tổ chức?",
+    "ground_truth": "Liên chi đoàn Khoa Cơ khí.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0009",
+      "ten_ctxh": "TỔ CHỨC WORKSHOP “LEAN FUNDAMENTAL\"",
+      "noi_dung": "WORKSHOP “LEAN FUNDAMENTAL\" được tổ chức vào 05/04/2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Dĩ An, Bình Dương",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "06-05-2025 -> 13-05-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động CTXH nào liên quan đến lễ trao học bổng trong tháng 5 năm 2025 không?",
+    "ground_truth": "Có, hoạt động 'Hỗ Trợ Tổ Chức Lễ Trao Học Bổng Thành An E&T và Giới Thiệu Sản Phẩm Quạt Elta Fans và AHU Huber&Ranner' diễn ra tại cơ sở Lý Thường Kiệt từ ngày 09-05-2025 đến 16-05-2025.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0010",
+      "ten_ctxh": "Hỗ Trợ Tổ Chức Lễ Trao Học Bổng Thành An E&T và Giới Thiệu Sản Phẩm Quạt Elta Fans và AHU Huber&Ranner",
+      "noi_dung": "Hỗ Trợ Tổ Chức Lễ Trao Học Bổng Thành An E&T và Giới Thiệu Sản Phẩm Quạt Elta Fans và AHU Huber&Ranner",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "09-05-2025 -> 16-05-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Hoạt động CTV LỄ TỐT NGHIỆP KHOA CƠ KHÍ 4-2025 diễn ra ở đâu và khi nào?",
+    "ground_truth": "Hoạt động này diễn ra tại cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh, từ ngày 13/05/2025 đến 20/05/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0011",
+      "ten_ctxh": "CTV LỄ TỐT NGHIỆP KHOA CƠ KHÍ 4-2025",
+      "noi_dung": "CTV LỄ TỐT NGHIỆP KHOA CƠ KHÍ 4-2025 (Quản lý bởi Tổ Công tác của BCH Đoàn - Hội khoa Cơ khí)",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "13-05-2025 -> 20-05-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động nào diễn ra vào tháng 5/2025 không?",
+    "ground_truth": "Có, đó là hoạt động 'TỔ CÔNG TÁC NGHIỆP VỤ SỔ ĐOÀN VIÊN - KHOA CƠ KHÍ - ĐỢT TN 04/2025' diễn ra từ 16-05-2025 đến 23-05-2025.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0012",
+      "ten_ctxh": "TỔ CÔNG TÁC NGHIỆP VỤ SỔ ĐOÀN VIÊN - KHOA CƠ KHÍ - ĐỢT TN 04/2025",
+      "noi_dung": "TỔ CÔNG TÁC NGHIỆP VỤ SỔ ĐOÀN VIÊN - KHOA CƠ KHÍ - ĐỢT TN 04/2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "16-05-2025 -> 23-05-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động nào liên quan đến treo cờ Tổ quốc trong tháng 5/2025 không?",
+    "ground_truth": "Có, hoạt động 'ĐOÀN VIÊN - THANH NIÊN THAM GIA TREO CỜ TỔ QUỐC HƯỞNG ỨNG 50 NĂM GIẢI PHÓNG MIỀN NAM - THỐNG NHẤT ĐẤT NƯỚC' diễn ra từ 17/05/2025 đến 24/05/2025 tại cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0013",
+      "ten_ctxh": "ĐOÀN VIÊN - THANH NIÊN THAM GIA TREO CỜ TỔ QUỐC HƯỞNG ỨNG 50 NĂM GIẢI PHÓNG MIỀN NAM - THỐNG NHẤT ĐẤT NƯỚC",
+      "noi_dung": "ĐOÀN VIÊN - THANH NIÊN THAM GIA TREO CỜ TỔ QUỐC HƯỞNG ỨNG 50 NĂM GIẢI PHÓNG MIỀN NAM - THỐNG NHẤT ĐẤT NƯỚC",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "17-05-2025 -> 24-05-2025",
+      "ngay_mod_duyet": "2.5"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động công tác xã hội nào diễn ra trong tháng 5 năm 2025 không?",
+    "ground_truth": "Có, hoạt động TỔ TRUYỀN THÔNG VÀ TUYỂN QUÂN CDTN MHX 2025 KHOA CƠ KHÍ - LẦN 1 sẽ diễn ra từ ngày 22/05/2025 đến 25/05/2025 tại cơ sở Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0014",
+      "ten_ctxh": "TỔ TRUYỀN THÔNG VÀ TUYỂN QUÂN CDTN MHX 2025 KHOA CƠ KHÍ - LẦN 1",
+      "noi_dung": "TỔ TRUYỀN THÔNG VÀ TUYỂN QUÂN CDTN MHX 2025 KHOA CƠ KHÍ - LẦN 1",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "22-05-2025 -> 25-05-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có tổ chức hoạt động nào trong tháng 5/2025 không?",
+    "ground_truth": "Có, hoạt động CTV hỗ trợ Lễ Trao học bổng của CLB Tennis CSV khoa Cơ khí cho SV khoa Cơ khí sẽ diễn ra từ ngày 23/05/2025 đến 25/05/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0015",
+      "ten_ctxh": "CTV hỗ trợ Lễ Trao học bổng của CLB Tennis CSV khoa Cơ khí cho SV khoa Cơ khí ngày 23/05/2025",
+      "noi_dung": "CTV hỗ trợ Lễ Trao học bổng của CLB Tennis CSV khoa Cơ khí cho SV khoa Cơ khí ngày 23/05/2025",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "23-05-2025 -> 25-05-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động nào liên quan đến lễ tốt nghiệp trong tháng 7 không?",
+    "ground_truth": "Có, hoạt động TỔ CÔNG TÁC LỄ TỐT NGHIỆP KHOA CƠ KHÍ 2025.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0016",
+      "ten_ctxh": "TỔ CÔNG TÁC LỄ TỐT NGHIỆP KHOA CƠ KHÍ 2025",
+      "noi_dung": "TỔ CÔNG TÁC LỄ TỐT NGHIỆP KHOA CƠ KHÍ 2025 của BCH Đoàn - Hội khoa Cơ khí",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "03-07-2025 -> 07-07-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có tổ chức ngày hội việc làm nào không?",
+    "ground_truth": "Có, hoạt động 'SINH VIÊN THAM GIA JOB FAIR KHOA CƠ KHÍ 2025 - NHÓM 7' diễn ra tại cơ sở Lý Thường Kiệt từ 07-07-2025 đến 14-07-2025.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0017",
+      "ten_ctxh": "SINH VIÊN THAM GIA JOB FAIR KHOA CƠ KHÍ 2025 - NHÓM 7",
+      "noi_dung": "SINH VIÊN THAM GIA JOB FAIR KHOA CƠ KHÍ 2025 - NHÓM 7",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Ngày hội việc làm",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "07-07-2025 -> 14-07-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có tổ chức hoạt động tình nguyện viên nào cho cuộc thi robot vào tháng 7 không?",
+    "ground_truth": "Có, hoạt động CTV CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - VÒNG SƠ LOẠI diễn ra từ 08/07/2025 đến 15/07/2025 tại cơ sở Dĩ An, Bình Dương.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0018",
+      "ten_ctxh": "CTV CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - VÒNG SƠ LOẠI",
+      "noi_dung": "CTV CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2025 - VÒNG SƠ LOẠI",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Dĩ An, Bình Dương",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "08-07-2025 -> 15-07-2025",
+      "ngay_mod_duyet": "0.5"
+    }
+  },
+  {
+    "question": "Hoạt động 'TỔ CHỨC HOẠT ĐỘNG MOCK INTERVIEW 6 - CLB IE CONNECT' diễn ra ở đâu?",
+    "ground_truth": "Hoạt động này diễn ra tại cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0019",
+      "ten_ctxh": "TỔ CHỨC HOẠT ĐỘNG MOCK INTERVIEW 6 - CLB IE CONNECT",
+      "noi_dung": "TỔ CHỨC HOẠT ĐỘNG MOCK INTERVIEW 6 - CLB IE CONNECT",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "08-07-2025 -> 15-07-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Hoạt động 'TỔ CHỨC TƯ VẤN PHÂN NGÀNH ISE K24 - CLB IE CONNECT' thuộc về tổ chức nào và thời lượng là bao lâu?",
+    "ground_truth": "Hoạt động này thuộc Liên chi đoàn Khoa Cơ khí và có thời lượng 2 ngày.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0020",
+      "ten_ctxh": "TỔ CHỨC TƯ VẤN PHÂN NGÀNH ISE K24 - CLB IE CONNECT",
+      "noi_dung": "TỔ CHỨC TƯ VẤN PHÂN NGÀNH ISE K24 - CLB IE CONNECT",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Dĩ An, Bình Dương",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "08-07-2025 -> 15-07-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Hoạt động 'Hỗ Trợ Công Tác Kiểm Định AQAS Cho Ngành Kỹ Thuật Nhiệt' diễn ra ở đâu và vào thời gian nào?",
+    "ground_truth": "Hoạt động này diễn ra tại cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh, từ 23.06.2025 đến 26.06.2025.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0021",
+      "ten_ctxh": "Hỗ Trợ Công Tác Kiểm Định AQAS Cho Ngành Kỹ Thuật Nhiệt",
+      "noi_dung": "Hỗ Trợ Công Tác Kiểm Định AQAS Cho Ngành Kỹ Thuật Nhiệt\r\ntừ Thứ Hai (23.06.2025) tới hết Năm (26.06.2025) với mỗi ngày bắt đầu từ 07h00 tới 18h00",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "04-08-2025 -> 04-09-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Hoạt động \"TỔ CHỨC PHÁT HÀNH CHUỖI VIDEO TIẾNG ANH \"PLEC GO GO\"\" thuộc về liên chi đoàn nào?",
+    "ground_truth": "Hoạt động này thuộc về Liên chi đoàn Khoa Cơ khí.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0022",
+      "ten_ctxh": "TỔ CHỨC PHÁT HÀNH CHUỖI VIDEO TIẾNG ANH \"PLEC GO GO\"",
+      "noi_dung": "Phát hành 3 video trực tuyến trên fanpage từ ngày 04 tháng 10 năm 2024 đến ngày 03 tháng 05 năm 2025.",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "21-08-2025 -> 21-09-2025",
+      "ngay_mod_duyet": "3"
+    }
+  },
+  {
+    "question": "Đơn vị nào tổ chức hoạt động hỗ trợ Đoàn - Hội khoa Cơ khí vào tháng 9?",
+    "ground_truth": "Hoạt động HỖ TRỢ THƯỜNG TRỰC ĐOÀN - HỘI KHOA CƠ KHÍ NGÀY 03/9/2025 do Thường trực Đoàn - Hội khoa Cơ khí tổ chức.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0023",
+      "ten_ctxh": "HỖ TRỢ THƯỜNG TRỰC ĐOÀN - HỘI KHOA CƠ KHÍ NGÀY 03/9/2025",
+      "noi_dung": "Tên hoạt động: HỖ TRỢ THƯỜNG TRỰC ĐOÀN - HỘI KHOA CƠ KHÍ NGÀY 03/9/2025\r\nThời gian: từ 8g30 đến 17g30 ngày 03/9/2025\r\nĐịa điểm: Văn phòng Đoàn TN - LCH SV khoa Cơ khí, 104-B11, CS1\r\nĐơn vị tổ chức: Thường trực Đoàn - Hội khoa Cơ khí\r\nNgười phụ trách (kèm SĐT): Huỳnh Hữu Đức (Bí thư Đoàn khoa trực tiếp phụ trách)",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "03-09-2025 -> 03-10-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có hoạt động nào cần hỗ trợ công tác văn phòng không?",
+    "ground_truth": "Có, hoạt động 'HỖ TRỢ CÔNG TÁC VĂN PHÒNG ĐOÀN TN - LIÊN CHI HỘI SV KHOA CƠ KHÍ TỪ NGÀY 04/9 ĐẾN 12/9/2025' diễn ra từ 10/09/2025 đến 05/10/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0024",
+      "ten_ctxh": "HỖ TRỢ CÔNG TÁC VĂN PHÒNG ĐOÀN TN - LIÊN CHI HỘI SV KHOA CƠ KHÍ TỪ NGÀY 04/9 ĐẾN 12/9/2025",
+      "noi_dung": "hỗ trợ công tác chuẩn bị lễ đón tsv, lễ trao học bổng, công tác văn thư - lưu trữ - kiểm đếm văn phòng",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "6",
+      "thoi_gian_thuc_hien": "10-09-2025 -> 05-10-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Khoa Cơ khí có tổ chức hoạt động nào để đón tân sinh viên K2025 và trao học bổng không?",
+    "ground_truth": "Có, hoạt động 'THAM GIA TỔ CHỨC LỄ ĐÓN TÂN SINH K2025 VÀ LỄ TRAO HỌC BỔNG KHOA CƠ KHÍ 05/9/2025' diễn ra từ 23-09-2025 đến 05-10-2025 tại cơ sở 1, P. Diên Hồng.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0025",
+      "ten_ctxh": "THAM GIA TỔ CHỨC LỄ ĐÓN TÂN SINH K2025 VÀ LỄ TRAO HỌC BỔNG KHOA CƠ KHÍ 05/9/2025",
+      "noi_dung": "THAM GIA TỔ CHỨC LỄ ĐÓN TÂN SINH K2025 VÀ LỄ TRAO HỌC BỔNG KHOA CƠ KHÍ 05/9/2025: chuẩn bị, triển khai, tiến hành ở HT A5, kỹ thuật - truyền thông",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "23-09-2025 -> 05-10-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ công tác văn phòng của Liên chi đoàn Khoa Cơ khí có thời lượng bao nhiêu ngày?",
+    "ground_truth": "Hoạt động này có thời lượng là 1 ngày.",
+    "metadata": {
+      "ma_ctxh": "CK25KKK0026",
+      "ten_ctxh": "HỖ TRỢ CÔNG TÁC VĂN PHÒNG ĐOÀN TN - LIÊN CHI HỘI SV KHOA CƠ KHÍ TỪ NGÀY 15/9 ĐẾN 19/9/2025",
+      "noi_dung": "HỖ TRỢ CÔNG TÁC VĂN PHÒNG ĐOÀN TN - LIÊN CHI HỘI SV KHOA CƠ KHÍ TỪ NGÀY 15/9 ĐẾN 19/9/2025: văn phòng, dữ liệu, điểm danh",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "26-09-2025 -> 26-10-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động dọn dẹp phòng thí nghiệm của Liên chi đoàn Khoa Kỹ thuật Giao thông diễn ra ở đâu và khi nào?",
+    "ground_truth": "Hoạt động [GT] CTV HỖ TRỢ DỌN DẸP PHÒNG BỘ MÔN HÀNG KHÔNG diễn ra tại Lab Hàng không - Lab Tàu thủy vào ngày 24-01-2025.",
+    "metadata": {
+      "ma_ctxh": "GT25CTX0006 ",
+      "ten_ctxh": "[GT] CTV HỖ TRỢ DỌN DẸP PHÒNG BỘ MÔN HÀNG KHÔNG",
+      "noi_dung": "[GT] CTV HỖ TRỢ DỌN DẸP PHÒNG BỘ MÔN HÀNG KHÔNG",
+      "organization": {
+        "id": "a7a06a4d-4729-4596-b881-03f976a523cb",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Giao Thông",
+        "code": "LIEN_CHI_DOAN_GT"
+      },
+      "dia_diem": "Lab Hàng không - Lab Tàu thủy",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "24-01-2025 -> 24-01-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Kỹ Thuật Giao Thông có hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường) nào diễn ra vào tháng 2 không?",
+    "ground_truth": "Có, hoạt động \"[GT] CTV HỖ TRỢ ĐÓN ĐOÀN HỌC SINH\" diễn ra tại Tòa C5 vào ngày 07/02/2025.",
+    "metadata": {
+      "ma_ctxh": "GT25CTX0007 ",
+      "ten_ctxh": "[GT] CTV HỖ TRỢ ĐÓN ĐOÀN HỌC SINH",
+      "noi_dung": "[GT] CTV HỖ TRỢ ĐÓN ĐOÀN HỌC SINH",
+      "organization": {
+        "id": "a7a06a4d-4729-4596-b881-03f976a523cb",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Giao Thông",
+        "code": "LIEN_CHI_DOAN_GT"
+      },
+      "dia_diem": "Tòa C5",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "07-02-2025 -> 07-02-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ Lễ tiếp nhận động cơ từ Công ty TNHH Việt Nam Suzuki diễn ra vào ngày nào?",
+    "ground_truth": "Hoạt động '[GT] HỖ TRỢ SỰ KIỆN CỦA KHOA' diễn ra vào ngày 09-04-2025.",
+    "metadata": {
+      "ma_ctxh": "GT25CTX0008 ",
+      "ten_ctxh": "[GT] HỖ TRỢ SỰ KIỆN CỦA KHOA",
+      "noi_dung": "Hỗ trợ Lễ tiếp nhận động cơ từ Công ty TNHH Việt Nam Suzuki",
+      "organization": {
+        "id": "a7a06a4d-4729-4596-b881-03f976a523cb",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Giao Thông",
+        "code": "LIEN_CHI_DOAN_GT"
+      },
+      "dia_diem": "Hội trường C5, trường Đại học Bách khoa, ĐHQG-HCM, cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "09-04-2025 -> 09-04-2025",
+      "ngay_mod_duyet": "3"
+    }
+  },
+  {
+    "question": "Khi nào và ở đâu sẽ diễn ra Lễ vinh danh tài năng Lương Văn Can lần thứ 11?",
+    "ground_truth": "Lễ vinh danh tài năng Lương Văn Can lần thứ 11 sẽ diễn ra vào ngày 18-11-2025 tại Hội trường 17, lầu 1, Văn phòng 2 – Bộ Giáo dục và Đào tạo.",
+    "metadata": {
+      "ma_ctxh": "CT25KKK0059 ",
+      "ten_ctxh": "CTV LỄ VINH DANH TÀI NĂNG LƯƠNG VĂN CAN LẦN THỨ 11 VÀ PHÁT ĐỘNG GIẢI THƯỞNG LẦN THỨ 12",
+      "noi_dung": "CTV LỄ VINH DANH TÀI NĂNG LƯƠNG VĂN CAN LẦN THỨ 11 VÀ PHÁT ĐỘNG GIẢI THƯỞNG LẦN THỨ 12",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "Hội trường 17, lầu 1, Văn phòng 2 – Bộ Giáo dục và Đào tạo",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "18-11-2025 -> 18-11-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động Trọng tài hỗ trợ Hội thao Khoa Điện - Điện tử 2025 diễn ra khi nào và kéo dài bao lâu?",
+    "ground_truth": "Hoạt động diễn ra từ 29-11-2025 đến 06-12-2025, kéo dài 8 ngày.",
+    "metadata": {
+      "ma_ctxh": "DD25KKK0013 ",
+      "ten_ctxh": "[FEEE] - TRỌNG TÀI HỖ TRỢ HỘI THAO KHOA ĐIỆN - ĐIỆN TỬ 2025",
+      "noi_dung": "[FEEE] - TRỌNG TÀI HỖ TRỢ HỘI THAO KHOA ĐIỆN - ĐIỆN TỬ 2025",
+      "organization": {
+        "id": "f34374fa-1258-4b67-9e35-3e47af7a6608",
+        "name": "Liên chi đoàn Khoa Điện Điện tử",
+        "code": "LIEN_CHI_DOAN_DD"
+      },
+      "dia_diem": "Đại Học Bách Khoa TPHCM - Thành Phố Dĩ An, Tỉnh Bình Dương",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "8",
+      "thoi_gian_thuc_hien": "29-11-2025 -> 06-12-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ công tác hồ sơ phong trào Sinh viên 5 tốt của Liên chi đoàn Khoa Điện Điện tử sẽ diễn ra ở đâu và trong bao lâu?",
+    "ground_truth": "Hoạt động này sẽ diễn ra tại Đại Học Bách Khoa TPHCM - Thành Phố Dĩ An, Tỉnh Bình Dương, kéo dài 8 ngày từ 05-12-2025 đến 12-12-2025.",
+    "metadata": {
+      "ma_ctxh": "DD25KKK0014 ",
+      "ten_ctxh": "[FEEE] - HỖ TRỢ CÔNG TÁC HỒ SƠ PHÒNG TRÀO SINH VIÊN 5 TỐT CÁC CẤP NĂM HỌC 2024-2025",
+      "noi_dung": "[FEEE] - HỖ TRỢ CÔNG TÁC HỒ SƠ PHÒNG TRÀO SINH VIÊN 5 TỐT CÁC CẤP NĂM HỌC 2024-2025",
+      "organization": {
+        "id": "f34374fa-1258-4b67-9e35-3e47af7a6608",
+        "name": "Liên chi đoàn Khoa Điện Điện tử",
+        "code": "LIEN_CHI_DOAN_DD"
+      },
+      "dia_diem": "Đại Học Bách Khoa TPHCM - Thành Phố Dĩ An, Tỉnh Bình Dương",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "8",
+      "thoi_gian_thuc_hien": "05-12-2025 -> 12-12-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Điện Điện tử có hoạt động CTXH nào diễn ra vào tháng 12 năm 2025 không?",
+    "ground_truth": "Có, hoạt động '[FEEE] - HOẠT ĐỘNG CTV tham gia Lễ ra quân hoạt động Môi trường xanh'.",
+    "metadata": {
+      "ma_ctxh": "DD25KKK0015 ",
+      "ten_ctxh": "[FEEE] - HOẠT ĐỘNG CTV tham gia Lễ ra quân hoạt động Môi trường xanh",
+      "noi_dung": "[FEEE] - HOẠT ĐỘNG CTV tham gia Lễ ra quân hoạt động Môi trường xanh",
+      "organization": {
+        "id": "f34374fa-1258-4b67-9e35-3e47af7a6608",
+        "name": "Liên chi đoàn Khoa Điện Điện tử",
+        "code": "LIEN_CHI_DOAN_DD"
+      },
+      "dia_diem": "Đại Học Bách Khoa TPHCM - 268, Đường Lý Thường Kiệt, Phường 14, Quận 10, Thành Phố Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "14-12-2025 -> 21-12-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ DEE GAMES 2025 của Liên chi đoàn Khoa Điện Điện tử diễn ra ở đâu và khi nào?",
+    "ground_truth": "Hoạt động [FEEE] - HOẠT ĐỘNG HỖ TRỢ DEE GAMES 2025 diễn ra tại Đại Học Bách Khoa TPHCM, từ 14-12-2025 đến 21-12-2025.",
+    "metadata": {
+      "ma_ctxh": "DD25KKK0016 ",
+      "ten_ctxh": "[FEEE] - HOẠT ĐỘNG HỖ TRỢ DEE GAMES 2025",
+      "noi_dung": "[FEEE] - HOẠT ĐỘNG HỖ TRỢ DEE GAMES 2025",
+      "organization": {
+        "id": "f34374fa-1258-4b67-9e35-3e47af7a6608",
+        "name": "Liên chi đoàn Khoa Điện Điện tử",
+        "code": "LIEN_CHI_DOAN_DD"
+      },
+      "dia_diem": "Đại Học Bách Khoa TPHCM - 268, Đường Lý Thường Kiệt, Phường 14, Quận 10, Thành Phố Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "8",
+      "thoi_gian_thuc_hien": "14-12-2025 -> 21-12-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Hoạt động [FEEE] - HOẠT ĐỘNG HỖ TRỢ DEEGAMES 2025 diễn ra ở đâu và khi nào?",
+    "ground_truth": "Hoạt động này diễn ra tại Đại Học Bách Khoa TPHCM - 268, Đường Lý Thường Kiệt, Phường 14, Quận 10, Thành Phố Hồ Chí Minh, từ ngày 14-12-2025 đến 21-12-2025.",
+    "metadata": {
+      "ma_ctxh": "DD25KKK0017 ",
+      "ten_ctxh": "[FEEE] - HOẠT ĐỘNG HỖ TRỢ DEEGAMES 2025",
+      "noi_dung": "[FEEE] - HOẠT ĐỘNG HỖ TRỢ DEEGAMES 2025",
+      "organization": {
+        "id": "f34374fa-1258-4b67-9e35-3e47af7a6608",
+        "name": "Liên chi đoàn Khoa Điện Điện tử",
+        "code": "LIEN_CHI_DOAN_DD"
+      },
+      "dia_diem": "Đại Học Bách Khoa TPHCM - 268, Đường Lý Thường Kiệt, Phường 14, Quận 10, Thành Phố Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "8",
+      "thoi_gian_thuc_hien": "14-12-2025 -> 21-12-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Điện Điện tử có hoạt động nào thuộc loại 'Hoạt động khác' diễn ra trong tháng 12 không?",
+    "ground_truth": "Có, đó là chương trình [FEEE] - TUYỂN SINH VIÊN THAM DỰ CHƯƠNG TRÌNH GẶP GỠ CÁN BỘ ĐOÀN VÀ ĐẢNG VIÊN TRẺ KHÓA K25, diễn ra từ 14-12-2025 đến 21-12-2025.",
+    "metadata": {
+      "ma_ctxh": "DD25KKK0018 ",
+      "ten_ctxh": "[FEEE] - TUYỂN SINH VIÊN THAM DỰ CHƯƠNG TRÌNH GẶP GỠ CÁN BỘ ĐOÀN VÀ ĐẢNG VIÊN TRẺ KHÓA K25",
+      "noi_dung": "[FEEE] - TUYỂN SINH VIÊN THAM DỰ CHƯƠNG TRÌNH GẶP GỠ CÁN BỘ ĐOÀN VÀ ĐẢNG VIÊN TRẺ KHÓA K25",
+      "organization": {
+        "id": "f34374fa-1258-4b67-9e35-3e47af7a6608",
+        "name": "Liên chi đoàn Khoa Điện Điện tử",
+        "code": "LIEN_CHI_DOAN_DD"
+      },
+      "dia_diem": "Đại Học Bách Khoa TPHCM - 268, Đường Lý Thường Kiệt, Phường 14, Quận 10, Thành Phố Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "14-12-2025 -> 21-12-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động CTV hỗ trợ lễ tốt nghiệp tháng 11 2025 do tổ chức nào phụ trách?",
+    "ground_truth": "Hoạt động này do Liên chi đoàn Khoa Điện Điện tử phụ trách.",
+    "metadata": {
+      "ma_ctxh": "DD25KKK0019 ",
+      "ten_ctxh": "[FEEE] - CTV HỖ TRỢ LỄ TỐT NGHIỆP THÁNG 11 2025",
+      "noi_dung": "[FEEE] - CTV HỖ TRỢ LỄ TỐT NGHIỆP THÁNG 11 2025",
+      "organization": {
+        "id": "f34374fa-1258-4b67-9e35-3e47af7a6608",
+        "name": "Liên chi đoàn Khoa Điện Điện tử",
+        "code": "LIEN_CHI_DOAN_DD"
+      },
+      "dia_diem": "Đại Học Bách Khoa TPHCM - 268, Đường Lý Thường Kiệt, Phường 14, Quận 10, Thành Phố Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "8",
+      "thoi_gian_thuc_hien": "26-12-2025 -> 02-01-2026",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Có hoạt động tình nguyện viên hỗ trợ phát hồ sơ cho phòng CTSV nào diễn ra trong tháng 9 hoặc tháng 10/2025 không?",
+    "ground_truth": "Có, đó là hoạt động 'TNV HO TRO PHAT HO SO CHO PHONG CTSV THANG 9 - 10.2025' do Đoàn Trường tổ chức, diễn ra tại TRUONG DAI HOC BACH KHOA_CS1 từ 17/09/2025 đến 17/10/2025.",
+    "metadata": {
+      "ma_ctxh": "CT25KKK0040 ",
+      "ten_ctxh": "TNV HO TRO PHAT HO SO CHO PHONG CTSV THANG 9 - 10.2025",
+      "noi_dung": "TNV HO TRO PHAT HO SO CHO PHONG CTSV THANG 9 - 10.2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "TRUONG DAI HOC BACH KHOA_CS1",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "17-09-2025 -> 17-10-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Có hoạt động nào hỗ trợ phát giấy chứng nhận sinh viên tại Bách Khoa CS1 vào tháng 10 không?",
+    "ground_truth": "Có hoạt động 'TNV Hỗ trợ công tác sinh viên' do Đoàn Trường tổ chức, diễn ra từ 07-10-2025 đến 11-10-2025 tại Bách Khoa CS1.",
+    "metadata": {
+      "ma_ctxh": "CT25KKK0041 ",
+      "ten_ctxh": "TNV Hỗ trợ công tác sinh viên",
+      "noi_dung": "Hỗ t ro phát giấy chứng nhận sinh viên",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "Bách Khoa CS1",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "07-10-2025 -> 11-10-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Có hoạt động công tác xã hội nào ở Cơ sở Lý Thường Kiệt trong tháng 6 không?",
+    "ground_truth": "Có, hoạt động Dọn PTN Hoá Phân tích 207 B2 tháng 4/2025 của Liên chi đoàn Khoa Kỹ Thuật Hóa Học, diễn ra từ 17-06-2025 đến 01-07-2025.",
+    "metadata": {
+      "ma_ctxh": "HC25CTX0036 ",
+      "ten_ctxh": "[HH] Dọn PTN Hoá Phân tích 207 B2 tháng 4/2025",
+      "noi_dung": "[HH] Dọn PTN Hoá Phân tích 207 B2 tháng 4/2025",
+      "organization": {
+        "id": "5c20dc90-3f3c-4476-83f7-b7fa5762bbbe",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Hóa Học",
+        "code": "LIEN_CHI_DOAN_HC"
+      },
+      "dia_diem": "Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "17-06-2025 -> 01-07-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Có hoạt động dọn dẹp phòng thí nghiệm nào ở Cơ sở Lý Thường Kiệt diễn ra trong tháng 1 hoặc tháng 2 năm 2025 không?",
+    "ground_truth": "Có, đó là hoạt động [HH] Dọn PTN Hoá Vô cơ 213 B2 tháng 12/2024.",
+    "metadata": {
+      "ma_ctxh": "HC25CTX0002 ",
+      "ten_ctxh": "[HH] Dọn PTN Hoá Vô cơ 213 B2 tháng 12/2024",
+      "noi_dung": "[HH] Dọn PTN Hoá Vô cơ 213 B2 tháng 12/2024",
+      "organization": {
+        "id": "5c20dc90-3f3c-4476-83f7-b7fa5762bbbe",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Hóa Học",
+        "code": "LIEN_CHI_DOAN_HC"
+      },
+      "dia_diem": "Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "28-01-2025 -> 11-02-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Có hoạt động nào về chủ đề sức khỏe diễn ra ở CS LTK không?",
+    "ground_truth": "Có, hoạt động BTC HỘI THẢO SỨC KHỎE TOÀN DIỆN HEALTH AND WELLNESS WORKSHOP, do Đoàn Trường tổ chức, diễn ra từ 16-07-2025 đến 01-12-2025.",
+    "metadata": {
+      "ma_ctxh": "QT25CTX0054 ",
+      "ten_ctxh": "BTC HỘI THẢO SỨC KHỎE TOÀN DIỆN HEALTH AND WELLNESS WORKSHOP",
+      "noi_dung": "BTC HỘI THẢO SỨC KHỎE TOÀN DIỆN HEALTH AND WELLNESS WORKSHOP",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS LTK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "16-07-2025 -> 01-12-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Hoạt động 'BTC OSA PODCAST: WHISPERS OF ETERNITY' là loại hình công tác xã hội gì và do ai tổ chức?",
+    "ground_truth": "Đây là hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….) do Đoàn Trường tổ chức.",
+    "metadata": {
+      "ma_ctxh": "QT25CTX0055 ",
+      "ten_ctxh": "BTC OSA PODCAST: WHISPERS OF ETERNITY",
+      "noi_dung": "BTC OSA PODCAST: WHISPERS OF ETERNITY",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS LTK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "16-07-2025 -> 01-12-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Đoàn Trường có hoạt động công tác xã hội nào ở CS LTK trong năm 2025 không?",
+    "ground_truth": "Có, hoạt động BTC WORKSHOP YONKOMA diễn ra từ 16-07-2025 đến 01-12-2025.",
+    "metadata": {
+      "ma_ctxh": "QT25CTX0056 ",
+      "ten_ctxh": "BTC WORKSHOP YONKOMA",
+      "noi_dung": "BTC WORKSHOP YONKOMA",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS LTK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "16-07-2025 -> 01-12-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Đoàn Trường có tổ chức hoạt động công tác xã hội nào liên quan đến dọn dẹp, môi trường không?",
+    "ground_truth": "Có, hoạt động 'BTC INTERNATIONAL CONNECTION FESTIVAL' tại CS LTK, diễn ra từ 16-07-2025 đến 01-12-2025.",
+    "metadata": {
+      "ma_ctxh": "QT25CTX0057 ",
+      "ten_ctxh": "BTC INTERNATIONAL CONNECTION FESTIVAL",
+      "noi_dung": "BTC INTERNATIONAL CONNECTION FESTIVAL",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS LTK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "16-07-2025 -> 01-12-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Hoạt động 'Ước mơ Tuổi Thơ Mùa 2 - 2025' thuộc loại hình gì và do đơn vị nào tổ chức?",
+    "ground_truth": "Đây là Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….) do Đoàn Trường tổ chức.",
+    "metadata": {
+      "ma_ctxh": "QT25CTX0058 ",
+      "ten_ctxh": "BTC HOẠT ĐỘNG ƯỚC MƠ TUỔI THƠ MÙA 2 - 2025",
+      "noi_dung": "BTC HOẠT ĐỘNG ƯỚC MƠ TUỔI THƠ MÙA 2 - 2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS LTK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "16-07-2025 -> 01-12-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Hoạt động 'CTV HỖ TRỢ HẬU CẦN HOẠT ĐỘNG THĂM QUÂN MÙA HÈ XANH 2025' thuộc loại hoạt động gì và do tổ chức nào triển khai?",
+    "ground_truth": "Đây là hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường…) do Đoàn Trường triển khai.",
+    "metadata": {
+      "ma_ctxh": "QT25CTX0059 ",
+      "ten_ctxh": "CTV HỖ TRỢ HẬU CẦN HOẠT ĐỘNG THĂM QUÂN MÙA HÈ XANH 2025",
+      "noi_dung": "CTV HỖ TRỢ HẬU CẦN HOẠT ĐỘNG THĂM QUÂN MÙA HÈ XANH 2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS LTK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "16-07-2025 -> 01-12-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Đoàn Trường có hoạt động nào liên quan đến trao đổi văn hóa sắp tới không?",
+    "ground_truth": "Có, hoạt động \"CTV HOẠT ĐỘNG TRAO ĐỔI VĂN HÓA THÁNG 6/2025\" sẽ diễn ra tại CS LTK từ 16-07-2025 đến 01-12-2025, với thời lượng 4 ngày.",
+    "metadata": {
+      "ma_ctxh": "QT25CTX0060 ",
+      "ten_ctxh": "CTV HOẠT ĐỘNG TRAO ĐỔI VĂN HÓA THÁNG 6/2025",
+      "noi_dung": "CTV HOẠT ĐỘNG TRAO ĐỔI VĂN HÓA THÁNG 6/2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS LTK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "16-07-2025 -> 01-12-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Đoàn Trường có hoạt động công tác xã hội nào trong tháng 1 năm 2026 không?",
+    "ground_truth": "Có, hoạt động 'CTV HỖ TRỢ CÁC HOẠT ĐỘNG TRAO ĐỔI VĂN HÓA - 12/2025' diễn ra từ 10/01/2026 đến 31/01/2026 tại CS 1: LTK.",
+    "metadata": {
+      "ma_ctxh": "QT26CTX0001 ",
+      "ten_ctxh": "CTV HỖ TRỢ CÁC HOẠT ĐỘNG TRAO ĐỔI VĂN HÓA - 12/2025",
+      "noi_dung": "CTV HỖ TRỢ CÁC HOẠT ĐỘNG TRAO ĐỔI VĂN HÓA - 12/2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS 1: LTK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "10-01-2026 -> 31-01-2026",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Đoàn Trường có tổ chức hoạt động hội trại nào trong tháng 1 năm 2026 không?",
+    "ground_truth": "Có, hoạt động 'HỖ TRỢ TỔ CHỨC HỘI TRẠI TRUYỀN THỐNG OISP CAMP 2025' diễn ra từ 11-01-2026 đến 31-01-2026.",
+    "metadata": {
+      "ma_ctxh": "QT26CTX0002 ",
+      "ten_ctxh": "HỖ TRỢ TỔ CHỨC HỘI TRẠI TRUYỀN THỐNG OISP CAMP 2025",
+      "noi_dung": "HỖ TRỢ TỔ CHỨC HỘI TRẠI TRUYỀN THỐNG OISP CAMP 2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS 1: LTK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "11-01-2026 -> 31-01-2026",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Có hoạt động công tác xã hội nào liên quan đến dọn dẹp ở cơ sở LTK trong tháng 1/2026 không?",
+    "ground_truth": "Có, đó là hoạt động CTV HỖ TRỢ CÁC CÔNG TÁC HẬU CẦN CỦA VPĐTQT - 12/2025, diễn ra từ 11-01-2026 đến 31-01-2026.",
+    "metadata": {
+      "ma_ctxh": "QT26CTX0003 ",
+      "ten_ctxh": "CTV HỖ TRỢ CÁC CÔNG TÁC HẬU CẦN CỦA VPĐTQT - 12/2025",
+      "noi_dung": "CTV HỖ TRỢ CÁC CÔNG TÁC HẬU CẦN CỦA VPĐTQT - 12/2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS 1: LTK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "3",
+      "thoi_gian_thuc_hien": "11-01-2026 -> 31-01-2026",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Hoạt động 'Chào đón tân sinh viên M.O.V.E 2025' diễn ra ở đâu và khi nào?",
+    "ground_truth": "Hoạt động diễn ra tại CS 1: LTK, từ 17-01-2026 đến 28-02-2026.",
+    "metadata": {
+      "ma_ctxh": "QT26CTX0004 ",
+      "ten_ctxh": "TỔ CHỨC VÀ THAM GIA CHƯƠNG TRÌNH CHÀO ĐÓN TÂN SINH VIÊN M.O.V.E 2025",
+      "noi_dung": "TỔ CHỨC VÀ THAM GIA CHƯƠNG TRÌNH CHÀO ĐÓN TÂN SINH VIÊN M.O.V.E 2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS 1: LTK",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "17-01-2026 -> 28-02-2026",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Đoàn Trường có tổ chức hội thảo khoa học nào trong đầu năm 2026 không?",
+    "ground_truth": "Có, một hội thảo về điện toán đám mây, điện toán lượng tử, dữ liệu lớn tại CS 1, diễn ra từ 20-01-2026 đến 28-02-2026.",
+    "metadata": {
+      "ma_ctxh": "QT26CTX0005 ",
+      "ten_ctxh": "THAM DỰ HỘI THẢO KHOA HỌC SINH VIÊN, LĨNH VỰC ĐIỆN TOÁN ĐÁM MÂY, ĐIỆN TOÁN LƯỢNG TỬ, DỮ LIỆU LỚN - 30/10/2025",
+      "noi_dung": "THAM DỰ HỘI THẢO KHOA HỌC SINH VIÊN, LĨNH VỰC ĐIỆN TOÁN ĐÁM MÂY, ĐIỆN TOÁN LƯỢNG TỬ, DỮ LIỆU LỚN - 30/10/2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS 1",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "20-01-2026 -> 28-02-2026",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Có hoạt động công tác xã hội nào thuộc kiểu dọn dẹp, vệ sinh mà diễn ra trong tháng 1 hoặc tháng 2 năm 2026 không?",
+    "ground_truth": "Có, hoạt động \"Tham dự Hội nghị khoa học và công nghệ lần thứ 19: “Công nghệ chiến lược – kết nối trí tuệ – Kiến tạo đổi mới”\" do Đoàn Trường tổ chức tại CS 1 từ 25-01-2026 đến 28-02-2026.",
+    "metadata": {
+      "ma_ctxh": "QT26CTX0006 ",
+      "ten_ctxh": "Tham dự Hội nghị khoa học và công nghệ lần thứ 19: “Công nghệ chiến lược – kết nối trí tuệ - Kiến tạo đổi mới” - 21/11/2025",
+      "noi_dung": "Tham dự Hội nghị khoa học và công nghệ lần thứ 19: “Công nghệ chiến lược – kết nối trí tuệ - Kiến tạo đổi mới” - 21/11/2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS 1",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "25-01-2026 -> 28-02-2026",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Đoàn Trường có hoạt động công tác xã hội nào ở Cơ sở 1 trong tháng 2 năm 2026 không?",
+    "ground_truth": "Có, hoạt động CTV HỖ TRỢ ĐĂNG KÝ MÔN HỌC HK2 NH 2025-2026 (HK252) diễn ra từ 25-01-2026 đến 28-02-2026.",
+    "metadata": {
+      "ma_ctxh": "QT26CTX0007 ",
+      "ten_ctxh": "CTV HỖ TRỢ ĐĂNG KÝ MÔN HỌC HK2 NH 2025-2026 (HK252)",
+      "noi_dung": "CTV HỖ TRỢ ĐĂNG KÝ MÔN HỌC HK2 NH 2025-2026 (HK252)",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS 1",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "25-01-2026 -> 28-02-2026",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Tháng 2/2026 có hoạt động công tác xã hội nào liên quan đến môi trường không?",
+    "ground_truth": "Có, hoạt động THAM GIA VÀ TỔ CHỨC HOẠT ĐỘNG OYU WORKSHOP 2026 - \"SẮC VIỆT\" diễn ra tại CS 1.",
+    "metadata": {
+      "ma_ctxh": "QT26CTX0008 ",
+      "ten_ctxh": "THAM GIA VÀ TỔ CHỨC HOẠT ĐỘNG OYU WORKSHOP 2026 - \"SẮC VIỆT\" (31/12/2025)",
+      "noi_dung": "THAM GIA VÀ TỔ CHỨC HOẠT ĐỘNG OYU WORKSHOP 2026 - \"SẮC VIỆT\" (31/12/2025)",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS 1",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "31-01-2026 -> 28-02-2026",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Hoạt động chào mừng tân học viên chương trình IMP khóa 2025 diễn ra khi nào, ở đâu và thuộc đơn vị nào?",
+    "ground_truth": "Hoạt động này do Đoàn Trường tổ chức, diễn ra tại Cơ sở 1 từ 31-01-2026 đến 28-02-2026.",
+    "metadata": {
+      "ma_ctxh": "QT26CTX0009 ",
+      "ten_ctxh": "HỖ TRỢ TỔ CHỨC BUỔI CHÀO MỪNG TÂN HỌC VIÊN CHƯƠNG TRÌNH IMP KHÓA 2025 - 10/01/2026",
+      "noi_dung": "HỖ TRỢ TỔ CHỨC BUỔI CHÀO MỪNG TÂN HỌC VIÊN CHƯƠNG TRÌNH IMP KHÓA 2025 - 10/01/2026",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "CS 1",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "31-01-2026 -> 28-02-2026",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Hoạt động 'TNV HỖ TRỢ HỘI DIỄN VĂN NGHỆ 7.2025' do tổ chức nào phụ trách?",
+    "ground_truth": "Hoạt động này do Đoàn Trường phụ trách.",
+    "metadata": {
+      "ma_ctxh": "SV25KKK0117 ",
+      "ten_ctxh": "TNV HỖ TRỢ HỘI DIỄN VĂN NGHỆ 7.2025",
+      "noi_dung": "TNV HỖ TRỢ HỘI DIỄN VĂN NGHỆ 7.2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "01-07-2025 -> 20-07-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ văn nghệ nào của Đoàn Trường sẽ diễn ra ở ĐHBK trong tháng 7?",
+    "ground_truth": "Có hoạt động 'TNV HỖ TRỢ HỘI DIỄN VĂN NGHỆ 7.2025 - 2' do Đoàn Trường tổ chức tại ĐHBK, diễn ra từ ngày 01-07-2025 đến 20-07-2025.",
+    "metadata": {
+      "ma_ctxh": "SV25KKK0118 ",
+      "ten_ctxh": "TNV HỖ TRỢ HỘI DIỄN VĂN NGHỆ 7.2025 - 2",
+      "noi_dung": "TNV HỖ TRỢ HỘI DIỄN VĂN NGHỆ 7.2025 - 2",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "01-07-2025 -> 20-07-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Đoàn Trường có hoạt động tình nguyện nào hỗ trợ hội diễn văn nghệ trong tháng 7/2025 không?",
+    "ground_truth": "Có, hoạt động TNV HỖ TRỢ HỘI DIỄN VĂN NGHỆ 7.2025 - 2 tại ĐHBK, diễn ra từ 01-07-2025 đến 20-07-2025.",
+    "metadata": {
+      "ma_ctxh": "SV25KKK0119 ",
+      "ten_ctxh": "TNV HỖ TRỢ HỘI DIỄN VĂN NGHỆ 7.2025 - 2",
+      "noi_dung": "TNV HỖ TRỢ HỘI DIỄN VĂN NGHỆ 7.2025 - 2",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "01-07-2025 -> 20-07-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Có hoạt động tình nguyện nào giúp phân phát và thu gom lễ phục tốt nghiệp không?",
+    "ground_truth": "Có, hoạt động 'TNV HỖ TRỢ PHÂN PHÁT, THU GOM LỄ PHỤC TỐT NGHIỆP 4.2025' do Đoàn Trường tổ chức tại ĐHBK, diễn ra từ 22-04-2025 đến 29-04-2025.",
+    "metadata": {
+      "ma_ctxh": "SV25KKK0120 ",
+      "ten_ctxh": "TNV HỖ TRỢ PHÂN PHÁT, THU GOM LỄ PHỤC TỐT NGHIỆP 4.2025",
+      "noi_dung": "TNV HỖ TRỢ PHÂN PHÁT, THU GOM LỄ PHỤC TỐT NGHIỆP 4.2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "22-04-2025 -> 29-04-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Đoàn Trường đã tổ chức hoạt động tình nguyện nào ở ĐHBK vào tháng 7/2025?",
+    "ground_truth": "Đó là hoạt động 'TNV HỖ TRỢ TRẠM Y TẾ 7.2025' diễn ra vào ngày 01-07-2025.",
+    "metadata": {
+      "ma_ctxh": "SV25KKK0121 ",
+      "ten_ctxh": "TNV HỖ TRỢ TRẠM Y TẾ 7.2025",
+      "noi_dung": "TNV HỖ TRỢ TRẠM Y TẾ 7.2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "01-07-2025 -> 01-07-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Hoạt động 'TNV HỖ TRỢ LỄ BẾ MẠC BKCUP 4.2025' do tổ chức nào phụ trách và diễn ra ở đâu?",
+    "ground_truth": "Hoạt động này do Đoàn Trường phụ trách và diễn ra tại ĐHBK.",
+    "metadata": {
+      "ma_ctxh": "TN25KKK0096 ",
+      "ten_ctxh": "TNV HỖ TRỢ LỄ BẾ MẠC BKCUP 4.2025",
+      "noi_dung": "TNV HỖ TRỢ LỄ BẾ MẠC BKCUP 4.2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "25-05-2025 -> 25-05-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Đoàn Trường có tổ chức hoạt động tình nguyện nào vào ngày 26-05-2025 không?",
+    "ground_truth": "Có, hoạt động 'TNV HỖ TRỢ PHÒNG THÍ NGHIỆM 5.2025' diễn ra tại ĐHBK.",
+    "metadata": {
+      "ma_ctxh": "TN25KKK0095 ",
+      "ten_ctxh": "TNV HỖ TRỢ PHÒNG THÍ NGHIỆM 5.2025",
+      "noi_dung": "TNV HỖ TRỢ PHÒNG THÍ NGHIỆM 5.2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "26-05-2025 -> 26-05-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động tình nguyện hỗ trợ văn phòng Đoàn trường tháng 5 sẽ do tổ chức nào phụ trách và diễn ra khi nào?",
+    "ground_truth": "Hoạt động này do Đoàn Trường phụ trách, diễn ra vào ngày 25-05-2025.",
+    "metadata": {
+      "ma_ctxh": "TN25KKK0094 ",
+      "ten_ctxh": "TNV HỖ TRỢ VP ĐOÀN TRƯỜNG 5.2025",
+      "noi_dung": "TNV HỖ TRỢ VP ĐOÀN TRƯỜNG 5.2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "25-05-2025 -> 25-05-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ dọn dẹp phòng thí nghiệm Kỹ thuật Mỹ phẩm được tổ chức bởi đơn vị nào và diễn ra khi nào?",
+    "ground_truth": "Hoạt động 'TNV HỖ TRỢ DỌN DẸP PTN KỸ THUẬT MỸ PHẨM 6.2025' được tổ chức bởi Đoàn Trường và diễn ra từ ngày 03-07-2025 đến 04-07-2025.",
+    "metadata": {
+      "ma_ctxh": "TN25KKK0153 ",
+      "ten_ctxh": "TNV HỖ TRỢ DỌN DẸP PTN KỸ THUẬT MỸ PHẨM 6.2025",
+      "noi_dung": "TNV HỖ TRỢ DỌN DẸP PTN KỸ THUẬT MỸ PHẨM 6.2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "03-07-2025 -> 04-07-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động 'TNV THAM GIA HỖ TRỢ CHƯƠNG TRÌNH GIẤC MƠ DU HỌC NĂM 2025' diễn ra khi nào và do đơn vị nào tổ chức?",
+    "ground_truth": "Hoạt động này sẽ diễn ra từ 03-07-2025 đến 04-07-2025 và do Đoàn Trường tổ chức.",
+    "metadata": {
+      "ma_ctxh": "TN25KKK0154 ",
+      "ten_ctxh": "TNV THAM GIA HỖ TRỢ CHƯƠNG TRÌNH GIẤC MƠ DU HỌC NĂM 2025",
+      "noi_dung": "TNV THAM GIA HỖ TRỢ CHƯƠNG TRÌNH GIẤC MƠ DU HỌC NĂM 2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "03-07-2025 -> 04-07-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Tôi muốn tham gia hoạt động hỗ trợ Đoàn khoa KTXD tháng 09/2025 thì liên hệ ai?",
+    "ground_truth": "Bạn có thể liên hệ Nhật Thuận qua Zalo: 0393873106.",
+    "metadata": {
+      "ma_ctxh": "XD25CTX0011 ",
+      "ten_ctxh": "[XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 09/2025",
+      "noi_dung": "- Hỗ trợ Đoàn khoa KTXD trong tháng 09 năm 2025.\r\n- Mọi thắc mắc vui lòng liên hệ: Nhật Thuận (Zalo: 0393873106)\r\n- Đây là chuỗi hoạt động hỗ trợ đoàn khoa KTXD trong tháng 09 các bạn theo dõi Fanpage Facebook Ban Công Tác Xã Hội - Khoa Kỹ Thuật Xây Dựng\r\n- Link fanpage: https://www.facebook.com/profile.php?id=100068133033425",
+      "organization": {
+        "id": "a0d863e3-7183-4df2-8fb8-1e48865827ed",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "LIEN_CHI_DOAN_XD"
+      },
+      "dia_diem": "Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "5",
+      "thoi_gian_thuc_hien": "17-10-2025 -> 20-10-2025",
+      "ngay_mod_duyet": "5"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ Đoàn khoa KTXD sắp tới sẽ diễn ra ở đâu và kéo dài bao nhiêu ngày?",
+    "ground_truth": "Hoạt động này sẽ diễn ra tại Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt và kéo dài 6 ngày.",
+    "metadata": {
+      "ma_ctxh": "XD25CTX0012 ",
+      "ten_ctxh": "[XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 10/2025",
+      "noi_dung": "- Hỗ trợ Đoàn khoa KTXD trong tháng 10 năm 2025.\r\n- Mọi thắc mắc vui lòng liên hệ: Nhật Thuận (Zalo: 0393873106)\r\n- Đây là chuỗi hoạt động hỗ trợ đoàn khoa KTXD trong tháng 10 các bạn theo dõi Fanpage Facebook Ban Công Tác Xã Hội - Khoa Kỹ Thuật Xây Dựng\r\n- Link fanpage: https://www.facebook.com/profile.php?id=100068133033425",
+      "organization": {
+        "id": "a0d863e3-7183-4df2-8fb8-1e48865827ed",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "LIEN_CHI_DOAN_XD"
+      },
+      "dia_diem": "Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "6",
+      "thoi_gian_thuc_hien": "16-11-2025 -> 19-11-2025",
+      "ngay_mod_duyet": "6"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng có hoạt động công tác xã hội nào trong nửa cuối tháng 12 không?",
+    "ground_truth": "Có, hoạt động hỗ trợ Đoàn khoa KTXD tháng 11/2025 tại Cơ sở Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "XD25CTX0013 ",
+      "ten_ctxh": "[XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 11/2025",
+      "noi_dung": "- Hỗ trợ Đoàn khoa KTXD trong tháng 11 năm 2025.\r\n- Mọi thắc mắc vui lòng liên hệ: Hữu Danh (Zalo: 0328355041)\r\n- Đây là chuỗi hoạt động hỗ trợ đoàn khoa KTXD trong tháng 11 các bạn theo dõi Fanpage Facebook Ban Công Tác Xã Hội - Khoa Kỹ Thuật Xây Dựng\r\n- Link fanpage: https://www.facebook.com/profile.php?id=100068133033425",
+      "organization": {
+        "id": "a0d863e3-7183-4df2-8fb8-1e48865827ed",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "LIEN_CHI_DOAN_XD"
+      },
+      "dia_diem": "Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "6",
+      "thoi_gian_thuc_hien": "20-12-2025 -> 31-12-2025",
+      "ngay_mod_duyet": "6"
+    }
+  },
+  {
+    "question": "Khoa Kỹ Thuật Xây Dựng có hoạt động công tác xã hội nào ở Cơ sở Lý Thường Kiệt diễn ra trong tháng 12 không?",
+    "ground_truth": "Có, đó là hoạt động [XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 11/2025 BỔ SUNG, diễn ra từ 20-12-2025 đến 31-12-2025.",
+    "metadata": {
+      "ma_ctxh": "XD25CTX0014 ",
+      "ten_ctxh": "[XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 11/2025 BỔ SUNG",
+      "noi_dung": "- Hỗ trợ Đoàn khoa KTXD trong tháng 11 năm 2025.\r\n- Mọi thắc mắc vui lòng liên hệ: Hữu Danh (Zalo: 0328355041)\r\n- Đây là chuỗi hoạt động hỗ trợ đoàn khoa KTXD trong tháng 11 các bạn theo dõi Fanpage Facebook Ban Công Tác Xã Hội - Khoa Kỹ Thuật Xây Dựng\r\n- Link fanpage: https://www.facebook.com/profile.php?id=100068133033425",
+      "organization": {
+        "id": "a0d863e3-7183-4df2-8fb8-1e48865827ed",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "LIEN_CHI_DOAN_XD"
+      },
+      "dia_diem": "Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "6",
+      "thoi_gian_thuc_hien": "20-12-2025 -> 31-12-2025",
+      "ngay_mod_duyet": "6"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng có chương trình hội trại hay ngày hội nào không?",
+    "ground_truth": "Có, hoạt động '[XD] TỔ CHỨC LỚP ÔN TẬP KHOA KTXD THÁNG 12/2024' là một chương trình Hội trại, ngày hội.",
+    "metadata": {
+      "ma_ctxh": "XD25HTR0001 ",
+      "ten_ctxh": "[XD] TỔ CHỨC LỚP ÔN TẬP KHOA KTXD THÁNG 12/2024",
+      "noi_dung": "- Tổ chức lớp ôn tập khoa KTXD trong tháng 12 năm 2024.\r\n- Mọi thắc mắc vui lòng liên hệ: Hữu Danh (Zalo: 0328355041)\r\n- Link fanpage: https://www.facebook.com/profile.php?id=100068133033425",
+      "organization": {
+        "id": "a0d863e3-7183-4df2-8fb8-1e48865827ed",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "LIEN_CHI_DOAN_XD"
+      },
+      "dia_diem": "Trường ĐH Bách Khoa Tp. Hồ Chí Minh, cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "28-01-2025 -> 31-01-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Khoa Kỹ thuật Xây dựng có hoạt động công tác xã hội nào ở Cơ sở Lý Thường Kiệt sắp diễn ra không?",
+    "ground_truth": "Có, Hoạt động hỗ trợ Đoàn khoa KTXD tháng 12/2025, diễn ra từ 18-01-2026 đến 23-01-2026.",
+    "metadata": {
+      "ma_ctxh": "XD26CTX0001 ",
+      "ten_ctxh": "[XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 12/2025",
+      "noi_dung": "- Hỗ trợ Đoàn khoa KTXD trong tháng 12 năm 2025.\r\n- Mọi thắc mắc vui lòng liên hệ: Hữu Danh (Zalo: 0328355041)\r\n- Đây là chuỗi hoạt động hỗ trợ đoàn khoa KTXD trong tháng 12 các bạn theo dõi Fanpage Facebook Ban Công Tác Xã Hội - Khoa Kỹ Thuật Xây Dựng\r\n- Link fanpage: https://www.facebook.com/profile.php?id=100068133033425",
+      "organization": {
+        "id": "a0d863e3-7183-4df2-8fb8-1e48865827ed",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "LIEN_CHI_DOAN_XD"
+      },
+      "dia_diem": "Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "6",
+      "thoi_gian_thuc_hien": "18-01-2026 -> 23-01-2026",
+      "ngay_mod_duyet": "6"
+    }
+  },
+  {
+    "question": "Có chương trình hội trại nào của Khoa Kỹ thuật Xây dựng diễn ra vào tháng 1 năm 2026 không?",
+    "ground_truth": "Có, hoạt động '[XD] CTV THƯỜNG TRỰC ĐOÀN - HỘI KHOA KTXD THÁNG 09-10/2025' sẽ diễn ra từ 17-01-2026 đến 21-01-2026.",
+    "metadata": {
+      "ma_ctxh": "XD26HTR0001 ",
+      "ten_ctxh": "[XD] CTV THƯỜNG TRỰC ĐOÀN - HỘI KHOA KTXD THÁNG 09-10/2025",
+      "noi_dung": "- Cập nhật CTXH cho Tổ CTV Thường trực khoa KTXD tháng 09-10/2025\r\n- Mọi thắc mắc vui lòng liên hệ: Nguyễn Hữu Danh (0328355041)",
+      "organization": {
+        "id": "a0d863e3-7183-4df2-8fb8-1e48865827ed",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "LIEN_CHI_DOAN_XD"
+      },
+      "dia_diem": "Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "17-01-2026 -> 21-01-2026",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng có tổ chức hoạt động hội trại nào vào tháng 1 năm 2026 không?",
+    "ground_truth": "Có, hoạt động '[XD] CTV THƯỜNG TRỰC ĐOÀN - HỘI KHOA KTXD THÁNG 11-12/2025' là một chương trình hội trại, diễn ra từ 17-01-2026 đến 21-01-2026.",
+    "metadata": {
+      "ma_ctxh": "XD26HTR0002 ",
+      "ten_ctxh": "[XD] CTV THƯỜNG TRỰC ĐOÀN - HỘI KHOA KTXD THÁNG 11-12/2025",
+      "noi_dung": "- Cập nhật CTXH cho Tổ CTV Thường trực khoa KTXD tháng 09-10/2025\r\n- Mọi thắc mắc vui lòng liên hệ: Nguyễn Hữu Danh (0328355041)",
+      "organization": {
+        "id": "a0d863e3-7183-4df2-8fb8-1e48865827ed",
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "LIEN_CHI_DOAN_XD"
+      },
+      "dia_diem": "Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "17-01-2026 -> 21-01-2026",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Đoàn Trường có hoạt động hiến máu tình nguyện nào trong tháng 1 năm 2025 không?",
+    "ground_truth": "Có hoạt động TNV THAM GIA HIẾN MÁU TÌNH NGUYỆN 01.2025, diễn ra tại ĐHBK từ 01-01-2025 đến 07-01-2025.",
+    "metadata": {
+      "ma_ctxh": "SV25HMT0002 ",
+      "ten_ctxh": "TNV THAM GIA HIẾN MÁU TÌNH NGUYỆN 01.2025",
+      "noi_dung": "TNV THAM GIA HIẾN MÁU TÌNH NGUYỆN 01.2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hiến máu tình nguyện",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "01-01-2025 -> 07-01-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có tổ chức hoạt động tình nguyện nào tại mái ấm, nhà mở ở Biên Hòa trong tháng 3/2025 không?",
+    "ground_truth": "Có, hoạt động CTXH tại Cơ sở Bảo trợ xã hội Cô nhi Thiên Bình, diễn ra từ ngày 09/03/2025 đến 13/03/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25MAI0003",
+      "ten_ctxh": "CTXH tại Cơ sở Bảo trợ xã hội Cô nhi Thiên Bình",
+      "noi_dung": "✅Địa điểm: Số 138 ấp Thiên Bình, xã Tam Phước, TP Biên Hòa, tỉnh Đồng Nai.\r\n✅Nội dung hoạt động: Dọn dẹp vệ sinh tại phòng sơ sinh, dạy học, hỗ trợ công việc nhà bếp…\r\n✅Phương tiện: Bắt buộc di chuyển bằng xe buýt đã được Đội thuê - tập trung tại cổng KTX khu A lúc 6h30 và đi theo sự hướng dẫn của người giám sát, thu lệ phí di chuyển 50k/người.",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Số 138 ấp Thiên Bình, xã Tam Phước, TP Biên Hòa, tỉnh Đồng Nai.",
+      "loai_hoat_dong": "Hoạt động Công tác xã hội (tình nguyện) tại mái ấm, nhà mở, làng trẻ em, khu điều dưỡng cho người già…",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "09-03-2025 -> 13-03-2025",
+      "ngay_mod_duyet": "2.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động công tác xã hội nào trong tháng 3 này không?",
+    "ground_truth": "Có, hoạt động CTXH TẠI TRUNG TÂM BẢO TRỢ XÃ HỘI CÔ NHI THIÊN BÌNH - T2/2025, diễn ra từ 16/03/2025 đến 19/03/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25MAI0004",
+      "ten_ctxh": "CTXH TẠI TRUNG TÂM BẢO TRỢ XÃ HỘI CÔ NHI THIÊN BÌNH - T2/2025",
+      "noi_dung": "✅Địa điểm: Số 138 ấp Thiên Bình, xã Tam Phước, TP Biên Hòa, tỉnh Đồng Nai.\r\n✅Nội dung hoạt động: Dọn dẹp vệ sinh tại phòng sơ sinh, dạy học, hỗ trợ công việc nhà bếp…",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "Số 138 ấp Thiên Bình, xã Tam Phước, TP Biên Hòa, tỉnh Đồng Nai",
+      "loai_hoat_dong": "Hoạt động Công tác xã hội (tình nguyện) tại mái ấm, nhà mở, làng trẻ em, khu điều dưỡng cho người già…",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "16-03-2025 -> 19-03-2025",
+      "ngay_mod_duyet": "1.5"
+    }
+  },
+  {
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động công tác xã hội nào tại mái ấm trong tháng 3 năm 2025 không?",
+    "ground_truth": "Có, hoạt động CTXH TẠI TRUNG TÂM NHÂN ĐẠO QUÊ HƯƠNG - T2/2025, diễn ra từ ngày 16/03/2025 đến 19/03/2025.",
+    "metadata": {
+      "ma_ctxh": "CK25MAI0005",
+      "ten_ctxh": "CTXH TẠI TRUNG TÂM NHÂN ĐẠO QUÊ HƯƠNG - T2/2025",
+      "noi_dung": "✅Địa điểm: 1210 ĐT743A, Khu phố Tân Long, Phường Tân Đông Hiệp, Thành phố Dĩ An, Bình Dương.\r\n✅Nội dung hoạt động: Dọn dẹp vệ sinh, khuân vác đồ đạc , cải tạo khuôn viên, phụ bếp, chăm sóc trẻ nhỏ, dạy học, vui chơi cùng các em,…",
+      "organization": {
+        "id": "d626a54e-5878-4fd6-829b-9fe3cf6d6f6c",
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "LIEN_CHI_DOAN_CK"
+      },
+      "dia_diem": "1210 ĐT743A, Khu phố Tân Long, Phường Tân Đông Hiệp, Thành phố Dĩ An, Bình Dương",
+      "loai_hoat_dong": "Hoạt động Công tác xã hội (tình nguyện) tại mái ấm, nhà mở, làng trẻ em, khu điều dưỡng cho người già…",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "16-03-2025 -> 19-03-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động SIM-PHONY OF VERSE do đơn vị nào tổ chức?",
+    "ground_truth": "Hoạt động này do Liên chi đoàn Khoa Quản Lý Công Nghiệp tổ chức.",
+    "metadata": {
+      "ma_ctxh": "QL25DKT0001",
+      "ten_ctxh": "SIM-PHONY OF VERSE",
+      "noi_dung": "SIM-PHONY OF VERSE",
+      "organization": {
+        "id": "69e5d561-dd4c-4230-863e-5f527ded5793",
+        "name": "Liên chi đoàn Khoa Quản Lý Công Nghiệp",
+        "code": "LIEN_CHI_DOAN_QL"
+      },
+      "dia_diem": "Nhà văn hóa sinh viên ĐHQG",
+      "loai_hoat_dong": "Cá danh hiệu tuyên dương khen thưởng sinh viên",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "30-10-2025 -> 04-11-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Hoạt động 'HỖ TRỢ HỘI THẢO AI APPLICATION IN HEALTHCARE' thuộc khoa/tổ chức nào và diễn ra khi nào?",
+    "ground_truth": "Thuộc Liên chi đoàn Khoa Quản Lý Công Nghiệp, diễn ra từ 30-10-2025 đến 04-11-2025.",
+    "metadata": {
+      "ma_ctxh": "QL25DKT0002",
+      "ten_ctxh": "HỖ TRỢ HỘI THẢO AI APPLICATION IN HEALTHCARE",
+      "noi_dung": "HỖ TRỢ HỘI THẢO AI APPLICATION IN HEALTHCARE",
+      "organization": {
+        "id": "69e5d561-dd4c-4230-863e-5f527ded5793",
+        "name": "Liên chi đoàn Khoa Quản Lý Công Nghiệp",
+        "code": "LIEN_CHI_DOAN_QL"
+      },
+      "dia_diem": "Hội trường C5 - CS1",
+      "loai_hoat_dong": "Cá danh hiệu tuyên dương khen thưởng sinh viên",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "30-10-2025 -> 04-11-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Có hội thảo khoa học sinh viên nào về điện toán đám mây diễn ra ở CS1 vào tháng 11 không?",
+    "ground_truth": "Có, hoạt động 'Tham gia Hội thảo Khoa học sinh viên, lĩnh vực “Điện toán đám mây, điện toán lượng tử và dữ liệu lớn”' do Liên chi đoàn Khoa Quản Lý Công Nghiệp tổ chức tại CS1 từ ngày 08-11-2025 đến 11-11-2025.",
+    "metadata": {
+      "ma_ctxh": "QL25DKT0003",
+      "ten_ctxh": "Tham gia Hội thảo Khoa học sinh viên, lĩnh vực “Điện toán đám mây, điện toán lượng tử và dữ liệu lớn”",
+      "noi_dung": "Tham gia Hội thảo Khoa học sinh viên, lĩnh vực “Điện toán đám mây, điện toán lượng tử và dữ liệu lớn”",
+      "organization": {
+        "id": "69e5d561-dd4c-4230-863e-5f527ded5793",
+        "name": "Liên chi đoàn Khoa Quản Lý Công Nghiệp",
+        "code": "LIEN_CHI_DOAN_QL"
+      },
+      "dia_diem": "CS1",
+      "loai_hoat_dong": "Cá danh hiệu tuyên dương khen thưởng sinh viên",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "08-11-2025 -> 11-11-2025",
+      "ngay_mod_duyet": "2"
+    }
+  },
+  {
+    "question": "Hoạt động hiến máu tình nguyện của Đoàn Trường có tên 'TNV THAM GIA HIẾN MÁU TÌNH NGUYỆN 10.2025' sẽ diễn ra khi nào?",
+    "ground_truth": "Hoạt động này sẽ diễn ra từ ngày 21-10-2025 đến 26-10-2025.",
+    "metadata": {
+      "ma_ctxh": "SV25HMT0037",
+      "ten_ctxh": "TNV THAM GIA HIẾN MÁU TÌNH NGUYỆN 10.2025",
+      "noi_dung": "TNV THAM GIA HIẾN MÁU TÌNH NGUYỆN 10.2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hiến máu tình nguyện",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "21-10-2025 -> 26-10-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Hoạt động 'TNV HỖ TRỢ CHƯƠNG TRÌNH SÁCH CŨ TRI THỨC MỚI NĂM 2025' diễn ra khi nào và ở đâu?",
+    "ground_truth": "Hoạt động diễn ra từ 02-03-2025 đến 23-03-2025 tại ĐHBK.",
+    "metadata": {
+      "ma_ctxh": "SV25KKK0080",
+      "ten_ctxh": "TNV HỖ TRỢ CHƯƠNG TRÌNH SÁCH CŨ TRI THỨC MỚI NĂM 2025",
+      "noi_dung": "TNV HỖ TRỢ CHƯƠNG TRÌNH SÁCH CŨ TRI THỨC MỚI NĂM 2025",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "02-03-2025 -> 23-03-2025",
+      "ngay_mod_duyet": "0"
+    }
+  },
+  {
+    "question": "Đoàn Trường có hoạt động nào trong tháng 11/2025 không?",
+    "ground_truth": "Có, hoạt động 'TNV THAM GIA CỔ VŨ ĐỘI BÓNG ĐÁ CATP THUỘC KHUÔN KHỔ VÒNG 9 LPBANK V.LEAGUE 1' diễn ra vào ngày 01-11-2025 tại Sân vận động Thống Nhất.",
+    "metadata": {
+      "ma_ctxh": "SV25KKK0237",
+      "ten_ctxh": "TNV THAM GIA CỔ VŨ ĐỘI BÓNG ĐÁ CATP THUỘC KHUÔN KHỔ VÒNG 9 LPBANK V.LEAGUE 1",
+      "noi_dung": "TNV THAM GIA CỔ VŨ ĐỘI BÓNG ĐÁ CATP THUỘC KHUÔN KHỔ VÒNG 9 LPBANK V.LEAGUE 1",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "Sân vận động Thống Nhất",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "01-11-2025 -> 01-11-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động '[HSV] TNV HỖ TRỢ THAM GIA CHƯƠNG TRÌNH \"VINH DANH THỦ KHOA\" 21/11' diễn ra vào ngày nào, ở đâu và thuộc tổ chức nào?",
+    "ground_truth": "Hoạt động này diễn ra vào ngày 21-11-2025 tại TP. Hồ Chí Minh và thuộc về Đoàn Trường.",
+    "metadata": {
+      "ma_ctxh": "SV25KKK0253",
+      "ten_ctxh": "[HSV] TNV HỖ TRỢ THAM GIA CHƯƠNG TRÌNH \"VINH DANH THỦ KHOA\" 21/11",
+      "noi_dung": "[HSV] TNV HỖ TRỢ THAM GIA CHƯƠNG TRÌNH \"VINH DANH THỦ KHOA\" 21/11",
+      "organization": {
+        "id": "c6e1f42a-9b5f-426e-9b4b-0ae21551c873",
+        "name": "Đoàn Trường",
+        "code": "DOAN_TRUONG"
+      },
+      "dia_diem": "TP. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "1",
+      "thoi_gian_thuc_hien": "21-11-2025 -> 21-11-2025",
+      "ngay_mod_duyet": "1"
+    }
+  },
+  {
+    "question": "Hoạt động hỗ trợ Ngày hội việc làm của Khoa Khoa học và Kỹ thuật Máy tính diễn ra từ ngày nào đến ngày nào?",
+    "ground_truth": "Hoạt động \"[MT] CTV HỖ TRỢ NGÀY HỘI VIỆC LÀM KHOA KH&KTMT - JOB FAIR\" diễn ra từ 04-04-2025 đến 31-05-2025.",
+    "metadata": {
+      "ma_ctxh": "MT25NHV0001",
+      "ten_ctxh": "[MT] CTV HỖ TRỢ NGÀY HỘI VIỆC LÀM KHOA KH&KTMT - JOB FAIR",
+      "noi_dung": "[MT] CTV HỖ TRỢ NGÀY HỘI VIỆC LÀM KHOA KH&KTMT - JOB FAIR",
+      "organization": {
+        "id": "3f68f818-6ff1-49e0-80df-010b5ad2ba77",
+        "name": "Liên chi đoàn Khoa Khoa học và Kỹ thuật Máy tính",
+        "code": "LIEN_CHI_DOAN_MT"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Ngày hội việc làm",
+      "thoi_luong_ngay": "4",
+      "thoi_gian_thuc_hien": "04-04-2025 -> 31-05-2025",
+      "ngay_mod_duyet": "4"
+    }
+  },
+  {
+    "question": "Khoa Quản Lý Công Nghiệp có hoạt động hội trại nào sắp diễn ra không?",
+    "ground_truth": "Có, hoạt động 'Show quân sự 22/3' diễn ra từ 20/04/2025 đến 24/04/2025 tại 286- Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "QL25HTR0015",
+      "ten_ctxh": "Show quân sự 22/3",
+      "noi_dung": "Show quân sự 22/3",
+      "organization": {
+        "id": "69e5d561-dd4c-4230-863e-5f527ded5793",
+        "name": "Liên chi đoàn Khoa Quản Lý Công Nghiệp",
+        "code": "LIEN_CHI_DOAN_QL"
+      },
+      "dia_diem": "286- Lý Thường Kiệt, Phường 14, Quận 10,TP. Hồ Chí Minh",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "2",
+      "thoi_gian_thuc_hien": "20-04-2025 -> 24-04-2025",
+      "ngay_mod_duyet": "2"
+    }
+  }
+]

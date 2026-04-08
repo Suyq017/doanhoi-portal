@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../../shared/hooks';
 import { useCtxhPermissions } from './useCtxhPermissions';
@@ -20,6 +20,7 @@ export const useActivityDetail = (): UseActivityDetailReturn => {
     const { t } = useTranslation(['ctxh', 'common']);
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const ctxhPermissions = useCtxhPermissions();
 
     // State
@@ -78,13 +79,15 @@ export const useActivityDetail = (): UseActivityDetailReturn => {
         if (activity) {
             loadParticipants();
         }
-    }, [activity?.id]);
+    }, [activity?.id, loadParticipants]);
 
     // Calculate statistics
     const getStatistics = useCallback((): ActivityStatistics => {
         const total = participants.length;
         const completed = participants.filter(p => p.status === 'COMPLETED').length;
-        const registered = participants.filter(p => p.status === 'REGISTERED').length;
+        const registered = participants.filter(
+            p => p.status === 'APPROVED' || p.status === 'REGISTERED'
+        ).length;
         const cancelled = participants.filter(p => p.status === 'CANCELLED').length;
 
         return { total, completed, registered, cancelled };
@@ -141,8 +144,19 @@ export const useActivityDetail = (): UseActivityDetailReturn => {
 
     // Action handlers
     const handleBack = useCallback(() => {
+        const navState = location.state as { from?: string; category?: any } | null;
+
+        if (navState?.from === 'category-detail' && navState.category) {
+            navigate('/portal/ctxh/categories', {
+                state: {
+                    openCategoryDetail: navState.category,
+                },
+            });
+            return;
+        }
+
         navigate('/portal/ctxh/activities');
-    }, [navigate]);
+    }, [location.state, navigate]);
 
     const handleActivityUpdate = useCallback(async (activityData: any) => {
         if (!activity) return;

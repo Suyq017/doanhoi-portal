@@ -68,6 +68,7 @@ export interface ClientValidationResult {
     invalid: number;
     duplicates: number;
   };
+  previewData?: any[];
 }
 
 export interface BatchInfo {

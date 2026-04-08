@@ -600,7 +600,7 @@ const FieldOptionsEditor: React.FC<FieldOptionsEditorProps> = ({ field, onUpdate
                 newOptions[optIndex] = { value: newValue, label: newValue };
                 onUpdateField({ options: newOptions });
               }}
-              placeholder={t('templates:config.optionPlaceholder', { index: optIndex + 1 })}
+              placeholder={t(`templates:config.optionPlaceholder`)}
               className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm"
             />
             {(field.options?.length || 0) > 1 && (

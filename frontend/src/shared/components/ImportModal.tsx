@@ -422,6 +422,26 @@ const ImportModal = ({
     return renderValue();
   };
 
+  const getCellValue = (item: any, key: string): any => {
+    if (!item || typeof item !== 'object') return undefined;
+    if (item[key] !== undefined && item[key] !== null) return item[key];
+
+    const fallbackKeyMap: Record<string, string[]> = {
+      studentCode: ['student_code', 'studentId', 'student_id', 'code'],
+      name: ['fullName', 'full_name', 'studentName', 'student_name'],
+      email: ['studentEmail', 'student_email', 'mail']
+    };
+
+    const candidates = fallbackKeyMap[key] || [];
+    for (const candidate of candidates) {
+      if (item[candidate] !== undefined && item[candidate] !== null) {
+        return item[candidate];
+      }
+    }
+
+    return undefined;
+  };
+
   const getDisplayRows = () => {
     // Support both client-side and server-side processing
     const validation = state.clientValidation || state.serverValidation;
@@ -431,29 +451,51 @@ const ImportModal = ({
     // For server-side processing, use previewData
     let rows: any[];
 
-    if (state.clientValidation && state.clientData) {
-      // Client-side: merge validation result with original data for display
-      rows = state.clientData.map((originalRow: any, index: number) => {
-        // Check if this row has validation errors
-        // Backend validation returns errors array with row numbers
-        const rowErrors = (state.clientValidation?.errors || []).filter((error: any) => {
-          return typeof error === 'object' && error.row === (index + 2); // +2 for Excel row (header is row 1)
+    if (state.clientValidation) {
+      // Client-side: prefer previewData from validation to preserve _hasError and transformed values.
+      if (Array.isArray(state.clientValidation.previewData) && state.clientValidation.previewData.length > 0) {
+        rows = state.clientValidation.previewData.map((row: any, index: number) => {
+          const rowNumber = (typeof row._rowIndex === 'number' && row._rowIndex > 0)
+            ? row._rowIndex
+            : index + 1;
+
+          const rowErrors = (state.clientValidation?.errors || []).filter((error: any) => {
+            return typeof error === 'object' && typeof error.row === 'number' && error.row === rowNumber;
+          });
+
+          const rowWarnings = (state.clientValidation?.warnings || []).filter((warning: any) => {
+            return typeof warning === 'object' && typeof warning.row === 'number' && warning.row === rowNumber;
+          });
+
+          return {
+            ...row,
+            _rowIndex: rowNumber,
+            _errors: rowErrors,
+            _warnings: rowWarnings
+          };
         });
+      } else if (state.clientData) {
+        rows = state.clientData.map((originalRow: any, index: number) => {
+          const rowNumber = index + 1;
+          const rowErrors = (state.clientValidation?.errors || []).filter((error: any) => {
+            return typeof error === 'object' && typeof error.row === 'number' && error.row === rowNumber;
+          });
 
-        const rowWarnings = (state.clientValidation?.warnings || []).filter((warning: any) => {
-          return typeof warning === 'object' && warning.row === (index + 2);
+          const rowWarnings = (state.clientValidation?.warnings || []).filter((warning: any) => {
+            return typeof warning === 'object' && typeof warning.row === 'number' && warning.row === rowNumber;
+          });
+
+          return {
+            ...originalRow,
+            _hasError: rowErrors.length > 0,
+            _errors: rowErrors,
+            _warnings: rowWarnings,
+            _rowIndex: rowNumber
+          };
         });
-
-        const hasError = rowErrors.length > 0;
-
-        return {
-          ...originalRow, // Original data for display
-          _hasError: hasError,
-          _errors: rowErrors,
-          _warnings: rowWarnings,
-          _rowIndex: index + 2 // Excel row number (header is row 1)
-        };
-      });
+      } else {
+        rows = [];
+      }
     } else {
       // Server-side processing
       rows = state.serverValidation?.previewData || [];
@@ -461,9 +503,26 @@ const ImportModal = ({
 
     // Apply error filtering - check both hasErrors and _hasError for compatibility
     if (showOnlyErrors) {
-      // Since we already filtered out error rows, this will return empty array
-      // but keeping for consistency with the UI toggle
-      rows = [];
+      rows = rows.filter((row: any) => {
+        return Boolean(row.hasErrors || row._hasError || (row._errors && row._errors.length > 0));
+      });
+    }
+
+    // Defensive fallback: if validation did not return preview rows, still show parsed file data.
+    if (rows.length === 0 && state.clientData && state.clientData.length > 0) {
+      rows = state.clientData.map((row: any, index: number) => ({
+        ...row,
+        _rowIndex: index + 1
+      }));
+
+      if (showOnlyErrors) {
+        rows = rows.filter((_: any, index: number) => {
+          const rowNumber = index + 1;
+          return (state.clientValidation?.errors || []).some((error: any) => {
+            return typeof error === 'object' && typeof error.row === 'number' && error.row === rowNumber;
+          });
+        });
+      }
     }
 
     // Calculate pagination
@@ -721,14 +780,8 @@ const ImportModal = ({
 
           <div className="p-4 text-center bg-red-100 rounded-lg dark:bg-red-900/20">
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {state.clientData ?
-                // For client-side, count rows with errors
-                state.clientData.filter((_: any, index: number) => {
-                  const rowErrors = (errors || []).filter((error: any) => {
-                    return typeof error === 'object' && error.row === (index + 2);
-                  });
-                  return rowErrors.length > 0;
-                }).length
+              {state.clientValidation && Array.isArray(state.clientValidation.previewData) ?
+                state.clientValidation.previewData.filter((row: any) => row.hasErrors || row._hasError).length
                 :
                 // For server-side, use summary
                 summary.invalid
@@ -741,14 +794,8 @@ const ImportModal = ({
 
           <div className="p-4 text-center bg-yellow-100 rounded-lg dark:bg-yellow-900/20">
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {state.clientData ?
-                // For client-side, count rows with warnings
-                state.clientData.filter((_: any, index: number) => {
-                  const rowWarnings = (warnings || []).filter((warning: any) => {
-                    return typeof warning === 'object' && warning.row === (index + 2);
-                  });
-                  return rowWarnings.length > 0;
-                }).length
+              {state.clientValidation && Array.isArray(state.clientValidation.previewData) ?
+                state.clientValidation.previewData.filter((row: any) => row.hasWarnings || (row._warnings && row._warnings.length > 0)).length
                 :
                 // For server-side, use warnings length
                 warnings.length
@@ -885,7 +932,7 @@ const ImportModal = ({
                       </td>
                       {config.columns.map(col => (
                         <td key={col.key} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                          {renderCellValue(item[col.key], col.type)}
+                          {renderCellValue(getCellValue(item, col.key), col.type)}
                         </td>
                       ))}
                       <td className="px-4 py-3 text-center">

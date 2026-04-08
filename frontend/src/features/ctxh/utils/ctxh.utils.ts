@@ -18,6 +18,10 @@ export const getActivityStatusDisplay = (status: ActivityStatus): { label: strin
 
 export const getParticipationStatusDisplay = (status: ParticipationStatus): { label: string; color: string; bgColor: string } => {
   switch (status) {
+    case ParticipationStatus.PENDING:
+      return { label: 'Chờ duyệt', color: 'text-amber-700', bgColor: 'bg-amber-100' };
+    case ParticipationStatus.APPROVED:
+      return { label: 'Đã duyệt', color: 'text-blue-700', bgColor: 'bg-blue-100' };
     case ParticipationStatus.REGISTERED:
       return { label: 'Đã đăng ký', color: 'text-yellow-600', bgColor: 'bg-yellow-100' };
     case ParticipationStatus.COMPLETED:

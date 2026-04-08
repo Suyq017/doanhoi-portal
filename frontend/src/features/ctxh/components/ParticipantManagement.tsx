@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Users, Plus, Upload, Download, Search, Edit2, Trash2, FileSpreadsheet, X, ChevronDown } from 'lucide-react';
+import { Users, Plus, Upload, Download, Search, Edit2, FileSpreadsheet, X, ChevronDown, Check, XCircle } from 'lucide-react';
 import { CtxhActivity, ParticipationResponse } from '../types';
 import { activityService } from '../services';
 import { userService } from '../../../shared/services/userService';
@@ -34,6 +34,12 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   const [studentInfo, setStudentInfo] = useState<{ name?: string, email?: string, alreadyParticipating?: boolean }>({});
   const [lookingUpStudent, setLookingUpStudent] = useState(false);
   const [participantsStudentInfo, setParticipantsStudentInfo] = useState<Record<string, { name?: string, email?: string }>>({});
+  const [pendingParticipants, setPendingParticipants] = useState<ParticipationResponse[]>([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [registeringSelf, setRegisteringSelf] = useState(false);
+  const [cancellingSelf, setCancellingSelf] = useState(false);
+  const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
+  const [selectedPendingIds, setSelectedPendingIds] = useState<Set<string>>(new Set());
 
   // Grading states
   const [showGradingModal, setShowGradingModal] = useState(false);
@@ -55,8 +61,16 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'approved' | 'pending'>('approved');
+
   // Toast notifications
   const { toasts, hideToast, showSuccess, showError, showConfirm, confirmDialog } = useToast();
+  const currentUser = authService.getUser();
+
+  // Permission check - early
+  const canManageParticipants = ctxhPermissions.activities.manage_participants;
+  const requiresApproval = Boolean(activity.requiresApproval ?? (activity as any).requires_approval);
 
   // Format number to remove unnecessary decimal places
   const formatNumber = (num: number): string => {
@@ -179,7 +193,126 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           participants // Pass existing participants to check for duplicates
         );
 
-        return batchImportService.createValidationResult(validationResult.data, validationResult);
+        const localizeParticipantImportMessage = (message: string): string => {
+          if (!message) return message;
+
+          const duplicateMatchVi = message.match(/^Mã số sinh viên\s+(.+?)\s+bị trùng lặp trong file import$/i);
+          if (duplicateMatchVi) {
+            return t('participant.importErrors.duplicateInFile', { studentCode: duplicateMatchVi[1] });
+          }
+
+          const duplicateMatchEn = message.match(/^Student code\s+(.+?)\s+is duplicated in import file$/i);
+          if (duplicateMatchEn) {
+            return t('participant.importErrors.duplicateInFile', { studentCode: duplicateMatchEn[1] });
+          }
+
+          const alreadyMatchVi = message.match(/^Sinh viên\s+(.+?)\s+đã tham gia hoạt động này$/i)
+            || message.match(/^Sinh viên\s+(.+?)\s+đã tham gia hoạt động$/i);
+          if (alreadyMatchVi) {
+            return t('participant.importErrors.alreadyParticipating', { studentCode: alreadyMatchVi[1] });
+          }
+
+          const alreadyMatchEn = message.match(/^Student\s+(.+?)\s+has already participated in this activity$/i)
+            || message.match(/^Student\s+(.+?)\s+already joined this activity$/i);
+          if (alreadyMatchEn) {
+            return t('participant.importErrors.alreadyParticipating', { studentCode: alreadyMatchEn[1] });
+          }
+
+          const notFoundMatchVi = message.match(/^Không tìm thấy sinh viên với mã số\s+(.+)$/i);
+          if (notFoundMatchVi) {
+            return t('participant.importErrors.studentNotFoundByCode', { studentCode: notFoundMatchVi[1] });
+          }
+
+          const notFoundMatchEn = message.match(/^Student not found with code:?\s+(.+)$/i);
+          if (notFoundMatchEn) {
+            return t('participant.importErrors.studentNotFoundByCode', { studentCode: notFoundMatchEn[1] });
+          }
+
+          const lookupErrorVi = message.match(/^Lỗi khi tra cứu thông tin sinh viên\s+(.+)$/i);
+          if (lookupErrorVi) {
+            return t('participant.importErrors.lookupFailedByCode', { studentCode: lookupErrorVi[1] });
+          }
+
+          const lookupErrorEn = message.match(/^Error while looking up student information\s+(.+)$/i);
+          if (lookupErrorEn) {
+            return t('participant.importErrors.lookupFailedByCode', { studentCode: lookupErrorEn[1] });
+          }
+
+          const invalidEmailVi = message.match(/^Định dạng email không hợp lệ:\s+(.+)$/i);
+          if (invalidEmailVi) {
+            return t('participant.importErrors.invalidEmailFormat', { email: invalidEmailVi[1] });
+          }
+
+          const invalidEmailEn = message.match(/^Invalid email format:\s+(.+)$/i);
+          if (invalidEmailEn) {
+            return t('participant.importErrors.invalidEmailFormat', { email: invalidEmailEn[1] });
+          }
+
+          return message;
+        };
+
+        const normalizedValidationResult = {
+          ...validationResult,
+          errors: (validationResult.errors || []).map((error: any) => ({
+            ...error,
+            message: localizeParticipantImportMessage(error.message),
+          })),
+          warnings: (validationResult.warnings || []).map((warning: any) => ({
+            ...warning,
+            message: localizeParticipantImportMessage(warning.message),
+          })),
+          data: (validationResult.data || []).map((item: any) => ({
+            ...item,
+            _errorMessage: item._errorMessage ? localizeParticipantImportMessage(item._errorMessage) : item._errorMessage,
+          })),
+        };
+
+        // Enforce max participants at preview step so import cannot proceed when exceeding capacity.
+        if (activity.maxParticipants !== null && activity.maxParticipants !== undefined) {
+          const remainingSlots = activity.maxParticipants - approvedParticipantsCount;
+          const validCount = normalizedValidationResult.validData.length;
+
+          if (remainingSlots <= 0 || validCount > remainingSlots) {
+            const capacityMessage = remainingSlots <= 0
+              ? t('participant.registerDisabledCapacity')
+              : t('participant.registerDisabledCapacityWithRemaining', { remaining: remainingSlots });
+
+            const dataWithCapacityError = normalizedValidationResult.data.map((item: any) => {
+              if (item._hasError) {
+                return item;
+              }
+              return {
+                ...item,
+                _hasError: true,
+                _errorMessage: capacityMessage,
+              };
+            });
+
+            return batchImportService.createValidationResult(dataWithCapacityError as any[], {
+              ...normalizedValidationResult,
+              data: dataWithCapacityError,
+              validData: [],
+              invalidData: dataWithCapacityError,
+              errors: [
+                ...(normalizedValidationResult.errors || []),
+                {
+                  row: 1,
+                  field: 'studentCode',
+                  value: null,
+                  message: capacityMessage,
+                  type: 'conflict',
+                },
+              ],
+              summary: {
+                ...normalizedValidationResult.summary,
+                valid: 0,
+                invalid: dataWithCapacityError.length,
+              },
+            });
+          }
+        }
+
+        return batchImportService.createValidationResult(normalizedValidationResult.data, normalizedValidationResult);
       } catch (error) {
         console.error('Validation error:', error);
         throw new Error('Lỗi khi kiểm tra dữ liệu');
@@ -189,6 +322,16 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     // Client-side batch submission
     submitClientData: async (validData: any[], onProgress?: (progress: any) => void) => {
       try {
+        if (activity.maxParticipants !== null && activity.maxParticipants !== undefined) {
+          const remainingSlots = activity.maxParticipants - approvedParticipantsCount;
+          if (remainingSlots <= 0) {
+            throw new Error(t('participant.registerDisabledCapacity'));
+          }
+          if (validData.length > remainingSlots) {
+            throw new Error(t('participant.registerDisabledCapacityWithRemaining', { remaining: remainingSlots }));
+          }
+        }
+
         const result = await batchImportService.submitParticipantBatches(
           activity.id,  // Don't convert UUID to number!
           validData,
@@ -292,7 +435,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         };
       } catch (error) {
         console.error('Submission error:', error);
-        throw new Error(error instanceof Error ? error.message : 'Lỗi khi chấm điểm');
+        throw new Error(error instanceof Error ? error.message : 'Lỗi khi chấm ngày CTXH');
       }
     },
 
@@ -350,11 +493,32 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     };
   }, [showGradingModal]);
 
+  // Load pending participants - comes before loadParticipants since it's called by useEffect
+  const loadPendingParticipants = async () => {
+    try {
+      setPendingLoading(true);
+      const response = await activityService.getPendingParticipants(activity.id);
+      setPendingParticipants(Array.isArray(response) ? response : []);
+    } catch (error) {
+      console.error('Failed to load pending participants:', error);
+      setPendingParticipants([]);
+    } finally {
+      setPendingLoading(false);
+    }
+  };
+
   const loadParticipants = async () => {
     try {
       setLoading(true);
       const response = await activityService.getParticipants(activity.id);
       setParticipants(Array.isArray(response) ? response : []);
+
+      // Always load pending participants if activity requires approval
+      if (requiresApproval) {
+        await loadPendingParticipants();
+      } else {
+        setPendingParticipants([]);
+      }
 
       // Tra cứu thông tin sinh viên cho những participant chưa có tên
       const participantsNeedingLookup = response.filter((p: ParticipationResponse) =>
@@ -383,6 +547,108 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
       setParticipants([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRegisterSelf = async () => {
+    const confirmed = await showConfirm(
+      t('participant.registerConfirmTitle') || 'Xác nhận đăng ký hoạt động',
+      t('participant.registerConfirmMessage') || 'Bạn có chắc muốn đăng ký tham gia hoạt động này? Lưu ý: sau khi được duyệt hoặc đã tham gia, bạn sẽ không thể hủy đăng ký.',
+      {
+        confirmText: t('participant.registerButton') || t('common:actions.confirm'),
+        cancelText: t('common:actions.cancel'),
+        variant: 'info',
+      }
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setRegisteringSelf(true);
+      await activityService.registerSelf(activity.id);
+      showSuccess(t('participant.registerSuccess'));
+      await loadParticipants();
+      onRefresh?.();
+    } catch (error: any) {
+      showError(error?.message || t('participant.registerError'));
+    } finally {
+      setRegisteringSelf(false);
+    }
+  };
+
+  const handleCancelSelfRegistration = async () => {
+    const confirmed = await showConfirm(
+      t('participant.cancelPendingTitle'),
+      t('participant.cancelPendingConfirmMessage'),
+      {
+        confirmText: t('common:actions.confirm'),
+        cancelText: t('common:actions.cancel'),
+        variant: 'danger',
+      }
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setCancellingSelf(true);
+      await activityService.cancelSelfRegistration(activity.id);
+      showSuccess(t('participant.cancelPendingSuccess'));
+      await loadParticipants();
+      onRefresh?.();
+    } catch (error: any) {
+      showError(error?.message || t('participant.cancelPendingError'));
+    } finally {
+      setCancellingSelf(false);
+    }
+  };
+
+  const handleApprovePending = async (participation: ParticipationResponse) => {
+    try {
+      setApprovingIds(prev => new Set(prev).add(participation.id));
+      await activityService.approveParticipant(activity.id, participation.id);
+      showSuccess(t('participant.approveOneSuccess'));
+      await loadParticipants();
+      onRefresh?.();
+    } catch (error: any) {
+      showError(error?.message || t('participant.approveOneError'));
+    } finally {
+      setApprovingIds(prev => {
+        const next = new Set(prev);
+        next.delete(participation.id);
+        return next;
+      });
+    }
+  };
+
+  // Handle reject pending participant
+  const handleRejectPending = async (participation: ParticipationResponse) => {
+    const confirmed = await showConfirm(
+      t('participant.rejectTitle') || 'Từ chối đơn đăng ký',
+      t('participant.rejectConfirmMessage', { studentCode: participation.student_code }) || `Bạn có chắc muốn từ chối đơn đăng ký của sinh viên ${participation.student_code} không?`,
+      {
+        confirmText: t('common:actions.reject') || 'Từ chối',
+        cancelText: t('common:actions.cancel'),
+        variant: 'danger',
+      }
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setApprovingIds(prev => new Set(prev).add(participation.id));
+      // Reject pending registration by removing the participation record
+      await activityService.removeParticipant(activity.id, participation.id);
+      showSuccess(t('participant.rejectSuccess') || 'Đã từ chối đơn đăng ký');
+      await loadParticipants();
+      onRefresh?.();
+    } catch (error: any) {
+      showError(error?.message || (t('participant.rejectError') || 'Không thể từ chối đơn đăng ký'));
+    } finally {
+      setApprovingIds(prev => {
+        const next = new Set(prev);
+        next.delete(participation.id);
+        return next;
+      });
     }
   };
 
@@ -480,11 +746,47 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
     return false;
   });
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredParticipants.length / itemsPerPage);
+  // For approved tab: exclude PENDING participants if activity requires approval
+  const filteredApprovedParticipants = filteredParticipants.filter(participant => {
+    if (requiresApproval && participant.status === 'PENDING') {
+      return false;
+    }
+    return true;
+  });
+
+  // For pending tab: use the separate API response if available (for managers),
+  // otherwise filter from the main participants list (for students)
+  const effectivePendingParticipants = canManageParticipants
+    ? (pendingParticipants.length > 0 ? pendingParticipants : participants.filter(p => p.status === 'PENDING'))
+    : participants.filter(p => p.status === 'PENDING');
+
+  const approvedLikeStatuses = ['APPROVED', 'REGISTERED', 'COMPLETED'];
+  const approvedParticipantsCount = participants.filter(
+    (p) => p.status && approvedLikeStatuses.includes(p.status),
+  ).length;
+
+  const selfParticipation = participants.find(
+    (p) =>
+      (currentUser?.id && p.student_id === currentUser.id) ||
+      (currentUser?.code && p.student_code === currentUser.code),
+  );
+
+  const isSelfPending = selfParticipation?.status === 'PENDING';
+  const isSelfAlreadyApprovedLike = !!selfParticipation && approvedLikeStatuses.includes(selfParticipation.status || '');
+  const isSelfCancelled = selfParticipation?.status === 'CANCELLED';
+  const isActivityActive = activity.status === 'ACTIVE';
+  const isAtCapacity = activity.maxParticipants !== null
+    && activity.maxParticipants !== undefined
+    && approvedParticipantsCount >= activity.maxParticipants;
+
+  // Pagination calculations - use filtered approved participants for approved tab
+  const paginationList = (activeTab === 'approved' || !requiresApproval)
+    ? filteredApprovedParticipants
+    : filteredParticipants;
+  const totalPages = Math.ceil(paginationList.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedParticipants = filteredParticipants.slice(startIndex, endIndex);
+  const paginatedParticipants = paginationList.slice(startIndex, endIndex);
 
   // Reset to first page when search changes
   useEffect(() => {
@@ -553,6 +855,11 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   const handleAddStudent = async () => {
     if (!newStudentCode.trim()) {
       showError(t('participant.studentCodeRequired'));
+      return;
+    }
+
+    if (isAtCapacity) {
+      showError(t('participant.registerDisabledCapacity'));
       return;
     }
 
@@ -809,7 +1116,10 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
   const formatDate = (dateString: string | null): string => {
     if (!dateString) return 'Chưa xác định';
     try {
-      return new Date(dateString).toLocaleDateString('vi-VN');
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      return `${day}/${month}`;
     } catch {
       return 'Chưa xác định';
     }
@@ -825,13 +1135,14 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
               <Users className="mr-3 h-6 w-6 text-blue-600 dark:text-blue-400" />
               {t('participant.title')}
             </h3>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 flex items-center">
-              <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 font-medium">
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 flex flex-col gap-2">
+              <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 text-blue-900 dark:text-blue-100 font-semibold border border-blue-200 dark:border-blue-700 shadow-sm w-fit">
+                <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 {searchTerm ? (
                   <>
                     {filteredParticipants.length} / {participants.length} {t('activity.students')}
                     {filteredParticipants.length !== participants.length && (
-                      <span className="ml-1 text-xs">({t('common:filtered')})</span>
+                      <span className="ml-1 text-xs font-normal">({t('common:filtered')})</span>
                     )}
                   </>
                 ) : (
@@ -842,8 +1153,51 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {!canManageParticipants && (
+              <>
+                {!isSelfPending && !isSelfAlreadyApprovedLike && !isSelfCancelled && (
+                  <button
+                    onClick={handleRegisterSelf}
+                    disabled={registeringSelf || !isActivityActive || isAtCapacity}
+                    className="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[160px]"
+                    title={
+                      !isActivityActive
+                        ? t('participant.registerDisabledInactive')
+                        : isAtCapacity
+                          ? t('participant.registerDisabledCapacity')
+                          : t('participant.registerButton')
+                    }
+                  >
+                    {registeringSelf ? t('common:states.processing') : t('participant.registerButton')}
+                  </button>
+                )}
+
+                {isSelfPending && (
+                  <button
+                    onClick={handleCancelSelfRegistration}
+                    disabled={cancellingSelf}
+                    className="inline-flex items-center justify-center px-4 py-2.5 border border-red-300 text-sm font-medium rounded-lg text-red-800 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[160px]"
+                  >
+                    {cancellingSelf ? t('common:states.processing') : t('participant.cancelPendingButton')}
+                  </button>
+                )}
+
+                {isSelfAlreadyApprovedLike && (
+                  <span className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg bg-green-50 text-green-700 border border-green-200">
+                    {t('participant.registeredStateApproved')}
+                  </span>
+                )}
+
+                {isSelfCancelled && (
+                  <span className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 border border-gray-300">
+                    {t('participant.registeredStateCancelled')}
+                  </span>
+                )}
+              </>
+            )}
+
             {/* Thêm sinh viên Dropdown - disable khi hoạt động không ACTIVE hoặc không có quyền */}
-            {ctxhPermissions.activities.manage_participants && (
+            {canManageParticipants && (
               <div className="relative dropdown-container">
                 <button
                   onClick={() => {
@@ -901,7 +1255,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
             )}
 
             {/* Chấm từ file */}
-            {ctxhPermissions.activities.manage_participants && (
+            {canManageParticipants && (
               <div className="relative dropdown-container">
                 <button
                   onClick={() => {
@@ -939,25 +1293,67 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
-        <input
-          type="text"
-          placeholder="Tìm kiếm sinh viên..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-        />
-      </div>
+      {/* Tab Header - Only show if requiresApproval */}
+      {requiresApproval && (
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden max-w-full border-b border-gray-200 dark:border-gray-700">
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => {
+                setActiveTab('approved');
+                setSearchTerm('');
+              }}
+              className={`flex-1 px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'approved'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              {t('participant.tabApproved')} (
+                {activity.maxParticipants 
+                  ? `${approvedParticipantsCount}/${activity.maxParticipants}`
+                  : participants.filter(p => p.status !== 'PENDING').length
+                }
+              )
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('pending');
+                setSearchTerm('');
+              }}
+              className={`flex-1 px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'pending'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              {t('participant.tabPending')} ({effectivePendingParticipants.length})
+            </button>
+          </div>
+        </div>
+      )}
 
-      {/* Participants Table */}
+      {/* Search - Only show on approved tab or always if no requiresApproval */}
+      {(activeTab === 'approved' || !requiresApproval) && (
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm sinh viên..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+          />
+        </div>
+      )}
+
+      {/* Participants Table - Show on approved tab or always if no requiresApproval */}
+      {(activeTab === 'approved' || !requiresApproval) && (
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden max-w-full">
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400"></div>
           </div>
-        ) : filteredParticipants.length === 0 ? (
+        ) : filteredApprovedParticipants.length === 0 ? (
           <div className="text-center py-12">
             <Users className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
@@ -966,7 +1362,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               {searchTerm ? t('participant.changeSearchKeyword') : t('participant.startByAddingStudents')}
             </p>
-            {!searchTerm && activity.status === 'ACTIVE' && (
+            {!searchTerm && activity.status === 'ACTIVE' && canManageParticipants && (
               <div className="mt-6">
                 <button
                   onClick={() => setShowAddStudentModal(true)}
@@ -977,31 +1373,49 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                 </button>
               </div>
             )}
+
+            {!searchTerm && activity.status === 'ACTIVE' && !canManageParticipants && !isSelfPending && !isSelfAlreadyApprovedLike && !isSelfCancelled && (
+              <div className="mt-6">
+                <button
+                  onClick={handleRegisterSelf}
+                  disabled={registeringSelf || isAtCapacity}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {registeringSelf ? t('common:states.processing') : t('participant.registerButton')}
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <>
             <div className="overflow-x-auto max-w-full">
-              <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 min-w-[800px]">
+              <table className={`w-full divide-y divide-gray-200 dark:divide-gray-700 ${canManageParticipants ? 'min-w-[800px]' : ''}`}>
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('participant.studentName')}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('participant.actualDays')}
-                    </th>
+                    {canManageParticipants && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('participant.actualDays')}
+                      </th>
+                    )}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('participant.status')}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('participant.note')}
-                    </th>
+                    {canManageParticipants && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('participant.note')}
+                      </th>
+                    )}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('participant.joinDate')}
                     </th>
-                    <th className="relative px-6 py-3">
-                      <span className="sr-only">{t('common:fields.actions')}</span>
-                    </th>
+                    {canManageParticipants && (
+                      <th className="relative px-6 py-3">
+                        <span className="sr-only">{t('common:fields.actions')}</span>
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -1027,65 +1441,63 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-900 dark:text-white">
-                          {participant.actual_days ? `${formatNumber(participant.actual_days)} ${t('activity.days')}` : t('participant.notGraded')}
-                        </span>
-                      </td>
+                      {canManageParticipants && (
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-gray-900 dark:text-white">
+                            {participant.actual_days ? `${formatNumber(participant.actual_days)} ${t('activity.days')}` : t('participant.notGraded')}
+                          </span>
+                        </td>
+                      )}
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${participant.status === 'COMPLETED' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+                          participant.status === 'APPROVED' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' :
+                            participant.status === 'PENDING' ? 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200' :
                           participant.status === 'CANCELLED' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
                             'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
                           }`}>
                           {participant.status === 'COMPLETED' ? t('participant.statusOptions.completed') :
+                            participant.status === 'APPROVED' ? t('participant.statusOptions.approved') :
+                              participant.status === 'PENDING' ? t('participant.statusOptions.pending') :
                             participant.status === 'CANCELLED' ? t('participant.statusOptions.cancelled') :
                               t('participant.statusOptions.registered')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        <div className="max-w-xs">
-                          {participant.note ? (
-                            <div className="break-words" title={participant.note}>
-                              {participant.note}
-                            </div>
-                          ) : (
-                            '-'
-                          )}
-                        </div>
-                      </td>
+                      {canManageParticipants && (
+                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="max-w-xs">
+                            {participant.note ? (
+                              <div className="break-words" title={participant.note}>
+                                {participant.note}
+                              </div>
+                            ) : (
+                              '-'
+                            )}
+                          </div>
+                        </td>
+                      )}
                       <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                         {formatDate(participant.created_at)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        {ctxhPermissions.activities.manage_participants && (
-                          <button
-                            onClick={() => {
-                              if (activity.status === 'ACTIVE' || activity.status === 'COMPLETED') {
-                                handleGradeParticipant(participant);
-                              }
-                            }}
-                            disabled={activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED'}
-                            className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900 rounded disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                            title={
-                              (activity.status !== 'ACTIVE' && activity.status !== 'COMPLETED')
-                                ? t('participant.gradingStatusRestriction', { status: activity.status })
-                                : t('participant.gradeThisStudent')
-                            }
-                          >
-                            <Edit2 className="h-3 w-3 mr-1" />
-                            {t('participant.grade')}
-                          </button>
-                        )}
-                        {ctxhPermissions.activities.manage_participants && (
+                      {canManageParticipants && (
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                          {(activity.status === 'ACTIVE' || activity.status === 'COMPLETED') && participant.status !== 'PENDING' && participant.status !== 'CANCELLED' && (
+                            <button
+                              onClick={() => handleGradeParticipant(participant)}
+                              title="Chấm ngày CTXH"
+                              className="inline-flex items-center justify-center p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded transition-colors"
+                            >
+                              <Edit2 className="h-5 w-5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleRemoveParticipant(participant)}
-                            className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900 rounded"
+                            title="Xóa"
+                            className="inline-flex items-center justify-center p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded transition-colors"
                           >
-                            <Trash2 className="h-3 w-3 mr-1" />
-                            {t('common:actions.delete')}
+                            <XCircle className="h-5 w-5" />
                           </button>
-                        )}
-                      </td>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -1096,7 +1508,7 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              total={filteredParticipants.length}
+              total={paginationList.length}
               limit={itemsPerPage}
               onPageChange={(page) => setCurrentPage(page)}
               onLimitChange={(newLimit) => {
@@ -1108,8 +1520,139 @@ const ParticipantManagement: React.FC<ParticipantManagementProps> = ({
           </>
         )}
       </div>
+      )}
 
-      {/* Add Student Modal */}
+      {/* Pending Approvals Tab */}
+      {activeTab === 'pending' && requiresApproval && (
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden max-w-full">
+          {pendingLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-200 dark:border-gray-600 border-t-doan-500 dark:border-t-doan-400"></div>
+            </div>
+          ) : effectivePendingParticipants.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                {t('participant.noPendingApprovals')}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {t('participant.allStudentsApproved')}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Pending Participants List */}
+              <div className="overflow-x-auto max-w-full">
+                <table className={`w-full divide-y divide-gray-200 dark:divide-gray-700 ${canManageParticipants ? 'min-w-[800px]' : ''}`}>
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      {canManageParticipants && (
+                        <th className="px-6 py-3 text-left">
+                          <input
+                            type="checkbox"
+                            checked={selectedPendingIds.size === effectivePendingParticipants.length && effectivePendingParticipants.length > 0}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedPendingIds(new Set(effectivePendingParticipants.map(p => p.id)));
+                              } else {
+                                setSelectedPendingIds(new Set());
+                              }
+                            }}
+                            className="rounded border-gray-300 text-blue-600 cursor-pointer"
+                          />
+                        </th>
+                      )}
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('participant.studentName')}
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('participant.joinDate')}
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('participant.status')}
+                      </th>
+                      {canManageParticipants && (
+                        <th className="relative px-6 py-3">
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {effectivePendingParticipants.map((participant) => (
+                      <tr key={participant.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        {canManageParticipants && (
+                          <td className="px-6 py-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedPendingIds.has(participant.id)}
+                              onChange={(e) => {
+                                const newSelected = new Set(selectedPendingIds);
+                                if (e.target.checked) {
+                                  newSelected.add(participant.id);
+                                } else {
+                                  newSelected.delete(participant.id);
+                                }
+                                setSelectedPendingIds(newSelected);
+                              }}
+                              className="rounded border-gray-300 text-blue-600 cursor-pointer"
+                            />
+                          </td>
+                        )}
+                        <td className="px-6 py-4">
+                          <div className="max-w-xs">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white break-words">
+                              {participant.student?.full_name || participant.student_code || 'N/A'}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 break-words">
+                              {t('participant.studentCodeLabel')}: {participant.student_code || 'N/A'}
+                            </div>
+                            {participant.student?.email && (
+                              <div className="text-sm text-gray-500 dark:text-gray-400 break-words">
+                                {participant.student.email}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-gray-900 dark:text-white">
+                            {formatDate(participant.created_at)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200">
+                            {t('participant.statusOptions.pending')}
+                          </span>
+                        </td>
+                        {canManageParticipants && (
+                          <td className="px-6 py-4 text-right text-sm font-medium space-x-2">
+                            <button
+                              onClick={() => handleApprovePending(participant)}
+                              disabled={approvingIds.has(participant.id)}
+                              title="Duyệt"
+                              className="inline-flex items-center justify-center p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <Check className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => handleRejectPending(participant)}
+                              disabled={approvingIds.has(participant.id)}
+                              title="Từ chối"
+                              className="inline-flex items-center justify-center p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <XCircle className="h-5 w-5" />
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      )}
       {showAddStudentModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">

@@ -21,6 +21,7 @@ import {
   PaymentCampaignDetailPage
 } from './features/fee-collection';
 import { CategoryManagement, ActivityManagement, ActivityDetail, LimitConfigManagement, CtxhOldSystemImportPage } from './features/ctxh/pages';
+import { CtxhChatPage } from './features/ctxh-chat';
 import { StudentReportsPage } from './features/student-reports';
 import FormsPage from './features/templates/pages/FormsPage';
 import TemplateListPage from './features/templates/pages/admin/TemplateListPage';
@@ -226,6 +227,16 @@ function App() {
                               <OrganizationStatsProvider>
                                 <CtxhOldSystemImportPage />
                               </OrganizationStatsProvider>
+                            </Layout>
+                          </EnhancedProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="ctxh/chatbot"
+                        element={
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                            <Layout>
+                              <CtxhChatPage />
                             </Layout>
                           </EnhancedProtectedRoute>
                         }
