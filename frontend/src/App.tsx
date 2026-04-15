@@ -174,7 +174,7 @@ function App() {
                       <Route
                         path="ctxh/categories"
                         element={
-                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access', 'ctxh.categories.view']} requireAllPermissions={false}>
                             <Layout>
                               <OrganizationStatsProvider>
                                 <CategoryManagement />
@@ -186,7 +186,7 @@ function App() {
                       <Route
                         path="ctxh/activities"
                         element={
-                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access', 'ctxh.activities.view']} requireAllPermissions={false}>
                             <Layout>
                               <OrganizationStatsProvider>
                                 <ActivityManagement />
@@ -198,7 +198,7 @@ function App() {
                       <Route
                         path="ctxh/activities/:id"
                         element={
-                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access', 'ctxh.activities.view']} requireAllPermissions={false}>
                             <Layout>
                               <OrganizationStatsProvider>
                                 <ActivityDetail />
