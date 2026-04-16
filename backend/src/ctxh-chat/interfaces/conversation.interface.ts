@@ -60,7 +60,14 @@ export interface SessionMetadata {
 export interface SessionContext {
   /** Recently discussed topics */
   recentTopics: string[];
-  
+
   /** User preferences and settings */
   userPreferences: Record<string, any>;
+
+  /** Last mentioned activity — used by REGISTER_ACTIVITY intent to recall which activity the user refers to */
+  lastMentionedActivity?: {
+    activityId: string | number;
+    activityName: string;
+    isRecruiting: boolean;
+  };
 }

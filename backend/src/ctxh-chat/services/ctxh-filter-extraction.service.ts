@@ -4,7 +4,6 @@ import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { LangChainConfig } from '../config/langchain.config';
 import { MetadataFilterSchema, MetadataFilters } from '../dto/filter-extraction.dto';
 import { FILTER_EXTRACTION_PROMPT } from '../prompts/filter-extraction.prompt';
-import { getCategoryListString, getCategoryKeywordMapString, VALID_CATEGORIES } from '../config/category.config';
 
 
 /**
@@ -157,7 +156,6 @@ export class CtxhFilterExtractionService implements OnModuleInit {
   isEmpty(filters: MetadataFilters): boolean {
     return (
       (!filters.status || filters.status.length === 0) &&
-      // (!filters.category || filters.category.length === 0) &&
       (!filters.organizationKeywords || filters.organizationKeywords.length === 0) &&
       !filters.organizationLevel &&
       (!filters.locationRaw || filters.locationRaw.length === 0) &&

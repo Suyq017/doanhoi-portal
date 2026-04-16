@@ -3,12 +3,13 @@ import { z } from 'zod';
 /**
  * Intent types for the Router Agent.
  *
- * - RAG_QUERY   : Question about specific CTXH activities → needs vector DB retrieval
- * - DOC_QUERY   : Question about general procedures/rules → may use FAQ/docs (future)
- * - GREETING    : Hello, capability questions, "who are you" → friendly intro response
- * - CHITCHAT    : Truly off-topic (coding, weather, politics) → polite rejection
+ * - RAG_QUERY          : Question about specific CTXH activities → needs vector DB retrieval
+ * - DOC_QUERY          : Question about general procedures/rules → may use FAQ/docs (future)
+ * - GREETING           : Hello, capability questions, "who are you" → friendly intro response
+ * - CHITCHAT           : Truly off-topic (coding, weather, politics) → polite rejection
+ * - REGISTER_ACTIVITY  : Student wants to register/join a CTXH activity → call registration API
  */
-export const IntentEnum = z.enum(['RAG_QUERY', 'DOC_QUERY', 'GREETING', 'CHITCHAT']);
+export const IntentEnum = z.enum(['RAG_QUERY', 'DOC_QUERY', 'GREETING', 'CHITCHAT', 'REGISTER_ACTIVITY']);
 export type Intent = z.infer<typeof IntentEnum>;
 
 /**
@@ -43,10 +44,12 @@ export const RouterOutputSchema = z.object({
    */
   intent: IntentEnum.describe(
     'Phân loại intent của câu hỏi: ' +
-    'RAG_QUERY nếu hỏi về hoạt động CTXH cụ thể (tên, thời gian, địa điểm, tổ chức, trạng thái, đăng ký). ' +
+    'RAG_QUERY nếu hỏi về hoạt động CTXH cụ thể (tên, thời gian, địa điểm, tổ chức, trạng thái). ' +
     'DOC_QUERY nếu hỏi về quy trình / điều kiện / thủ tục CTXH nói chung (không hỏi HĐ cụ thể). ' +
     'GREETING nếu là lời chào hỏi, câu hỏi về khả năng chatbot, hoặc hỏi chatbot là ai/làm được gì. ' +
-    'CHITCHAT nếu hoàn toàn ngoài phạm vi CTXH và không phải chào hỏi (toán, thời tiết, code, v.v.).',
+    'CHITCHAT nếu hoàn toàn ngoài phạm vi CTXH và không phải chào hỏi (toán, thời tiết, code, v.v.). ' +
+    'REGISTER_ACTIVITY nếu sinh viên muốn ĐĂNG KÝ / THAM GIA / THÊM BẢN THÂN vào một hoạt động CTXH ' +
+    '(ví dụ: "đăng ký tôi vào hoạt động này", "thêm tôi vào hoạt động ctxh", "tôi muốn tham gia", "đăng ký cho tôi").',
   ),
 });
 

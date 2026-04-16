@@ -294,7 +294,7 @@ export class CtxhChatService {
     // 3. Get sources separately for response metadata
     const retriever = this.vectorStoreService.getRetriever(5);
     const sourceDocs = await retriever.getRelevantDocuments(message);
-
+    
     // 4. Format response
     return {
       sessionId: sessionId || this.generateSessionId(),
@@ -304,7 +304,6 @@ export class CtxhChatService {
         activityName: doc.metadata.activityName,
         organizationName: doc.metadata.organizationName,
         similarityScore: doc.metadata.score,
-        link: doc.metadata.registrationLink,
       })),
       responseTime: Date.now() - startTime,
       timestamp: new Date(),

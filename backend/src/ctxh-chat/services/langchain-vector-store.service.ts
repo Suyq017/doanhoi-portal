@@ -186,7 +186,7 @@ export class LangChainVectorStoreService implements OnModuleInit {
       const filteredResults = rawResults
         .filter(([doc]) => this.shouldIncludeInRetrieval(doc))
         .map(([doc, cosineDistance]) => {
-          // Convert cosine distance → cosine similarity
+          // Convert cosine distance -> cosine similarity
           const similarityScore = 1 - cosineDistance;
           return [
             {

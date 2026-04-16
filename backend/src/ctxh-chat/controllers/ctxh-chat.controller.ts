@@ -21,6 +21,8 @@ import { UniversalEmbeddingsService } from '../services/universal-embeddings.ser
 import { UniversalLLMService } from '../services/universal-llm.service';
 import { CtxhVectorSyncService } from '../services/ctxh-vector-sync.service';
 import { ChatRequestDto, ChatResponseDto } from '../dto';
+import { ParticipationService } from '../../ctxh/activity/services/participation.service';
+import { UserContextService } from '../services/user-context.service';
 import type { Request } from 'express';
 
 @ApiTags('ctxh-chat')
@@ -36,6 +38,8 @@ export class CtxhChatController {
     private readonly universalEmbeddingsService: UniversalEmbeddingsService,
     private readonly universalLLMService: UniversalLLMService,
     private readonly vectorSyncService: CtxhVectorSyncService,
+    private readonly participationService: ParticipationService,
+    private readonly userContextService: UserContextService,
   ) {}
 
   // ========== RAG CHAT ENDPOINTS ==========
@@ -64,6 +68,8 @@ export class CtxhChatController {
       hour: '2-digit', minute: '2-digit',
     });
 
+    const userOrgName = await this.userContextService.getTrainingDepartmentName(userId);
+
     const response = await this.ragChainService.invoke(
       chatRequestDto.message,
       sessionId,
@@ -74,8 +80,23 @@ export class CtxhChatController {
         currentDate,
         currentDayOfWeek,
         currentDatetime,
+        userOrg: userOrgName ?? undefined,
       }
     );
+
+    // ── Handle REGISTER_ACTIVITY: call ParticipationService on behalf of user ──
+    if (response.intent === 'REGISTER_ACTIVITY' && response.registrationTarget) {
+      try {
+        await this.participationService.registerSelf(
+          String(response.registrationTarget.activityId),
+          userId,
+        );
+        response.response = `✅ Đã đăng ký thành công bạn vào hoạt động **${response.registrationTarget.activityName}**! Đơn đăng ký của bạn đang chờ duyệt.`;
+      } catch (err: any) {
+        const errorMsg = err?.message || 'Vui lòng thử lại sau.';
+        response.response = `❌ Không thể đăng ký: ${errorMsg}`;
+      }
+    }
 
     // Generate follow-up suggestions based on response
     const followUpSuggestions = this.generateFollowUpSuggestions(response.response);
@@ -127,12 +148,13 @@ export class CtxhChatController {
     return new Observable(observer => {
       (async () => {
         try {
+          const userOrgName = await this.userContextService.getTrainingDepartmentName(userId);
           const chunks: string[] = [];
 
           for await (const chunk of this.ragChainService.stream(
             chatRequestDto.message,
             sessionId,
-            { currentDate, currentDayOfWeek, currentDatetime },
+            { currentDate, currentDayOfWeek, currentDatetime, userOrg: userOrgName ?? undefined },
           )) {
             chunks.push(chunk);
             observer.next({

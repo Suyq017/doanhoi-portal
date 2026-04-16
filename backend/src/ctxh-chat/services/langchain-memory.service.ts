@@ -11,6 +11,12 @@ interface MemoryEntry {
   history: InMemoryChatMessageHistory;
   lastAccessed: Date;
   turnCount: number;
+  /** Last mentioned activity — used by REGISTER_ACTIVITY intent */
+  lastMentionedActivity?: {
+    activityId: string | number;
+    activityName: string;
+    isRecruiting: boolean;
+  };
 }
 
 /**
@@ -245,6 +251,41 @@ export class LangChainMemoryService {
    */
   getActiveSessions(): string[] {
     return Array.from(this.memories.keys());
+  }
+
+  /**
+   * Store the last mentioned activity in session for REGISTER_ACTIVITY intent
+   */
+  setLastMentionedActivity(
+    sessionId: string,
+    activityId: string | number,
+    activityName: string,
+    isRecruiting: boolean,
+  ): void {
+    // Ensure session entry exists (may not exist on the very first turn
+    // because getFormattedHistory() does not create entries)
+    if (!this.memories.has(sessionId)) {
+      this.getMemory(sessionId);
+    }
+    const entry = this.memories.get(sessionId);
+    if (entry) {
+      entry.lastMentionedActivity = { activityId, activityName, isRecruiting };
+      this.logger.debug(
+        `[Memory] Stored lastMentionedActivity for ${sessionId}: ${activityName} (id=${activityId}, recruiting=${isRecruiting})`,
+      );
+    }
+  }
+
+  /**
+   * Retrieve the last mentioned activity from session
+   */
+  getLastMentionedActivity(sessionId: string): {
+    activityId: string | number;
+    activityName: string;
+    isRecruiting: boolean;
+  } | null {
+    const entry = this.memories.get(sessionId);
+    return entry?.lastMentionedActivity ?? null;
   }
 
   /**
