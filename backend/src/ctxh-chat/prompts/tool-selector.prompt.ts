@@ -34,9 +34,9 @@ NHIỆM VỤ: Phân tích câu hỏi của sinh viên và GỌI ĐÚNG MỘT too
 TUYỆT ĐỐI KHÔNG trả lời câu hỏi — chỉ gọi tool.
 
 QUY TẮC CHỌN TOOL:
-• search_with_filters  → Câu hỏi có ít nhất 1 tiêu chí cụ thể (thời gian / địa điểm / danh mục / tổ chức / trạng thái)
-• search_diverse       → Câu hỏi muốn xem NHIỀU / ĐA DẠNG loại hoạt động, không quan tâm loại cụ thể
-• search_semantic      → Tất cả trường hợp còn lại (câu hỏi chung chung, không có tiêu chí rõ)
+• search_with_filters  -> Câu hỏi có ít nhất 1 tiêu chí cụ thể (thời gian / địa điểm / danh mục / tổ chức / trạng thái)
+• search_diverse       -> Câu hỏi muốn xem NHIỀU / ĐA DẠNG loại hoạt động, không quan tâm loại cụ thể
+• search_semantic      -> Tất cả trường hợp còn lại (câu hỏi chung chung, không có tiêu chí rõ)
 
 Đối số "query": truyền nguyên văn câu hỏi của người dùng.`,
   ],

@@ -54,15 +54,15 @@ const CHITCHAT_REJECTION =
 
 /** Friendly greeting response for GREETING intent */
 const GREETING_RESPONSE = [
-  'Xin chào bạn! 👋 Tôi là trợ lý ảo chuyên tư vấn về các hoạt động **Công tác Xã hội (CTXH)** tại Đại học Bách Khoa TP.HCM.',
+  'Xin chào bạn! Tôi là trợ lý ảo chuyên tư vấn về các hoạt động **Công tác Xã hội (CTXH)** tại Đại học Bách Khoa TP.HCM.',
   '',
   'Tôi có thể giúp bạn:',
-  '• 🔍 **Tìm kiếm hoạt động CTXH** theo thời gian, địa điểm, danh mục (hiến máu, tình nguyện, hội trại,...)',
-  '• 📋 **Tra cứu thông tin chi tiết**: thời gian, địa điểm, số ngày CTXH được tính',
-  '• 🏫 **Tìm hoạt động theo tổ chức/khoa** (ví dụ: hoạt động của Liên chi đoàn Khoa Máy tính)',
-  '• 📅 **Kiểm tra trạng thái**: đang mở đăng ký, sắp diễn ra, đã kết thúc',
+  '\n• **Tìm kiếm hoạt động CTXH** theo thời gian, địa điểm, danh mục (hiến máu, tình nguyện, hội trại,...)',
+  '\n• **Tra cứu thông tin chi tiết**: thời gian, địa điểm, số ngày CTXH được tính',
+  '\n• **Tìm hoạt động theo tổ chức/khoa** (ví dụ: hoạt động của Liên chi đoàn Khoa Máy tính)',
+  '\n• **Kiểm tra trạng thái**: đang mở đăng ký, đã kết thúc',
   '',
-  'Hãy đặt câu hỏi cho tôi nhé! 😊',
+  '\nHãy đặt câu hỏi cho tôi nhé! 😊',
 ].join('\n');
 
 /**
@@ -102,7 +102,7 @@ export class LangChainRagChainService implements OnModuleInit {
       // Initialize LLM (supports both Ollama and Gemini)
       this.llm = LangChainConfig.getLLM(this.configService);
       
-      const modelType = LangChainConfig.isUsingLocalModel(this.configService) ? 'Ollama' : 'Gemini';
+      const modelType = LangChainConfig.isUsingLocalLLM(this.configService) ? 'Ollama' : 'Gemini';
       this.logger.log(`Using ${modelType} LLM for RAG chain`);
 
       // Ensure vector store is ready
@@ -293,7 +293,7 @@ export class LangChainRagChainService implements OnModuleInit {
    *  search_diverse      -> maxMarginalRelevanceSearch() (MMR, diverse results)
    *
    * Fallback hierarchy (graceful degradation):
-   *  1. No tool_call returned -> retrieveDocuments() with useMMR flag (old logic)
+   *  1. No tool_call returned -> retrieveDocuments() with useMMR flag
    *  2. bindTools() / invoke() throws -> retrieveDocuments() with useMMR flag
    *
    * Optimised for Qwen / Ollama:
@@ -534,12 +534,6 @@ export class LangChainRagChainService implements OnModuleInit {
         return registrationResult;
       }
 
-      // ── Step 4: DOC_QUERY falls through to RAG (Phase 1 decision) ──────────
-      // Future: route DOC_QUERY to a dedicated FAQ handler.
-      if (intent === 'DOC_QUERY') {
-        this.logger.debug('[RouterAgent] DOC_QUERY intent — falling through to RAG pipeline');
-      }
-
       // ── Step 5: Retrieve documents (with Retrieve-Then-Verify) ──────────
       const sources = await this.retrieveDocumentsWithVerification(rewrittenQuestion, currentDate, k, useMMR, userOrg);
 
@@ -662,11 +656,6 @@ export class LangChainRagChainService implements OnModuleInit {
           await this.memoryService.saveInteraction(sessionId, question, registrationResult.response);
         }
         return;
-      }
-
-      // ── Step 4: DOC_QUERY falls through to RAG (Phase 1 decision) ──────────
-      if (intent === 'DOC_QUERY') {
-        this.logger.debug('[RouterAgent] DOC_QUERY intent — falling through to RAG pipeline (stream)');
       }
 
       // ── Step 5: Retrieve documents (with Retrieve-Then-Verify) ──────────

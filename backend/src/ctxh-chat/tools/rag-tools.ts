@@ -30,7 +30,7 @@ const SearchToolSchema = z.object({
 // ─────────────────────────────────────────────────────────────────────────────
 // Tool 1: Filtered Search
 // When to use: question mentions specific time / location / category / org / status
-// Effect:      LLM filter extraction → similaritySearchWithMetadataFilters (SQL WHERE)
+// Effect:      LLM filter extraction -> similaritySearchWithMetadataFilters (SQL WHERE)
 // ─────────────────────────────────────────────────────────────────────────────
 export const filteredSearchTool = new DynamicStructuredTool({
   name: RAG_TOOL_NAMES.FILTERED_SEARCH,
@@ -66,7 +66,7 @@ export const semanticSearchTool = new DynamicStructuredTool({
 // ─────────────────────────────────────────────────────────────────────────────
 // Tool 3: Diverse Search (MMR)
 // When to use: user wants a broad overview of many/all activities
-// Effect:      maxMarginalRelevanceSearch → diverse, non-redundant results
+// Effect:      maxMarginalRelevanceSearch -> diverse, non-redundant results
 // ─────────────────────────────────────────────────────────────────────────────
 export const diverseSearchTool = new DynamicStructuredTool({
   name: RAG_TOOL_NAMES.DIVERSE_SEARCH,

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-import { Cron, CronExpression } from '@nestjs/schedule';
+// import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   ActivityCreatedEvent,
   ActivityUpdatedEvent,
@@ -38,11 +38,11 @@ const CONTENT_FIELDS: string[] = [
 /** Default Bull job options — 3 retries with exponential backoff */
 const JOB_OPTIONS = {
   attempts: 3,
-  backoff: { type: 'exponential', delay: 2000 }, // 2s → 4s → 8s
+  backoff: { type: 'exponential', delay: 2000 }, // 2s -> 4s -> 8s
   // removeOnComplete: true — QUAN TRỌNG: phải xóa ngay sau khi completed.
   // Nếu giữ lại (removeOnComplete: 100), Bull v4 vẫn giữ key `jobId` trong Redis.
-  // Khi add job mới với cùng jobId, Bull thấy key đã tồn tại → bỏ qua silently
-  // → activity bị update xong nhưng vector store không được re-embed.
+  // Khi add job mới với cùng jobId, Bull thấy key đã tồn tại -> bỏ qua silently
+  // -> activity bị update xong nhưng vector store không được re-embed.
   removeOnComplete: true,
   removeOnFail: 50,
 };
@@ -66,7 +66,7 @@ export class CtxhVectorSyncService {
     private readonly ingestionService: LangChainIngestionService,
   ) {}
 
-  // ─── Event Listeners → Add to BullMQ (non-blocking) ────────────
+  // ─── Event Listeners -> Add to BullMQ (non-blocking) ────────────
 
   @OnEvent(ACTIVITY_EVENTS.CREATED, { async: true })
   async handleActivityCreated(event: ActivityCreatedEvent): Promise<void> {
@@ -114,7 +114,7 @@ export class CtxhVectorSyncService {
   @OnEvent(ACTIVITY_EVENTS.STATUS_CHANGED, { async: true })
   async handleStatusChanged(event: ActivityStatusChangedEvent): Promise<void> {
     this.logger.log(
-      `🔄 [status_changed] ${event.oldStatus} → ${event.newStatus} for "${event.activityName}" — queuing re-embed`,
+      `🔄 [status_changed] ${event.oldStatus} -> ${event.newStatus} for "${event.activityName}" — queuing re-embed`,
     );
     await this.addUpsertJob(event.activityId, event.activityName);
   }
@@ -125,28 +125,28 @@ export class CtxhVectorSyncService {
    * Chạy mỗi giờ: incremental sync — bắt các activity thay đổi bị bỏ sót.
    * Sử dụng runIncrementalUpdate() qua BullMQ để vẫn giữ concurrency: 1.
    */
-  @Cron(CronExpression.EVERY_HOUR)
-  async scheduledIncrementalSync(): Promise<void> {
-    this.logger.log('⏰ [cron] Hourly incremental sync — adding to queue');
-    await this.vectorQueue.add(
-      VECTOR_JOB.FULL_SYNC,
-      {
-        activityId: 'incremental',
-        triggeredBy: 'cron:hourly',
-        timestamp: new Date().toISOString(),
-      },
-      { ...JOB_OPTIONS, jobId: 'incremental_sync_latest' },
-    );
-  }
+  // @Cron(CronExpression.EVERY_HOUR)
+  // async scheduledIncrementalSync(): Promise<void> {
+  //   this.logger.log('⏰ [cron] Hourly incremental sync — adding to queue');
+  //   await this.vectorQueue.add(
+  //     VECTOR_JOB.FULL_SYNC,
+  //     {
+  //       activityId: 'incremental',
+  //       triggeredBy: 'cron:hourly',
+  //       timestamp: new Date().toISOString(),
+  //     },
+  //     { ...JOB_OPTIONS, jobId: 'incremental_sync_latest' },
+  //   );
+  // }
 
   /**
    * Chạy lúc 2:00 AM mỗi ngày: full re-index để đảm bảo consistency.
    */
-  @Cron('0 2 * * *')
-  async scheduledFullSync(): Promise<void> {
-    this.logger.log('🌙 [cron] Nightly full re-index — adding to queue');
-    await this.forceSyncAll();
-  }
+  // @Cron('0 2 * * *')
+  // async scheduledFullSync(): Promise<void> {
+  //   this.logger.log('🌙 [cron] Nightly full re-index — adding to queue');
+  //   await this.forceSyncAll();
+  // }
 
   // ─── Manual Controls (dùng cho API endpoints) ──────────────────
 
@@ -174,7 +174,7 @@ export class CtxhVectorSyncService {
 
   /**
    * Add or replace an upsert job.
-   * jobId = `upsert_{activityId}` → BullMQ deduplicates automatically:
+   * jobId = `upsert_{activityId}` -> BullMQ deduplicates automatically:
    * if a job with the same jobId is already waiting/delayed, it is skipped.
    */
   async addUpsertJob(

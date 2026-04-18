@@ -18,7 +18,7 @@ import {
 /**
  * VectorIngestionProcessor — BullMQ Worker
  *
- * concurrency: 1 → Ollama chỉ nhận đúng 1 embedding request tại một thời điểm.
+ * concurrency: 1 -> Ollama chỉ nhận đúng 1 embedding request tại một thời điểm.
  * Retry 3 lần với exponential backoff được quản lý tự động bởi Bull.
  */
 @Processor(VECTOR_QUEUE)

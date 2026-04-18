@@ -1,87 +1,38 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { OllamaEmbeddings } from '@langchain/ollama';
 import { Embeddings } from '@langchain/core/embeddings';
-import { GoogleGenAIEmbeddings } from '../config/google-genai-embeddings';
-import { OpenAIEmbeddings } from "@langchain/openai";
+import { LangChainConfig } from '../config/langchain.config';
 
 /**
  * Universal Embeddings Service
  * Supports seamless switching between Ollama (local) and Gemini (cloud) embeddings
- * Toggle via USE_LOCAL_MODEL environment variable
+ * Toggle via USE_LOCAL_MODEL_EMBEDDING environment variable
  */
 @Injectable()
 export class UniversalEmbeddingsService implements OnModuleInit {
   private readonly logger = new Logger(UniversalEmbeddingsService.name);
   private embeddings: Embeddings;
-  private readonly useLocalModel: boolean;
   private dimension: number;
   private modelName: string;
 
-  constructor(private readonly configService: ConfigService) {
-    this.useLocalModel =
-      this.configService.get('USE_LOCAL_MODEL') === 'true';
-  }
+  constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit(): Promise<void> {
-    await this.initializeEmbeddings();
-  }
+    this.embeddings = LangChainConfig.getEmbeddings(this.configService);
+    this.dimension = LangChainConfig.getEmbeddingDimension(this.configService);
 
-  /**
-   * Initialize embeddings based on configuration
-   */
-  private async initializeEmbeddings(): Promise<void> {
-    if (this.useLocalModel) {
-      await this.initializeOllamaEmbeddings();
+    const useLocal = LangChainConfig.isUsingLocalEmbedding(this.configService);
+    if (useLocal) {
+      this.modelName = this.configService.get('OLLAMA_EMBEDDING_MODEL');
+      this.logger.log(
+        `✅ Using LOCAL Ollama Embeddings: ${this.modelName} (dimension: ${this.dimension})`,
+      );
     } else {
-      await this.initializeGeminiEmbeddings();
-    }
-  }
-
-  /**
-   * Initialize Ollama BGE-M3 embeddings (local)
-   */
-  private async initializeOllamaEmbeddings(): Promise<void> {
-    const baseUrl = this.configService.get('OLLAMA_BASE_URL',);
-    this.modelName = this.configService.get('OLLAMA_EMBEDDING_MODEL');
-    this.dimension = parseInt(this.configService.get('OLLAMA_EMBEDDING_DIMENSION'),);
-
-    this.embeddings = new OpenAIEmbeddings({
-      model: this.modelName,
-      dimensions: this.dimension,
-      configuration: {
-        baseURL: baseUrl,
-      },
-    });
-
-    this.logger.log(
-      `✅ Using LOCAL Ollama Embeddings: ${this.modelName} (dimension: ${this.dimension}) at ${baseUrl}`,
-    );
-  }
-
-  /**
-   * Initialize Gemini embeddings (cloud)
-   */
-  private async initializeGeminiEmbeddings(): Promise<void> {
-    const apiKey = this.configService.get('GEMINI_API_KEY');
-    this.modelName = this.configService.get('GEMINI_EMBEDDING_MODEL',);
-    this.dimension = parseInt(this.configService.get('GEMINI_EMBEDDING_DIMENSION'),);
-
-    if (!apiKey) {
-      throw new Error(
-        'GEMINI_API_KEY is required when USE_LOCAL_MODEL is false',
+      this.modelName = this.configService.get('GEMINI_EMBEDDING_MODEL');
+      this.logger.log(
+        `✅ Using GEMINI Embeddings: ${this.modelName} (dimension: ${this.dimension})`,
       );
     }
-
-    this.embeddings = new GoogleGenAIEmbeddings({
-      apiKey,
-      model: this.modelName,
-      outputDimensionality: this.dimension,
-    });
-
-    this.logger.log(
-      `✅ Using GEMINI Embeddings: ${this.modelName} (dimension: ${this.dimension})`,
-    );
   }
 
   /**
@@ -109,7 +60,7 @@ export class UniversalEmbeddingsService implements OnModuleInit {
    * Check if using local model (Ollama)
    */
   isUsingLocalModel(): boolean {
-    return this.useLocalModel;
+    return LangChainConfig.isUsingLocalEmbedding(this.configService);
   }
 
   /**

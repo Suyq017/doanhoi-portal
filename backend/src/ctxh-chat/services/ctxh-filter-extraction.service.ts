@@ -38,7 +38,7 @@ export class CtxhFilterExtractionService implements OnModuleInit {
       this.llm = LangChainConfig.getLLM(this.configService);
       this.initialized = true;
 
-      const modelType = LangChainConfig.isUsingLocalModel(this.configService)
+      const modelType = LangChainConfig.isUsingLocalLLM(this.configService)
         ? 'Ollama'
         : 'Gemini';
       this.logger.log(`✅ Filter extraction service initialized (${modelType})`);
@@ -68,7 +68,7 @@ export class CtxhFilterExtractionService implements OnModuleInit {
 
     try {
       // Create a structured-output chain:
-      // prompt → LLM.withStructuredOutput(zodSchema)
+      // prompt -> LLM.withStructuredOutput(zodSchema)
       const structuredLlm = this.llm.withStructuredOutput(
         MetadataFilterSchema,
         { name: 'extract_metadata_filters' },

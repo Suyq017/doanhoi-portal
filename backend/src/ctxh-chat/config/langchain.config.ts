@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { ChatOpenAI } from '@langchain/openai'
 import { ChatOllama } from '@langchain/ollama';
 import { OllamaEmbeddings } from '@langchain/ollama';
 import { GoogleGenAIEmbeddings } from './google-genai-embeddings';
@@ -9,22 +10,31 @@ import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 /**
  * LangChain Configuration for CTXH Chat Module
  * Provides centralized configuration for LLM and Embeddings
- * Supports toggle between Ollama (local) and Gemini (cloud)
+ * Supports independent toggle between Ollama (local) and Gemini (cloud)
+ * USE_LOCAL_MODEL_LLM: controls LLM (true = Ollama, false = Gemini)
+ * USE_LOCAL_MODEL_EMBEDDING: controls Embeddings (true = Ollama, false = Gemini)
  */
 export class LangChainConfig {
   /**
-   * Check if using local model (Ollama)
+   * Check if using local LLM (Ollama)
    */
-  static isUsingLocalModel(configService: ConfigService): boolean {
-    return configService.get('USE_LOCAL_MODEL') === 'true';
+  static isUsingLocalLLM(configService: ConfigService): boolean {
+    return configService.get('USE_LOCAL_MODEL_LLM') === 'true';
+  }
+
+  /**
+   * Check if using local Embeddings (Ollama)
+   */
+  static isUsingLocalEmbedding(configService: ConfigService): boolean {
+    return configService.get('USE_LOCAL_MODEL_EMBEDDING') === 'true';
   }
 
   /**
    * Get configured Chat LLM instance
-   * Returns Ollama or Gemini based on USE_LOCAL_MODEL config
+   * Returns Ollama or Gemini based on USE_LOCAL_MODEL_LLM config
    */
   static getLLM(configService: ConfigService): BaseChatModel {
-    const useLocalModel = this.isUsingLocalModel(configService);
+    const useLocalModel = this.isUsingLocalLLM(configService);
 
     if (useLocalModel) {
       // Use Ollama Qwen
@@ -47,20 +57,20 @@ export class LangChainConfig {
       }
 
       return new ChatGoogleGenerativeAI({
-        model: configService.get('RAG_CHAT_MODEL'),
         apiKey,
+        model: configService.get('GEMINI_MODEL'),
         temperature: parseFloat(configService.get('RAG_TEMPERATURE')),
-        maxOutputTokens: parseInt(configService.get('RAG_MAX_OUTPUT_TOKENS'), 10),
+        // maxOutputTokens: parseInt(configService.get('RAG_MAX_OUTPUT_TOKENS'), 10),
       });
     }
   }
 
   /**
    * Get configured Embeddings instance
-   * Returns Ollama BGE-M3 or Gemini based on USE_LOCAL_MODEL config
+   * Returns Ollama BGE-M3 or Gemini based on USE_LOCAL_MODEL_EMBEDDING config
    */
   static getEmbeddings(configService: ConfigService): Embeddings {
-    const useLocalModel = this.isUsingLocalModel(configService);
+    const useLocalModel = this.isUsingLocalEmbedding(configService);
 
     if (useLocalModel) {
       // Use Ollama BGE-M3 (dimension: 1024)
@@ -72,7 +82,7 @@ export class LangChainConfig {
         model,
       }) as unknown as Embeddings;
     } else {
-      // Use Gemini (dimension: 768)
+      // Use Gemini (dimension: 1024)
       const apiKey = configService.get<string>('GEMINI_API_KEY');
       if (!apiKey) {
         throw new Error('GEMINI_API_KEY is not configured');
@@ -90,10 +100,21 @@ export class LangChainConfig {
   }
 
   /**
+   * Get the name of the currently configured LLM model
+   */
+  static getModelName(configService: ConfigService): string {
+    if (this.isUsingLocalLLM(configService)) {
+      return configService.get('OLLAMA_LLM_MODEL');
+    } else {
+      return configService.get('GEMINI_MODEL');
+    }
+  }
+
+  /**
    * Get embedding dimension based on current model
    */
   static getEmbeddingDimension(configService: ConfigService): number {
-    const useLocalModel = this.isUsingLocalModel(configService);
+    const useLocalModel = this.isUsingLocalEmbedding(configService);
     
     if (useLocalModel) {
       return parseInt(configService.get('OLLAMA_EMBEDDING_DIMENSION'), 10);

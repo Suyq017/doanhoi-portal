@@ -109,7 +109,7 @@ export const seedRoles = async (dataSource: DataSource) => {
         existingRole.permissions = permissions;
         await roleRepository.save(existingRole);
         console.log(
-          `🔄 Updated role: ${roleData.name} — ${currentCodes.length} → ${permissions.length} permissions`,
+          `🔄 Updated role: ${roleData.name} — ${currentCodes.length} -> ${permissions.length} permissions`,
         );
       } else {
         console.log(`✅ Role already up-to-date: ${roleData.name} (${permissions.length} permissions)`);

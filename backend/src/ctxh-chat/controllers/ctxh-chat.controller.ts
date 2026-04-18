@@ -23,6 +23,7 @@ import { CtxhVectorSyncService } from '../services/ctxh-vector-sync.service';
 import { ChatRequestDto, ChatResponseDto } from '../dto';
 import { ParticipationService } from '../../ctxh/activity/services/participation.service';
 import { UserContextService } from '../services/user-context.service';
+import { StaffAgentService } from '../services/staff-agent.service';
 import type { Request } from 'express';
 
 @ApiTags('ctxh-chat')
@@ -40,6 +41,7 @@ export class CtxhChatController {
     private readonly vectorSyncService: CtxhVectorSyncService,
     private readonly participationService: ParticipationService,
     private readonly userContextService: UserContextService,
+    private readonly staffAgentService: StaffAgentService,
   ) {}
 
   // ========== RAG CHAT ENDPOINTS ==========
@@ -56,11 +58,34 @@ export class CtxhChatController {
     @Req() request: Request,
   ): Promise<ChatResponseDto> {
     const userId = (request as any).user?.id;
+    const userType = (request as any).user?.userType;
     const sessionId = chatRequestDto.sessionId || `session_${userId}_${Date.now()}`;
 
     // Lấy thời gian thực (GMT+7)
     const now = new Date();
     const currentDate = now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }); // YYYY-MM-DD
+
+    // ── Route staff users to StaffAgentService ──────────────────────────────
+    if (userType === 'staff') {
+      const startTime = Date.now();
+      const staffResponse = await this.staffAgentService.invoke(
+        chatRequestDto.message,
+        sessionId,
+        userId,
+        { currentDate },
+      );
+      return {
+        sessionId,
+        response: staffResponse,
+        sources: [],
+        responseTime: Date.now() - startTime,
+        timestamp: new Date(),
+        followUpSuggestions: [],
+        confidence: 0.9,
+      };
+    }
+
+    // ── Student / default flow ─────────────────────────────────────────────
     const currentDayOfWeek = now.toLocaleDateString('vi-VN', { weekday: 'long', timeZone: 'Asia/Ho_Chi_Minh' });
     const currentDatetime = now.toLocaleString('vi-VN', {
       timeZone: 'Asia/Ho_Chi_Minh',

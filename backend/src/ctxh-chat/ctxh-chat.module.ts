@@ -21,11 +21,15 @@ import { LangChainAdvancedRetrieverService } from './services/langchain-advanced
 import { LangChainIngestionService } from './services/langchain-ingestion.service';
 import { CtxhFilterExtractionService } from './services/ctxh-filter-extraction.service';
 import { UserContextService } from './services/user-context.service';
+import { StaffAgentService } from './services/staff-agent.service';
 
 // Vector Auto-Ingestion Pipeline
 import { CtxhVectorSyncService } from './services/ctxh-vector-sync.service';
 import { VectorIngestionProcessor } from './processors/vector-ingestion.processor';
 import { VECTOR_QUEUE } from './constants/vector-queue.constants';
+
+// Notifications (re-declared here to avoid circular CtxhChatModule ↔ CtxhMcpModule)
+import { NodemailerService } from '../ctxh-mcp/notifications/nodemailer.service';
 
 @Module({
   imports: [
@@ -55,6 +59,9 @@ import { VECTOR_QUEUE } from './constants/vector-queue.constants';
     LangChainIngestionService,
     CtxhFilterExtractionService,
     UserContextService,
+    // Staff Agent (tool-calling chatbot for cán bộ)
+    NodemailerService,
+    StaffAgentService,
     // Vector Auto-Ingestion Pipeline
     CtxhVectorSyncService,
     VectorIngestionProcessor, // Worker với concurrency: 1 per job type
