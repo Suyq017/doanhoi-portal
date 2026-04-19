@@ -22,7 +22,7 @@ import { Toast } from '@/shared/components';
 interface FormFillTabProps {
   templateId: string | null;
   onBack: () => void;
-  onSubmitSuccess?: (message: string) => void; // Callback khi submit thành công với message
+  onSubmitSuccess?: (message: string, status?: 'completed' | 'failed' | 'pending') => void;
   editingSubmission?: TemplateSubmission | null; // Submission đang chỉnh sửa
 }
 
@@ -345,14 +345,14 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
     },
     onSuccess: async (submission) => {
       // Polling để đợi file tạo xong
-      const checkStatus = async (): Promise<'completed' | 'failed' | 'pending'> => {
+      const checkStatus = async (): Promise<{ status: 'completed' | 'failed' | 'pending'; errorMessage?: string | null }> => {
         try {
           const updated = await getSubmissionById(submission.id);
-          if (updated.status === 'completed') return 'completed';
-          if (updated.status === 'failed') return 'failed';
-          return 'pending';
+          if (updated.status === 'completed') return { status: 'completed', errorMessage: updated.errorMessage };
+          if (updated.status === 'failed') return { status: 'failed', errorMessage: updated.errorMessage };
+          return { status: 'pending', errorMessage: updated.errorMessage };
         } catch {
-          return 'pending';
+          return { status: 'pending' };
         }
       };
 
@@ -360,9 +360,12 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
       let attempts = 0;
       const maxAttempts = 30;
       let finalStatus: 'completed' | 'failed' | 'pending' = 'pending';
+      let finalErrorMessage: string | null | undefined;
 
       while (attempts < maxAttempts) {
-        finalStatus = await checkStatus();
+        const statusResult = await checkStatus();
+        finalStatus = statusResult.status;
+        finalErrorMessage = statusResult.errorMessage;
         if (finalStatus === 'completed' || finalStatus === 'failed') break;
 
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -379,17 +382,25 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
           ? t('templates:messages.formCompleted')
           : t('templates:messages.formCompleted');
       } else if (finalStatus === 'failed') {
-        message = t('templates:messages.formError');
+        if (typeof finalErrorMessage === 'string' && finalErrorMessage.includes('S3 configuration not available')) {
+          message = t('templates:messages.s3FormSubmitConfigRequired');
+        } else {
+          message = t('templates:messages.formError');
+        }
       } else {
         message = t('templates:messages.formProcessing');
       }
 
       // Nếu có callback onSubmitSuccess thì dùng và truyền message
       if (onSubmitSuccess) {
-        onSubmitSuccess(message);
+        onSubmitSuccess(message, finalStatus);
       } else {
         // Fallback: hiển thị toast và quay lại
-        showSuccess(message);
+        if (finalStatus === 'failed') {
+          showError(message);
+        } else {
+          showSuccess(message);
+        }
         setTimeout(() => {
           onBack();
         }, 2000);
@@ -397,7 +408,12 @@ const FormFillTabInner: React.FC<FormFillTabProps> = ({ templateId, onBack, onSu
     },
     onError: (error: any) => {
       setIsSubmitting(false);
-      showError(error?.response?.data?.message || t('templates:messages.submitError'));
+      const backendMessage = error?.response?.data?.message || error?.message;
+      if (typeof backendMessage === 'string' && backendMessage.includes('S3 configuration not available')) {
+        showError(t('templates:messages.s3FormSubmitConfigRequired'));
+        return;
+      }
+      showError(backendMessage || t('templates:messages.submitError'));
     },
   });
 

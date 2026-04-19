@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useFormsPage } from '../hooks';
 import { Toast } from '@/shared/components';
 
@@ -67,7 +68,7 @@ const FormsPageHeader: React.FC<FormsPageHeaderProps> = ({
 
 // Main FormsPage Component
 const FormsPage: React.FC = () => {
-  const { t } = require('react-i18next').useTranslation(['templates', 'common']);
+  const { t } = useTranslation(['templates', 'common']);
   const [searchParams] = useSearchParams();
 
   const {

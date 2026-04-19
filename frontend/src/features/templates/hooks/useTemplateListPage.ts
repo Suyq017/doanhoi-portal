@@ -1,18 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getAllTemplates, deleteTemplate } from '@/shared/services/template.service';
 import { useToast } from '@/shared/hooks/useToast';
 import { usePermissions } from '@/shared/hooks/usePermissions';
+import { useAwsS3ConfigActive } from '@/shared/hooks/queries/useSystemConfigQueries';
 import type { UseTemplateListPageReturn, StatusOption, TemplateListFilters } from '../types';
 
 export function useTemplateListPage(): UseTemplateListPageReturn {
     const { t } = useTranslation(['templates', 'common']);
+    const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
     const { toasts, confirmDialog, showSuccess, showError, showConfirm, hideToast } = useToast();
     const { canManageTemplates } = usePermissions();
+    const { data: activeS3Config, isLoading: isCheckingS3Config } = useAwsS3ConfigActive();
 
     // Filter states
     const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -119,6 +122,15 @@ export function useTemplateListPage(): UseTemplateListPageReturn {
         setCurrentPage(1);
     };
 
+    const handleNavigateToUpload = () => {
+        if (!activeS3Config) {
+            showError(t('templates:messages.s3ConfigRequiredBeforeCreate'));
+            return;
+        }
+
+        navigate('/portal/admin/templates/upload');
+    };
+
     const filters: TemplateListFilters = {
         statusFilter,
         searchInput,
@@ -148,6 +160,7 @@ export function useTemplateListPage(): UseTemplateListPageReturn {
             setCurrentPage(1);
         },
         handleDelete,
+        handleNavigateToUpload,
 
         // UI State
         statusDropdownOpen,
@@ -157,6 +170,8 @@ export function useTemplateListPage(): UseTemplateListPageReturn {
         permissions: {
             canManageTemplates: canManageTemplates(),
         },
+        hasActiveS3Config: !!activeS3Config,
+        isCheckingS3Config,
 
         // Toast & Dialog
         toasts,

@@ -54,13 +54,17 @@ export function useFormsPage(): UseFormsPageReturn {
         setSearchParams({ tab: returnTab });
     };
 
-    const handleSubmitSuccess = (message: string) => {
+    const handleSubmitSuccess = (message: string, status: 'completed' | 'failed' | 'pending' = 'completed') => {
         setSelectedTemplateId(null);
         setEditingSubmission(null);
         setSearchParams({ tab: 'submissions' });
         // Hiển thị toast sau khi đã chuyển tab
         setTimeout(() => {
-            showSuccess(message);
+            if (status === 'failed') {
+                showError(message);
+            } else {
+                showSuccess(message);
+            }
         }, 100);
     };
 

@@ -151,7 +151,11 @@
     "processingTitle": "Template is in \"Processing\" status",
     "processingDesc": "This template has not been activated and users cannot use it yet. To activate, please select \"Active\" status in the top corner and click \"Save Configuration\".",
     "inactiveTitle": "Template is suspended",
-    "inactiveDesc": "This template is not available to users. Change to \"Active\" to reactivate it."
+    "inactiveDesc": "This template is not available to users. Change to \"Active\" to reactivate it.",
+    "s3ConfigMissingShort": "AWS S3 is not configured",
+    "s3ConfigRequiredBeforeCreate": "No active AWS S3 configuration found. Go to Administrator/ system conffiguration before creating a template.",
+    "s3UploadConfigRequired": "Unable to create template because there is no active AWS S3 configuration. Please configure AWS S3 in Administrator/ system conffiguration first.",
+    "s3FormSubmitConfigRequired": "Unable to process the form because there is no active AWS S3 configuration. Please configure AWS S3 in Administrator/ system conffiguration first."
   },
   
   "upload": {
