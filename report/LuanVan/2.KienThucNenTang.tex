@@ -1,6 +1,148 @@
 \section{Kiến thức nền tảng}
 \subsection{Khảo sát thực tế}
+Hiện nay, Trường Đại học Bách Khoa -- Đại học Quốc gia TP.HCM đã có một cổng thông tin phục vụ cho hoạt động ngoại khóa và công tác xã hội, trong đó sinh viên có thể truy cập để xem thông báo, tra cứu hoạt động, xem thông tin cá nhân và đăng ký tham gia các hoạt động phù hợp. Phần khảo sát dưới đây được thực hiện dựa trên giao diện hiện tại của cổng này ở góc nhìn người dùng sinh viên, không phải từ mã nguồn của hệ thống đề xuất trong đề tài.
+
+Từ quan sát giao diện hiện tại, có thể xác định hệ thống CTXH đang cần đáp ứng một số chức năng cơ bản sau: công bố thông báo và nội dung cập nhật; cung cấp danh sách hoạt động theo trạng thái; hiển thị chi tiết hoạt động để sinh viên xem thông tin tổ chức, thời gian, địa điểm và nội dung; cho phép sinh viên đăng ký hoặc theo dõi hoạt động; hiển thị trang cá nhân để kiểm tra tổng số ngày CTXH tích lũy; và hỗ trợ khu vực dành cho đơn vị tổ chức đăng ký hoặc quản lý hoạt động mới. Đây là những chức năng cốt lõi mà một cổng thông tin CTXH cần có để phục vụ cả sinh viên lẫn cán bộ phụ trách.
+
+\subsubsection{Quan sát kỹ thuật từ phía người dùng}
+Thông qua quan sát bằng công cụ Developer Tools (F12) ở phía trình duyệt, có thể nhận thấy hệ thống hiện tại mang đặc trưng của nền tảng ASP.NET WebForms cũ. Cụ thể, phía client sử dụng các script như \texttt{MicrosoftAjaxTimer.debug.js} thuộc \texttt{AjaxControlToolkit 3.5.60623.0} (mốc công nghệ cũ), cùng cơ chế \texttt{\_\_doPostBack} và các yêu cầu bất đồng bộ đến các trang \texttt{.aspx}.
+
+Ở lớp giao tiếp dữ liệu, không ghi nhận API REST công khai theo kiểu tài nguyên (ví dụ \texttt{/api/...}) từ phía người dùng; thay vào đó, các yêu cầu chủ yếu đi qua các endpoint trang \texttt{.aspx} và tài nguyên tĩnh. Điều này cho thấy mô hình tích hợp và mở rộng theo hướng dịch vụ hiện đại còn hạn chế.
+
+\subsubsection{Thực trạng mức độ sử dụng}
+Theo thực tế sử dụng hiện nay, cổng CTXH cũ vẫn còn giá trị nhất định ở chức năng tra cứu thông tin và theo dõi tổng số ngày CTXH cá nhân. Tuy nhiên, mức độ sử dụng cho các tác vụ tương tác thường xuyên không cao; nhiều hoạt động được truyền thông và tiếp nhận đăng ký chủ yếu qua các hội nhóm trên mạng xã hội, sau đó mới đối chiếu hoặc cập nhật lại trên hệ thống.
+
+Thực trạng này phản ánh khoảng cách giữa chức năng hệ thống đang có và trải nghiệm người dùng mong đợi trong bối cảnh số, đặc biệt ở nhu cầu tiếp cận thông tin nhanh, đăng ký thuận tiện và theo dõi trạng thái tập trung.
+
+\subsubsection{Giao diện thông tin và thông báo}
+Ở màn hình chính, hệ thống hiện tại cung cấp một khu vực thông báo ở cột bên trái, nơi sinh viên có thể theo dõi các nội dung cập nhật, các bài viết liên quan đến hoạt động và một số thông báo cũ được lưu lại. Phần này giúp người dùng nắm nhanh tình hình chung, nhưng cách trình bày còn thiên về danh sách, chưa hỗ trợ lọc hoặc tìm kiếm theo nhu cầu cụ thể.
+
+Từ góc độ khảo sát, phần thông báo cho thấy hệ thống đang đáp ứng nhu cầu công bố thông tin, nhưng cách hiển thị khá đơn giản và chưa thật sự tối ưu cho việc theo dõi nhanh những nội dung mới nhất hoặc những nội dung có liên quan trực tiếp đến từng sinh viên.
+
+\subsubsection{Danh mục và danh sách hoạt động}
+Khu vực danh mục hoạt động cho phép sinh viên xem các hoạt động theo trạng thái như đang diễn ra, đang mở đăng ký hoặc đã kết thúc. Khi chọn từng trạng thái, hệ thống sẽ hiển thị danh sách các hoạt động tương ứng với tên hoạt động, đơn vị tổ chức, thời gian và địa điểm thực hiện. Nhìn chung, đây là chức năng quan trọng vì giúp sinh viên tra cứu hoạt động đang mở, tuy nhiên việc khám phá thông tin vẫn chủ yếu theo kiểu duyệt danh sách thủ công.
+
+Khu vực này cho thấy hệ thống hiện tại đã đáp ứng được yêu cầu tra cứu cơ bản, nhưng chưa có cơ chế tìm kiếm, lọc nâng cao hoặc gợi ý theo nhu cầu cụ thể của sinh viên. Khi số lượng hoạt động tăng lên, cách duyệt danh sách như vậy sẽ kém tiện dụng hơn và tốn thời gian hơn cho người dùng.
+
+\subsubsection{Chi tiết hoạt động và đăng ký tham gia}
+Khi truy cập vào từng hoạt động, sinh viên có thể xem trang chi tiết gồm tên hoạt động, banner, thời gian thực hiện, địa điểm, đơn vị tổ chức, nội dung mô tả và một số thông tin liên hệ. Một số màn hình còn thể hiện số ngày CTXH đề xuất, số ngày được duyệt và trạng thái của hoạt động.
+
+Từ trang chi tiết, sinh viên có thể đăng ký tham gia hoặc xem các mục liên quan như bình luận, thành viên, ảnh, video, thông báo và đội nhóm. Điều này cho thấy hệ thống hiện tại đã hỗ trợ được phần tương tác cơ bản giữa sinh viên và hoạt động, nhưng thông tin vẫn được tách thành nhiều tab, nên việc tra cứu toàn bộ nội dung thường phải thực hiện qua nhiều bước.
+
+Nhìn từ góc độ sử dụng thực tế, trang chi tiết đã cung cấp được các thông tin cần thiết để quyết định tham gia một hoạt động. Tuy nhiên, việc chia nội dung thành nhiều tab và nhiều khu vực khác nhau khiến trải nghiệm tra cứu chưa liền mạch. Nếu sinh viên chỉ muốn biết nhanh một vài thông tin như điều kiện tham gia, số ngày CTXH hoặc thời gian thực hiện thì vẫn phải tự đọc và đối chiếu nhiều phần khác nhau trên trang.
+
+\subsubsection{Trang cá nhân sinh viên}
+Ngoài phần tra cứu hoạt động, sinh viên còn có trang cá nhân để xem thông tin tài khoản và tổng số ngày CTXH đã tích lũy. Tại đây, hệ thống hiển thị danh sách các hoạt động cá nhân đã tham gia cùng các cột như ngày tính, ngày CTXH, minh chứng, khoa xác nhận và tình trạng. Đây là chức năng hữu ích cho việc theo dõi quá trình tích lũy ngày CTXH, nhưng giao diện vẫn còn thiên về bảng dữ liệu và chưa thật sự tối ưu cho việc tra cứu nhanh hoặc hỏi đáp theo ngữ cảnh.
+
+Điểm cần lưu ý là dữ liệu được trình bày theo dạng bảng, phù hợp cho việc quản lý và đối soát, nhưng lại chưa thân thiện nếu người dùng muốn tìm nhanh một hoạt động cụ thể hoặc muốn hiểu ý nghĩa của các trường thông tin mà không cần đọc nhiều hướng dẫn kèm theo.
+
+\subsubsection{Đăng ký hoạt động mới và danh sách điều phối}
+Hệ thống còn có màn hình đăng ký hoạt động mới cho các đơn vị tổ chức, với các trường thông tin như loại hoạt động, đơn vị tổ chức, mã hoạt động, tên hoạt động, hình ảnh, mô tả và nội dung chi tiết. Bên cạnh đó, một số khu vực quản trị còn hiển thị danh sách moderator hoặc danh mục hoạt động theo khu vực.
+
+Từ góc độ người dùng sinh viên, những màn hình này cho thấy cổng thông tin hiện tại đã có nền tảng nghiệp vụ tương đối đầy đủ cho việc công bố và theo dõi hoạt động CTXH. Tuy nhiên, hệ thống vẫn mang tính truyền thống, giao diện chưa đồng nhất hoàn toàn và chưa có cơ chế hỏi đáp tự động để hỗ trợ sinh viên khi cần tra cứu nhanh nội dung hoạt động.
+
+Ngoài ra, do hệ thống thiên về liệt kê và nhập liệu theo biểu mẫu, việc tìm hiểu thông tin mới chủ yếu dựa vào thao tác thủ công của người dùng. Điều này là chấp nhận được với một hệ thống cũ, nhưng về lâu dài sẽ làm giảm tính tiện ích nếu nhu cầu tra cứu tăng lên hoặc sinh viên cần hỗ trợ ngay trong lúc tìm kiếm thông tin.
+
+\subsubsection{Các vấn đề chính của hệ thống cũ}
+Từ khảo sát ở cả góc nhìn nghiệp vụ và góc nhìn kỹ thuật phía người dùng, có thể tổng hợp các vấn đề chính như sau:
+
+\begin{itemize}
+    \item Công nghệ nền tảng cũ: mô hình WebForms và Ajax toolkit cũ khiến giao diện và cách tương tác khó đáp ứng kỳ vọng hiện đại về tốc độ và tính trực quan.
+    \item Khả năng truy xuất thông tin chưa thuận tiện: người dùng phải duyệt nhiều danh sách và nhiều tab để tổng hợp thông tin cần thiết cho một hoạt động.
+    \item Không ghi nhận API dịch vụ công khai ở phía người dùng: dữ liệu chủ yếu đi qua các trang \texttt{.aspx}, gây hạn chế trong tích hợp mở rộng đa kênh.
+    \item Trải nghiệm sử dụng chưa cao: thực tế nhiều sinh viên chỉ vào hệ thống để xem ngày CTXH hiện tại, còn nhu cầu tiếp cận hoạt động mới lại diễn ra nhiều trên mạng xã hội.
+    \item Thiếu công cụ hỗ trợ thông minh: chưa có cơ chế hỏi đáp tự động để hỗ trợ tra cứu nhanh quy định, điều kiện và thông tin hoạt động.
+\end{itemize}
+
+Các vấn đề trên là cơ sở để đề tài định hướng xây dựng hệ thống mới theo hướng hiện đại hơn, thuận tiện hơn trong tra cứu và sử dụng, đồng thời có khả năng mở rộng tích hợp tốt hơn trong tương lai.
+
 \subsection{Cơ sở lý thuyết}
+\subsubsection{Quản lý dữ liệu tập trung}
+Hệ thống của đề tài được xây dựng theo hướng quản lý dữ liệu tập trung, trong đó thông tin người dùng, hoạt động công tác xã hội, quyền truy cập và dữ liệu tài chính được lưu trữ và truy xuất từ một nguồn dữ liệu thống nhất. Cách tiếp cận này giúp hạn chế tình trạng phân tán dữ liệu, giảm trùng lặp thông tin và hỗ trợ tra cứu nhanh hơn so với việc lưu trữ rời rạc trên nhiều file hoặc nhiều công cụ khác nhau.
+
+Trong bối cảnh quản lý Đoàn -- Hội, mô hình dữ liệu tập trung còn giúp tăng khả năng đồng bộ giữa các phân hệ, từ đó bảo đảm rằng khi một thông tin được cập nhật ở một nơi thì các thành phần liên quan trong hệ thống cũng có thể sử dụng ngay dữ liệu mới nhất.
+
+\subsubsection{Kiến trúc phân lớp}
+Kiến trúc phân lớp là phương pháp tổ chức hệ thống phần mềm thành các lớp có trách nhiệm rõ ràng, phổ biến nhất là lớp giao diện, lớp nghiệp vụ và lớp dữ liệu. Mỗi lớp chỉ đảm nhận một vai trò cụ thể và tương tác với các lớp khác thông qua các giao diện được định nghĩa rõ ràng.
+
+Trong dự án này, kiến trúc phân lớp giúp tách biệt phần hiển thị giao diện người dùng ở frontend, phần xử lý nghiệp vụ ở backend và phần lưu trữ dữ liệu ở cơ sở dữ liệu. Cách tổ chức này làm cho hệ thống dễ bảo trì, dễ mở rộng và thuận lợi hơn khi phát triển các tính năng mới như chatbot CTXH hoặc các chức năng quản lý bổ sung trong tương lai.
+
+\subsubsection{RESTful API}
+RESTful API là kiến trúc giao tiếp giữa client và server dựa trên các nguyên tắc của REST, trong đó mỗi tài nguyên được định danh bằng URI và được thao tác thông qua các phương thức HTTP như GET, POST, PUT, PATCH và DELETE. Đây là nền tảng quan trọng để frontend và backend trong hệ thống có thể trao đổi dữ liệu một cách rõ ràng, thống nhất và độc lập với nhau.
+
+Đối với đề tài, RESTful API được sử dụng để xử lý các nghiệp vụ như quản lý người dùng, danh mục hoạt động, chấm ngày CTXH, cấu hình giới hạn, thanh toán và tra cứu chatbot. Cách thiết kế này giúp hệ thống dễ tích hợp với các màn hình giao diện khác nhau và cũng thuận tiện khi kiểm thử hoặc mở rộng về sau.
+
+\subsubsection{Xác thực và phân quyền}
+Xác thực và phân quyền là hai thành phần quan trọng trong hệ thống quản lý có nhiều nhóm người dùng khác nhau. Xác thực dùng để kiểm tra danh tính của người dùng khi đăng nhập, còn phân quyền dùng để quyết định người dùng đó được phép truy cập hoặc thao tác trên những chức năng nào.
+
+Trong hệ thống này, JSON Web Token (JWT) được sử dụng để duy trì trạng thái đăng nhập theo hướng an toàn và gọn nhẹ. Bên cạnh đó, cơ chế phân quyền dựa trên vai trò (Role-Based Access Control - RBAC) giúp tách biệt quyền hạn giữa sinh viên, cán bộ và quản trị viên, từ đó hạn chế việc truy cập sai chức năng hoặc chỉnh sửa dữ liệu không phù hợp.
+
+\subsubsection{RAG cho chatbot CTXH}
+Retrieval-Augmented Generation (RAG) là mô hình kết hợp giữa truy xuất thông tin và sinh nội dung bằng mô hình ngôn ngữ lớn. Thay vì chỉ dựa hoàn toàn vào kiến thức đã học, hệ thống RAG sẽ truy xuất các tài liệu hoặc dữ liệu liên quan trước, sau đó dùng mô hình ngôn ngữ để tạo ra câu trả lời phù hợp hơn với ngữ cảnh thực tế.
+
+Trong đề tài, RAG được áp dụng cho AI Chatbot phục vụ công tác xã hội. Chatbot chỉ trả lời trong phạm vi thông tin CTXH đã được quản lý trên hệ thống, chẳng hạn như quy định, hoạt động, điều kiện tham gia, hoặc các nội dung tra cứu phổ biến. Cách làm này giúp câu trả lời có cơ sở dữ liệu rõ ràng, đồng thời giảm bớt nguy cơ trả lời ngoài phạm vi hoặc sai lệch nội dung.
+
 \subsection{Công nghệ sử dụng}
+\subsubsection{Frontend}
+Frontend của hệ thống được xây dựng bằng React kết hợp TypeScript và Vite. React được dùng để phát triển giao diện theo hướng component, cho phép tái sử dụng các thành phần hiển thị trong nhiều màn hình khác nhau. TypeScript giúp bổ sung kiểu dữ liệu tĩnh, giảm lỗi trong quá trình phát triển, còn Vite hỗ trợ khởi tạo và biên dịch dự án nhanh hơn.
+
+Ngoài các công nghệ nền tảng trên, giao diện còn sử dụng React Router để điều hướng giữa các trang, TanStack React Query để quản lý trạng thái dữ liệu từ server, i18next để hỗ trợ đa ngôn ngữ, Tailwind CSS để xây dựng giao diện nhanh và nhất quán, cùng với Radix UI và assistant-ui cho các thành phần giao diện tương tác, đặc biệt là phần chatbot.
+
+\begin{itemize}
+    \item React: xây dựng giao diện theo hướng component và dễ tái sử dụng.
+    \item TypeScript: tăng tính an toàn kiểu dữ liệu và khả năng bảo trì.
+    \item React Router: quản lý điều hướng và phân trang trong ứng dụng.
+    \item TanStack React Query: đồng bộ dữ liệu từ backend, giảm xử lý thủ công ở phía client.
+    \item Tailwind CSS, Radix UI: hỗ trợ xây dựng giao diện nhanh, gọn và linh hoạt.
+    \item i18next: hỗ trợ đa ngôn ngữ cho các màn hình người dùng.
+    \item assistant-ui: hiển thị và tương tác với giao diện chatbot.
+\end{itemize}
+
+\subsubsection{Backend}
+Backend của hệ thống được xây dựng bằng NestJS trên nền tảng Node.js và TypeScript. NestJS cung cấp kiến trúc module rõ ràng, phù hợp với các hệ thống có nhiều phân hệ như quản lý người dùng, CTXH, thanh toán, xuất báo cáo và chatbot. TypeORM được sử dụng để làm việc với cơ sở dữ liệu theo hướng ánh xạ đối tượng -- quan hệ, giúp mã nguồn backend rõ ràng và dễ bảo trì hơn.
+
+Hệ thống cũng sử dụng JWT và Passport cho xác thực, Swagger để sinh tài liệu API, Bull kết hợp Redis cho các tác vụ nền, PayOS cho thanh toán điện tử, và AWS S3 cho các nhu cầu lưu trữ tệp. Ngoài ra, NestJS Schedule và EventEmitter được dùng để hỗ trợ các tác vụ định kỳ và cơ chế phát sinh sự kiện trong hệ thống.
+
+\begin{itemize}
+    \item NestJS: framework backend theo mô hình module, phù hợp cho hệ thống quy mô lớn.
+    \item TypeORM: ánh xạ dữ liệu giữa entity và PostgreSQL.
+    \item JWT, Passport: xác thực và bảo vệ các API quan trọng.
+    \item Bull, Redis: xử lý hàng đợi và tác vụ nền cho các luồng cần bất đồng bộ.
+    \item Swagger: tài liệu hóa API và hỗ trợ kiểm thử nhanh.
+    \item PayOS: tích hợp thanh toán trực tuyến cho các nghiệp vụ có thu phí.
+    \item AWS S3: lưu trữ tệp tin và tài liệu dùng chung.
+\end{itemize}
+
+\subsubsection{Cơ sở dữ liệu}
+PostgreSQL là hệ quản trị cơ sở dữ liệu quan hệ được sử dụng để lưu trữ toàn bộ dữ liệu nghiệp vụ của hệ thống. PostgreSQL phù hợp với các bài toán cần tính nhất quán cao, hỗ trợ truy vấn phức tạp và có khả năng mở rộng tốt.
+
+Riêng với phần chatbot CTXH, hệ thống còn sử dụng cơ chế lưu vector embedding trong PostgreSQL để phục vụ truy xuất ngữ nghĩa. Cách tổ chức này cho phép chatbot tìm đúng nội dung liên quan từ dữ liệu CTXH trước khi tạo câu trả lời.
+
+\begin{itemize}
+    \item PostgreSQL: lưu trữ dữ liệu quan hệ của người dùng, tổ chức, hoạt động và giao dịch.
+    \item Vector embedding: phục vụ truy xuất ngữ nghĩa cho chatbot CTXH.
+    \item TypeORM migrations và seed scripts: hỗ trợ tạo, cập nhật và khởi tạo dữ liệu.
+\end{itemize}
+
+\subsubsection{AI Chatbot và LangChain}
+Phần AI Chatbot của hệ thống được xây dựng dựa trên LangChain.js, kết hợp với mô hình ngôn ngữ và cơ chế RAG để trả lời các câu hỏi trong phạm vi hoạt động công tác xã hội. Cụm xử lý này gồm bước nạp dữ liệu CTXH vào vector store, truy xuất các đoạn nội dung liên quan, rồi mới sinh câu trả lời cuối cùng.
+
+Theo cấu hình hiện tại trong dự án, hệ thống hỗ trợ hai hướng triển khai mô hình: chạy cục bộ qua Ollama hoặc dùng dịch vụ Gemini tùy cấu hình môi trường. Nhờ đó, chatbot có thể được điều chỉnh theo điều kiện triển khai thực tế và yêu cầu vận hành của hệ thống.
+
+\begin{itemize}
+    \item LangChain.js: điều phối luồng RAG, truy xuất và sinh câu trả lời.
+    \item Ollama hoặc Gemini: cung cấp mô hình ngôn ngữ và embeddings theo cấu hình.
+    \item Vector store trên PostgreSQL: lưu trữ và tìm kiếm embedding của hoạt động CTXH.
+    \item Bull: hỗ trợ nạp dữ liệu và đồng bộ embedding theo luồng nền.
+\end{itemize}
+
+\subsubsection{Triển khai và giám sát}
+Hệ thống được đóng gói và triển khai bằng Docker, giúp thống nhất môi trường phát triển và môi trường chạy thật. Bên cạnh đó, dự án còn có cấu hình Prometheus và Grafana để theo dõi trạng thái hệ thống, phục vụ giám sát và phân tích vận hành.
+
+\begin{itemize}
+    \item Docker: đóng gói và triển khai dịch vụ đồng nhất giữa các môi trường.
+    \item Prometheus: thu thập chỉ số vận hành.
+    \item Grafana: trực quan hóa dữ liệu giám sát.
+\end{itemize}
 
 \clearpage
