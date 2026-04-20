@@ -1,0 +1,207 @@
+\section{Tổng kết}
+
+\subsection{Nhận xét}
+
+Sau quá trình phát triển và triển khai hệ thống Đoàn Hội Portal tại Trường Đại học Bách Khoa TP.HCM, nhóm đã đạt được những kết quả đáng ghi nhận và rút ra một số nhận xét về ưu nhược điểm của hệ thống.
+
+\subsubsection{Ưu điểm}
+
+\begin{itemize}
+    \item \textbf{Số hóa toàn diện quy trình quản lý:}
+    \begin{itemize}
+        \item Hệ thống đã thay thế thành công các quy trình thủ công bằng giải pháp số hóa: từ quản lý hồ sơ Đoàn viên/Hội viên, đăng ký và chấm điểm hoạt động CTXH, đến thu hội phí trực tuyến.
+        \item Giảm thiểu đáng kể khối lượng công việc giấy tờ, nâng cao hiệu quả làm việc cho cán bộ Đoàn -- Hội.
+        \item Sinh viên có thể tra cứu thông tin cá nhân, điểm CTXH, và thanh toán hội phí mọi lúc mọi nơi thông qua giao diện web responsive.
+    \end{itemize}
+    
+    \item \textbf{Kiến trúc hệ thống hiện đại và khoa học:}
+    \begin{itemize}
+        \item Áp dụng kiến trúc modular với backend NestJS và frontend ReactJS, tách biệt rõ ràng giữa presentation layer và business logic.
+        \item Sử dụng TypeORM giúp xây dựng query an toàn, dễ dàng bảo trì và mở rộng schema database.
+        \item Triển khai Docker container hóa toàn bộ stack, đảm bảo tính nhất quán giữa các môi trường development, staging và production.
+        \item Tích hợp Prometheus và Grafana cho phép giám sát real-time các metrics quan trọng của hệ thống.
+    \end{itemize}
+    
+    \item \textbf{Hệ thống phân quyền linh hoạt:}
+    \begin{itemize}
+        \item Mô hình RBAC với context theo tổ chức cho phép quản lý quyền truy cập chi tiết và phù hợp với cơ cấu tổ chức thực tế.
+        \item Một user có thể có nhiều vai trò khác nhau ở các tổ chức khác nhau, phản ánh đúng thực tế hoạt động Đoàn -- Hội.
+        \item PermissionGuard tự động kiểm tra quyền trước khi thực thi API, giảm thiểu lỗi bảo mật.
+    \end{itemize}
+    
+    \item \textbf{Tính năng import/export Excel linh hoạt:}
+    \begin{itemize}
+        \item Hỗ trợ import hàng loạt user với 18 cột thông tin, tự động tạo tổ chức/khoa/lớp nếu chưa tồn tại.
+        \item Upload Excel để chấm điểm CTXH hàng loạt với validation chặt chẽ, giảm thời gian xử lý từ hàng giờ xuống còn vài phút.
+        \item Parse file theo chunk giúp xử lý được file lớn (hàng nghìn dòng) mà không bị timeout.
+    \end{itemize}
+    
+    \item \textbf{Tích hợp thanh toán trực tuyến:}
+    \begin{itemize}
+        \item PayOS integration cho phép thu hội phí tự động, giảm gánh nặng quản lý tiền mặt.
+        \item Webhook tự động cập nhật trạng thái thanh toán, đảm bảo dữ liệu đồng bộ real-time.
+        \item Lưu trữ đầy đủ lịch sử giao dịch phục vụ đối soát và audit.
+    \end{itemize}
+    
+    \item \textbf{Hệ thống biểu mẫu động:}
+    \begin{itemize}
+        \item Docxtemplater cho phép tạo template Word với placeholder, tự động generate document từ dữ liệu form.
+        \item Admin có thể tạo và cấu hình biểu mẫu mới mà không cần developer can thiệp.
+        \item Upload file output lên S3, tách biệt storage khỏi database server.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Hạn chế}
+
+\begin{itemize}
+    \item \textbf{Hiệu năng khi xử lý dữ liệu lớn:}
+    \begin{itemize}
+        \item Import Excel file có hơn 5000 dòng có thể mất thời gian xử lý lâu (30-60 giây) do thực hiện đồng bộ, gây trải nghiệm chờ đợi cho người dùng.
+        \item Generate document từ template với nhiều field (> 50 placeholder) có thể mất 10-20 giây, chưa có progress indicator rõ ràng.
+        \item Query danh sách hoạt động khi có nhiều filter và sort có thể chậm (2-3 giây) do chưa optimize index đầy đủ.
+    \end{itemize}
+    
+    \item \textbf{Giao diện người dùng:}
+    \begin{itemize}
+        \item Responsive design trên mobile browser còn chưa mượt mà ở một số màn hình phức tạp (form tạo hoạt động, dashboard).
+        \item Một số thông báo lỗi validation chưa đủ rõ ràng, người dùng mới có thể gặp khó khăn khi điền form.
+        \item Dark mode chưa được tối ưu hoàn toàn, một số component còn hiển thị màu không đồng nhất.
+    \end{itemize}
+    
+    \item \textbf{Kiểm thử và đảm bảo chất lượng:}
+    \begin{itemize}
+        \item Test coverage hiện tại còn thấp (backend < 30\%, frontend < 20\%), chủ yếu dựa vào manual testing.
+        \item Chưa có automated testing trong quy trình deployment, tăng rủi ro khi release version mới.
+        \item Chưa thực hiện performance testing và load testing để xác định giới hạn của hệ thống.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Kế hoạch phát triển}
+
+Dựa trên nền tảng đã xây dựng, kế hoạch phát triển tiếp theo của nhóm trong giai đoạn sau tập trung vào việc hoàn thiện, tối ưu hóa và nâng cao chất lượng hệ thống hiện tại, thay vì phát triển các tính năng mới phức tạp.
+
+\subsubsection{Hoàn thiện và tối ưu các tính năng hiện có (Tuần 1-6)}
+
+\begin{itemize}
+    \item \textbf{Cải thiện hiệu năng:}
+    \begin{itemize}
+        \item Triển khai Redis để cache các query lặp lại thường xuyên (danh sách tổ chức, thông tin user, danh sách hoạt động).
+        \item Implement Bull Queue để xử lý bất đồng bộ các tác vụ nặng: import Excel, generate document, gửi email hàng loạt.
+        \item Phân tích và tối ưu các slow query, thêm index phù hợp cho các bảng lớn.
+    \end{itemize}
+    
+    \item \textbf{Nâng cao tính bảo mật:}
+    \begin{itemize}
+        \item Triển khai rate limiting cho các endpoint quan trọng (login, upload file, payment) để chống tấn công brute-force.
+        \item Thêm 2FA (Two-Factor Authentication) cho tài khoản admin bằng Google Authenticator.
+        \item Cải thiện audit logging: ghi nhận đầy đủ các thao tác quan trọng với thông tin user, IP, timestamp.
+    \end{itemize}
+    
+    \item \textbf{Cải thiện trải nghiệm người dùng:}
+    \begin{itemize}
+        \item Tối ưu responsive design cho các màn hình tablet và mobile.
+        \item Cải thiện các thông báo lỗi, loading states, validation messages để user-friendly hơn.
+        \item Thêm hướng dẫn sử dụng (tooltips, help text) cho các tính năng phức tạp.
+        \item Tối ưu performance frontend: lazy loading, code splitting, giảm bundle size.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Triển khai Testing toàn diện (Tuần 7-10)}
+
+\begin{itemize}
+    \item \textbf{Backend Testing:}
+    \begin{itemize}
+        \item Unit tests cho các service và controller quan trọng (auth, users, activities, payment).
+        \item Integration tests cho các API endpoint với database test.
+        \item Mục tiêu: đạt test coverage ít nhất 60\% cho backend code.
+    \end{itemize}
+    
+    \item \textbf{Frontend Testing:}
+    \begin{itemize}
+        \item Component tests cho các UI component chính bằng React Testing Library.
+        \item Integration tests cho các user flows quan trọng (login, đăng ký hoạt động, thanh toán).
+        \item Mục tiêu: test coverage 50\% cho các component và pages quan trọng.
+    \end{itemize}
+    
+    \item \textbf{End-to-End Testing:}
+    \begin{itemize}
+        \item Viết E2E tests cho các user journey quan trọng bằng Playwright hoặc Cypress.
+        \item Test cases: đăng nhập, quản lý hoạt động, import Excel, thanh toán, export báo cáo.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Cải thiện DevOps và Deployment (Tuần 11-14)}
+
+\begin{itemize}
+    \item \textbf{CI/CD Pipeline:}
+    \begin{itemize}
+        \item Setup GitHub Actions hoặc GitLab CI để tự động chạy tests khi có pull request.
+        \item Automated build và push Docker images lên registry khi merge vào branch main.
+        \item Automated deployment lên staging environment để test trước khi production.
+    \end{itemize}
+    
+    \item \textbf{Quản lý thông tin bí mật:}
+    \begin{itemize}
+        \item Triển khai HashiCorp Vault để quản lý secrets (database credentials, API keys, JWT secrets).
+        \item Loại bỏ hardcoded secrets trong codebase và environment files.
+        \item Implement dynamic secrets rotation cho database credentials.
+    \end{itemize}
+    
+    \item \textbf{Monitoring, Alerting và Logging:}
+    \begin{itemize}
+        \item Cấu hình Alertmanager tích hợp với Prometheus để gửi cảnh báo qua email/Telegram khi có sự cố.
+        \item Setup centralized logging với ELK Stack (Elasticsearch, Logstash, Kibana) hoặc Loki để tổng hợp log từ các container.
+        \item Tạo runbook cho các incident scenarios phổ biến (high CPU, database connection timeout, API errors).
+    \end{itemize}
+    
+    \item \textbf{Backup và Disaster Recovery:}
+    \begin{itemize}
+        \item Automated daily backup cho PostgreSQL database với retention policy 30 ngày.
+        \item S3 versioning và lifecycle policy để backup file uploads, tự động archive sang Glacier sau 90 ngày.
+        \item Viết và test disaster recovery procedure, đo lường RTO (Recovery Time Objective) và RPO (Recovery Point Objective).
+    \end{itemize}
+    
+    \item \textbf{Security Scanning:}
+    \begin{itemize}
+        \item Tích hợp Trivy vào CI/CD pipeline để scan Docker images và dependencies trước khi deploy.
+        \item Sử dụng OWASP Dependency Check để phát hiện lỗ hổng bảo mật trong các thư viện npm/Python.
+        \item Thiết lập policy fail build nếu phát hiện vulnerabilities ở mức CRITICAL hoặc HIGH.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Documentation và Knowledge Transfer (Tuần 15-16)}
+
+\begin{itemize}
+    \item \textbf{Technical Documentation:}
+    \begin{itemize}
+        \item Cập nhật README với hướng dẫn setup đầy đủ cho developer mới.
+        \item Viết API documentation đầy đủ trên Swagger/OpenAPI.
+        \item Document các design decisions, architecture choices, trade-offs đã thực hiện.
+    \end{itemize}
+    
+    \item \textbf{User Documentation:}
+    \begin{itemize}
+        \item Viết user manual cho admin: hướng dẫn quản lý user, tạo hoạt động, import Excel, tạo biểu mẫu.
+        \item Viết hướng dẫn cho sinh viên: đăng ký hoạt động, thanh toán hội phí, xem điểm CTXH.
+        \item Tạo video tutorials cho các tính năng chính.
+    \end{itemize}
+    
+    \item \textbf{Deployment Guide:}
+    \begin{itemize}
+        \item Document chi tiết quy trình deployment production.
+        \item Hướng dẫn troubleshooting cho các vấn đề thường gặp.
+        \item Maintenance checklist cho việc vận hành hệ thống.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Các mục tiêu đo lường được}
+
+\begin{itemize}
+    \item Backend test coverage: $\geq 60\%$
+    \item Frontend test coverage: $\geq 50\%$
+    \item E2E test scenarios: $\geq 10$ user journeys quan trọng
+    \item CI/CD pipeline: 100\% automated testing và deployment
+    \item Response time với Redis: giảm $\geq 50\%$ so với hiện tại
+    \item Downtime khi deployment: $< 5$ phút
+    \item Documentation completeness: 100\% các module chính được document
+\end{itemize}

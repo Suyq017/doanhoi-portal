@@ -1,0 +1,21 @@
+\thispagestyle {empty}
+\contentsline {table}{\numberline {1}{\ignorespaces Bảng mô tả Use Case UC01 – Quản lý thành viên}}{12}{table.caption.4}%
+\contentsline {table}{\numberline {2}{\ignorespaces Bảng mô tả Use Case UC01.1 - Thêm một thành viên từ Form}}{13}{table.caption.5}%
+\contentsline {table}{\numberline {3}{\ignorespaces Bảng mô tả Use Case UC01.2 - Thêm nhiều thành viên từ file Excel}}{14}{table.caption.6}%
+\contentsline {table}{\numberline {4}{\ignorespaces Bảng mô tả Use Case UC01.3 - Gán vai trò cho thành viên}}{16}{Item.43}%
+\contentsline {table}{\numberline {5}{\ignorespaces Bảng mô tả Use Case UC02 - Quản lý đơn vị}}{18}{Item.46}%
+\contentsline {table}{\numberline {6}{\ignorespaces Bảng mô tả Use Case UC03 - Quản lý lớp học}}{20}{Item.49}%
+\contentsline {table}{\numberline {7}{\ignorespaces Bảng mô tả Use Case UC04 - Quản lý tổ chức}}{22}{Item.54}%
+\contentsline {table}{\numberline {8}{\ignorespaces Bảng mô tả Use Case UC05 - Gán vai trò và Phân quyền}}{24}{Item.60}%
+\contentsline {table}{\numberline {9}{\ignorespaces Bảng mô tả Use Case UC04 - Quản lý đóng phí}}{27}{Item.72}%
+\contentsline {table}{\numberline {10}{\ignorespaces Bảng mô tả Use Case UC7.1 - Quản lý danh mục công tác xã hội}}{31}{table.caption.15}%
+\contentsline {table}{\numberline {11}{\ignorespaces Bảng mô tả Use Case UC7.2 - Quản lý người tham gia hoạt động}}{34}{table.caption.18}%
+\contentsline {table}{\numberline {12}{\ignorespaces Bảng mô tả Use Case UC7.3 - Quản lý hoạt động công tác xã hội}}{36}{table.caption.20}%
+\contentsline {table}{\numberline {13}{\ignorespaces Bảng mô tả Use Case UC7.4 - Quản lý hạn mức ngày CTXH theo chức}}{37}{table.caption.21}%
+\contentsline {table}{\numberline {14}{\ignorespaces Bảng mô tả Use Case UC7.5 - Xem báo cáo ngày công tác xã hội cá nhân}}{38}{table.caption.22}%
+\contentsline {table}{\numberline {15}{\ignorespaces Bảng mô tả Use Case UC7.6 - Nhập dữ liệu ngày CTXH từ hệ thống cũ}}{39}{table.caption.23}%
+\contentsline {table}{\numberline {16}{\ignorespaces Bảng mô tả Use Case UC8.1 - Quản lý biểu mẫu}}{42}{table.caption.26}%
+\contentsline {table}{\numberline {17}{\ignorespaces Bảng mô tả Use Case UC8.2 - Điền thông tin vào biểu mẫu}}{45}{table.caption.29}%
+\contentsline {table}{\numberline {18}{\ignorespaces Bảng mô tả Use Case UC09 - Tra cứu hoạt động Công tác xã hội qua Chatbot}}{46}{Item.152}%
+\contentsline {table}{\numberline {19}{\ignorespaces Cấu trúc dữ liệu CtxhActivity}}{73}{table.caption.49}%
+\contentsline {table}{\numberline {20}{\ignorespaces So sánh giữa LLM thuần túy và RAG}}{77}{table.caption.51}%

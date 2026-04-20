@@ -1,0 +1,102 @@
+\contentsline {figure}{\numberline {1}{\ignorespaces Four Layered Architecture \cite {layerd}}}{13}{figure.caption.3}%
+\contentsline {figure}{\numberline {2}{\ignorespaces Json Web Token \cite {jsonwebtoken}}}{15}{figure.caption.4}%
+\contentsline {figure}{\numberline {3}{\ignorespaces Graph \cite {graph}}}{16}{figure.caption.5}%
+\contentsline {figure}{\numberline {4}{\ignorespaces TypeScript \cite {typescript}}}{17}{figure.caption.6}%
+\contentsline {figure}{\numberline {5}{\ignorespaces React \cite {reactjs}}}{18}{figure.caption.7}%
+\contentsline {figure}{\numberline {6}{\ignorespaces React Native \cite {reactnative}}}{19}{figure.caption.8}%
+\contentsline {figure}{\numberline {7}{\ignorespaces Material UI \cite {mui}}}{20}{figure.caption.9}%
+\contentsline {figure}{\numberline {8}{\ignorespaces NodeJS \cite {nodejs}}}{21}{figure.caption.10}%
+\contentsline {figure}{\numberline {9}{\ignorespaces ExpressJS \cite {express}}}{22}{figure.caption.11}%
+\contentsline {figure}{\numberline {10}{\ignorespaces Prisma \cite {prisma}}}{22}{figure.caption.12}%
+\contentsline {figure}{\numberline {11}{\ignorespaces PostgreSQL \cite {postgresql}}}{23}{figure.caption.13}%
+\contentsline {figure}{\numberline {12}{\ignorespaces Sơ đồ Use-Case cho toàn bộ hệ thống}}{30}{figure.caption.17}%
+\contentsline {figure}{\numberline {13}{\ignorespaces Use case diagram cho đăng nhập và đăng ký}}{31}{figure.caption.18}%
+\contentsline {figure}{\numberline {14}{\ignorespaces Use-case diagram cho đặt hàng sản phẩm}}{35}{figure.caption.19}%
+\contentsline {figure}{\numberline {15}{\ignorespaces Use-case diagram cho phương thức thanh toán}}{41}{figure.caption.20}%
+\contentsline {figure}{\numberline {16}{\ignorespaces Use-case diagram cho quản lý thông tin cá nhân}}{44}{figure.caption.21}%
+\contentsline {figure}{\numberline {17}{\ignorespaces Use case diagram cho quản lý nhân viên}}{46}{figure.caption.22}%
+\contentsline {figure}{\numberline {18}{\ignorespaces Use-case diagram cho đánh giá và nhận xét}}{52}{figure.caption.23}%
+\contentsline {figure}{\numberline {19}{\ignorespaces Use-case diagram cho quản lý khuyến mãi}}{53}{figure.caption.24}%
+\contentsline {figure}{\numberline {20}{\ignorespaces Use-case diagram cho quản lý khách hàng}}{57}{figure.caption.25}%
+\contentsline {figure}{\numberline {21}{\ignorespaces Use case diagram cho quản lý sản phẩm}}{61}{figure.caption.26}%
+\contentsline {figure}{\numberline {22}{\ignorespaces Use-case diagram quản lý đơn hàng}}{67}{figure.caption.27}%
+\contentsline {figure}{\numberline {23}{\ignorespaces Tạo connection đến ứng dụng}}{72}{figure.caption.28}%
+\contentsline {figure}{\numberline {24}{\ignorespaces Bắn message đến cho ứng dụng}}{72}{figure.caption.29}%
+\contentsline {figure}{\numberline {25}{\ignorespaces Giải thuật Search by image}}{74}{figure.caption.30}%
+\contentsline {figure}{\numberline {26}{\ignorespaces Kiến trúc tổng quan của hệ thống}}{76}{figure.caption.31}%
+\contentsline {figure}{\numberline {27}{\ignorespaces Thiết kế tổng quan cơ sở dữ liệu ý niệm của cửa hàng thời trang}}{77}{figure.caption.32}%
+\contentsline {figure}{\numberline {28}{\ignorespaces Chi tiết thiết kế của thực thể Account}}{78}{figure.caption.33}%
+\contentsline {figure}{\numberline {29}{\ignorespaces Chi tiết thiết kế của thực thể Category}}{79}{figure.caption.34}%
+\contentsline {figure}{\numberline {30}{\ignorespaces Chi tiết thiết kế của thực thể Order}}{79}{figure.caption.35}%
+\contentsline {figure}{\numberline {31}{\ignorespaces Chi tiết thiết kế của thực thể Payment Method}}{80}{figure.caption.36}%
+\contentsline {figure}{\numberline {32}{\ignorespaces Chi tiết thiết kế của thực thể Analyze product monthly}}{81}{figure.caption.37}%
+\contentsline {figure}{\numberline {33}{\ignorespaces Chi tiết thiết kế của thực thể Product}}{81}{figure.caption.38}%
+\contentsline {figure}{\numberline {34}{\ignorespaces Chi tiết thiết kế của thực thể Shipping Method}}{82}{figure.caption.39}%
+\contentsline {figure}{\numberline {35}{\ignorespaces Chi tiết thiết kế của thực thể Recipient information}}{83}{figure.caption.40}%
+\contentsline {figure}{\numberline {36}{\ignorespaces Chi tiết thiết kế của thực thể Variant}}{83}{figure.caption.41}%
+\contentsline {figure}{\numberline {37}{\ignorespaces Chi tiết thiết kế của thực thể Voucher}}{84}{figure.caption.42}%
+\contentsline {figure}{\numberline {38}{\ignorespaces Chi tiết thiết kế của thực thể Color}}{85}{figure.caption.43}%
+\contentsline {figure}{\numberline {39}{\ignorespaces Chi tiết thiết kế của thực thể Order detail}}{86}{figure.caption.44}%
+\contentsline {figure}{\numberline {40}{\ignorespaces Chi tiết thiết kế của thực thể Product image}}{86}{figure.caption.45}%
+\contentsline {figure}{\numberline {41}{\ignorespaces Cấu trúc thư mục ứng dụng web}}{95}{figure.caption.65}%
+\contentsline {figure}{\numberline {42}{\ignorespaces Cấu trúc thư mục ứng dụng di động}}{96}{figure.caption.66}%
+\contentsline {figure}{\numberline {43}{\ignorespaces Cấu trúc thư mục Web service}}{98}{figure.caption.67}%
+\contentsline {figure}{\numberline {44}{\ignorespaces Một phần giao diện của trang điều khiển (Dashboard)}}{101}{figure.caption.70}%
+\contentsline {figure}{\numberline {45}{\ignorespaces Một phần giao diện của trang điều khiển (Dashboard)}}{101}{figure.caption.71}%
+\contentsline {figure}{\numberline {46}{\ignorespaces Giao diện hiển thị danh sách thể loại}}{101}{figure.caption.72}%
+\contentsline {figure}{\numberline {47}{\ignorespaces Giao diện của trang tạo mới thể loại}}{102}{figure.caption.73}%
+\contentsline {figure}{\numberline {48}{\ignorespaces Giao diện của trang cập nhật thể loại}}{102}{figure.caption.74}%
+\contentsline {figure}{\numberline {49}{\ignorespaces Một phần giao diện hiển thị danh sách sản phẩm}}{102}{figure.caption.75}%
+\contentsline {figure}{\numberline {50}{\ignorespaces Một phần giao diện hiển thị thông tin chi tiết sản phẩm}}{103}{figure.caption.76}%
+\contentsline {figure}{\numberline {51}{\ignorespaces Một phần giao diện của trang cập nhật sản phẩm}}{103}{figure.caption.77}%
+\contentsline {figure}{\numberline {52}{\ignorespaces Một phần giao diện hiển thị danh sách Variant}}{103}{figure.caption.78}%
+\contentsline {figure}{\numberline {53}{\ignorespaces Giao diện của trang cập nhật Variant}}{104}{figure.caption.79}%
+\contentsline {figure}{\numberline {54}{\ignorespaces Giao diện hiển thị danh sách mã giảm giá}}{104}{figure.caption.80}%
+\contentsline {figure}{\numberline {55}{\ignorespaces Giao diện của trang cập nhật mã giảm giá}}{104}{figure.caption.81}%
+\contentsline {figure}{\numberline {56}{\ignorespaces Một phần giao diện của trang tạo mới mã giảm giá}}{105}{figure.caption.82}%
+\contentsline {figure}{\numberline {57}{\ignorespaces Một phần giao diện của trang gán mã giảm giá cho thể loại}}{105}{figure.caption.83}%
+\contentsline {figure}{\numberline {58}{\ignorespaces Một phần giao diện của trang gán mã giảm giá cho sản phẩm}}{105}{figure.caption.84}%
+\contentsline {figure}{\numberline {59}{\ignorespaces Một phần giao diện của trang gán mã giảm giá cho người dùng}}{106}{figure.caption.85}%
+\contentsline {figure}{\numberline {60}{\ignorespaces Một phần giao diện hiển thị danh sách đơn hàng}}{106}{figure.caption.86}%
+\contentsline {figure}{\numberline {61}{\ignorespaces Một phần giao diện hiển thị thông tin chi tiết đơn hàng}}{106}{figure.caption.87}%
+\contentsline {figure}{\numberline {62}{\ignorespaces Một phần giao diện hiển thị thông tin chi tiết đơn hàng}}{107}{figure.caption.88}%
+\contentsline {figure}{\numberline {63}{\ignorespaces Giao diện hiển thị danh sách khách hàng}}{107}{figure.caption.89}%
+\contentsline {figure}{\numberline {64}{\ignorespaces Giao diện hiển thị thông tin cá nhân của khách hàng}}{107}{figure.caption.90}%
+\contentsline {figure}{\numberline {65}{\ignorespaces Giao diện hiển thị thông tin nhận hàng của khách hàng}}{108}{figure.caption.91}%
+\contentsline {figure}{\numberline {66}{\ignorespaces Giao diện hiển thị danh sách nhân viên}}{108}{figure.caption.92}%
+\contentsline {figure}{\numberline {67}{\ignorespaces Giao diện hiển thị thông tin cá nhân của nhân viên}}{108}{figure.caption.93}%
+\contentsline {figure}{\numberline {68}{\ignorespaces Khởi động ứng dụng}}{109}{figure.caption.94}%
+\contentsline {figure}{\numberline {69}{\ignorespaces Giới thiệu}}{109}{figure.caption.94}%
+\contentsline {figure}{\numberline {70}{\ignorespaces Giới thiệu}}{109}{figure.caption.95}%
+\contentsline {figure}{\numberline {71}{\ignorespaces Giới thiệu}}{109}{figure.caption.95}%
+\contentsline {figure}{\numberline {72}{\ignorespaces Đăng nhập}}{110}{figure.caption.96}%
+\contentsline {figure}{\numberline {73}{\ignorespaces Đăng ký tài khoản}}{110}{figure.caption.96}%
+\contentsline {figure}{\numberline {74}{\ignorespaces Nhập mã xác thực tài khoản}}{110}{figure.caption.97}%
+\contentsline {figure}{\numberline {75}{\ignorespaces Lấy lại mật khẩu}}{110}{figure.caption.97}%
+\contentsline {figure}{\numberline {76}{\ignorespaces Tạo mật khẩu mới}}{111}{figure.caption.98}%
+\contentsline {figure}{\numberline {77}{\ignorespaces Tìm kiếm sản phẩm}}{111}{figure.caption.98}%
+\contentsline {figure}{\numberline {78}{\ignorespaces Trang chủ}}{111}{figure.caption.99}%
+\contentsline {figure}{\numberline {79}{\ignorespaces Thông tin sản phẩm}}{111}{figure.caption.99}%
+\contentsline {figure}{\numberline {80}{\ignorespaces Thông tin chi tiết sản phẩm}}{112}{figure.caption.100}%
+\contentsline {figure}{\numberline {81}{\ignorespaces Xem đánh giá về sản phẩm}}{112}{figure.caption.100}%
+\contentsline {figure}{\numberline {82}{\ignorespaces Xóa sản phẩm khỏi giỏ hàng}}{112}{figure.caption.101}%
+\contentsline {figure}{\numberline {83}{\ignorespaces Xem giỏ hàng}}{112}{figure.caption.101}%
+\contentsline {figure}{\numberline {84}{\ignorespaces Chỉnh sửa giỏ hàng }}{113}{figure.caption.102}%
+\contentsline {figure}{\numberline {85}{\ignorespaces Chi tiết đơn hàng}}{113}{figure.caption.102}%
+\contentsline {figure}{\numberline {86}{\ignorespaces Thanh toán đơn hàng}}{113}{figure.caption.103}%
+\contentsline {figure}{\numberline {87}{\ignorespaces Thanh toán đơn hàng}}{113}{figure.caption.103}%
+\contentsline {figure}{\numberline {88}{\ignorespaces Thanh toán đơn hàng thành công}}{114}{figure.caption.104}%
+\contentsline {figure}{\numberline {89}{\ignorespaces Theo dõi đơn hàng}}{114}{figure.caption.104}%
+\contentsline {figure}{\numberline {90}{\ignorespaces Xem thông báo}}{114}{figure.caption.105}%
+\contentsline {figure}{\numberline {91}{\ignorespaces Viết đánh giá sản phẩm}}{114}{figure.caption.105}%
+\contentsline {figure}{\numberline {92}{\ignorespaces Trạng thái đơn hàng}}{115}{figure.caption.106}%
+\contentsline {figure}{\numberline {93}{\ignorespaces Nhập mã giảm giá}}{115}{figure.caption.106}%
+\contentsline {figure}{\numberline {94}{\ignorespaces Sản phẩm yêu thích}}{115}{figure.caption.107}%
+\contentsline {figure}{\numberline {95}{\ignorespaces Trang tài khoản}}{115}{figure.caption.107}%
+\contentsline {figure}{\numberline {96}{\ignorespaces Tìm kiếm, lọc, xem sản phẩm}}{116}{figure.caption.108}%
+\contentsline {figure}{\numberline {97}{\ignorespaces Lọc sản phẩm}}{116}{figure.caption.108}%
+\contentsline {figure}{\numberline {98}{\ignorespaces Cấu hình nginx}}{133}{figure.caption.110}%
+\contentsline {figure}{\numberline {99}{\ignorespaces Khởi tạo dự án trên CloudFlare}}{134}{figure.caption.111}%
+\contentsline {figure}{\numberline {100}{\ignorespaces Thiết lập các biến môi trường và tiến hành Deploy}}{135}{figure.caption.112}%
+\contentsline {figure}{\numberline {101}{\ignorespaces Thiết lập DNS cho tên miền}}{136}{figure.caption.113}%
+\contentsline {figure}{\numberline {102}{\ignorespaces Điểm đánh giá PageSpeed Insights lần đầu tiên}}{137}{figure.caption.114}%
