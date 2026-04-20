@@ -1,7 +1,130 @@
 \section{Phân tích hệ thống}
 \subsection{Các tính năng trong hệ thống}
+\subsubsection{Yêu cầu chức năng}
+Trong phạm vi đề tài, nhóm xác định các chức năng theo hướng bám sát quy trình vận hành thực tế của công tác Đoàn -- Hội trong trường. Thay vì tách rời từng màn hình, hệ thống được chia theo các cụm nghiệp vụ để thuận tiện triển khai và mở rộng.
+
+\textbf{1. Nhóm quản lý người dùng và tổ chức}\par
+Nhóm chức năng này tập trung vào việc số hóa hồ sơ người dùng, bao gồm thông tin định danh, học vụ và trạng thái Đoàn viên/Hội viên. Bên cạnh đó, hệ thống quản lý cơ cấu Trường $\rightarrow$ Khoa $\rightarrow$ Lớp và các loại tổ chức như Đoàn, Hội, CLB. Để giảm thời gian nhập liệu, dữ liệu có thể được nạp hàng loạt từ Excel. Phần phân quyền sử dụng RBAC có ngữ cảnh tổ chức, cho phép một tài khoản đảm nhiệm nhiều vai trò ở các đơn vị khác nhau.
+
+\textbf{2. Nhóm quản lý hoạt động công tác xã hội (CTXH)}\par
+Đây là cụm nghiệp vụ trọng tâm của đề tài. Hệ thống hỗ trợ quản lý danh mục và danh sách hoạt động CTXH theo vòng đời trạng thái, quản lý danh sách người tham gia theo từng hoạt động, đồng thời cho phép cập nhật dữ liệu bằng cả thao tác thủ công và import từ file. Việc chấm ngày CTXH được hỗ trợ theo hai cách là chấm trực tiếp hoặc chấm hàng loạt bằng Excel. Kết quả sau cùng được đồng bộ về hồ sơ sinh viên để phục vụ báo cáo cá nhân và tổng hợp.
+
+\textbf{3. Nhóm quản lý thu phí}\par
+Đối với nghiệp vụ thu phí, hệ thống cho phép tạo đợt thu, cấu hình mức phí và phân công đối tượng cần đóng. Trạng thái thanh toán được theo dõi theo từng sinh viên và từng đợt để dễ đối soát. Hệ thống tích hợp PayOS cho thanh toán trực tuyến, sau đó nhận webhook để cập nhật trạng thái giao dịch. Dữ liệu lịch sử thanh toán cũng được lưu lại để phục vụ kiểm tra và thống kê.
+
+\textbf{4. Nhóm biểu mẫu và chứng từ}\par
+Nhóm chức năng này xử lý toàn bộ vòng đời biểu mẫu điện tử. Quản trị viên có thể upload template Word (\texttt{.docx}), hệ thống nhận diện placeholder để tạo field dữ liệu tương ứng. Người dùng điền thông tin qua form động, backend render tài liệu bằng Docxtemplater, lưu file trên S3 và lưu metadata vào cơ sở dữ liệu. Các hồ sơ đã nộp có thể được tra cứu và tải lại khi cần.
+
+\textbf{5. Nhóm hỗ trợ tra cứu bằng chatbot CTXH}\par
+Chatbot đóng vai trò kênh hỗ trợ tra cứu nhanh cho sinh viên. Người dùng có thể đặt câu hỏi tự nhiên, và hệ thống trả lời dựa trên dữ liệu CTXH hiện có, tập trung vào quy định và thông tin hoạt động liên quan.
+
+\textbf{6. Nhóm nền tảng vận hành}\par
+Ngoài các nghiệp vụ chính, hệ thống còn có các thành phần nền tảng phục vụ vận hành gồm dashboard tổng quan, màn hình cấu hình hệ thống tập trung (bao gồm S3 và feature flags), cùng với cơ chế xác thực, quản lý phiên và kiểm tra quyền xuyên suốt.
+
+\subsubsection{Yêu cầu phi chức năng}
+Ngoài chức năng nghiệp vụ, hệ thống cần đáp ứng một số yêu cầu phi chức năng để có thể đưa vào sử dụng ổn định.
+
+\textbf{1. Bảo mật và an toàn dữ liệu}\par
+Về bảo mật, thông tin nhạy cảm được bảo vệ bằng cơ chế băm mật khẩu và xác thực JWT/refresh token. Các thao tác quan trọng đều phải đi qua lớp kiểm tra quyền RBAC. Dữ liệu đầu vào được kiểm tra ở cả frontend và backend để hạn chế lỗi cũng như rủi ro bảo mật. Ngoài ra, hệ thống có cơ chế kiểm soát upload tệp, CORS và HTTPS theo môi trường triển khai.
+
+\textbf{2. Hiệu năng xử lý}\par
+Về hiệu năng, truy vấn dữ liệu cần có phân trang và tối ưu index để tránh quá tải khi dữ liệu tăng. Các tác vụ nặng như import, sinh tài liệu hoặc đồng bộ embeddings được tổ chức theo luồng xử lý phù hợp. Ở phía giao diện, cơ chế cache giúp giảm số lần gọi API lặp lại.
+
+\textbf{3. Khả năng mở rộng và bảo trì}\par
+Về mở rộng và bảo trì, hệ thống được đóng gói bằng Docker và tổ chức theo kiến trúc module để dễ thêm chức năng mới. Việc tách lớp lưu trữ tệp lên S3 giúp giảm tải cho cơ sở dữ liệu giao dịch. Hai phần backend/frontend có thể phát triển tương đối độc lập theo từng nhóm nghiệp vụ.
+
+\textbf{4. Giám sát vận hành}\par
+Trong quá trình vận hành, hệ thống theo dõi metrics bằng Prometheus và trực quan hóa bằng Grafana. Song song đó, các thao tác chính được ghi log để hỗ trợ kiểm tra lỗi và truy vết.
+
+\textbf{5. Trải nghiệm sử dụng}\par
+Về trải nghiệm người dùng, giao diện cần đảm bảo responsive và thể hiện rõ trạng thái loading/error. Hệ thống hỗ trợ đa ngôn ngữ và tổ chức giao diện theo module để người dùng dễ làm quen. Mã nguồn được duy trì theo coding standards để thuận lợi cho bàn giao và bảo trì dài hạn.
+
 \subsection{Danh sách các Actor}
+Phần này sẽ được bổ sung sau.
+
 \subsection{Sơ đồ Use-Case cho toàn bộ hệ thống}
+Phần này sẽ được bổ sung sau.
+
 \subsection{Sơ đồ Use-Case chi tiết}
+Phần này sẽ được bổ sung sau.
+
 \subsection{Một số bài toán và giải pháp}
+\subsubsection{Bài toán quản lý và chấm điểm CTXH theo hoạt động}
+\textbf{a. Khái niệm}
+
+Trong mô hình cũ, dữ liệu hoạt động và dữ liệu chấm ngày thường nằm rời rạc, nên khó kiểm soát tiến độ thật của từng sinh viên. Vì vậy, bài toán đặt ra là phải quản lý trọn vòng đời hoạt động CTXH, từ lúc mở đăng ký đến lúc chấm điểm và tổng hợp kết quả.
+
+\textbf{b. Các phương pháp hiện có}
+
+Nhóm khảo sát thấy có hai hướng xử lý phổ biến:
+
+Thứ nhất là quản lý thủ công bằng bảng tính, cập nhật từng dòng theo từng đợt.
+
+Thứ hai là quản lý trên hệ thống có trạng thái nghiệp vụ rõ ràng và chấm theo danh sách participant.
+
+Hướng thứ hai phù hợp hơn vì giúp hạn chế chấm trùng, kiểm soát trạng thái hoạt động và dễ tổng hợp báo cáo.
+
+\textbf{c. Hiện thực trong hệ thống}
+
+Trong hệ thống hiện tại, module CTXH đã bao gồm quản lý danh mục, quản lý hoạt động, quản lý người tham gia, chấm trực tiếp và chấm bằng Excel. Mỗi hoạt động đi qua các trạng thái \texttt{DRAFT}, \texttt{ACTIVE}, \texttt{COMPLETED}, \texttt{CANCELLED}; quyền thao tác và bước chấm được ràng buộc theo trạng thái này. Kết quả chấm hợp lệ sẽ được cộng dồn vào hồ sơ sinh viên để dùng cho báo cáo cá nhân và báo cáo tổng hợp.
+
+\subsubsection{Bài toán thu phí trực tuyến và đồng bộ trạng thái thanh toán}
+\textbf{a. Khái niệm}
+
+Bài toán thu phí không chỉ dừng ở việc tạo danh sách phải đóng, mà còn phải theo dõi trạng thái giao dịch đủ tin cậy để đối soát. Nếu cập nhật thủ công, khả năng lệch dữ liệu giữa thực tế và hệ thống là rất cao.
+
+\textbf{b. Các phương pháp hiện có}
+
+Hai cách làm thường gặp là:
+
+Một là ghi nhận thủ công sau khi nhận chuyển khoản.
+
+Hai là tích hợp cổng thanh toán và cập nhật trạng thái tự động qua callback/webhook.
+
+Cách thứ hai phù hợp hơn cho môi trường có số lượng giao dịch lớn vì giảm nhập tay và rút ngắn thời gian đối soát.
+
+\textbf{c. Hiện thực trong hệ thống}
+
+Hệ thống hiện thực module Fee Collection gồm \textit{Payment Campaign}, \textit{Fee Level}, \textit{Payment Assignment} và luồng thanh toán qua PayOS. Khi sinh viên thanh toán, kết quả được đẩy về qua webhook để cập nhật trạng thái giao dịch trong hệ thống. Toàn bộ lịch sử thanh toán được lưu lại để phục vụ đối soát và kiểm tra khi cần.
+
+\subsubsection{Bài toán sinh biểu mẫu tự động từ template Word}
+\textbf{a. Khái niệm}
+
+Trong công tác Đoàn -- Hội, nhiều biểu mẫu có cấu trúc lặp lại. Nếu nhập tay từng hồ sơ sẽ tốn thời gian và dễ sai định dạng. Vì vậy cần một cơ chế sinh biểu mẫu tự động từ template chuẩn.
+
+\textbf{b. Các phương pháp hiện có}
+
+Hai hướng xử lý dễ gặp là:
+
+Hướng thứ nhất là người dùng tải mẫu, điền thủ công và nộp file.
+
+Hướng thứ hai là hệ thống parse placeholder và render tự động từ dữ liệu form.
+
+Cách sinh tự động có ưu điểm rõ hơn: dữ liệu đồng nhất, giảm lỗi nhập và thuận tiện lưu trữ lâu dài.
+
+\textbf{c. Hiện thực trong hệ thống}
+
+Với hệ thống này, quản trị viên có thể upload template \texttt{.docx}, hệ thống tự đọc placeholder và sinh cấu hình field tương ứng. Người dùng chỉ cần điền form động trên giao diện, backend sẽ render tài liệu bằng Docxtemplater. File kết quả được lưu trên S3, metadata được lưu trong database để tra cứu và tải lại khi cần.
+
+\subsubsection{Bài toán chatbot hỏi đáp CTXH bằng RAG}
+\textbf{a. Khái niệm}
+
+Sinh viên thường cần tra cứu nhanh thông tin CTXH nhưng không muốn đọc nhiều trang hướng dẫn. Bài toán đặt ra là xây dựng chatbot trả lời nhanh, đồng thời vẫn bám dữ liệu thực của hệ thống để tránh trả lời sai lệch.
+
+\textbf{b. Các phương pháp hiện có}
+
+Qua khảo sát, có ba hướng phổ biến:
+
+Hướng đầu tiên là FAQ tĩnh theo từ khóa.
+
+Hướng thứ hai là chatbot dùng mô hình ngôn ngữ nhưng không truy xuất dữ liệu hệ thống.
+
+Hướng thứ ba là RAG, tức truy xuất dữ liệu liên quan trước khi sinh câu trả lời.
+
+Trong bối cảnh CTXH thay đổi theo từng đợt hoạt động, RAG là hướng phù hợp hơn vì giữ được độ bám dữ liệu và cập nhật tốt hơn FAQ tĩnh.
+
+\textbf{c. Hiện thực trong hệ thống}
+
+Hệ thống triển khai chatbot CTXH theo mô hình RAG bằng LangChain. Dữ liệu CTXH được đưa vào vector store trên PostgreSQL/pgvector, sau đó truy xuất ngữ nghĩa trước khi sinh câu trả lời. Pipeline đồng bộ embeddings giúp dữ liệu mới sớm phản ánh vào kết quả truy vấn. Ngoài ra, phần cấu hình cho phép chọn mô hình cục bộ (Ollama) hoặc cloud (Gemini) tùy môi trường triển khai.
+
 \clearpage
