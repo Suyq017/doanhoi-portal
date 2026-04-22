@@ -6,7 +6,15 @@ Trong bối cảnh giáo dục đại học tại Việt Nam, Trường Đại h
 
 Tuy nhiên, thực tế triển khai cho thấy công tác quản lý Đoàn -- Hội hiện nay vẫn còn phụ thuộc nhiều vào phương thức thủ công và các kênh lưu trữ rời rạc. Dữ liệu liên quan đến người dùng, hoạt động và tài chính chưa được tập trung trên một hệ thống thống nhất mà thường phân tán trong hồ sơ giấy, bảng tính Excel hoặc các tệp Word lưu trữ cục bộ trên máy tính cá nhân của cán bộ. Cách tổ chức này làm cho việc tra cứu thông tin, tổng hợp báo cáo, theo dõi lịch sử tham gia và đối soát dữ liệu trở nên tốn nhiều thời gian, dễ sai sót và khó mở rộng.
 
-Từ quá trình khảo sát thực tế tại Đoàn trường và Hội Sinh viên, có thể nhận thấy ba nhóm vấn đề cốt lõi cần được giải quyết. Thứ nhất là quản lý người dùng và tổ chức: sinh viên chưa có một cơ chế định danh số hóa xuyên suốt, việc xác minh tư cách đoàn viên hoặc hội viên còn phụ thuộc nhiều vào sổ đoàn, hồ sơ giấy và biên lai thủ công. Thứ hai là quản lý hoạt động công tác xã hội: thông tin về các chương trình, phong trào và sự kiện hiện đang được đăng tải trên nhiều kênh khác nhau, gây phân tán dữ liệu, khó theo dõi và thiếu công cụ thống kê tự động. Thứ ba là quản lý tài chính: quy trình thu -- chi vẫn còn dựa nhiều vào tiền mặt và các khâu trung gian, tiềm ẩn rủi ro thất thoát, sai lệch số liệu và thiếu minh bạch trong đối soát.
+Từ quá trình khảo sát thực tế tại Đoàn trường và Hội Sinh viên, có thể nhận thấy ba nhóm vấn đề cốt lõi cần được giải quyết:
+
+\begin{enumerate}
+	\item \textbf{Quản lý người dùng và tổ chức}: sinh viên chưa có một cơ chế định danh số hóa xuyên suốt; việc xác minh tư cách đoàn viên hoặc hội viên còn phụ thuộc nhiều vào sổ đoàn, hồ sơ giấy và biên lai thủ công.
+	\item \textbf{Quản lý hoạt động công tác xã hội}: thông tin về các chương trình, phong trào và sự kiện hiện đang được đăng tải trên nhiều kênh khác nhau, gây phân tán dữ liệu, khó theo dõi và thiếu công cụ thống kê tự động.
+	\item \textbf{Quản lý tài chính}: quy trình thu -- chi vẫn còn dựa nhiều vào tiền mặt và các khâu trung gian, tiềm ẩn rủi ro thất thoát, sai lệch số liệu và thiếu minh bạch trong đối soát.
+\end{enumerate}
+
+Ngoài ba nhóm vấn đề trên, còn có một khoảng trống đáng chú ý về khả năng tra cứu thông tin và hỗ trợ người dùng. Trong thực tế, sinh viên thường phải tự tìm hoạt động phù hợp qua nhiều kênh truyền thông khác nhau, trong khi cán bộ lại mất nhiều thời gian để trả lời lặp lại các câu hỏi phổ biến về quy định, điều kiện tham gia hoặc cách thức thực hiện thủ tục. Điều này cho thấy nhu cầu không chỉ nằm ở việc lưu trữ dữ liệu, mà còn ở việc tổ chức lại quy trình tiếp cận thông tin theo hướng trực quan, tập trung và có khả năng hỗ trợ tự động.
 
 Những hạn chế trên không chỉ làm giảm hiệu quả vận hành của tổ chức Đoàn -- Hội mà còn ảnh hưởng trực tiếp đến trải nghiệm và quyền lợi của sinh viên. Vì vậy, việc xây dựng một giải pháp chuyển đổi số có tính hệ thống, tập trung và có khả năng mở rộng là yêu cầu cấp thiết.
 
@@ -20,6 +28,8 @@ Xuất phát từ các vấn đề đã phân tích, có thể thấy rằng vi�
 Đối với bài toán quản lý tài chính, hướng giải quyết là số hóa quy trình thu -- chi và từng bước giảm sự phụ thuộc vào tiền mặt. Việc ghi nhận, đối soát và truy xuất giao dịch trên hệ thống điện tử giúp tăng tính minh bạch, giảm rủi ro thất thoát, hạn chế sai lệch số liệu và giảm áp lực cho các cán bộ trung gian trong quá trình thu nộp.
 
 Trên cơ sở đó, đề tài hướng đến việc xây dựng một cổng thông tin điện tử tập trung cho hoạt động Đoàn -- Hội, đóng vai trò là nền tảng quản lý thống nhất cho dữ liệu người dùng, hoạt động và tài chính. Bên cạnh đó, việc tích hợp AI Chatbot hỗ trợ hỏi đáp tự động được kỳ vọng sẽ giúp sinh viên tiếp cận nhanh các thông tin thuộc phạm vi quản lý hoạt động công tác xã hội, đồng thời giảm tải công việc tra cứu và phản hồi cho cán bộ phụ trách.
+
+Từ góc độ nghiên cứu và triển khai, đề tài không chỉ giải quyết bài toán quản lý dữ liệu đơn lẻ mà còn hướng đến việc kết nối các phân hệ nghiệp vụ vào cùng một hệ sinh thái số. Cách tiếp cận này cho phép dữ liệu phát sinh ở một phân hệ có thể được tái sử dụng ở các phân hệ khác, ví dụ như hồ sơ người dùng phục vụ phân quyền, dữ liệu hoạt động phục vụ chấm điểm CTXH, hoặc dữ liệu đã quản lý phục vụ chatbot tra cứu. Đây là điểm then chốt giúp hệ thống có giá trị sử dụng thực tế và có khả năng mở rộng về sau.
 
 \subsection{Mục tiêu}
 Mục tiêu của đề tài là xây dựng một hệ thống cổng thông tin Đoàn -- Hội tập trung, hỗ trợ quản lý đồng bộ người dùng, hoạt động công tác xã hội và tài chính trên cùng một nền tảng. Thông qua việc số hóa và chuẩn hóa dữ liệu, hệ thống hướng đến việc giảm thao tác thủ công, tăng tính minh bạch trong quản lý và cải thiện hiệu quả vận hành cho cán bộ Đoàn -- Hội.
@@ -47,9 +57,13 @@ Về mặt triển khai, đề tài không đi sâu vào thay thế hoàn toàn 
 
 Trong giai đoạn này, nhóm thực hiện khảo sát nghiệp vụ thực tế tại Đoàn trường và Hội Sinh viên, từ đó xác định các nhu cầu chính liên quan đến quản lý người dùng, hoạt động công tác xã hội và tài chính. Kết quả của bước này là bộ yêu cầu chức năng và phi chức năng làm cơ sở cho các giai đoạn tiếp theo.
 
+Việc khảo sát không chỉ nhằm liệt kê chức năng cần có mà còn để nhận diện những điểm nghẽn trong quy trình hiện tại, mức độ lặp lại của các thao tác và thứ tự ưu tiên của từng nhu cầu nghiệp vụ. Nhờ đó, đề tài có thể tập trung vào đúng các vấn đề có ảnh hưởng lớn nhất đến hiệu quả quản lý thay vì dàn trải trên nhiều tình huống ít giá trị hơn.
+
 \textbf{Bước 2. Thiết kế kiến trúc và dữ liệu}
 
 Sau khi hoàn thành khảo sát, nhóm tiến hành xây dựng kiến trúc tổng thể của hệ thống, bao gồm phân rã các phân hệ chức năng, thiết kế cơ sở dữ liệu và xác định các luồng xử lý chính. Ở bước này, cấu trúc dữ liệu cho các hoạt động công tác xã hội và các thành phần liên quan đến chatbot cũng được xác định để bảo đảm khả năng tích hợp sau này.
+
+Đây là bước chuyển từ nhu cầu nghiệp vụ sang mô hình triển khai cụ thể. Nếu kiến trúc và dữ liệu được thiết kế rõ ngay từ đầu, hệ thống sẽ hạn chế được việc chỉnh sửa lớn trong giai đoạn hiện thực, đồng thời tạo ra nền tảng đủ ổn định để mở rộng thêm các tính năng mới ở những giai đoạn tiếp theo.
 
 \textbf{Bước 3. Phát triển các chức năng cốt lõi}
 

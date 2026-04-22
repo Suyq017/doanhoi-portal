@@ -3,6 +3,8 @@
 \subsubsection{Yêu cầu chức năng}
 Trong phạm vi đề tài, nhóm xác định các chức năng theo hướng bám sát quy trình vận hành thực tế của công tác Đoàn -- Hội trong trường. Thay vì tách rời từng màn hình, hệ thống được chia theo các cụm nghiệp vụ để thuận tiện triển khai và mở rộng.
 
+Việc mô hình hóa yêu cầu theo cụm nghiệp vụ giúp phản ánh đúng cách tổ chức công việc trong thực tế: một cán bộ thường không thao tác trên một chức năng đơn lẻ mà xử lý theo chuỗi, ví dụ như quản lý hồ sơ người dùng đi cùng với phân quyền, hoặc tạo hoạt động đi cùng với phân công và chấm điểm. Cách trình bày này giúp phần yêu cầu chức năng sát thực hơn với quy trình vận hành và đồng thời tạo nền tảng cho phần phân tích use case ở các mục sau.
+
 \textbf{1. Nhóm quản lý người dùng và tổ chức}\par
 Nhóm chức năng này tập trung vào việc số hóa hồ sơ người dùng, bao gồm thông tin định danh, học vụ và trạng thái Đoàn viên/Hội viên. Bên cạnh đó, hệ thống quản lý cơ cấu Trường $\rightarrow$ Khoa $\rightarrow$ Lớp và các loại tổ chức như Đoàn, Hội, CLB. Để giảm thời gian nhập liệu, dữ liệu có thể được nạp hàng loạt từ Excel. Phần phân quyền sử dụng RBAC có ngữ cảnh tổ chức, cho phép một tài khoản đảm nhiệm nhiều vai trò ở các đơn vị khác nhau.
 
@@ -24,6 +26,8 @@ Ngoài các nghiệp vụ chính, hệ thống còn có các thành phần nền
 \subsubsection{Yêu cầu phi chức năng}
 Ngoài chức năng nghiệp vụ, hệ thống cần đáp ứng một số yêu cầu phi chức năng để có thể đưa vào sử dụng ổn định.
 
+Các yêu cầu phi chức năng được đặt ra không chỉ để bảo đảm hệ thống chạy được, mà còn để đáp ứng đúng bối cảnh sử dụng của một cổng thông tin có nhiều nhóm người dùng và nhiều loại dữ liệu khác nhau. Khi số lượng sinh viên, hoạt động và giao dịch tăng lên, những yêu cầu như bảo mật, hiệu năng, khả năng mở rộng hay giám sát vận hành sẽ trở thành điều kiện bắt buộc để hệ thống duy trì chất lượng dịch vụ.
+
 \textbf{1. Bảo mật và an toàn dữ liệu}\par
 Về bảo mật, thông tin nhạy cảm được bảo vệ bằng cơ chế băm mật khẩu và xác thực JWT/refresh token. Các thao tác quan trọng đều phải đi qua lớp kiểm tra quyền RBAC. Dữ liệu đầu vào được kiểm tra ở cả frontend và backend để hạn chế lỗi cũng như rủi ro bảo mật. Ngoài ra, hệ thống có cơ chế kiểm soát upload tệp, CORS và HTTPS theo môi trường triển khai.
 
@@ -40,13 +44,879 @@ Trong quá trình vận hành, hệ thống theo dõi metrics bằng Prometheus 
 Về trải nghiệm người dùng, giao diện cần đảm bảo responsive và thể hiện rõ trạng thái loading/error. Hệ thống hỗ trợ đa ngôn ngữ và tổ chức giao diện theo module để người dùng dễ làm quen. Mã nguồn được duy trì theo coding standards để thuận lợi cho bàn giao và bảo trì dài hạn.
 
 \subsection{Danh sách các Actor}
-Phần này sẽ được bổ sung sau.
+Trong hệ thống cổng quản lý Đoàn -- Hội, actor được xác định theo mô hình phân quyền và luồng nghiệp vụ đang hiện thực trong mã nguồn. Nhóm phân tách actor thành các nhóm người dùng nội bộ và actor hệ thống bên ngoài để thuận tiện cho việc đặc tả use-case.
+
+\begin{enumerate}
+    \renewcommand{\labelenumi}{\alph{enumi}.}
+	\item Người dùng chưa đăng nhập
+	\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{5cm}|p{10cm}|}
+		\hline
+		Chức năng & Mô tả  \\
+		\hline
+		Truy cập màn hình đăng nhập & Người dùng chưa đăng nhập truy cập trang công khai \texttt{/login}; đường dẫn \texttt{/admin-doan-hoi/login} là điểm vào nội bộ cho cán bộ quản trị, không công khai cho người dùng phổ thông. \\
+		\hline
+		Xác thực tài khoản & Người dùng thực hiện đăng nhập bằng tài khoản nội bộ hoặc qua Google OAuth, sau đó hệ thống cấp phiên truy cập. \\
+		\hline
+		Nhận kết quả xác thực & Sau khi xác thực thành công, người dùng được chuyển qua luồng callback và vào khu vực \texttt{/portal}. \\
+		\hline
+	\end{tabular}
+	\caption{Chức năng của người dùng chưa đăng nhập}
+	\end{table}
+
+	\item Thành viên (Sinh viên/Đoàn viên/Hội viên)
+	\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{5cm}|p{10cm}|}
+		\hline
+		Chức năng & Mô tả  \\
+		\hline
+		Xem báo cáo CTXH của bản thân & Thành viên có thể xem báo cáo cá nhân và dữ liệu CTXH của sinh viên, gồm thông tin sinh viên (họ tên, mã số sinh viên, email), tổng số ngày CTXH, tổng hợp kết quả (ngày hoạt động đã hoàn thành, ngày hoạt động trên hệ thống cũ, tổng số ngày hoạt động CTXH, trạng thái đạt/chưa đạt), cùng danh sách hoạt động với các cột tên hoạt động, danh mục, số ngày thực tế, trạng thái, ngày chấm điểm và ghi chú. \\
+		\hline
+		Tra cứu và thanh toán khoản phí của tôi & Thành viên xem danh sách các đợt thu được phân công, tạo giao dịch thanh toán và theo dõi kết quả thanh toán. \\
+		\hline
+		Điền và nộp biểu mẫu & Thành viên điền form động theo template đã cấu hình và lưu hồ sơ biểu mẫu trên hệ thống. \\
+		\hline
+		Tra cứu CTXH bằng chatbot & Thành viên đặt câu hỏi tự nhiên để tra cứu quy định và thông tin hoạt động CTXH. \\
+		\hline
+	\end{tabular}
+	\caption{Chức năng của actor thành viên}
+	\end{table}
+
+	\item Cán bộ đơn vị (cấp Trường/Khoa/Lớp/Chi đoàn/Chi hội)
+	\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{5cm}|p{10cm}|}
+		\hline
+		Chức năng & Mô tả  \\
+		\hline
+		Quản lý người dùng và cơ cấu tổ chức & Cán bộ đơn vị quản lý danh sách người dùng, tổ chức, khoa/phòng và lớp trong phạm vi đơn vị được phân quyền. \\
+		\hline
+		Quản lý hoạt động CTXH & Cán bộ đơn vị quản lý danh mục, hoạt động, người tham gia và nhập dữ liệu CTXH từ hệ thống cũ trong phạm vi đơn vị được phân quyền. \\
+		\hline
+		Quản lý thu phí theo đơn vị & Cán bộ đơn vị tạo đợt thu, phân công đối tượng đóng phí, theo dõi thống kê và xuất báo cáo thu phí. \\
+		\hline
+		Theo dõi trạng thái xử lý nghiệp vụ & Cán bộ đơn vị theo dõi tình trạng xử lý các hoạt động và giao dịch trong phạm vi đơn vị để phục vụ điều phối công việc hằng ngày. \\
+		\hline
+	\end{tabular}
+	\caption{Chức năng của actor cán bộ đơn vị}
+	\end{table}
+
+	\item Quản trị hệ thống (Super Admin)
+	\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{5cm}|p{10cm}|}
+		\hline
+		Chức năng & Mô tả  \\
+		\hline
+		Quản trị phân quyền toàn cục & Quản trị hệ thống cấu hình vai trò/quyền và kiểm soát truy cập ở mức hệ thống và mức tổ chức. \\
+		\hline
+		Quản trị cấu hình hệ thống & Quản trị hệ thống quản lý các cấu hình nền tảng như S3, feature flags và tham số vận hành chung. \\
+		\hline
+		Quản trị biểu mẫu & Quản trị hệ thống quản lý template biểu mẫu, upload và cấu hình placeholder cho toàn hệ thống. \\
+		\hline
+		Quản trị cấu hình giới hạn CTXH & Quản trị hệ thống thiết lập các giới hạn, điều kiện và tham số áp dụng cho hoạt động CTXH trên toàn hệ thống. \\
+		\hline
+		Giám sát và can thiệp liên module & Quản trị hệ thống có quyền truy cập đầy đủ các module để kiểm tra, đồng bộ và xử lý sự cố vận hành. \\
+		\hline
+	\end{tabular}
+	\caption{Chức năng của actor quản trị hệ thống}
+	\end{table}
+
+	\item Cổng thanh toán PayOS (actor hệ thống ngoài)
+	\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{5cm}|p{10cm}|}
+		\hline
+		Chức năng & Mô tả  \\
+		\hline
+		Tiếp nhận yêu cầu tạo giao dịch & PayOS nhận thông tin đơn hàng từ hệ thống để tạo liên kết thanh toán cho người dùng. \\
+		\hline
+		Xử lý giao dịch thanh toán & PayOS thực hiện nghiệp vụ thanh toán và trả về trạng thái giao dịch tương ứng. \\
+		\hline
+		Đồng bộ trạng thái về hệ thống & Hệ thống truy vấn/nhận trạng thái từ PayOS để cập nhật lịch sử thanh toán và kết quả đối soát. \\
+		\hline
+	\end{tabular}
+	\caption{Chức năng của actor PayOS}
+	\end{table}
+\end{enumerate}
 
 \subsection{Sơ đồ Use-Case cho toàn bộ hệ thống}
-Phần này sẽ được bổ sung sau.
+Do hệ thống bao gồm nhiều phân hệ nghiệp vụ độc lập (Người dùng, Tổ chức, Phân quyền, CTXH, Thu phí, Biểu mẫu, Chatbot), sơ đồ use-case toàn cục được trình bày theo dạng tổng hợp từ các phân hệ chính để đảm bảo dễ theo dõi trên khổ trang luận văn.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.48\linewidth]{Images/use-case-diagram/UC01_user_usecase.drawio.png}
+	\hfill
+	\includegraphics[width=0.48\linewidth]{Images/use-case-diagram/UC04_organizations_usecase.drawio.png}\\[0.5em]
+	\includegraphics[width=0.48\linewidth]{Images/use-case-diagram/UC04_payment_usecase.drawio.png}
+	\hfill
+	\includegraphics[width=0.48\linewidth]{Images/use-case-diagram/UC07_tong_quat.png}
+	\caption{Sơ đồ Use-Case tổng quan toàn bộ hệ thống (ghép từ các phân hệ chính)}
+\end{figure}
 
 \subsection{Sơ đồ Use-Case chi tiết}
-Phần này sẽ được bổ sung sau.
+\subsubsection{Phân hệ quản lý người dùng}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC01_user_usecase.drawio.png}
+	\caption{UC01 - Quản lý thành viên}
+\end{figure}
+
+Phân hệ này tập trung vào các thao tác quản lý hồ sơ thành viên trong hệ thống gồm thêm/sửa/xóa, import từ Excel, tìm kiếm và xuất dữ liệu phục vụ vận hành ở cấp đơn vị.
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC01 - Quản lý thành viên} \\ \hline
+		\textbf{Actor(s)} & Quản trị viên \\ \hline
+		\textbf{Description} & Use case này cho phép quản trị viên thực hiện các thao tác quản lý thông tin thành viên trong hệ thống, bao gồm:\newline
+		-- Xem danh sách thành viên\newline
+		-- Tìm kiếm và lọc thành viên\newline
+		-- Thêm, sửa, xóa thông tin thành viên\newline
+		-- Gán vai trò (phân quyền) cho thành viên. \\ \hline
+		\textbf{Trigger} & Quản trị viên truy cập chức năng Quản lý thành viên từ giao diện hệ thống. \\ \hline
+		\textbf{Pre-condition(s)} & Quản trị viên đã đăng nhập vào hệ thống bằng tài khoản có quyền quản lý thành viên. \\ \hline
+		\textbf{Post-condition(s)} & Thông tin thành viên được hiển thị và cập nhật chính xác theo các thao tác đã thực hiện. \\ \hline
+		\textbf{Main Flow} & 1. Quản trị viên truy cập module Quản lý thành viên.\newline
+		2. Hệ thống hiển thị danh sách thành viên.\newline
+		3. Quản trị viên chọn một trong các thao tác: xem chi tiết, tìm kiếm/lọc, thêm mới, chỉnh sửa, xóa, gán vai trò.\newline
+		4. Hệ thống xử lý yêu cầu và cập nhật dữ liệu.\newline
+		5. Hệ thống hiển thị kết quả thao tác cho quản trị viên. \\ \hline
+		\textbf{Alternative Flow} & Ở bước 3:\newline
+		-- 3a. Quản trị viên thực hiện tìm kiếm/lọc, hệ thống hiển thị danh sách phù hợp.\newline
+		-- 3b. Quản trị viên hủy thao tác thêm/sửa, hệ thống quay về danh sách mà không đổi dữ liệu. \\ \hline
+		\textbf{Exception} & Ở bước 1: nếu không có quyền, hệ thống chặn truy cập module.\newline
+		Ở bước 4: nếu dữ liệu không hợp lệ, hệ thống báo lỗi và yêu cầu nhập lại. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC01 - Quản lý thành viên}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC01.1 - Thêm một thành viên từ Form} \\ \hline
+		\textbf{Actor(s)} & Quản trị viên \\ \hline
+		\textbf{Description} & Quản trị viên thêm một thành viên mới vào hệ thống thông qua form nhập liệu. \\ \hline
+		\textbf{Trigger} & Quản trị viên bấm nút "Thêm thành viên mới" trong trang quản lý người dùng. \\ \hline
+		\textbf{Pre-condition(s)} & Quản trị viên đã đăng nhập vào hệ thống. \\ \hline
+		\textbf{Post-condition(s)} & Thành viên mới được tạo và lưu vào hệ thống; thông tin được hiển thị lại đúng sau khi xử lý. \\ \hline
+		\textbf{Main Flow} & 1. Quản trị viên bấm nút "Thêm thành viên mới".\newline
+		2. Hệ thống hiển thị form nhập thông tin thành viên.\newline
+		3. Quản trị viên điền thông tin vào form.\newline
+		4. Quản trị viên bấm nút "Tạo mới".\newline
+		5. Hệ thống kiểm tra tính hợp lệ của dữ liệu.\newline
+		6. Hệ thống lưu thông tin thành viên và hiển thị thông báo thành công. \\ \hline
+		\textbf{Alternative Flow} & Ở bước 5, nếu người dùng không nhập mật khẩu thì hệ thống tự động tạo mật khẩu mặc định. \\ \hline
+		\textbf{Exception} & Ở bước 5, nếu dữ liệu nhập không hợp lệ hoặc thông tin đã tồn tại thì hệ thống hiển thị thông báo lỗi và yêu cầu nhập lại. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC01.1 - Thêm một thành viên từ Form}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC01.2 - Thêm nhiều thành viên từ file Excel} \\ \hline
+		\textbf{Actor(s)} & Quản trị viên \\ \hline
+		\textbf{Description} & Quản trị viên thêm hàng loạt thành viên từ file Excel theo template chuẩn của hệ thống. \\ \hline
+		\textbf{Trigger} & Quản trị viên cần import nhiều thành viên cùng lúc (đầu năm học, nhập dữ liệu chuyển tiếp). \\ \hline
+		\textbf{Pre-condition(s)} & Quản trị viên đã đăng nhập; có quyền import thành viên; file Excel được chuẩn bị theo mẫu. \\ \hline
+		\textbf{Post-condition(s)} & Danh sách thành viên được import thành công; dữ liệu được lưu và hiển thị lại đúng. \\ \hline
+		\textbf{Main Flow} & 1. Quản trị viên chọn chức năng "Thêm từ File".\newline
+		2. Hệ thống hiển thị hướng dẫn và file mẫu.\newline
+		3. Quản trị viên tải lên file Excel.\newline
+		4. Hệ thống tiếp nhận file và kiểm tra dữ liệu.\newline
+		5. Quản trị viên xác nhận thực hiện import.\newline
+		6. Hệ thống import dữ liệu và thông báo kết quả. \\ \hline
+		\textbf{Alternative Flow} & Nếu dữ liệu chưa phù hợp, hệ thống hiển thị danh sách bản ghi lỗi để người dùng điều chỉnh. \\ \hline
+		\textbf{Exception} & File sai định dạng, file sai mẫu hoặc dữ liệu nhập không hợp lệ thì hệ thống báo lỗi và không import. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC01.2 - Thêm nhiều thành viên từ file Excel}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC01.3 - Gán vai trò cho thành viên} \\ \hline
+		\textbf{Actor(s)} & Quản trị viên \\ \hline
+		\textbf{Description} & Quản trị viên gán một hoặc nhiều vai trò cho thành viên theo phạm vi toàn hệ thống hoặc theo tổ chức cụ thể. \\ \hline
+		\textbf{Trigger} & Quản trị viên cần phân quyền để thành viên thực hiện chức năng trong hệ thống. \\ \hline
+		\textbf{Pre-condition(s)} & Quản trị viên đã đăng nhập; có quyền gán vai trò; thành viên và danh sách vai trò đã tồn tại. \\ \hline
+		\textbf{Post-condition(s)} & Vai trò của thành viên được cập nhật; thông tin phân quyền được lưu lại. \\ \hline
+		\textbf{Main Flow} & 1. Quản trị viên mở trang chi tiết thành viên.\newline
+		2. Hệ thống hiển thị thông tin thành viên và danh sách vai trò hiện tại.\newline
+		3. Quản trị viên chọn chức năng gán vai trò.\newline
+		4. Hệ thống hiển thị form chọn vai trò.\newline
+		5. Quản trị viên chọn vai trò và lưu thay đổi.\newline
+		6. Hệ thống kiểm tra dữ liệu, cập nhật và thông báo thành công. \\ \hline
+		\textbf{Alternative Flow} & Quản trị viên có thể chọn phạm vi áp dụng vai trò nếu cần. \\ \hline
+		\textbf{Exception} & Nếu vai trò đã tồn tại, thiếu phạm vi áp dụng hoặc không đủ quyền thì hệ thống hiển thị thông báo lỗi. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC01.3 - Gán vai trò cho thành viên}
+\end{table}
+
+\subsubsection{Phân hệ quản lý khoa, lớp và tổ chức}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC03_department_usecase.drawio.png}
+	\caption{UC02 - Quản lý khoa/đơn vị}
+\end{figure}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC02 - Quản lý đơn vị} \\ \hline
+		\textbf{Actor(s)} & Quản trị viên \\ \hline
+		\textbf{Description} & Use case này cho phép quản trị viên thực hiện các thao tác quản lý thông tin đơn vị trong hệ thống bao gồm:\newline
+		-- Xem danh sách đơn vị\newline
+		-- Tìm và lọc đơn vị\newline
+		-- Thêm, xóa, sửa thông tin đơn vị. \\ \hline
+		\textbf{Trigger} & Quản trị viên truy cập chức năng quản lý đơn vị từ giao diện hệ thống. \\ \hline
+		\textbf{Pre-condition(s)} & Quản trị viên đã đăng nhập bằng tài khoản có phân quyền quản lý đơn vị. \\ \hline
+		\textbf{Post-condition(s)} & Thông tin đơn vị được hiển thị và cập nhật đúng theo thao tác đã thực hiện. \\ \hline
+		\textbf{Main Flow} & 1. Quản trị viên truy cập module Quản lý đơn vị.\newline
+		2. Hệ thống hiển thị danh sách đơn vị.\newline
+		3. Quản trị viên chọn xem/tìm/lọc/thêm/sửa/xóa đơn vị. \\ \hline
+		\textbf{Alternative Flow} & Ở bước 3, quản trị viên tìm kiếm/lọc; hệ thống trả về danh sách phù hợp điều kiện. \\ \hline
+		\textbf{Exception} & Ở bước 1, nếu không có quyền truy cập thì hệ thống chặn và không hiển thị module. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC02 - Quản lý đơn vị}
+\end{table}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC02_classes_usecase.drawio.png}
+	\caption{UC03 - Quản lý lớp}
+\end{figure}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC03 - Quản lý lớp học} \\ \hline
+		\textbf{Actor(s)} & Quản trị viên \\ \hline
+		\textbf{Description} & Use case này cho phép quản trị viên thực hiện các thao tác quản lý thông tin lớp học trong hệ thống bao gồm:\newline
+		-- Xem danh sách lớp học\newline
+		-- Tìm và lọc lớp học\newline
+		-- Thêm, xóa, sửa thông tin lớp học. \\ \hline
+		\textbf{Trigger} & Quản trị viên truy cập chức năng quản lý lớp học từ giao diện hệ thống. \\ \hline
+		\textbf{Pre-condition(s)} & Quản trị viên đã đăng nhập bằng tài khoản có phân quyền quản lý lớp học. \\ \hline
+		\textbf{Post-condition(s)} & Thông tin lớp học được hiển thị và cập nhật đúng theo thao tác đã thực hiện. \\ \hline
+		\textbf{Main Flow} & 1. Quản trị viên truy cập module Quản lý lớp học.\newline
+		2. Hệ thống hiển thị danh sách lớp học.\newline
+		3. Quản trị viên chọn xem/tìm/lọc/thêm/sửa/xóa lớp học. \\ \hline
+		\textbf{Alternative Flow} & Ở bước 3, quản trị viên tìm kiếm/lọc lớp; hệ thống trả về danh sách phù hợp. \\ \hline
+		\textbf{Exception} & Ở bước 1, nếu không có phân quyền truy cập thì hệ thống chặn truy cập module. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC03 - Quản lý lớp học}
+\end{table}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC04_organizations_usecase.drawio.png}
+	\caption{UC04 - Quản lý tổ chức Đoàn -- Hội}
+\end{figure}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC04 - Quản lý tổ chức} \\ \hline
+		\textbf{Actor(s)} & Quản trị viên, Thành viên \\ \hline
+		\textbf{Description} & Cho phép xem cấu trúc cây tổ chức và số liệu tổng quan. Với Quản trị viên, hệ thống hỗ trợ thêm/sửa/xóa tổ chức và thêm thành viên (thủ công hoặc từ file). \\ \hline
+		\textbf{Trigger} & Người dùng truy cập trang Quản lý tổ chức từ thanh điều hướng chính. \\ \hline
+		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập; dữ liệu tổ chức và thành viên đã tồn tại trong cơ sở dữ liệu. \\ \hline
+		\textbf{Post-condition(s)} & Cấu trúc tổ chức và thống kê được hiển thị chính xác; các thay đổi (nếu có) được lưu vào hệ thống. \\ \hline
+		\textbf{Main Flow} & 1. Người dùng yêu cầu xem danh sách tổ chức.\newline
+		2. Hệ thống hiển thị dữ liệu dạng cây phân cấp kèm thống kê.\newline
+		3. Người dùng mở rộng/thu gọn các nhánh tổ chức.\newline
+		4. Người dùng chọn một đơn vị cụ thể.\newline
+		5. Hệ thống chuyển sang trang chi tiết tổ chức. \\ \hline
+		\textbf{Alternative Flow} & Ở bước 3 (quản trị): thêm thành viên thủ công hoặc bằng file; thực hiện CRUD tổ chức theo phân quyền. \\ \hline
+		\textbf{Exception} & File import sai định dạng mẫu; dữ liệu tạo/sửa tổ chức bị trùng hoặc thiếu thông tin bắt buộc. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC04 - Quản lý tổ chức}
+\end{table}
+
+Nhóm use-case này mô tả luồng quản trị cơ cấu tổ chức nhiều cấp, đồng thời là nền tảng để gắn quyền theo ngữ cảnh đơn vị.
+
+\subsubsection{Phân hệ phân quyền và cấu hình truy cập}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC05_authorization-usecase.drawio.png}
+	\caption{UC05 - Gán vai trò và phân quyền}
+\end{figure}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC05 - Gán vai trò và phân quyền} \\ \hline
+		\textbf{Actor(s)} & Quản trị viên, Hệ thống \\ \hline
+		\textbf{Description} & Quản trị viên cấp quyền cho người dùng bằng cách gán vai trò; hệ thống tự động liên kết các quyền tương ứng và hỗ trợ phạm vi theo tổ chức khi cần. \\ \hline
+		\textbf{Trigger} & Quản trị viên chọn tài khoản người dùng và mở màn hình gán vai trò. \\ \hline
+		\textbf{Pre-condition(s)} & Quản trị viên đã đăng nhập và có quyền quản lý hệ thống; vai trò và tài khoản người dùng đã tồn tại. \\ \hline
+		\textbf{Post-condition(s)} & Người dùng được cập nhật vai trò/quyền tương ứng; dữ liệu phân quyền được lưu vào cơ sở dữ liệu. \\ \hline
+		\textbf{Main Flow} & 1. Quản trị viên chọn người dùng cần phân quyền.\newline
+		2. Hệ thống hiển thị danh sách vai trò khả dụng.\newline
+		3. Quản trị viên chọn vai trò cần gán.\newline
+		4. Hệ thống gắn các quyền tương ứng theo vai trò.\newline
+		5. Quản trị viên xác nhận lưu thay đổi.\newline
+		6. Hệ thống cập nhật và thông báo thành công. \\ \hline
+		\textbf{Alternative Flow} & Trường hợp vai trò có phạm vi tổ chức, quản trị viên chọn thêm tổ chức áp dụng trước khi lưu. \\ \hline
+		\textbf{Exception} & Lỗi kết nối cơ sở dữ liệu; tài khoản người dùng bị khóa/không hợp lệ nên hệ thống từ chối gán quyền. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC05 - Gán vai trò và phân quyền}
+\end{table}
+
+Phân hệ này cho phép gán vai trò và quyền theo tổ chức, hỗ trợ kiểm soát truy cập linh hoạt giữa các cấp quản trị.
+
+\subsubsection{Phân hệ thu phí}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.84\linewidth]{Images/use-case-diagram/UC04_payment_usecase.drawio.png}
+	\caption{UC06 - Quản lý đóng phí}
+\end{figure}
+
+Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, phân công đối tượng, thanh toán và đối soát trạng thái giao dịch với cổng thanh toán.
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC06 - Quản lý đóng phí} \\ \hline
+		\textbf{Actor(s)} & Cán bộ đơn vị, Thành viên, PayOS \\ \hline
+		\textbf{Description} & Quản lý trọn luồng thu phí: tạo đợt thu, cấu hình mức phí, phân công đối tượng, kích hoạt và theo dõi thanh toán. \\ \hline
+		\textbf{Trigger} & Cán bộ đơn vị tạo đợt thu mới hoặc thành viên truy cập chức năng đóng phí. \\ \hline
+		\textbf{Pre-condition(s)} & Có quyền quản lý đợt thu; đợt thu có mức phí và danh sách phân công hợp lệ; cổng thanh toán sẵn sàng khi thu online. \\ \hline
+		\textbf{Post-condition(s)} & Đợt thu được kích hoạt; giao dịch thanh toán được ghi nhận và cập nhật trạng thái trong lịch sử thu phí. \\ \hline
+		\textbf{Main Flow} & 1. Cán bộ đơn vị tạo đợt thu và nhập thông tin cơ bản.\newline
+		2. Cấu hình mức phí, phân công thành viên và kích hoạt đợt thu.\newline
+		3. Thành viên truy cập khoản phí của tôi và tạo thanh toán.\newline
+		4. Hệ thống tạo liên kết thanh toán.\newline
+		5. Hệ thống nhận/truy vấn trạng thái giao dịch và cập nhật kết quả. \\ \hline
+		\textbf{Alternative Flow} & Ở bước 3, thành viên có thể đóng thủ công; cán bộ đơn vị cập nhật trạng thái đã đóng trực tiếp trên hệ thống. \\ \hline
+		\textbf{Exception} & Thiếu cấu hình trước khi kích hoạt; lỗi kết nối cổng thanh toán; giao dịch bị hủy hoặc hết hạn. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC06 - Quản lý đóng phí}
+\end{table}
+
+\subsubsection{Phân hệ CTXH}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.70\linewidth]{Images/use-case-diagram/UC07_tong_quat.png}
+	\caption{UC07 - Quản lý công tác xã hội (tổng quát)}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC07_03_danh_muc.png}
+	\caption{UC07.1 - Quản lý danh mục CTXH}
+\end{figure}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC07.1 - Quản lý danh mục CTXH} \\ \hline
+		\textbf{Actor(s)} & Cán bộ đơn vị \\ \hline
+		\textbf{Description} & Quản lý danh mục phân loại hoạt động CTXH, bao gồm tạo mới, cập nhật, xem chi tiết và xóa theo điều kiện dữ liệu. \\ \hline
+		\textbf{Trigger} & Người dùng truy cập chức năng danh mục CTXH. \\ \hline
+		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập và có quyền quản lý danh mục CTXH. \\ \hline
+		\textbf{Post-condition(s)} & Danh mục CTXH được tạo mới, cập nhật hoặc xóa theo thao tác đã thực hiện. \\ \hline
+		\textbf{Main Flow} & 1. Người dùng mở danh sách danh mục.\newline
+		2. Hệ thống hiển thị danh sách danh mục và thông tin liên quan.\newline
+		3. Người dùng chọn tạo mới, chỉnh sửa hoặc xóa danh mục.\newline
+		4. Hệ thống kiểm tra dữ liệu và lưu thay đổi. \\ \hline
+		\textbf{Alternative Flow} & Người dùng có thể xem chi tiết danh mục và danh sách hoạt động thuộc danh mục. \\ \hline
+		\textbf{Exception} & Nếu danh mục đã có hoạt động liên kết thì hệ thống không cho xóa. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC07.1 - Quản lý danh mục CTXH}
+\end{table}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC07_03_hoat_dong.png}
+	\caption{UC07.2 - Quản lý hoạt động CTXH}
+\end{figure}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC07.2 - Quản lý hoạt động CTXH} \\ \hline
+		\textbf{Actor(s)} & Cán bộ đơn vị \\ \hline
+		\textbf{Description} & Quản lý vòng đời hoạt động CTXH, bao gồm tạo, chỉnh sửa, kích hoạt và cập nhật trạng thái hoạt động. \\ \hline
+		\textbf{Trigger} & Người dùng truy cập chức năng hoạt động CTXH. \\ \hline
+		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập và có quyền quản lý hoạt động CTXH. \\ \hline
+		\textbf{Post-condition(s)} & Hoạt động được tạo mới hoặc cập nhật và hiển thị trong danh sách. \\ \hline
+		\textbf{Main Flow} & 1. Người dùng tạo hoạt động mới.\newline
+		2. Hệ thống hiển thị form nhập thông tin.\newline
+		3. Người dùng điền thông tin và lưu lại.\newline
+		4. Hệ thống kiểm tra dữ liệu và cập nhật trạng thái. \\ \hline
+		\textbf{Alternative Flow} & Người dùng có thể xem danh sách hoạt động hoặc chỉnh sửa hoạt động đã tồn tại. \\ \hline
+		\textbf{Exception} & Nếu dữ liệu thời gian hoặc trạng thái không hợp lệ thì hệ thống hiển thị thông báo lỗi. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC07.2 - Quản lý hoạt động CTXH}
+\end{table}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC07_02_nguoi_tham_gia.png}
+	\caption{UC07.3 - Quản lý người tham gia hoạt động CTXH}
+\end{figure}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC07.3 - Quản lý người tham gia hoạt động CTXH} \\ \hline
+		\textbf{Actor(s)} & Cán bộ đơn vị, Thành viên \\ \hline
+		\textbf{Description} & Quản lý danh sách tham gia và cập nhật kết quả CTXH cho từng sinh viên trong hoạt động. \\ \hline
+		\textbf{Trigger} & Người dùng truy cập màn hình người tham gia của một hoạt động. \\ \hline
+		\textbf{Pre-condition(s)} & Hoạt động đã tồn tại; người dùng có quyền quản lý người tham gia. \\ \hline
+		\textbf{Post-condition(s)} & Danh sách tham gia và kết quả được lưu, đồng thời phản ánh lên báo cáo cá nhân. \\ \hline
+		\textbf{Main Flow} & 1. Chọn hoạt động.\newline
+		2. Thêm người tham gia.\newline
+		3. Chấm điểm hoặc cập nhật kết quả.\newline
+		4. Hệ thống lưu thay đổi và cập nhật thống kê. \\ \hline
+		\textbf{Alternative Flow} & Người dùng có thể xuất danh sách tham gia mà không thay đổi dữ liệu. \\ \hline
+		\textbf{Exception} & Nếu sinh viên trùng lặp hoặc file nhập sai định dạng thì hệ thống báo lỗi. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC07.3 - Quản lý người tham gia hoạt động CTXH}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC07.4 - Quản lý hạn mức ngày CTXH theo chức} \\ \hline
+		\textbf{Actor(s)} & Quản trị viên \\ \hline
+		\textbf{Description} & Quản trị viên thiết lập số ngày CTXH tối đa được phép cho từng tổ chức; cấu hình có thể tự động áp dụng cho tổ chức con. \\ \hline
+		\textbf{Trigger} & Quản trị viên muốn giới hạn số ngày CTXH theo tổ chức. \\ \hline
+		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập; có quyền cấu hình giới hạn; tổ chức tồn tại trong hệ thống. \\ \hline
+		\textbf{Post-condition(s)} & Cấu hình giới hạn được tạo và lưu lại; thông tin cấu hình được phản ánh trên hệ thống. \\ \hline
+		\textbf{Main Flow} & 1. Người dùng truy cập chức năng cấu hình giới hạn.\newline
+		2. Chọn tổ chức, nhập số ngày tối đa và trạng thái.\newline
+		3. Hệ thống kiểm tra tính hợp lệ của dữ liệu.\newline
+		4. Hệ thống lưu cấu hình cho tổ chức.\newline
+		5. Hệ thống áp dụng cho các tổ chức con phù hợp. \\ \hline
+		\textbf{Alternative Flow} & Nếu số ngày không hợp lệ hoặc tổ chức đã có cấu hình đang hoạt động, hệ thống hiển thị thông báo phù hợp. \\ \hline
+		\textbf{Exception} & Tổ chức không tồn tại thì hệ thống báo lỗi và không lưu cấu hình. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC07.4 - Quản lý hạn mức ngày CTXH theo chức}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC07.5 - Xem báo cáo ngày công tác xã hội cá nhân} \\ \hline
+		\textbf{Actor(s)} & Sinh viên \\ \hline
+		\textbf{Description} & Sinh viên xem báo cáo CTXH cá nhân bao gồm tổng số ngày đã tích lũy, trạng thái đạt/chưa đạt và danh sách chi tiết các hoạt động đã tham gia. \\ \hline
+		\textbf{Trigger} & Sinh viên muốn kiểm tra tiến độ CTXH của mình. \\ \hline
+		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập; tài khoản sinh viên có mã số sinh viên trong hệ thống. \\ \hline
+		\textbf{Post-condition(s)} & Báo cáo CTXH cá nhân được hiển thị đầy đủ thông tin. \\ \hline
+		\textbf{Main Flow} & 1. Sinh viên chọn chức năng xem báo cáo CTXH.\newline
+		2. Hệ thống truy vấn dữ liệu và tính tổng số ngày CTXH.\newline
+		3. Hệ thống kiểm tra trạng thái đạt/chưa đạt.\newline
+		4. Hệ thống hiển thị báo cáo cho sinh viên. \\ \hline
+		\textbf{Alternative Flow} & Nếu sinh viên chưa tham gia hoạt động nào, hệ thống thông báo tương ứng và gợi ý xem danh sách hoạt động. \\ \hline
+		\textbf{Exception} & Nếu không tìm thấy thông tin sinh viên thì hệ thống hiển thị lỗi tài khoản không hợp lệ. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC07.5 - Xem báo cáo ngày công tác xã hội cá nhân}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC07.6 - Nhập dữ liệu ngày CTXH từ hệ thống cũ} \\ \hline
+			extbf{Actor(s)} & Quản trị viên \\ \hline
+			extbf{Description} & Quản trị viên nhập dữ liệu số ngày CTXH từ hệ thống cũ vào hồ sơ sinh viên bằng file Excel. \\ \hline
+			extbf{Trigger} & Quản trị viên muốn nhập dữ liệu CTXH từ hệ thống cũ khi triển khai hệ thống mới. \\ \hline
+			extbf{Pre-condition(s)} & Người dùng đã đăng nhập; có quyền nhập dữ liệu; file Excel được chuẩn bị theo mẫu. \\ \hline
+			extbf{Post-condition(s)} & Số ngày CTXH của sinh viên được cập nhật đúng theo dữ liệu nhập. \\ \hline
+			extbf{Main Flow} & 1. Người dùng vào chức năng nhập dữ liệu hệ thống cũ.\newline
+		2. Tải mẫu Excel, điền dữ liệu và tải lên.\newline
+		3. Hệ thống kiểm tra dữ liệu trong file.\newline
+		4. Hệ thống hiển thị kết quả kiểm tra.\newline
+		5. Người dùng xác nhận nhập dữ liệu.\newline
+		6. Hệ thống cập nhật dữ liệu và thông báo kết quả. \\ \hline
+			extbf{Alternative Flow} & Nếu có dòng dữ liệu không hợp lệ, hệ thống đánh dấu lỗi và tiếp tục các dòng còn lại. \\ \hline
+			extbf{Exception} & Nếu file sai định dạng hoặc xảy ra lỗi xử lý hàng loạt thì hệ thống báo lỗi và dừng thao tác. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC07.6 - Nhập dữ liệu ngày CTXH từ hệ thống cũ}
+\end{table}
+
+\subsubsection{Phân hệ biểu mẫu}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC08_01_quan_ly_bieu_mau.png}
+	\caption{UC08.1 - Quản lý biểu mẫu}
+\end{figure}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC08.1 - Quản lý biểu mẫu} \\ \hline
+		\textbf{Actor(s)} & Quản trị hệ thống, Cán bộ đơn vị \\ \hline
+		\textbf{Description} & Quản lý biểu mẫu Word động, bao gồm tải lên template, cấu hình trường dữ liệu và quản lý danh sách biểu mẫu. \\ \hline
+		\textbf{Trigger} & Người dùng truy cập trang quản lý biểu mẫu. \\ \hline
+		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập và có quyền quản lý biểu mẫu. \\ \hline
+		\textbf{Post-condition(s)} & Biểu mẫu được tạo mới, cấu hình hoặc xóa trong hệ thống. \\ \hline
+		\textbf{Main Flow} & 1. Người dùng tải lên biểu mẫu mới.\newline
+		2. Hệ thống phân tích template và hiển thị các trường động.\newline
+		3. Người dùng cấu hình các trường dữ liệu.\newline
+		4. Hệ thống lưu template và cấu hình. \\ \hline
+		\textbf{Alternative Flow} & Người dùng có thể chỉnh sửa cấu hình biểu mẫu đã tồn tại. \\ \hline
+		\textbf{Exception} & Nếu template không đúng định dạng hoặc hệ thống gặp lỗi lưu trữ thì báo lỗi tương ứng. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC08.1 - Quản lý biểu mẫu}
+\end{table}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC08_02_dien_bieu_mau.png}
+	\caption{UC08.2 - Điền và nộp biểu mẫu}
+\end{figure}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC08.2 - Điền và nộp biểu mẫu} \\ \hline
+		\textbf{Actor(s)} & Thành viên \\ \hline
+		\textbf{Description} & Người dùng điền thông tin vào biểu mẫu và hệ thống tự động sinh file Word/PDF từ template. \\ \hline
+		\textbf{Trigger} & Người dùng muốn điền biểu mẫu hoặc quản lý các biểu mẫu đã nộp. \\ \hline
+		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập và có ít nhất một biểu mẫu trong hệ thống. \\ \hline
+		\textbf{Post-condition(s)} & Bản ghi nộp được tạo hoặc cập nhật; file kết quả được sinh và lưu lại. \\ \hline
+		\textbf{Main Flow} & 1. Người dùng chọn biểu mẫu cần điền.\newline
+		2. Hệ thống hiển thị form tương ứng.\newline
+		3. Người dùng điền thông tin và nộp biểu mẫu.\newline
+		4. Hệ thống kiểm tra, sinh file kết quả và lưu dữ liệu. \\ \hline
+		\textbf{Alternative Flow} & Người dùng có thể chỉnh sửa biểu mẫu đã nộp hoặc xem trước tài liệu đã sinh. \\ \hline
+		\textbf{Exception} & Nếu thiếu trường bắt buộc hoặc file kết quả không thể tạo thì hệ thống báo lỗi. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC08.2 - Điền và nộp biểu mẫu}
+\end{table}
+
+\subsubsection{Phân hệ chatbot CTXH}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC09_chatbot_usecase.drawio.png}
+	\caption{UC09 - Tra cứu CTXH bằng chatbot}
+\end{figure}
+
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC09 - Tra cứu CTXH bằng Chatbot} \\ \hline
+		\textbf{Actor(s)} & Thành viên, Cán bộ đơn vị \\ \hline
+		\textbf{Description} & Hỗ trợ hỏi đáp CTXH bằng ngôn ngữ tự nhiên dựa trên dữ liệu hoạt động đã được hệ thống thu thập và chuẩn bị trước. \\ \hline
+		\textbf{Trigger} & Người dùng truy cập màn hình chatbot và gửi câu hỏi. \\ \hline
+		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập; hệ thống chatbot và dữ liệu kiến thức đang sẵn sàng. \\ \hline
+		\textbf{Post-condition(s)} & Người dùng nhận được câu trả lời phù hợp; lịch sử hội thoại được lưu lại. \\ \hline
+		\textbf{Main Flow} & 1. Người dùng nhập câu hỏi về CTXH.\newline
+		2. Hệ thống xử lý câu hỏi và truy vấn dữ liệu liên quan.\newline
+		3. Hệ thống tổng hợp thông tin và tạo câu trả lời.\newline
+		4. Hệ thống hiển thị kết quả cho người dùng. \\ \hline
+		\textbf{Alternative Flow} & Nếu không tìm thấy thông tin phù hợp, hệ thống thông báo và gợi ý người dùng đặt câu hỏi khác. \\ \hline
+		\textbf{Exception} & Nếu dịch vụ truy xuất hoặc sinh nội dung gặp sự cố thì hệ thống hiển thị thông báo lỗi và yêu cầu thử lại sau. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC09 - Tra cứu CTXH bằng Chatbot}
+\end{table}
+
+\subsection{Mô hình hóa Activity Diagram}
+
+\subsubsection{Activity Diagram - Quản lý tổ chức}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/activity-diagram/activity_organization.drawio.png}
+	\caption{Activity Diagram - Quản lý tổ chức}
+\end{figure}
+
+Biểu đồ hoạt động tại hình trên mô tả luồng tương tác nghiệp vụ trên trang Quản lý tổ chức. Quy trình này không chỉ bao gồm các thao tác quản lý dữ liệu (CRUD) mà còn thể hiện chi tiết cơ chế tối ưu hóa trải nghiệm người dùng thông qua việc tải dữ liệu cây phân cấp theo nhu cầu. Quy trình được chia thành hai làn xử lý (swimlanes) là Thành viên và Hệ thống, bao gồm các giai đoạn chính sau:
+
+\paragraph{Khởi tạo và kiểm soát truy cập}
+Khi người dùng truy cập vào trang, hệ thống thực hiện chuỗi kiểm tra tự động trước khi hiển thị dữ liệu:
+\begin{itemize}
+	\item Xác thực người dùng: Hệ thống kiểm tra trạng thái đăng nhập. Nếu chưa xác thực, người dùng bị chuyển hướng về trang đăng nhập.
+	\item Khởi tạo ngữ cảnh: Nếu đã xác thực, hệ thống thực hiện bước kiểm tra tổ chức người dùng thuộc. Bước này giúp hệ thống xác định và ưu tiên hiển thị các đơn vị mà người dùng đang là thành viên lên đầu danh sách, sau đó mới hiển thị giao diện cây tổ chức hoàn chỉnh.
+\end{itemize}
+
+\paragraph{Phân loại hành động người dùng}
+Tại giao diện chính, người dùng có thể thực hiện hai nhóm tác vụ, dẫn đến hai nhánh xử lý riêng biệt:
+\begin{itemize}
+	\item Nhánh quản lý (CRUD): Bao gồm các thao tác thêm, sửa, xóa hoặc xem chi tiết. Hệ thống sẽ tiếp nhận và thực hiện các nghiệp vụ backend tương ứng rồi kết thúc luồng.
+	\item Nhánh xem cây (View Tree): Bao gồm thao tác mở rộng (+) hoặc thu gọn (-) các nhánh con của cây tổ chức.
+\end{itemize}
+
+\paragraph{Cơ chế hiển thị và Lazy Loading}
+Khi người dùng chọn thao tác mở rộng nhánh (thuộc nhóm thao tác xem cây), hệ thống áp dụng thuật toán tối ưu hóa dữ liệu:
+\begin{enumerate}
+	\item Kiểm tra dữ liệu cục bộ: Hệ thống kiểm tra xem dữ liệu của nhánh con đó đã được tải về trình duyệt chưa (client-side check).
+	\item Quyết định tải dữ liệu:
+	\begin{itemize}
+		\item Trường hợp chưa có (cache miss): Hệ thống thực hiện hành động tải dữ liệu bổ sung cho nhánh con từ máy chủ.
+		\item Trường hợp đã có (cache hit): Hệ thống bỏ qua bước tải mạng và sử dụng ngay dữ liệu có sẵn.
+	\end{itemize}
+	\item Cập nhật giao diện: Cuối cùng, hệ thống cập nhật lại hiển thị cây (re-render) để mở rộng nhánh mà người dùng vừa chọn.
+\end{enumerate}
+
+\subsubsection{Activity Diagram - Quản lý phân quyền}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/activity-diagram/authorization-activity.drawio.png}
+	\caption{Activity Diagram - Quản lý phân quyền}
+\end{figure}
+
+Biểu đồ hoạt động tại hình trên mô tả chi tiết quy trình nghiệp vụ quản lý phân quyền, bao gồm các bước kiểm soát truy cập và hai luồng chức năng chính: cấu hình vai trò mới và gán vai trò cho người dùng. Quy trình được chia thành hai làn xử lý (swimlanes) là Thành viên (Quản trị viên) và Hệ thống, với các bước xử lý cụ thể như sau:
+
+\paragraph{Kiểm soát truy cập ban đầu}
+Khi người dùng truy cập vào trang quản lý phân quyền, hệ thống thực hiện lớp bảo mật đầu tiên:
+\begin{itemize}
+	\item Kiểm tra xác thực: Hệ thống xác minh xem phiên làm việc của người dùng có hợp lệ không.
+	\item Điều hướng:
+	\begin{itemize}
+		\item Nếu chưa xác thực: Hệ thống tự động chuyển hướng về trang đăng nhập.
+		\item Nếu đã xác thực: Hệ thống tiếp tục kiểm tra quyền hạn cụ thể của người dùng trước khi hiển thị giao diện bảng danh sách vai trò.
+	\end{itemize}
+\end{itemize}
+
+\paragraph{Các luồng nghiệp vụ chính}
+Tại giao diện quản lý, quản trị viên có thể lựa chọn một trong hai hành động, dẫn đến hai nhánh xử lý khác nhau:
+\begin{itemize}
+	\item Nhánh 1: Tạo vai trò mới (Create Role):
+	\begin{enumerate}
+		\item Quản trị viên vào màn hình cấu hình vai trò.
+		\item Hệ thống cho phép thực hiện đồng thời hai tác vụ: lựa chọn các quyền hạn và đặt tên cho vai trò.
+		\item Sau khi hoàn tất cả hai thông tin trên, hệ thống tổng hợp và tạo vai trò mới trong cơ sở dữ liệu.
+	\end{enumerate}
+	\item Nhánh 2: Gán vai trò cho người dùng (Assign Role):
+	\begin{enumerate}
+		\item Hệ thống chuyển hướng và hiển thị danh sách người dùng.
+		\item Quản trị viên chọn một tài khoản người dùng cụ thể.
+		\item Hệ thống yêu cầu xác định song song hai yếu tố: vai trò cần gán và tổ chức áp dụng (scope).
+		\item Hệ thống cập nhật thông tin phân quyền vào cơ sở dữ liệu và kết thúc quy trình.
+	\end{enumerate}
+\end{itemize}
+
+\subsubsection{Activity Diagram - Module Công tác Xã hội}
+Để minh họa chi tiết luồng xử lý của các chức năng chính trong module Công tác Xã hội, báo cáo trình bày ba activity diagram đại diện cho các pattern quan trọng trong hệ thống:
+\begin{itemize}
+	\item Quản lý trạng thái: tạo và chỉnh sửa hoạt động với logic chuyển đổi giữa trạng thái nháp và đang hoạt động.
+	\item Xử lý hàng loạt: chấm điểm sinh viên từ file Excel với pipeline parse, validate, preview, batch update.
+	\item Cấu hình cascade: tạo cấu hình giới hạn tự động áp dụng cho tổ chức con theo cấp bậc.
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/activity-diagram/UC07_03_tao_chinh_sua_hoat_dong.png}
+	\caption{Activity Diagram - Tạo và chỉnh sửa hoạt động}
+\end{figure}
+
+Activity diagram trên minh họa luồng tạo và chỉnh sửa hoạt động CTXH với logic quản lý trạng thái. Điểm quan trọng là khi chọn trạng thái đang hoạt động, hệ thống yêu cầu validate đầy đủ thông tin như địa điểm, thời gian và số ngày; trong khi trạng thái nháp cho phép lưu chưa đầy đủ để tiếp tục sau. Hệ thống kiểm tra cấu hình giới hạn số ngày theo tổ chức nhưng chỉ hiển thị cảnh báo, vẫn cho phép tạo hoạt động vượt giới hạn để linh hoạt với các trường hợp đặc biệt.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/activity-diagram/UC07_02_cham_diem_excel.png}
+	\caption{Activity Diagram - Chấm điểm sinh viên từ file Excel}
+\end{figure}
+
+Activity diagram này thể hiện luồng xử lý hàng loạt điểm CTXH từ file Excel theo pipeline: parse file, validate từng dòng, preview kết quả, batch update. Hệ thống xử lý theo chunk 500 dòng để tối ưu hiệu năng với file lớn, đồng thời kiểm tra các quy tắc nghiệp vụ như số ngày là bội của 0.5, không vượt giới hạn hoạt động, sinh viên tồn tại và đã đăng ký. Trong màn hình preview, các dòng lỗi được đánh dấu rõ ràng theo nguyên nhân; chỉ các dòng hợp lệ mới được cập nhật vào cơ sở dữ liệu. Nếu có lỗi trong quá trình batch update, toàn bộ transaction được rollback để bảo đảm tính nhất quán dữ liệu.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/activity-diagram/UC07_04_tao_cau_hinh_gioi_han.png}
+	\caption{Activity Diagram - Tạo cấu hình giới hạn ngày CTXH}
+\end{figure}
+
+Activity diagram này minh họa luồng tạo cấu hình giới hạn số ngày CTXH với cơ chế cascade tự động. Sau khi tạo cấu hình cho tổ chức cha, hệ thống tự động duyệt qua các tổ chức con theo cấu trúc phân cấp. Với mỗi tổ chức con, hệ thống kiểm tra: nếu chưa có cấu hình thì tạo mới, nếu đã có cấu hình đang hoạt động thì cập nhật số ngày tối đa. Logic này giúp cấu hình được áp dụng nhất quán cho toàn bộ cây tổ chức mà không cần thiết lập thủ công từng tổ chức con.
+
+\subsubsection{Activity Diagram - Module Biểu mẫu}
+Để minh họa chi tiết luồng xử lý của các chức năng chính trong module Biểu mẫu, báo cáo trình bày hai activity diagram đại diện cho các pattern quan trọng trong hệ thống:
+\begin{itemize}
+	\item Template parsing and configuration: tải lên và phân tích file Word template, trích xuất placeholder động, cấu hình trường dữ liệu.
+	\item Dynamic form generation: sinh form động từ cấu hình, điền dữ liệu, thay thế placeholder và tạo file tự động.
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/activity-diagram/UC08_01_tao_cau_hinh_bieu_mau.png}
+	\caption{Activity Diagram - Tạo và cấu hình biểu mẫu}
+\end{figure}
+
+Activity diagram trên minh họa luồng tải lên và cấu hình biểu mẫu Word động. Hệ thống nhận file \texttt{.docx}, parse nội dung và trích xuất các placeholder theo cú pháp \texttt{{\{tên\_trường\}}}. Nếu không tìm thấy placeholder nào, hệ thống vẫn cho phép lưu template nhưng hiển thị cảnh báo. Sau khi trích xuất thành công, người dùng cấu hình cho từng placeholder gồm loại dữ liệu, nhãn hiển thị và trường bắt buộc hoặc tùy chọn. File template được lưu trên S3 và cấu hình trường được lưu vào cơ sở dữ liệu để sử dụng khi sinh form.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/activity-diagram/UC08_02_dien_bieu_mau.png}
+	\caption{Activity Diagram - Điền thông tin vào biểu mẫu}
+\end{figure}
+
+Activity diagram này thể hiện luồng điền biểu mẫu động và sinh file tự động. Hệ thống lấy cấu hình trường từ cơ sở dữ liệu để sinh form với các input phù hợp. Sau khi người dùng điền thông tin, hệ thống validate theo cấu hình. Nếu hợp lệ, hệ thống tải template từ S3, thay thế placeholder bằng dữ liệu người dùng nhập và sinh file đầu ra. File được lưu lại để người dùng có thể tải xuống hoặc xem trước trong trình duyệt. Toàn bộ quá trình được lưu thành bản ghi nộp trong cơ sở dữ liệu để tra cứu sau này.
+
+\subsubsection{Activity Diagram - Chức năng tạo đợt đóng phí}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/activity-diagram/payment_acitivity.drawio.png}
+	\caption{Activity Diagram - Quản lý đóng phí}
+\end{figure}
+
+Đầu tiên quản trị viên tạo đợt đóng phí theo tổ chức; sau khi bấm lưu, đợt đóng phí sẽ được tạo mới ở trạng thái nháp. Để kích hoạt, quản trị viên cần thiết lập mức phí và phân công thành viên. Sau khi đã thiết lập đầy đủ, hệ thống sẽ cho phép kích hoạt. Khi đợt đóng phí ở trạng thái kích hoạt thì đợt đóng phí được công bố cho toàn bộ thành viên được phân công để xem và thực hiện thanh toán.
+
+\subsubsection{Activity Diagram - Chức năng thêm dữ liệu từ file Excel}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/activity-diagram/import_from_file.png}
+	\caption{Activity Diagram - Thêm nhiều thành viên từ file Excel}
+\end{figure}
+
+Chức năng thêm dữ liệu từ file Excel trong module người dùng được xây dựng nhằm hỗ trợ nhập nhanh số lượng lớn dữ liệu sinh viên vào hệ thống, đặc biệt trong giai đoạn đầu mỗi năm học khi cần cập nhật thông tin cho nhiều khóa và lớp khác nhau. Trong phạm vi chức năng này, báo cáo tập trung mô tả quy trình import dữ liệu tại module người dùng do đây là module có tần suất sử dụng cao và đóng vai trò trung tâm trong việc quản lý thành viên.
+
+Khi quản trị viên tải lên file Excel, hệ thống tiến hành đọc, kiểm tra dữ liệu đầu vào và xử lý từng dòng tương ứng với một người dùng. Với mỗi bản ghi, hệ thống tự động xác định và tạo cấu trúc tổ chức phù hợp dựa trên thông tin lớp học và khoa đào tạo. Cụ thể, hệ thống kiểm tra sự tồn tại của các tổ chức cấp khoa và cấp lớp; trong trường hợp chưa tồn tại, hệ thống sẽ tự động khởi tạo mới.
+
+Sau khi hoàn tất việc xác định và tạo tổ chức, người dùng được tự động gán vào các tổ chức liên quan với vai trò mặc định phù hợp. Cách xử lý này giúp giảm đáng kể thao tác thủ công trong quá trình khởi tạo dữ liệu, đồng thời bảo đảm tính nhất quán của mô hình tổ chức trong toàn hệ thống.
+
+\subsection{Sơ đồ Sequence Diagram}
+Sơ đồ sequence được sử dụng để làm rõ thứ tự trao đổi thông điệp giữa các thành phần trong hệ thống và cơ chế phối hợp giữa frontend, backend, service layer, cơ sở dữ liệu cùng các hệ thống ngoài.
+
+\subsubsection{Sequence Diagram - Module Quản lý tổ chức}
+Quy trình hiển thị và tương tác với cấu trúc tổ chức (Organization Tree) là một trong những nghiệp vụ quan trọng, yêu cầu tốc độ phản hồi nhanh và trải nghiệm người dùng mượt mà. Biểu đồ tuần tự tại hình dưới mô tả chi tiết luồng tương tác giữa Thành viên, Hệ thống Frontend và Backend Controller. Quy trình xử lý được chia thành hai giai đoạn chính nhằm tối ưu hóa hiệu năng hệ thống:
+
+\paragraph{Giai đoạn 1: Khởi tạo và tải dữ liệu song song}
+Khi người dùng truy cập vào trang quản lý, hệ thống không thực hiện các lệnh gọi API tuần tự mà sử dụng kỹ thuật parallel processing để giảm thiểu tổng thời gian phản hồi.
+\begin{itemize}
+	\item Truy vấn cấu trúc cây (Tree Structure): Hệ thống gửi yêu cầu đến Organization Controller để lấy danh sách tổ chức phân cấp.
+	\item Truy vấn thống kê (Statistics): Đồng thời, một luồng xử lý khác truy vấn số liệu tổng hợp về thành viên từ cơ sở dữ liệu.
+\end{itemize}
+Sau khi nhận đủ dữ liệu từ cả hai luồng, Frontend thực hiện thuật toán sắp xếp cục bộ (client-side sorting). Các tổ chức mà người dùng đang là thành viên sẽ được ưu tiên hiển thị lên đầu danh sách (Priority 1), giúp người dùng tiếp cận thông tin quan trọng nhanh nhất.
+
+\paragraph{Giai đoạn 2: Tương tác và cơ chế Lazy Loading}
+Để giảm tải băng thông và dung lượng bộ nhớ ban đầu, hệ thống áp dụng cơ chế lazy loading cho các thao tác mở rộng nhánh cây:
+\begin{enumerate}
+	\item Khi người dùng kích hoạt mở rộng một nhánh tổ chức, hệ thống kiểm tra trạng thái dữ liệu cục bộ (local state).
+	\item Trường hợp cache hit: Nếu dữ liệu nhánh con đã tồn tại, giao diện được cập nhật tức thì mà không cần gọi về server.
+	\item Trường hợp cache miss: Nếu dữ liệu chưa có, hệ thống mới gửi yêu cầu tải bổ sung (fetch additional data) tới controller. Dữ liệu mới sau đó được cập nhật vào cây và hiển thị cho người dùng.
+\end{enumerate}
+Giải pháp này giúp hệ thống đảm bảo khả năng mở rộng tốt ngay cả khi số lượng tổ chức tăng lên quy mô rất lớn, đồng thời duy trì trải nghiệm mượt mà cho người dùng cuối.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/SQ04_organization_sequence.drawio .png}
+	\caption{Sequence Diagram - Luồng hiển thị và tương tác Organization Tree}
+\end{figure}
+
+\subsubsection{Sequence Diagram - Module Phân quyền}
+Đảm bảo an toàn bảo mật và phân quyền chính xác là yêu cầu cốt lõi của hệ thống. Biểu đồ tuần tự tại hình dưới mô tả chi tiết quy trình đăng nhập và cơ chế tự động tải quyền hạn (permissions) kết hợp với chiến lược caching để tối ưu hiệu năng.
+
+\paragraph{Giai đoạn 1: Xác thực người dùng (Authentication)}
+Khi thành viên nhập thông tin đăng nhập, hệ thống thực hiện các bước kiểm tra bảo mật nghiêm ngặt:
+\begin{itemize}
+	\item Kiểm tra thông tin: Auth Controller truy vấn thông tin từ cơ sở dữ liệu và thực hiện so khớp mật khẩu đã được mã hóa.
+	\item Cấp phát phiên làm việc: Nếu thông tin chính xác, hệ thống khởi tạo phiên làm việc bằng cách cấp phát cặp Access Token và Refresh Token. Thông tin phiên này cũng được lưu vết để quản lý bảo mật.
+\end{itemize}
+
+\paragraph{Giai đoạn 2: Tải quyền hạn và tối ưu hóa với cache}
+Sau khi đăng nhập thành công, hệ thống tự động thực hiện quy trình phân quyền (authorization) để xác định phạm vi truy cập của người dùng:
+\begin{enumerate}
+	\item Hệ thống kiểm tra danh sách quyền hạn của người dùng trong cache system.
+	\item Trường hợp cache hit: Nếu dữ liệu quyền đã có sẵn trong bộ nhớ đệm, hệ thống trả về ngay lập tức, giúp giảm độ trễ phản hồi.
+	\item Trường hợp cache miss: Nếu chưa có trong cache, hệ thống thực hiện truy vấn từ cơ sở dữ liệu, sau đó định dạng dữ liệu và lưu ngược vào cache cho các lần truy cập sau.
+\end{enumerate}
+
+\paragraph{Giai đoạn 3: Phân cấp giao diện (UI Adaptation)}
+Dựa trên danh sách quyền hạn nhận được, frontend thực hiện lọc và hiển thị giao diện động:
+\begin{itemize}
+	\item Các chức năng không thuộc quyền hạn của người dùng sẽ bị ẩn.
+	\item Người dùng được chuyển hướng đến trang chủ với giao diện được cá nhân hóa theo đúng vai trò.
+\end{itemize}
+Quy trình này đảm bảo tính toàn vẹn dữ liệu và ngăn chặn các truy cập trái phép vào các chức năng nhạy cảm của hệ thống.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/SQ05_authorization-sequence.drawio.png}
+	\caption{Sequence Diagram - Luồng hoạt động cơ chế phân quyền}
+\end{figure}
+
+\subsubsection{Sequence Diagram - Module Công tác Xã hội}
+Để minh họa chi tiết tương tác giữa các thành phần trong hệ thống, báo cáo trình bày hai sequence diagram đại diện cho các luồng xử lý quan trọng trong module Công tác Xã hội:
+\begin{itemize}
+	\item Tạo và chỉnh sửa hoạt động: tương tác giữa người dùng, controller, service layer và database khi tạo hoặc cập nhật hoạt động với logic quản lý trạng thái.
+	\item Chấm điểm từ Excel: tương tác phức tạp giữa nhiều component trong quá trình xử lý file Excel hàng loạt, bao gồm file parsing, validation và batch update.
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/UC07_03_tao_chinh_sua_hoat_dong.png}
+	\caption{Sequence Diagram - Tạo và chỉnh sửa hoạt động CTXH}
+\end{figure}
+
+Sequence diagram trên mô tả tương tác giữa các thành phần khi tạo hoặc chỉnh sửa hoạt động CTXH. Actor gửi request qua Controller, Controller gọi Service Layer để xử lý business logic. Service kiểm tra quyền, validate dữ liệu đầu vào (tên không trống, thời gian hợp lệ, số ngày là bội của 0.5), và kiểm tra cấu hình giới hạn từ ConfigService. Nếu trạng thái là đang hoạt động, Service validate đầy đủ thông tin bắt buộc. Sau khi validation thành công, Service gọi Repository để lưu vào cơ sở dữ liệu và trả kết quả cho người dùng. Nếu có lỗi validation, hệ thống trả về thông báo lỗi cụ thể để người dùng chỉnh sửa.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/UC07_02_cham_diem_excel.png}
+	\caption{Sequence Diagram - Chấm điểm sinh viên từ file Excel}
+\end{figure}
+
+Sequence diagram này thể hiện luồng xử lý phức tạp khi chấm điểm hàng loạt từ Excel. Controller nhận file upload, gọi parser service để parse file thành các chunk. Với mỗi chunk, validation service kiểm tra từng dòng: sinh viên tồn tại trong cơ sở dữ liệu, số ngày hợp lệ (bội 0.5, không âm) và không vượt giới hạn hoạt động. Kết quả validation được trả về dạng preview gồm danh sách dòng hợp lệ và dòng lỗi kèm lý do. Khi người dùng xác nhận, service bắt đầu batch update trong transaction: với mỗi dòng hợp lệ, cập nhật điểm tham gia và cộng vào tổng CTXH của sinh viên. Nếu có lỗi trong quá trình update, toàn bộ transaction được rollback để đảm bảo tính nhất quán dữ liệu.
+
+\subsubsection{Sequence Diagram - Module Biểu mẫu}
+Để minh họa chi tiết tương tác giữa các thành phần trong hệ thống, báo cáo trình bày sequence diagram đại diện cho luồng xử lý quan trọng trong module Biểu mẫu:
+\begin{itemize}
+	\item Tạo và cấu hình biểu mẫu: tương tác giữa người dùng, controller, parser service, S3 storage và database trong quá trình tải lên, phân tích template và cấu hình trường động.
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/UC08_01_tao_cau_hinh_bieu_mau.png}
+	\caption{Sequence Diagram - Tạo và cấu hình biểu mẫu}
+\end{figure}
+
+Sequence diagram trên mô tả tương tác giữa các thành phần khi tạo và cấu hình biểu mẫu động. Người dùng upload file Word (\texttt{.docx}) qua Controller. Controller validate định dạng file và kích thước, sau đó gọi parser service để phân tích nội dung. Parser tìm kiếm các placeholder theo pattern \texttt{{\{field\_name\}}} trong toàn bộ cấu trúc tài liệu. Danh sách placeholder được trả về để người dùng cấu hình kiểu dữ liệu, nhãn hiển thị và thuộc tính bắt buộc hoặc tùy chọn. Sau khi hoàn tất, Controller gọi dịch vụ lưu trữ để upload file template lên S3 và nhận về URL. Cuối cùng, service lưu thông tin template và cấu hình trường vào cơ sở dữ liệu. Cơ chế transaction đảm bảo cả file và metadata được lưu thành công; nếu có lỗi sẽ rollback để đảm bảo toàn vẹn dữ liệu.
+
+\subsubsection{Sequence Diagram - Chatbot hỏi-đáp hoạt động CTXH}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/data_ingestion_pipeline_sequence.drawio.png}
+	\caption{Sequence Diagram - Pipeline tự động chuyển đổi dữ liệu CTXH sang dạng vector embedding}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/rag_sequence.drawio.png}
+	\caption{Sequence Diagram - Luồng hoạt động của Chatbot RAG}
+\end{figure}
+
+Mô tả trong phần này sẽ được làm rõ ở phần hiện thực hệ thống khi trình bày pipeline đồng bộ dữ liệu và cơ chế truy vấn theo ngữ cảnh.
 
 \subsection{Một số bài toán và giải pháp}
 \subsubsection{Bài toán quản lý và chấm điểm CTXH theo hoạt động}
@@ -125,6 +995,6 @@ Trong bối cảnh CTXH thay đổi theo từng đợt hoạt động, RAG là h
 
 \textbf{c. Hiện thực trong hệ thống}
 
-Hệ thống triển khai chatbot CTXH theo mô hình RAG bằng LangChain. Dữ liệu CTXH được đưa vào vector store trên PostgreSQL/pgvector, sau đó truy xuất ngữ nghĩa trước khi sinh câu trả lời. Pipeline đồng bộ embeddings giúp dữ liệu mới sớm phản ánh vào kết quả truy vấn. Ngoài ra, phần cấu hình cho phép chọn mô hình cục bộ (Ollama) hoặc cloud (Gemini) tùy môi trường triển khai.
+Hệ thống triển khai chatbot CTXH theo hướng truy xuất thông tin trước khi sinh câu trả lời. Dữ liệu CTXH được chuẩn bị để hệ thống có thể tìm kiếm ngữ cảnh phù hợp trước khi phản hồi cho người dùng. Cách tổ chức này giúp câu trả lời bám sát nội dung hoạt động và thuận tiện cập nhật khi dữ liệu thay đổi.
 
 \clearpage

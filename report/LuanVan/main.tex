@@ -13,6 +13,7 @@
 \usepackage[unicode,hidelinks]{hyperref}
 \usepackage{tikz}
 \usepackage{tocloft}
+\usepackage{tabularx}
 
 \usetikzlibrary{calc}
 
@@ -135,34 +136,53 @@
 
 \pagenumbering{roman}
 
+\makeatletter
+\let\ps@plain\ps@frontmatter
+\makeatother
+
 \pagestyle{frontmatter}
 \input{Intro/LoiCamOn}
 \input{Intro/LoiCamDoan}
+
+\makeatletter
+\let\ps@plain\ps@tocstyle
+\makeatother
 
 \pagestyle{tocstyle}
 \begin{center}
 {\Large\bfseries \contentsname}
 \end{center}
 \vspace{-0.5em}
-\tableofcontents
+{\renewcommand{\contentsname}{}\tableofcontents}
 \thispagestyle{tocstyle}
 \clearpage
 
+\makeatletter
+\let\ps@plain\ps@frontmatter
+\makeatother
+
+\pagestyle{frontmatter}
 \begin{center}
 {\Large\bfseries \listfigurename}
 \end{center}
 \vspace{-0.5em}
-\listoffigures
-\thispagestyle{tocstyle}
+{\renewcommand{\listfigurename}{}\listoffigures}
+\thispagestyle{frontmatter}
 \clearpage
 
 \begin{center}
 {\Large\bfseries \listtablename}
 \end{center}
 \vspace{-0.5em}
-\listoftables
-\thispagestyle{tocstyle}
+{\renewcommand{\listtablename}{}\listoftables}
+\thispagestyle{frontmatter}
 \clearpage
+
+\input{Intro/DanhMucVietTatThuatNgu}
+
+\makeatletter
+\let\ps@plain\ps@mainstyle
+\makeatother
 
 \pagenumbering{arabic}
 \setcounter{page}{1}
