@@ -13,7 +13,7 @@ import { buildStudentServer } from '../servers/student.server';
 @ApiTags('mcp-student')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('api/mcp/student')
+@Controller('mcp/student')
 export class StudentMcpController {
   private readonly logger = new Logger(StudentMcpController.name);
 

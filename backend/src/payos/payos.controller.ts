@@ -10,7 +10,7 @@ import {
 import { SimplePayosService } from "./payos.service";
 import { PaymentHistoryService } from "../payment/services/payment-history.service";
 
-@Controller("api/payment")
+@Controller("payment")
 export class PayOSController {
   constructor(
     private readonly payosService: SimplePayosService,
