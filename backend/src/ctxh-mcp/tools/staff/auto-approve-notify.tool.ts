@@ -25,7 +25,7 @@ export function registerAutoApproveNotifyTool(
       send_email_notification: z.boolean().default(true).describe('Gửi email thông báo cho sinh viên được duyệt'),
       email_custom_message: z.string().optional().describe('Nội dung bổ sung trong email'),
     },
-    async ({ activity_id, participation_ids, send_email_notification, email_custom_message }) => {
+    async ({ activity_id, participation_ids, send_email_notification = true, email_custom_message }) => {
       // 1. Fetch activity info
       const activityRows = await dataSource.query<any[]>(
         `SELECT id, name, start_date, location, total_days, organization_id, requires_approval
@@ -66,18 +66,15 @@ export function registerAutoApproveNotifyTool(
         activity_id, participation_ids, userId,
       );
 
-      // 4. Send emails for successful approvals
+      // 4. Send single BCC email to all approved students
       let emailsSent = 0;
       let emailsFailed = 0;
 
       if (send_email_notification && batchResult.successful.length > 0) {
         const successfulIds = batchResult.successful.map((s) => s.participation_id);
 
-        // Fetch student info for all approved participations in one query
         const studentRows = await dataSource.query<any[]>(
-          `SELECT p.id AS participation_id,
-                  u.email,
-                  u."familyName" || ' ' || u."givenName" AS student_name
+          `SELECT p.id AS participation_id, u.email
            FROM ctxh_participations p
            JOIN users u ON u.id = p.student_id
            WHERE p.id = ANY($1::uuid[])
@@ -85,26 +82,20 @@ export function registerAutoApproveNotifyTool(
           [successfulIds],
         );
 
-        const studentMap = new Map<string, { email: string; student_name: string }>(
-          studentRows.map((r) => [r.participation_id, { email: r.email, student_name: r.student_name }]),
-        );
+        const emails = studentRows.map((r) => r.email as string);
+        const bccList = emails.join(', ');
 
-        for (const item of batchResult.successful) {
-          const student = studentMap.get(item.participation_id);
-          if (!student) continue;
-
+        if (bccList) {
           const sent = await mailerService.sendApprovalEmail({
-            to: student.email,
-            studentName: student.student_name,
+            bcc: bccList,
             activityName: activity.name,
             activityStartDate: activity.start_date ? new Date(activity.start_date) : null,
             activityLocation: activity.location ?? null,
             totalDays: activity.total_days !== null ? Number(activity.total_days) : 0,
             customMessage: email_custom_message,
           });
-
-          if (sent) emailsSent++;
-          else emailsFailed++;
+          if (sent) emailsSent = emails.length;
+          else emailsFailed = emails.length;
         }
       }
 

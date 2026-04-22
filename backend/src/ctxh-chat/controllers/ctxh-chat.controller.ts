@@ -116,10 +116,10 @@ export class CtxhChatController {
           String(response.registrationTarget.activityId),
           userId,
         );
-        response.response = `✅ Đã đăng ký thành công bạn vào hoạt động **${response.registrationTarget.activityName}**! Đơn đăng ký của bạn đang chờ duyệt.`;
+        response.response = `Đã đăng ký thành công bạn vào hoạt động **${response.registrationTarget.activityName}**! Đơn đăng ký của bạn đang chờ duyệt.`;
       } catch (err: any) {
         const errorMsg = err?.message || 'Vui lòng thử lại sau.';
-        response.response = `❌ Không thể đăng ký: ${errorMsg}`;
+        response.response = `Không thể đăng ký: ${errorMsg}`;
       }
     }
 
@@ -245,25 +245,6 @@ export class CtxhChatController {
   ): Promise<{ message: string }> {
     await this.memoryService.clearMemory(sessionId);
     return { message: 'Session cleared successfully' };
-  }
-
-  @Post('feedback')
-  @ApiOperation({ summary: 'Submit feedback for chat response' })
-  @ApiResponse({
-    status: 200,
-    description: 'Feedback submitted successfully'
-  })
-  async submitFeedback(
-    @Body() feedback: { 
-      sessionId: string; 
-      messageId?: string; 
-      rating: 'positive' | 'negative'; 
-      comment?: string 
-    }
-  ): Promise<{ message: string }> {
-    // TODO: Implement feedback storage
-    console.log('Feedback received:', feedback);
-    return { message: 'Feedback submitted successfully' };
   }
 
   // ========== DATA INGESTION ENDPOINTS ==========

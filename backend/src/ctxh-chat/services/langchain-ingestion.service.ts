@@ -283,13 +283,13 @@ export class LangChainIngestionService {
   private formatActivityContent(activity: CtxhActivity): string {
     const parts: string[] = [
       `Hoạt động CTXH: ${activity.name}`,
-      `Mô tả: ${activity.description || 'Không có mô tả'}`,
-      `Tổ chức: ${activity.organization?.name || 'N/A'}`,
-      `Địa điểm: ${activity.location || 'N/A'}`,
-      `Danh mục: ${activity.category?.name || 'N/A'}`,
-      `Thời gian: ${this.formatDate(activity.start_date)} - ${this.formatDate(activity.end_date)}`,
-      `Số ngày CTXH: ${activity.total_days || 0} ngày`,
-      `Trạng thái: ${activity.status || 'N/A'}`,
+      `do ${activity.organization?.name || 'N/A'} tổ chức`,
+      `thuộc danh mục: ${activity.category?.name || 'N/A'}`,
+      `địa điểm: ${activity.location || 'N/A'}`,
+      `thời gian: ${this.formatDate(activity.start_date)} - ${this.formatDate(activity.end_date)}`,
+      `mô tả: ${activity.description || 'Không có mô tả'}`,
+      `hoạt động được: ${activity.total_days || 0} ngày CTXH`,
+      `trạng thái: ${activity.status || 'N/A'}`,
     ];
 
     return parts.join('\n');

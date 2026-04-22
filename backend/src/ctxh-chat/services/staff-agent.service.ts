@@ -82,7 +82,7 @@ export class StaffAgentService implements OnModuleInit {
       }
     }
 
-    await this.memoryService.saveInteraction(sessionId, message, finalText);
+    await this.memoryService.addMessages(sessionId, messages.slice(1 + historyMessages.length));
     return finalText;
   }
 
@@ -90,75 +90,81 @@ export class StaffAgentService implements OnModuleInit {
 
   private buildTools(userId: string): DynamicStructuredTool[] {
     return [
-      this.buildSearchMyActivitiesTool(userId),
-      this.buildGetPendingParticipantsTool(userId),
+      this.buildSearchActivitiesTool(userId),
       this.buildApproveAndNotifyTool(userId),
       this.buildCreateActivityTool(userId),
+      this.buildLookupCategoryTool(),
+      this.buildLookupOrganizationTool(),
     ];
   }
 
-  // ── Tool 1: search_my_activities ──────────────────────────────────────────
+  // ── Tool 1: search_activities ─────────────────────────────────────────────
 
-  private buildSearchMyActivitiesTool(userId: string): DynamicStructuredTool {
-    const dataSource = this.dataSource;
+  private buildSearchActivitiesTool(userId: string): DynamicStructuredTool {
+    const activitiesService = this.activitiesService;
+    const participationService = this.participationService;
     return new DynamicStructuredTool({
-      name: 'search_my_activities',
+      name: 'search_activities',
       description:
-        'Tìm kiếm danh sách hoạt động CTXH do cán bộ này tạo. ' +
-        'Có thể lọc theo tên (từ khóa) và trạng thái. ' +
-        'Dùng trước khi duyệt đăng ký để xác nhận đúng hoạt động.',
+        'Tìm kiếm hoạt động CTXH trong hệ thống. ' +
+        'Có thể lọc theo từ khóa tên, trạng thái, và chỉ lấy hoạt động đang diễn ra theo ngày. ' +
+        'Dùng để trả lời câu hỏi về hoạt động (đang diễn ra, sắp tới, đã kết thúc...) ' +
+        'và để xác nhận đúng hoạt động trước khi duyệt đăng ký.',
       schema: z.object({
-        keyword: z.string().optional().describe('Từ khóa tìm trong tên hoạt động'),
+        keyword: z.string().optional().describe('Từ khóa tìm trong tên, mô tả, địa điểm hoạt động'),
         status: z
-          .array(z.enum(['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED']))
+          .enum(['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'])
           .optional()
-          .describe('Lọc theo trạng thái (để trống = tất cả)'),
+          .describe('Lọc theo một trạng thái cụ thể (để trống = tất cả trạng thái)'),
+        ongoing_only: z
+          .boolean()
+          .optional()
+          .describe('true = chỉ lấy hoạt động đang diễn ra hôm nay (start_date <= hôm nay <= end_date)'),
+        current_date: z.string().optional().describe('Ngày hiện tại YYYY-MM-DD để lọc time-based'),
         limit: z.number().int().min(1).max(20).default(10).describe('Số kết quả tối đa'),
       }),
-      func: async ({ keyword, status, limit }) => {
+      func: async ({ keyword, status, ongoing_only, current_date, limit }) => {
         try {
-          const statusList = status?.length ? status : ['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
-          const placeholders = statusList.map((_, i) => `$${i + 3}`).join(', ');
+          const today = current_date ?? new Date().toISOString().split('T')[0];
 
-          const rows = await dataSource.query<any[]>(
-            `SELECT
-               a.id,
-               a.name,
-               a.status,
-               a.start_date,
-               a.end_date,
-               a.total_days,
-               a.max_participants,
-               a.requires_approval,
-               o.name AS organization_name,
-               COUNT(p.id) FILTER (WHERE p.status = 'PENDING')  AS pending_count,
-               COUNT(p.id) FILTER (WHERE p.status = 'APPROVED') AS approved_count
-             FROM ctxh_activities a
-             LEFT JOIN organizations o ON o.id = a.organization_id
-             LEFT JOIN ctxh_participations p ON p.activity_id = a.id
-             WHERE a.created_by = $1
-               AND a.deleted_at IS NULL
-               AND ($2::text IS NULL OR a.name ILIKE '%' || $2 || '%')
-               AND a.status = ANY(ARRAY[${placeholders}]::text[])
-             GROUP BY a.id, o.name
-             ORDER BY a.created_at DESC
-             LIMIT ${Math.min(limit ?? 10, 20)}`,
-            [userId, keyword ?? null, ...statusList],
+          const result = await activitiesService.findAll({
+            search: keyword,
+            status: status,
+            // ongoing_only: activity overlaps [today, today] => start_date <= today AND end_date >= today
+            start_date: ongoing_only ? today : undefined,
+            end_date: ongoing_only ? today : undefined,
+            limit: limit ?? 10,
+            page: 1,
+            user_id: userId,
+          });
+
+          // Fetch pending participants in parallel for all returned activities
+          const pendingLists = await Promise.all(
+            result.data.map((a: any) =>
+              participationService.findPendingByActivity(a.id).catch(() => []),
+            ),
           );
 
           return JSON.stringify({
-            found: rows.length,
-            activities: rows.map((r) => ({
-              activity_id: r.id,
-              name: r.name,
-              status: r.status,
-              start_date: r.start_date,
-              end_date: r.end_date,
-              total_days: r.total_days,
-              organization_name: r.organization_name,
-              requires_approval: r.requires_approval,
-              pending_count: Number(r.pending_count),
-              approved_count: Number(r.approved_count),
+            found: result.data.length,
+            activities: result.data.map((a: any, i: number) => ({
+              activity_id: a.id,
+              name: a.name,
+              status: a.status,
+              start_date: a.start_date,
+              end_date: a.end_date,
+              total_days: a.total_days,
+              location: a.location ?? null,
+              organization_name: a.organization?.name ?? null,
+              requires_approval: a.requires_approval,
+              max_participants: a.max_participants ?? null,
+              pending_count: pendingLists[i].length,
+              pending_participants: pendingLists[i].map((p: any) => ({
+                participation_id: p.id,
+                student_name: p.student?.full_name ?? null,
+                student_code: p.student_code ?? null,
+                registered_at: p.created_at,
+              })),
             })),
           });
         } catch (err: any) {
@@ -170,42 +176,28 @@ export class StaffAgentService implements OnModuleInit {
 
   // ── Tool 2: get_pending_participants ──────────────────────────────────────
 
-  private buildGetPendingParticipantsTool(_userId: string): DynamicStructuredTool {
-    const dataSource = this.dataSource;
+  private buildGetPendingParticipantsTool(): DynamicStructuredTool {
+    const participationService = this.participationService;
     return new DynamicStructuredTool({
       name: 'get_pending_participants',
       description:
         'Lấy danh sách sinh viên đang chờ duyệt (PENDING) của một hoạt động cụ thể. ' +
         'Trả về participation_id, tên sinh viên, mã số, ngày đăng ký.',
       schema: z.object({
-        activity_id: z.string().uuid().describe('UUID của hoạt động cần lấy danh sách PENDING'),
+        activity_id: z.string().describe('UUID của hoạt động cần lấy danh sách PENDING'),
       }),
       func: async ({ activity_id }) => {
         try {
-          const rows = await dataSource.query<any[]>(
-            `SELECT
-               p.id   AS participation_id,
-               u."familyName" || ' ' || u."givenName" AS student_name,
-               u."studentId" AS student_code,
-               u.email,
-               p.created_at AS registered_at
-             FROM ctxh_participations p
-             JOIN users u ON u.id = p.student_id
-             WHERE p.activity_id = $1
-               AND p.status = 'PENDING'
-             ORDER BY p.created_at ASC`,
-            [activity_id],
-          );
-
+          const participants = await participationService.findPendingByActivity(activity_id);
           return JSON.stringify({
             activity_id,
-            pending_count: rows.length,
-            participants: rows.map((r) => ({
-              participation_id: r.participation_id,
-              student_name: r.student_name,
-              student_code: r.student_code ?? null,
-              email: r.email,
-              registered_at: r.registered_at,
+            pending_count: participants.length,
+            participants: participants.map((p: any) => ({
+              participation_id: p.id,
+              student_name: p.student?.full_name ?? null,
+              student_code: p.student_code ?? null,
+              email: p.student?.email ?? null,
+              registered_at: p.created_at,
             })),
           });
         } catch (err: any) {
@@ -219,6 +211,7 @@ export class StaffAgentService implements OnModuleInit {
 
   private buildApproveAndNotifyTool(userId: string): DynamicStructuredTool {
     const dataSource = this.dataSource;
+    const activitiesService = this.activitiesService;
     const participationService = this.participationService;
     const mailerService = this.mailerService;
 
@@ -228,9 +221,9 @@ export class StaffAgentService implements OnModuleInit {
         'Duyệt hàng loạt đăng ký PENDING và gửi email xác nhận cho sinh viên được duyệt. ' +
         'Yêu cầu quyền ctxh.activities.manage_participants.',
       schema: z.object({
-        activity_id: z.string().uuid().describe('UUID hoạt động'),
+        activity_id: z.string().describe('UUID hoạt động'),
         participation_ids: z
-          .array(z.string().uuid())
+          .array(z.string())
           .min(1)
           .max(200)
           .describe('Danh sách participation_id cần duyệt'),
@@ -239,19 +232,8 @@ export class StaffAgentService implements OnModuleInit {
       }),
       func: async ({ activity_id, participation_ids, send_email_notification, email_custom_message }) => {
         try {
-          // 1. Fetch activity
-          const activityRows = await dataSource.query<any[]>(
-            `SELECT id, name, start_date, location, total_days, organization_id, requires_approval
-             FROM ctxh_activities
-             WHERE id = $1 AND deleted_at IS NULL`,
-            [activity_id],
-          );
-
-          if (!activityRows.length) {
-            return JSON.stringify({ error: 'Không tìm thấy hoạt động.' });
-          }
-
-          const activity = activityRows[0];
+          // 1. Fetch activity via service
+          const activity = await activitiesService.findOne(activity_id);
 
           if (!activity.requires_approval) {
             return JSON.stringify({
@@ -270,51 +252,43 @@ export class StaffAgentService implements OnModuleInit {
             return JSON.stringify({ error: 'Bạn không có quyền duyệt đăng ký cho hoạt động này.' });
           }
 
-          // 3. Batch approve
+          // 3. Collect email addresses before approving (status changes to APPROVED after)
+          let emailSet = new Set<string>();
+          if (send_email_notification) {
+            const pending = await participationService.findPendingByActivity(activity_id);
+            emailSet = new Set(
+              pending
+                .filter((p: any) => participation_ids.includes(p.id) && p.student?.email)
+                .map((p: any) => p.student.email as string),
+            );
+          }
+
+          // 4. Batch approve
           const batchResult = await participationService.approveParticipationsBatch(
             activity_id,
             participation_ids,
             userId,
           );
 
-          // 4. Send emails
+          // 5. Send single BCC email to all approved students
           let emailsSent = 0;
           let emailsFailed = 0;
 
           if (send_email_notification && batchResult.successful.length > 0) {
-            const successfulIds = batchResult.successful.map((s) => s.participation_id);
+            const emails = Array.from(emailSet);
+            const bccList = emails.join(', ');
 
-            const studentRows = await dataSource.query<any[]>(
-              `SELECT p.id AS participation_id,
-                      u.email,
-                      u."familyName" || ' ' || u."givenName" AS student_name
-               FROM ctxh_participations p
-               JOIN users u ON u.id = p.student_id
-               WHERE p.id = ANY($1::uuid[])
-                 AND u.email IS NOT NULL`,
-              [successfulIds],
-            );
-
-            const studentMap = new Map<string, { email: string; student_name: string }>(
-              studentRows.map((r) => [r.participation_id, { email: r.email, student_name: r.student_name }]),
-            );
-
-            for (const item of batchResult.successful) {
-              const student = studentMap.get(item.participation_id);
-              if (!student) continue;
-
+            if (bccList) {
               const sent = await mailerService.sendApprovalEmail({
-                to: student.email,
-                studentName: student.student_name,
+                bcc: bccList,
                 activityName: activity.name,
                 activityStartDate: activity.start_date ? new Date(activity.start_date) : null,
                 activityLocation: activity.location ?? null,
                 totalDays: activity.total_days !== null ? Number(activity.total_days) : 0,
                 customMessage: email_custom_message,
               });
-
-              if (sent) emailsSent++;
-              else emailsFailed++;
+              if (sent) emailsSent = emails.length;
+              else emailsFailed = emails.length;
             }
           }
 
@@ -345,12 +319,14 @@ export class StaffAgentService implements OnModuleInit {
     return new DynamicStructuredTool({
       name: 'create_activity',
       description:
-        'Tạo hoạt động CTXH mới. Yêu cầu quyền ctxh.activities.create cho đơn vị tổ chức.',
+        'Tạo hoạt động CTXH mới. Nhận tên danh mục và tên tổ chức (không cần UUID). ' +
+        'Nếu chưa rõ tên chính xác, hãy dùng lookup_category hoặc lookup_organization trước. ' +
+        'Yêu cầu quyền ctxh.activities.create cho đơn vị tổ chức.',
       schema: z.object({
         name: z.string().min(1).max(255).describe('Tên hoạt động CTXH'),
         description: z.string().optional().describe('Mô tả chi tiết'),
-        category_id: z.string().uuid().describe('UUID danh mục hoạt động'),
-        organization_id: z.string().uuid().describe('UUID đơn vị tổ chức'),
+        category_name: z.string().describe('Tên danh mục hoạt động (sẽ tự động tìm UUID)'),
+        organization_name: z.string().describe('Tên đơn vị tổ chức (sẽ tự động tìm UUID)'),
         start_date: z.string().describe('Ngày bắt đầu ISO 8601'),
         end_date: z.string().describe('Ngày kết thúc ISO 8601'),
         total_days: z.number().min(1).describe('Số ngày CTXH được công nhận'),
@@ -360,27 +336,131 @@ export class StaffAgentService implements OnModuleInit {
       }),
       func: async (args) => {
         try {
+          // Resolve category by name
+          const categories = await dataSource.query(
+            `SELECT id, name FROM ctxh_category WHERE name ILIKE $1 AND deleted_at IS NULL LIMIT 5`,
+            [`%${args.category_name}%`],
+          );
+          if (categories.length === 0) {
+            return JSON.stringify({
+              error: `Không tìm thấy danh mục nào khớp với "${args.category_name}". Dùng lookup_category để xem danh sách.`,
+            });
+          }
+          if (categories.length > 1) {
+            return JSON.stringify({
+              error: `Tìm thấy ${categories.length} danh mục khớp với "${args.category_name}". Hãy chỉ định tên chính xác hơn.`,
+              matches: categories.map((c: any) => ({ id: c.id, name: c.name })),
+            });
+          }
+          const category_id: string = categories[0].id;
+
+          // Resolve organization by name
+          const organizations = await dataSource.query(
+            `SELECT id, name, type, code FROM organizations WHERE name ILIKE $1 AND "isActive" = true LIMIT 5`,
+            [`%${args.organization_name}%`],
+          );
+          if (organizations.length === 0) {
+            return JSON.stringify({
+              error: `Không tìm thấy tổ chức nào khớp với "${args.organization_name}". Dùng lookup_organization để xem danh sách.`,
+            });
+          }
+          if (organizations.length > 1) {
+            return JSON.stringify({
+              error: `Tìm thấy ${organizations.length} tổ chức khớp với "${args.organization_name}". Hãy chỉ định tên chính xác hơn.`,
+              matches: organizations.map((o: any) => ({ id: o.id, name: o.name, type: o.type, code: o.code })),
+            });
+          }
+          const organization_id: string = organizations[0].id;
+
+          // Permission check
           const hasPermission = await checkCtxhPermission(
             dataSource,
             userId,
             'ctxh.activities.create',
-            args.organization_id,
+            organization_id,
           );
           if (!hasPermission) {
             return JSON.stringify({ error: 'Bạn không có quyền tạo hoạt động cho đơn vị này.' });
           }
 
-          const activity = await activitiesService.create(args, userId);
+          const { category_name, organization_name, ...rest } = args;
+          const activity = await activitiesService.create({ ...rest, category_id, organization_id }, userId);
 
           return JSON.stringify({
             success: true,
             activity_id: activity.id,
             name: activity.name,
             status: activity.status,
+            category: categories[0].name,
+            organization: organizations[0].name,
             message: `Tạo hoạt động "${activity.name}" thành công!`,
           });
         } catch (err: any) {
           return JSON.stringify({ error: err?.message ?? 'Tạo hoạt động thất bại.' });
+        }
+      },
+    });
+  }
+
+  // ── Tool 5: lookup_category ───────────────────────────────────────────────
+
+  private buildLookupCategoryTool(): DynamicStructuredTool {
+    const dataSource = this.dataSource;
+
+    return new DynamicStructuredTool({
+      name: 'lookup_category',
+      description:
+        'Tìm kiếm danh mục hoạt động CTXH theo tên (tìm gần đúng). ' +
+        'Dùng trước khi tạo hoạt động để xác nhận tên danh mục chính xác.',
+      schema: z.object({
+        name: z.string().optional().describe('Từ khóa tìm kiếm tên danh mục (để trống = lấy tất cả)'),
+        limit: z.number().int().min(1).max(50).default(20).describe('Số kết quả tối đa'),
+      }),
+      func: async ({ name, limit }) => {
+        try {
+          const search = name?.trim() ? `%${name.trim()}%` : '%';
+          const rows = await dataSource.query(
+            `SELECT id, name, description FROM ctxh_category WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY name ASC LIMIT $2`,
+            [search, limit ?? 20],
+          );
+          return JSON.stringify({
+            found: rows.length,
+            categories: rows.map((r: any) => ({ id: r.id, name: r.name, description: r.description ?? null })),
+          });
+        } catch (err: any) {
+          return JSON.stringify({ error: err?.message ?? 'Lỗi tra cứu danh mục.' });
+        }
+      },
+    });
+  }
+
+  // ── Tool 6: lookup_organization ──────────────────────────────────────────
+
+  private buildLookupOrganizationTool(): DynamicStructuredTool {
+    const dataSource = this.dataSource;
+
+    return new DynamicStructuredTool({
+      name: 'lookup_organization',
+      description:
+        'Tìm kiếm tổ chức theo tên (tìm gần đúng). ' +
+        'Dùng trước khi tạo hoạt động để xác nhận tên tổ chức chính xác.',
+      schema: z.object({
+        name: z.string().optional().describe('Từ khóa tìm kiếm tên tổ chức (để trống = lấy tất cả)'),
+        limit: z.number().int().min(1).max(50).default(20).describe('Số kết quả tối đa'),
+      }),
+      func: async ({ name, limit }) => {
+        try {
+          const search = name?.trim() ? `%${name.trim()}%` : '%';
+          const rows = await dataSource.query(
+            `SELECT id, name, type, code FROM organizations WHERE name ILIKE $1 AND "isActive" = true ORDER BY name ASC LIMIT $2`,
+            [search, limit ?? 20],
+          );
+          return JSON.stringify({
+            found: rows.length,
+            organizations: rows.map((r: any) => ({ id: r.id, name: r.name, type: r.type, code: r.code })),
+          });
+        } catch (err: any) {
+          return JSON.stringify({ error: err?.message ?? 'Lỗi tra cứu tổ chức.' });
         }
       },
     });

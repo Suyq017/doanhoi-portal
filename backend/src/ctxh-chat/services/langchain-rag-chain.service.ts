@@ -62,7 +62,7 @@ const GREETING_RESPONSE = [
   '\n• **Tìm hoạt động theo tổ chức/khoa** (ví dụ: hoạt động của Liên chi đoàn Khoa Máy tính)',
   '\n• **Kiểm tra trạng thái**: đang mở đăng ký, đã kết thúc',
   '',
-  '\nHãy đặt câu hỏi cho tôi nhé! 😊',
+  '\nHãy đặt câu hỏi cho tôi nhé!',
 ].join('\n');
 
 /**

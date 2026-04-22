@@ -214,7 +214,9 @@ export class LangChainMemoryService {
 
     try {
       await memoryEntry.history.addMessages(messages);
+      memoryEntry.turnCount += 1;
       memoryEntry.lastAccessed = new Date();
+      await this.trimMemoryIfNeeded(sessionId);
     } catch (error) {
       this.logger.error(`Failed to add messages for ${sessionId}`, error);
     }

@@ -50,6 +50,7 @@
     "migrate:embeddings": "ts-node -r tsconfig-paths/register src/scripts/migrate-embeddings.ts",
     "generate:testset": "ts-node scripts/generate-testset.ts",
     "generate:sql": "ts-node scripts/excel-to-sql.ts",
+    "seed:ctxh-testset": "ts-node scripts/seed-ctxh-testset.ts",
     "models:health": "curl -X GET http://localhost:9200/api/ctxh-chat/health/models"
   },
   "dependencies": {

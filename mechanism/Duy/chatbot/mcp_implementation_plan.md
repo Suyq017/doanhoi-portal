@@ -906,12 +906,12 @@ export function registerAutoApproveNotifyTool(
 
       // ── STEP 5: Trả về summary ───────────────────────────────────────
       const summaryLines = [
-        `✅ Đã duyệt: ${successfulIds.length}/${input.participation_ids.length} sinh viên`,
+        `Đã duyệt: ${successfulIds.length}/${input.participation_ids.length} sinh viên`,
         input.send_email_notification
-          ? `📧 Email đã gửi: ${emailsSent}/${successfulIds.length}`
-          : '📧 Không gửi email (send_email_notification = false)',
+          ? `Email đã gửi: ${emailsSent}/${successfulIds.length}`
+          : 'Không gửi email (send_email_notification = false)',
         failedDetails.length > 0
-          ? `⚠️ Thất bại: ${failedDetails.length} (xem failed_details)`
+          ? `Thất bại: ${failedDetails.length} (xem failed_details)`
           : '',
       ].filter(Boolean).join('\n');
 
