@@ -21,7 +21,7 @@ import {
   PaymentCampaignDetailPage
 } from './features/fee-collection';
 import { CategoryManagement, ActivityManagement, ActivityDetail, LimitConfigManagement, CtxhOldSystemImportPage } from './features/ctxh/pages';
-import { CtxhChatPage } from './features/ctxh-chat';
+import { CtxhChatPage, ChatbotWidget } from './features/ctxh-chat';
 import { StudentReportsPage } from './features/student-reports';
 import FormsPage from './features/templates/pages/FormsPage';
 import TemplateListPage from './features/templates/pages/admin/TemplateListPage';
@@ -362,6 +362,7 @@ function App() {
                       { /* Authentication Callback */}
                       <Route path="/auth/callback" element={<AuthCallback />} />
                     </Routes>
+                    <ChatbotWidget />
                   </AuthGuard>
                 }
               />
