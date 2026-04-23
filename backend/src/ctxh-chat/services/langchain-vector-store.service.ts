@@ -551,6 +551,118 @@ export class LangChainVectorStoreService implements OnModuleInit {
   }
 
   /**
+   * Semantic search constrained to a pre-filtered set of activity IDs.
+   *
+   * Used as the second stage of the MCP-filter → semantic-search pipeline:
+   *   Stage 1 (MCP SQL) resolves which activity IDs match structured filters.
+   *   Stage 2 (this method) ranks those activities by semantic relevance.
+   *
+   * @param query       Natural-language search query
+   * @param activityIds Allowlist of activity UUIDs from the MCP filter stage
+   * @param k           Maximum documents to return
+   * @param currentDate ISO YYYY-MM-DD used for priority boost scoring
+   */
+  async similaritySearchConstrainedByIds(
+    query: string,
+    activityIds: string[],
+    k: number = 5,
+    currentDate?: string,
+  ): Promise<Document[]> {
+    if (activityIds.length === 0) {
+      return [];
+    }
+
+    await this.ensureInitialized();
+
+    try {
+      const queryEmbedding = await this.embeddings.embedQuery(query);
+      const embeddingStr = `[${queryEmbedding.join(',')}]`;
+
+      // Build the IN-list using safe UUID string escaping
+      const idList = activityIds
+        .map((id) => `'${id.replace(/'/g, "''")}'`)
+        .join(', ');
+
+      // Priority boost: reduce distance (increase rank) for activities starting/ending today
+      let orderByStr = `embedding <=> $1::vector`;
+      let scoreStr = `1 - (embedding <=> $1::vector)`;
+
+      if (currentDate) {
+        orderByStr = `
+          (embedding <=> $1::vector) - (
+            CASE
+              WHEN (metadata->>'startDate')::date = '${currentDate}'::date THEN 0.15
+              WHEN (metadata->>'endDate')::date   = '${currentDate}'::date THEN 0.10
+              ELSE 0
+            END
+          )
+        `;
+        scoreStr = `
+          1 - (embedding <=> $1::vector) + (
+            CASE
+              WHEN (metadata->>'startDate')::date = '${currentDate}'::date THEN 0.15
+              WHEN (metadata->>'endDate')::date   = '${currentDate}'::date THEN 0.10
+              ELSE 0
+            END
+          )
+        `;
+      }
+
+      const sql = `
+        SELECT
+          id,
+          content_text,
+          metadata,
+          ${scoreStr} AS similarity_score
+        FROM ctxh_embeddings
+        WHERE activity_id IN (${idList})
+          AND metadata->>'status' != 'DRAFT'
+        ORDER BY ${orderByStr}
+        LIMIT $2
+      `;
+
+      const client = new Client({
+        host: this.dbConfig.host,
+        port: this.dbConfig.port,
+        database: this.dbConfig.database,
+        user: this.dbConfig.user,
+        password: this.dbConfig.password,
+      });
+
+      try {
+        await client.connect();
+        const result = await client.query(sql, [embeddingStr, k]);
+
+        const documents: Document[] = result.rows.map((row: any) => {
+          const metadata =
+            typeof row.metadata === 'string'
+              ? JSON.parse(row.metadata)
+              : row.metadata;
+
+          return new Document({
+            pageContent: row.content_text,
+            metadata: {
+              ...metadata,
+              score: parseFloat(row.similarity_score),
+            },
+          });
+        });
+
+        this.logger.debug(
+          `[ConstrainedSearch] ${activityIds.length} candidate IDs → ${documents.length} docs returned`,
+        );
+
+        return documents;
+      } finally {
+        await client.end();
+      }
+    } catch (error) {
+      this.logger.error('Constrained similarity search failed, falling back to date filter search', error);
+      return this.similaritySearchWithDateFilter(query, k, currentDate, 'all');
+    }
+  }
+
+  /**
    * Add documents to the vector store with custom SQL to include activity_id
    */
   async addDocuments(documents: Document[]): Promise<void> {

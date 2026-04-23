@@ -321,6 +321,162 @@ export class McpSqlFallbackService {
     return clauses.length > 0 ? clauses.join('\n        ') : null;
   }
 
+  /**
+   * Query DISTINCT activity_ids from ctxh_embeddings.metadata JSONB using structured filters.
+   *
+   * Used as the first stage of the new MCP-filter → semantic-search pipeline:
+   *   1. This method resolves which activity IDs match the filters (via MCP SQL).
+   *   2. The vector store then does semantic ranking constrained to those IDs.
+   *
+   * Returns:
+   *   - `string[]`  — matched activity IDs (may be empty if no matches)
+   *   - `null`      — filters were all empty; caller should skip the filter step
+   */
+  async queryEmbeddingActivityIds(
+    filters: MetadataFilters,
+    currentDate: string = new Date().toISOString().split('T')[0],
+  ): Promise<string[] | null> {
+    if (!this.mcpClient.isConnected()) {
+      this.logger.warn('[MCP EmbeddingFilter] MCP client not connected, skipping');
+      return null;
+    }
+
+    const whereClause = this.buildEmbeddingMetadataWhereClause(filters, currentDate);
+    if (whereClause === null) {
+      // All filters empty — signal to caller to skip constrained search
+      return null;
+    }
+
+    const sql = `
+      SELECT DISTINCT activity_id
+      FROM ctxh_embeddings
+      WHERE ${whereClause}
+      LIMIT 50;
+    `;
+
+    try {
+      const rows = await this.mcpClient.executeSqlRows(sql);
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        this.logger.debug('[MCP EmbeddingFilter] SQL returned 0 activity_ids');
+        return [];
+      }
+
+      const ids = rows.map((r: any) => String(r.activity_id)).filter(Boolean);
+      this.logger.debug(
+        `[MCP EmbeddingFilter] Found ${ids.length} activity_ids matching filters`,
+      );
+      return ids;
+    } catch (err: any) {
+      this.logger.error(`[MCP EmbeddingFilter] executeSql failed: ${err.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Build WHERE clause operating on ctxh_embeddings.metadata JSONB.
+   * Returns null when all filters are empty (caller should use un-filtered search).
+   */
+  private buildEmbeddingMetadataWhereClause(
+    filters: MetadataFilters,
+    currentDate: string,
+  ): string | null {
+    const clauses: string[] = [];
+
+    // Always exclude DRAFT embeddings
+    clauses.push(`metadata->>'status' != 'DRAFT'`);
+
+    // --- Status (ongoing / upcoming / ended) ---
+    if (filters.status && filters.status.length > 0) {
+      const statusParts = filters.status.map((s) => {
+        if (s === 'ongoing') {
+          return `(metadata->>'status' = 'ACTIVE' AND (metadata->>'startDate')::date <= '${currentDate}'::date AND (metadata->>'endDate')::date >= '${currentDate}'::date)`;
+        } else if (s === 'upcoming') {
+          return `(metadata->>'status' = 'ACTIVE' AND (metadata->>'startDate')::date > '${currentDate}'::date)`;
+        } else {
+          // ended
+          return `(metadata->>'status' IN ('COMPLETED','CANCELLED') OR (metadata->>'status' = 'ACTIVE' AND (metadata->>'endDate')::date < '${currentDate}'::date))`;
+        }
+      });
+      clauses.push(`(${statusParts.join(' OR ')})`);
+    }
+
+    // --- Date range ---
+    const dr = filters.dateRange;
+    if (dr) {
+      if (dr.startDate && dr.endDate) {
+        clauses.push(
+          `(metadata->>'endDate')::date >= '${dr.startDate}'::date AND (metadata->>'startDate')::date <= '${dr.endDate}'::date`,
+        );
+      } else if (dr.startDate) {
+        clauses.push(`(metadata->>'endDate')::date >= '${dr.startDate}'::date`);
+      } else if (dr.endDate) {
+        clauses.push(`(metadata->>'startDate')::date <= '${dr.endDate}'::date`);
+      }
+    }
+
+    // --- Organization keywords (ILIKE on metadata.organizationName) ---
+    if (filters.organizationKeywords && filters.organizationKeywords.length > 0) {
+      const orgParts = filters.organizationKeywords.map((kw) => {
+        const safe = kw.replace(/'/g, "''");
+        return `metadata->>'organizationName' ILIKE '%${safe}%'`;
+      });
+      clauses.push(`(${orgParts.join(' OR ')})`);
+    }
+
+    // --- Location (ILIKE on metadata.location) ---
+    if (filters.locationRaw && filters.locationRaw.length > 0) {
+      const locationTerms: string[] = [];
+      for (const raw of filters.locationRaw) {
+        const expanded = getSearchTermsForLocation(raw);
+        for (const term of expanded) {
+          const safe = term.replace(/'/g, "''");
+          locationTerms.push(`metadata->>'location' ILIKE '%${safe}%'`);
+        }
+      }
+      if (locationTerms.length > 0) {
+        clauses.push(`(${locationTerms.join(' OR ')})`);
+      }
+    }
+
+    // Only the DRAFT guard is always present — if that's the only clause,
+    // no meaningful filter was extracted → return null to signal "no filter"
+    if (clauses.length === 1) {
+      return null;
+    }
+
+    return clauses.join(' AND ');
+  }
+
+  /**
+   * Return the set of activity IDs the given user is already enrolled in
+   * (status PENDING, APPROVED, or REGISTERED — i.e. active participation).
+   * Returns an empty Set when MCP is offline or userId is falsy.
+   */
+  async queryEnrolledActivityIds(userId: string): Promise<Set<string>> {
+    if (!userId || !this.mcpClient.isConnected()) return new Set();
+
+    const safeId = userId.replace(/'/g, "''");
+    const sql = `
+      SELECT DISTINCT activity_id
+      FROM ctxh_participation
+      WHERE student_id = '${safeId}'
+        AND status IN ('PENDING', 'APPROVED', 'REGISTERED');
+    `;
+
+    try {
+      const rows = await this.mcpClient.executeSqlRows(sql);
+      const ids = (rows ?? []).map((r: any) => String(r.activity_id)).filter(Boolean);
+      this.logger.debug(
+        `[EnrolledFilter] userId=${userId} already enrolled in ${ids.length} activities`,
+      );
+      return new Set(ids);
+    } catch (err: any) {
+      this.logger.warn(`[EnrolledFilter] Failed to query enrolled activities: ${err.message}`);
+      return new Set();
+    }
+  }
+
   private buildStatusWhereClause(statusHint: StatusHint, currentDate: string): string {
     switch (statusHint) {
       case 'upcoming':

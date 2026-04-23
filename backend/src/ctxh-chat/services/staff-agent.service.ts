@@ -108,6 +108,7 @@ export class StaffAgentService implements OnModuleInit {
   private buildTools(userId: string, sessionId: string): (DynamicStructuredTool | DynamicTool)[] {
     const customTools: (DynamicStructuredTool | DynamicTool)[] = [
       this.buildSearchActivitiesTool(userId),
+      this.buildGetPendingParticipantsTool(),
       this.buildApproveAndNotifyTool(userId),
       this.buildCreateActivityTool(userId),
       this.buildBatchCreateActivitiesTool(userId),

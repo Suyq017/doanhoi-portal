@@ -216,7 +216,7 @@ const BranchPicker: FC<{ className?: string }> = ({ className }) => (
 const SUGGESTIONS = [
   'Xin chào! Chatbot này có thể giúp gì cho tôi?',
   'Hoạt động CTXH nào đang diễn ra?',
-  'Điểm CTXH hiện tại của tôi?',
+  'Số ngày CTXH hiện tại của tôi?',
 ];
 
 // ── Main Popup ─────────────────────────────────────────────────────────────

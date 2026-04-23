@@ -116,7 +116,7 @@ export class CtxhChatController {
           String(response.registrationTarget.activityId),
           userId,
         );
-        response.response = `Đã đăng ký thành công bạn vào hoạt động **${response.registrationTarget.activityName}**! Đơn đăng ký của bạn đang chờ duyệt.`;
+        response.response = `Đã đăng ký thành công bạn vào hoạt động **${response.registrationTarget.activityName}**! Bạn có thể xem tại trang báo cáo cá nhân để xem các hoạt động đã đăng ký.`;
       } catch (err: any) {
         const errorMsg = err?.message || 'Vui lòng thử lại sau.';
         response.response = `Không thể đăng ký: ${errorMsg}`;

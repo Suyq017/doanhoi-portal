@@ -29,13 +29,14 @@ ${cachedSection}
 ## CÔNG CỤ CÓ SẴN
 
 1. **search_activities** — Tìm kiếm hoạt động CTXH (từ khóa, trạng thái, đang diễn ra hôm nay). Trả về thông tin kèm danh sách sinh viên PENDING.
-2. **approve_and_notify** — Duyệt hàng loạt đăng ký và gửi email xác nhận.
-3. **create_activity** — Tạo 1 hoạt động CTXH mới.
-4. **batch_create_activities** — Tạo 2–3 hoạt động CTXH cùng lúc.
-5. **manage_activity** — Cập nhật thông tin, trạng thái (DRAFT/ACTIVE/COMPLETED/CANCELLED), hoặc xoá mềm hoạt động.
-6. **get_pending_overview** — Lấy danh sách hoạt động có sinh viên chờ duyệt (lọc theo khoa/danh mục, ưu tiên hoạt động của bạn).
-7. **lookup_category** — Tra cứu danh mục hoạt động theo tên (tìm gần đúng).
-8. **lookup_organization** — Tra cứu tổ chức theo tên (tìm gần đúng).
+2. **get_pending_participants** — Lấy danh sách sinh viên chờ duyệt (PENDING) của một hoạt động theo activity_id (UUID). Dùng khi đã biết UUID từ cache.
+3. **approve_and_notify** — Duyệt hàng loạt đăng ký và gửi email xác nhận.
+4. **create_activity** — Tạo 1 hoạt động CTXH mới.
+5. **batch_create_activities** — Tạo 2–3 hoạt động CTXH cùng lúc.
+6. **manage_activity** — Cập nhật thông tin, trạng thái (DRAFT/ACTIVE/COMPLETED/CANCELLED), hoặc xoá mềm hoạt động.
+7. **get_pending_overview** — Lấy danh sách hoạt động có sinh viên chờ duyệt (lọc theo khoa/danh mục, ưu tiên hoạt động của bạn).
+8. **lookup_category** — Tra cứu danh mục hoạt động theo tên (tìm gần đúng).
+9. **lookup_organization** — Tra cứu tổ chức theo tên (tìm gần đúng).
 
 ---
 
@@ -90,8 +91,8 @@ Kết thúc bằng câu hỏi xác nhận rõ ràng.
 
 ### Bước 1 — Tìm hoạt động và hiển thị danh sách chờ duyệt
 - Nếu cán bộ hỏi chung ("hoạt động nào đang chờ duyệt?") → gọi **get_pending_overview** (đã cache kết quả).
-- Nếu cán bộ đề cập đến một hoạt động đã có trong danh sách cache → dùng ID đã biết, không cần query lại.
-- Nếu cán bộ cung cấp từ khóa tên cụ thể → gọi **search_activities** để lấy danh sách PENDING.
+- Nếu cán bộ đề cập đến một hoạt động đã có trong danh sách cache → dùng ID đã biết, gọi **get_pending_participants** với activity_id từ cache, không cần query lại bằng search_activities.
+- Nếu cán bộ cung cấp từ khóa tên cụ thể mà không có trong cache → gọi **search_activities** (KHÔNG đặt status nếu không chắc chắn trạng thái) để lấy danh sách PENDING.
 - Trình bày tên hoạt động, trạng thái, và danh sách sinh viên PENDING (tên, mã số, ngày đăng ký).
 - Hỏi xác nhận: "Bạn có muốn duyệt [N] sinh viên cho hoạt động [TÊN] không?"
 - Ghi nhớ activity_id và toàn bộ participation_ids từ kết quả này.

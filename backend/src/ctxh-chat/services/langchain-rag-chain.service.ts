@@ -201,6 +201,7 @@ export class LangChainRagChainService implements OnModuleInit {
     topK: number,
     useMMR: boolean,
     userOrg?: string,
+    userId?: string,
   ): Promise<Document[]> {
     // 1. Extract structured metadata filters via LLM
     let filters = await this.filterExtractionService.extractFilters(
@@ -248,15 +249,26 @@ export class LangChainRagChainService implements OnModuleInit {
         );
       }
     } else {
-      // Use MCP SQL filtered search (reliable JOINs on ctxh_activity)
-      // Fall back to vector store JSONB filtering if MCP returns 0 docs
-      const mcpDocs = await this.mcpFallbackService.filteredSearch(filters, topK, currentDate);
-      if (mcpDocs.length > 0) {
-        docs = mcpDocs;
-      } else {
-        docs = await this.vectorStoreService.similaritySearchWithMetadataFilters(
+      // Stage 1 — MCP SQL resolves matching activity IDs from ctxh_embeddings.metadata
+      // Stage 2 — pgvector ranks those candidates by semantic relevance
+      const activityIds = await this.mcpFallbackService.queryEmbeddingActivityIds(
+        filters,
+        currentDate,
+      );
+
+      if (activityIds === null) {
+        // MCP returned null (filters empty or client disconnected) → unfiltered semantic search
+        docs = await this.vectorStoreService.similaritySearchWithDateFilter(
           question,
-          filters,
+          topK,
+          currentDate,
+          'all',
+        );
+      } else {
+        // activityIds may be an empty array (no matches) — constrained search handles that
+        docs = await this.vectorStoreService.similaritySearchConstrainedByIds(
+          question,
+          activityIds,
           topK,
           currentDate,
         );
@@ -269,12 +281,23 @@ export class LangChainRagChainService implements OnModuleInit {
     // -> Always also run broad search (no org filter) and merge results.
     if (orgInjected) {
       const filtersWithoutOrg = { ...filters, organizationKeywords: [] };
-      const broadDocs = await this.vectorStoreService.similaritySearchWithMetadataFilters(
-        question,
+      const broadIds = await this.mcpFallbackService.queryEmbeddingActivityIds(
         filtersWithoutOrg,
-        topK,
         currentDate,
       );
+      const broadDocs = broadIds !== null
+        ? await this.vectorStoreService.similaritySearchConstrainedByIds(
+            question,
+            broadIds,
+            topK,
+            currentDate,
+          )
+        : await this.vectorStoreService.similaritySearchWithDateFilter(
+            question,
+            topK,
+            currentDate,
+            'all',
+          );
 
       // Merge: keep org-specific docs first, append broad docs not already present
       const seenIds = new Set(docs.map(d => d.metadata?.activityId).filter(Boolean));
@@ -318,6 +341,7 @@ export class LangChainRagChainService implements OnModuleInit {
     topK: number,
     useMMR: boolean,
     userOrg?: string,
+    userId?: string,
   ): Promise<Document[]> {
     try {
       // Bind all 3 search tools to a dedicated LLM call
@@ -338,7 +362,7 @@ export class LangChainRagChainService implements OnModuleInit {
       switch (selectedTool) {
         // ── search_with_filters: LLM extracts metadata filters then runs SQL-filtered search ─
         case RAG_TOOL_NAMES.FILTERED_SEARCH:
-          return this.retrieveDocuments(question, currentDate, topK, false, userOrg);
+          return this.retrieveDocuments(question, currentDate, topK, false, userOrg, userId);
 
         // ── search_semantic: pure embedding similarity, skips filter extraction ──────────
         case RAG_TOOL_NAMES.SEMANTIC_SEARCH:
@@ -397,7 +421,7 @@ export class LangChainRagChainService implements OnModuleInit {
       this.logger.warn(
         `[ToolSelector] Tool selection failed — falling back to retrieveDocuments(): ${error?.message}`,
       );
-      return this.retrieveDocuments(question, currentDate, topK, useMMR, userOrg);
+      return this.retrieveDocuments(question, currentDate, topK, useMMR, userOrg, userId);
     }
   }
 
@@ -422,16 +446,26 @@ export class LangChainRagChainService implements OnModuleInit {
     topK: number,
     useMMR: boolean,
     userOrg?: string,
+    userId?: string,
   ): Promise<Document[]> {
-    // ── Dynamic Tool Selection (Phase 3) then Verify (Phase 2) ────────────
-    const docs = await this.selectAndExecuteTool(question, currentDate, topK, useMMR, userOrg);
+    // Pre-fetch enrolled IDs once — shared across all retrieval paths below
+    const enrolledIds = userId
+      ? await this.mcpFallbackService.queryEnrolledActivityIds(userId)
+      : new Set<string>();
 
-    // ── Fast-path: results exist -> skip verifier entirely ─────────────────────
+    const filterEnrolled = (d: Document) =>
+      enrolledIds.size === 0 || !enrolledIds.has(String(d.metadata?.activityId));
+
+    // ── Dynamic Tool Selection (Phase 3) then Verify (Phase 2) ────────────
+    const docs = await this.selectAndExecuteTool(question, currentDate, topK, useMMR, userOrg, userId);
+
+    // ── Fast-path: results exist -> apply enrolled filter then return ──────────
     if (docs.length > 0) {
+      const filtered = docs.filter(filterEnrolled);
       this.logger.debug(
-        `[Verifier] Primary retrieval returned ${docs.length} docs — skipping verification`,
+        `[Verifier] Primary retrieval returned ${docs.length} docs (${docs.length - filtered.length} enrolled excluded) — skipping verification`,
       );
-      return docs;
+      return filtered;
     }
 
     // ── Zero-result: chạy song song Verifier LLM + MCP SQL fallback ───────────
@@ -473,7 +507,7 @@ export class LangChainRagChainService implements OnModuleInit {
       `[Verifier+MCP] Merged: ${mcpDocs.length} MCP + ${verifierDocs.length} verifier → ${merged.length} total`,
     );
 
-    return merged.slice(0, topK);
+    return merged.filter(filterEnrolled).slice(0, topK);
   }
 
   /** Verifier LLM rewrite fallback extracted into helper. */
@@ -537,9 +571,6 @@ export class LangChainRagChainService implements OnModuleInit {
     return undefined;
   }
 
-
-
-
   /**
    * Invoke RAG chain with a question
    */
@@ -561,6 +592,7 @@ export class LangChainRagChainService implements OnModuleInit {
       currentDayOfWeek = new Date().toLocaleDateString('vi-VN', { weekday: 'long' }),
       currentDatetime = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
       userOrg,
+      userId,
     } = options;
 
     try {
@@ -608,7 +640,7 @@ export class LangChainRagChainService implements OnModuleInit {
       if (intent === 'REGISTER_ACTIVITY') {
         this.logger.debug('[RouterAgent] REGISTER_ACTIVITY intent — looking up activity');
         const registrationResult = await this.handleRegistrationIntent(
-          rewrittenQuestion, sessionId, currentDate, k, useMMR, startTime, userOrg,
+          question, rewrittenQuestion, sessionId, currentDate, k, useMMR, startTime, userOrg,
         );
         if (sessionId) {
           await this.memoryService.saveInteraction(sessionId, question, registrationResult.response);
@@ -617,7 +649,7 @@ export class LangChainRagChainService implements OnModuleInit {
       }
 
       // ── Step 5: Retrieve documents (with Retrieve-Then-Verify) ──────────
-      const sources = await this.retrieveDocumentsWithVerification(rewrittenQuestion, currentDate, k, useMMR, userOrg);
+      const sources = await this.retrieveDocumentsWithVerification(rewrittenQuestion, currentDate, k, useMMR, userOrg, userId);
 
       // ── Step 6: Format context ─────────────────────────────────────────────
       const enrichedSources = await this.mcpEnricher.enrichDocuments(sources);
@@ -650,7 +682,7 @@ export class LangChainRagChainService implements OnModuleInit {
       );
       const recruitingActivity = allActivities.find(a => a.isRecruiting);
       if (distinctActivityIds.size === 1 && recruitingActivity) {
-        response += `\n\n---\n💬 Bạn có muốn tôi đăng ký bạn vào hoạt động **${recruitingActivity.activityName}** không?`;
+        response += `\n\n---\nBạn có muốn tôi đăng ký bạn vào hoạt động **${recruitingActivity.activityName}** không?`;
       }
 
       // Save interaction to memory
@@ -691,6 +723,7 @@ export class LangChainRagChainService implements OnModuleInit {
       currentDayOfWeek = new Date().toLocaleDateString('vi-VN', { weekday: 'long' }),
       currentDatetime = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
       userOrg,
+      userId,
     } = options;
 
     try {
@@ -728,7 +761,7 @@ export class LangChainRagChainService implements OnModuleInit {
       if (intent === 'REGISTER_ACTIVITY') {
         this.logger.debug('[RouterAgent] REGISTER_ACTIVITY intent — handling in stream');
         const registrationResult = await this.handleRegistrationIntent(
-          rewrittenQuestion, sessionId, currentDate, k, useMMR, Date.now(), userOrg,
+          question, rewrittenQuestion, sessionId, currentDate, k, useMMR, Date.now(), userOrg,
         );
         yield registrationResult.response;
         if (sessionId) {
@@ -738,7 +771,7 @@ export class LangChainRagChainService implements OnModuleInit {
       }
 
       // ── Step 5: Retrieve documents (with Retrieve-Then-Verify) ──────────
-      const sources = await this.retrieveDocumentsWithVerification(rewrittenQuestion, currentDate, k, useMMR, userOrg);
+      const sources = await this.retrieveDocumentsWithVerification(rewrittenQuestion, currentDate, k, useMMR, userOrg, userId);
 
       // ── Step 6: Format context ─────────────────────────────────────────────
       const enrichedSources = await this.mcpEnricher.enrichDocuments(sources);
@@ -788,6 +821,7 @@ export class LangChainRagChainService implements OnModuleInit {
    * 3. Return RAGResponse with registrationTarget for the controller to act on
    */
   private async handleRegistrationIntent(
+    originalQuestion: string,
     rewrittenQuestion: string,
     sessionId: string | undefined,
     currentDate: string,
@@ -799,10 +833,12 @@ export class LangChainRagChainService implements OnModuleInit {
     const intent = 'REGISTER_ACTIVITY' as const;
 
     // ── Priority 1: resolve from recent session memory ────────────────────
+    // Use originalQuestion for ordinal/name resolution — the Router Agent rewrites
+    // the question for semantic retrieval and may strip ordinal references like "số 4".
     if (sessionId) {
       const recentActivities = this.memoryService.getMentionedActivities(sessionId);
       if (recentActivities.length > 0) {
-        const target = this.resolveTargetActivity(rewrittenQuestion, recentActivities);
+        const target = this.resolveTargetActivity(originalQuestion, recentActivities);
         if (target) {
           this.logger.debug(
             `[Register] Resolved from memory: ${target.activityName} (id=${target.activityId})`,
@@ -829,7 +865,8 @@ export class LangChainRagChainService implements OnModuleInit {
     }
 
     // ── Priority 2: run retrieval to find the mentioned activity ─────────
-    this.logger.debug('[Register] No lastMentionedActivity — running retrieval for registration target');
+    // Use rewrittenQuestion here for better semantic retrieval quality.
+    this.logger.debug('[Register] No memory match — running retrieval for registration target');
     const sources = await this.retrieveDocumentsWithVerification(
       rewrittenQuestion, currentDate, topK, useMMR, userOrg,
     );
@@ -932,31 +969,78 @@ export class LangChainRagChainService implements OnModuleInit {
 
     const q = question.toLowerCase();
 
-    // Ordinal match: "thứ nhất/1" → index 0, "thứ hai/2" → index 1, …
-    const ordinalMap: Array<[RegExp, number]> = [
-      [/\b(thứ\s*nhất|đầu\s*tiên|số\s*1|\bthứ\s*1\b)\b/, 0],
-      [/\b(thứ\s*hai|số\s*2|\bthứ\s*2\b)\b/, 1],
-      [/\b(thứ\s*ba|số\s*3|\bthứ\s*3\b)\b/, 2],
-      [/\b(thứ\s*tư|số\s*4|\bthứ\s*4\b)\b/, 3],
-      [/\b(thứ\s*năm|số\s*5|\bthứ\s*5\b)\b/, 4],
+    // Ordinal match: support both named ("thứ nhất") and numeric ("số 4", "thứ 4") forms.
+    // Named ordinals map to fixed indices for safety.
+    const namedOrdinalMap: Array<[RegExp, number]> = [
+      [/thứ\s*nhất|đầu\s*tiên/, 0],
+      [/thứ\s*hai/, 1],
+      [/thứ\s*ba/, 2],
+      [/thứ\s*tư/, 3],
+      [/thứ\s*năm/, 4],
+      [/thứ\s*sáu/, 5],
+      [/thứ\s*bảy/, 6],
+      [/thứ\s*tám/, 7],
+      [/thứ\s*chín/, 8],
+      [/thứ\s*mười/, 9],
     ];
-    for (const [pattern, index] of ordinalMap) {
+    for (const [pattern, index] of namedOrdinalMap) {
       if (pattern.test(q) && index < activities.length) {
         return activities[index];
       }
     }
 
-    // Name fuzzy match: activity whose significant words all appear in the question
-    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+    // Numeric ordinal: "số N", "thứ N", "hoạt động số N", "#N" — handles any digit.
+    const numericOrdinalMatch = q.match(/(?:số|thứ|#)\s*(\d+)/);
+    if (numericOrdinalMatch) {
+      const n = parseInt(numericOrdinalMatch[1], 10);
+      const index = n - 1; // user says "số 4" → 1-based → index 3
+      if (index >= 0 && index < activities.length) {
+        return activities[index];
+      }
+    }
+
+    // Name fuzzy match.
+    // normalize: lowercase, strip [TAG] prefixes (e.g. [CTV], [XD]), collapse whitespace.
+    const normalize = (s: string) =>
+      s.toLowerCase().replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
+
     const qNorm = normalize(q);
+
+    // Pass 1: exact substring match (both directions, normalized).
     for (const activity of activities) {
       const nameNorm = normalize(activity.activityName);
-      const significantWords = nameNorm.split(' ').filter(w => w.length > 3);
-      if (
-        qNorm.includes(nameNorm) ||
-        (significantWords.length > 0 && significantWords.every(w => qNorm.includes(w)))
-      ) {
+      if (nameNorm.length > 0 && (qNorm.includes(nameNorm) || nameNorm.includes(qNorm))) {
         return activity;
+      }
+    }
+
+    // Pass 2: keyword scoring — count how many user-query keywords (words > 2 chars,
+    // after stripping Vietnamese registration stop-words) appear in the activity name.
+    // This handles cases like "cse jobfair" → "[CTV] tham gia hỗ trợ CSE Jobfair 4/2026".
+    const stopWords = new Set([
+      'đăng', 'ký', 'cho', 'tôi', 'vào', 'hoạt', 'động', 'muốn',
+      'giúp', 'hãy', 'bạn', 'với', 'các', 'này', 'đó', 'của',
+      'the', 'and', 'for', 'with',
+    ]);
+    const qKeywords = qNorm.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
+
+    if (qKeywords.length > 0) {
+      let bestScore = 0;
+      let bestActivity: MentionedActivity | null = null;
+
+      for (const activity of activities) {
+        const nameNorm = normalize(activity.activityName);
+        const matched = qKeywords.filter(kw => nameNorm.includes(kw)).length;
+        const score = matched / qKeywords.length;
+        if (score > bestScore) {
+          bestScore = score;
+          bestActivity = activity;
+        }
+      }
+
+      // Accept if at least one keyword matched (for short queries like "cse jobfair").
+      if (bestScore > 0 && bestActivity) {
+        return bestActivity;
       }
     }
 
