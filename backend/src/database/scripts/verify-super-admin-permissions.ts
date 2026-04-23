@@ -3,6 +3,7 @@ import { DataSource } from "typeorm";
 import * as dotenv from "dotenv";
 import { Role } from "../../entities/role.entity";
 import { Permission } from "../../entities/permission.entity";
+import { SUPER_ADMIN_PERMISSION_CODES } from "./update-super-admin-role";
 
 // Load environment variables
 dotenv.config();
@@ -81,12 +82,11 @@ async function verifySuperAdminPermissions() {
         console.log("✅ Connected successfully!\n");
 
         const roleRepository = AppDataSource.getRepository(Role);
-        const _permissionRepository = AppDataSource.getRepository(Permission);
 
         // Find super_admin role
         console.log("🔍 Finding super_admin role...");
         const superAdminRole = await roleRepository.findOne({
-            where: { name: "Super Admin" },
+            where: { name: "super_admin" },
             relations: ["permissions"],
         });
 
@@ -100,61 +100,7 @@ async function verifySuperAdminPermissions() {
         console.log(`📊 Total permissions: ${superAdminRole.permissions.length}\n`);
 
         // Expected permissions (should match roles.seed.ts)
-        const expectedPermissions = [
-            "dashboard.access",
-            "users.access",
-            "users.create",
-            "users.view_details",
-            "users.update",
-            "users.delete",
-            "users.export",
-            "organizations.access",
-            "organizations.create",
-            "organizations.view_member_count",
-            "organizations.access_children",
-            "organizations.update",
-            "organizations.delete",
-            "organizations.add_member",
-            "organizations.remove_member",
-            "departments.access",
-            "departments.create",
-            "departments.view_details",
-            "departments.update",
-            "departments.delete",
-            "classes.access",
-            "classes.create",
-            "classes.view_details",
-            "classes.update",
-            "classes.delete",
-            "permissions.access",
-            "permissions.create",
-            "permissions.update",
-            "permissions.delete",
-            "permissions.view_details",
-            "system-config.access",
-            "ctxh.access",
-            "ctxh.categories.view",
-            "ctxh.categories.create",
-            "ctxh.categories.update",
-            "ctxh.categories.delete",
-            "ctxh.activities.view",
-            "ctxh.activities.create",
-            "ctxh.activities.update",
-            "ctxh.activities.delete",
-            "ctxh.activities.manage_participants",
-            "ctxh.reports.export",
-            "ctxh.config.manage",
-            "ctxh.import.old_system",
-            "payment-campaigns.access",
-            "payment-campaigns.create",
-            "payment-campaigns.read",
-            "payment-campaigns.update",
-            "payment-campaigns.delete",
-            "payment-campaigns.manage_assignments",
-            "payment-campaigns.view_reports",
-            "payment-campaigns.export",
-            "my-payments.access",
-        ];
+        const expectedPermissions = SUPER_ADMIN_PERMISSION_CODES;
 
         // Group permissions by category
         const permissionsByCategory: { [key: string]: Permission[] } = {};
@@ -196,7 +142,6 @@ async function verifySuperAdminPermissions() {
             });
             console.log("\n💡 Fix: Run the following commands:");
             console.log("   npm run update:permissions");
-            console.log("   npm run update:super-admin");
         } else {
             console.log("\n✅ ALL EXPECTED PERMISSIONS ARE PRESENT!");
         }

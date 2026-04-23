@@ -3,6 +3,7 @@ import { DataSource } from "typeorm";
 import * as dotenv from "dotenv";
 import { Role } from "../../entities/role.entity";
 import { Permission } from "../../entities/permission.entity";
+import { seedPermissions } from "../seeds/permissions.seed";
 
 // Load environment variables
 dotenv.config();
@@ -57,14 +58,148 @@ const AppDataSource = new DataSource({
   logging: false,
 });
 
+export const SUPER_ADMIN_PERMISSION_CODES = [
+  "dashboard.access",
+  "users.access",
+  "users.create",
+  "users.view_details",
+  "users.update",
+  "users.delete",
+  "users.export",
+  "organizations.access",
+  "organizations.create",
+  "organizations.view_member_count",
+  "organizations.access_children",
+  "organizations.update",
+  "organizations.delete",
+  "organizations.add_member",
+  "organizations.remove_member",
+  "departments.access",
+  "departments.create",
+  "departments.view_details",
+  "departments.update",
+  "departments.delete",
+  "classes.access",
+  "classes.create",
+  "classes.view_details",
+  "classes.update",
+  "classes.delete",
+  "permissions.access",
+  "permissions.create",
+  "permissions.update",
+  "permissions.delete",
+  "permissions.view_details",
+  "system-config.access",
+  "ctxh.access",
+  "ctxh.categories.view",
+  "ctxh.categories.create",
+  "ctxh.categories.update",
+  "ctxh.categories.delete",
+  "ctxh.activities.view",
+  "ctxh.activities.create",
+  "ctxh.activities.update",
+  "ctxh.activities.delete",
+  "ctxh.activities.manage_participants",
+  "ctxh.reports.export",
+  "ctxh.config.manage",
+  "ctxh.import.old_system",
+  "payment-campaigns.access",
+  "payment-campaigns.create",
+  "payment-campaigns.read",
+  "payment-campaigns.update",
+  "payment-campaigns.delete",
+  "payment-campaigns.manage_assignments",
+  "payment-campaigns.view_reports",
+  "payment-campaigns.export",
+  "my-payments.access",
+  "templates.access",
+  "templates.admin.access",
+  "templates.manage",
+];
+
+export async function updateSuperAdminRole(dataSource: DataSource) {
+  const roleRepository = dataSource.getRepository(Role);
+  const permissionRepository = dataSource.getRepository(Permission);
+
+  // Find super_admin role
+  console.log("🔍 Finding super_admin role...");
+  const superAdminRole = await roleRepository.findOne({
+    where: { name: "super_admin" },
+    relations: ["permissions"],
+  });
+
+  if (!superAdminRole) {
+    throw new Error("super_admin role not found! Please run database seeding first.");
+  }
+
+  console.log(
+    `✅ Found super_admin role with ${superAdminRole.permissions.length} current permissions\n`,
+  );
+
+  console.log(
+    `🔄 Fetching ${SUPER_ADMIN_PERMISSION_CODES.length} permissions from database...\n`,
+  );
+
+  // Get all permissions from database
+  const permissions = await permissionRepository.find({
+    where: SUPER_ADMIN_PERMISSION_CODES.map((code) => ({ code })),
+  });
+
+  console.log(`✅ Found ${permissions.length} permissions in database\n`);
+
+  // Check for missing permissions
+  const foundCodes = permissions.map((p) => p.code);
+  const missingCodes = SUPER_ADMIN_PERMISSION_CODES.filter(
+    (code) => !foundCodes.includes(code),
+  );
+
+  if (missingCodes.length > 0) {
+    console.warn(
+      "⚠️  Warning: The following permissions are not found in database:",
+    );
+    missingCodes.forEach((code) => console.warn(`   - ${code}`));
+    console.warn("\n💡 You may need to run: npm run update:permissions\n");
+  }
+
+  const currentCodes = superAdminRole.permissions.map((p) => p.code);
+
+  // Update super_admin role with all permissions
+  superAdminRole.permissions = permissions;
+  await roleRepository.save(superAdminRole);
+
+  console.log("✅ super_admin role updated successfully!");
+  console.log(`📊 Total permissions assigned: ${permissions.length}`);
+
+  const newlyAdded = permissions.filter((p) => !currentCodes.includes(p.code));
+
+  if (newlyAdded.length > 0) {
+    console.log("\n🆕 Newly added permissions:");
+    newlyAdded.forEach((p) => console.log(`   ✓ ${p.code} - ${p.name}`));
+  } else {
+    console.log("\n📋 No new permissions added (already up to date)");
+  }
+
+  return {
+    totalAssigned: permissions.length,
+    missingCodes,
+    newlyAddedCodes: newlyAdded.map((p) => p.code),
+  };
+}
+
 /**
- * Script to update super_admin role with latest permissions
- * This ensures super_admin has all permissions defined in the system
+ * Script runner for permissions maintenance.
  *
- * Usage: npm run update-super-admin
+ * Usage:
+ * - npm run update:permissions   (runs with --with-seed)
+ * - npm run update:super-admin   (sync role only)
+ *
+ * This ensures super_admin has all permissions defined in the system.
  */
-async function updateSuperAdminRole() {
-  console.log("🚀 Starting super_admin role update...\n");
+async function runMaintenanceScript(withSeed: boolean) {
+  const modeText = withSeed
+    ? "permissions update + super_admin sync"
+    : "super_admin role update";
+  console.log(`🚀 Starting ${modeText}...\n`);
 
   try {
     // Initialize database connection
@@ -74,130 +209,12 @@ async function updateSuperAdminRole() {
     await AppDataSource.initialize();
     console.log("✅ Database connected successfully!\n");
 
-    const roleRepository = AppDataSource.getRepository(Role);
-    const permissionRepository = AppDataSource.getRepository(Permission);
-
-    // Find super_admin role
-    console.log("🔍 Finding super_admin role...");
-    const superAdminRole = await roleRepository.findOne({
-      where: { name: "super_admin" },
-      relations: ["permissions"],
-    });
-
-    if (!superAdminRole) {
-      console.error(
-        "❌ super_admin role not found! Please run database seeding first.",
-      );
-      process.exit(1);
+    if (withSeed) {
+      console.log("🔄 Updating permissions from seed...\n");
+      await seedPermissions(AppDataSource);
     }
 
-    console.log(
-      `✅ Found super_admin role with ${superAdminRole.permissions.length} current permissions\n`,
-    );
-
-    // Get all permissions defined in super_admin seed
-    const superAdminPermissionCodes = [
-      "dashboard.access",
-      "users.access",
-      "users.create",
-      "users.view_details",
-      "users.update",
-      "users.delete",
-      "users.export",
-      "organizations.access",
-      "organizations.create",
-      "organizations.view_member_count",
-      "organizations.access_children",
-      "organizations.update",
-      "organizations.delete",
-      "organizations.add_member",
-      "organizations.remove_member",
-      "departments.access",
-      "departments.create",
-      "departments.view_details",
-      "departments.update",
-      "departments.delete",
-      "classes.access",
-      "classes.create",
-      "classes.view_details",
-      "classes.update",
-      "classes.delete",
-      "permissions.access",
-      "permissions.create",
-      "permissions.update",
-      "permissions.delete",
-      "permissions.view_details",
-      "system-config.access", // System config permission
-      // CTXH permissions
-      "ctxh.access",
-      "ctxh.categories.view",
-      "ctxh.categories.create",
-      "ctxh.categories.update",
-      "ctxh.categories.delete",
-      "ctxh.activities.view",
-      "ctxh.activities.create",
-      "ctxh.activities.update",
-      "ctxh.activities.delete",
-      "ctxh.activities.manage_participants",
-      "ctxh.reports.export",
-      "ctxh.config.manage",
-      "ctxh.import.old_system", // CTXH import from old system
-      // Payment permissions
-      "payment-campaigns.access",
-      "payment-campaigns.create",
-      "payment-campaigns.read",
-      "payment-campaigns.update",
-      "payment-campaigns.delete",
-      "payment-campaigns.manage_assignments",
-      "payment-campaigns.view_reports",
-      "payment-campaigns.export",
-      "my-payments.access",
-    ];
-
-    console.log(
-      `🔄 Fetching ${superAdminPermissionCodes.length} permissions from database...\n`,
-    );
-
-    // Get all permissions from database
-    const permissions = await permissionRepository.find({
-      where: superAdminPermissionCodes.map((code) => ({ code })),
-    });
-
-    console.log(`✅ Found ${permissions.length} permissions in database\n`);
-
-    // Check for missing permissions
-    const foundCodes = permissions.map((p) => p.code);
-    const missingCodes = superAdminPermissionCodes.filter(
-      (code) => !foundCodes.includes(code),
-    );
-
-    if (missingCodes.length > 0) {
-      console.warn(
-        "⚠️  Warning: The following permissions are not found in database:",
-      );
-      missingCodes.forEach((code) => console.warn(`   - ${code}`));
-      console.warn("\n💡 You may need to run: npm run update-permissions\n");
-    }
-
-    // Update super_admin role with all permissions
-    superAdminRole.permissions = permissions;
-    await roleRepository.save(superAdminRole);
-
-    console.log("✅ super_admin role updated successfully!");
-    console.log(`📊 Total permissions assigned: ${permissions.length}`);
-
-    // Show newly added permissions
-    const currentCodes = superAdminRole.permissions.map((p) => p.code);
-    const newlyAdded = permissions.filter(
-      (p) => !currentCodes.includes(p.code),
-    );
-
-    if (newlyAdded.length > 0) {
-      console.log("\n🆕 Newly added permissions:");
-      newlyAdded.forEach((p) => console.log(`   ✓ ${p.code} - ${p.name}`));
-    } else {
-      console.log("\n📋 No new permissions added (already up to date)");
-    }
+    await updateSuperAdminRole(AppDataSource);
 
     console.log("\n✅ Update completed successfully!\n");
 
@@ -208,5 +225,8 @@ async function updateSuperAdminRole() {
   }
 }
 
-// Run the update
-updateSuperAdminRole();
+// Run the update only when executed directly
+if (require.main === module) {
+  const withSeed = process.argv.includes("--with-seed");
+  runMaintenanceScript(withSeed);
+}

@@ -357,7 +357,7 @@ curl -X DELETE http://localhost:9200/api/ctxh-chat/cache/clear
   ```
 
 ### Ingestion trả về 0 activities
-- ✅ Chạy: `npm run seed:ctxh-activities`
+- ✅ Chạy: `npm run ctxh:sync`
 - ✅ Kiểm tra database có dữ liệu: `SELECT * FROM ctxh_activity;`
 
 ### Response rất chậm (>10s)
