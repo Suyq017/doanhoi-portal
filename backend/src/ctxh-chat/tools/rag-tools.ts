@@ -12,6 +12,7 @@ export const RAG_TOOL_NAMES = {
   FILTERED_SEARCH: 'search_with_filters',
   SEMANTIC_SEARCH: 'search_semantic',
   DIVERSE_SEARCH:  'search_diverse',
+  LIST_SQL:        'list_activities_sql',
 } as const;
 
 export type RagToolName = typeof RAG_TOOL_NAMES[keyof typeof RAG_TOOL_NAMES];
@@ -79,6 +80,23 @@ export const diverseSearchTool = new DynamicStructuredTool({
   func: async () => '[]',
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Tool 4: List Activities SQL
+// When to use: user wants to list/see all activities (upcoming, ongoing, all)
+// Effect:      McpSqlFallbackService.listActivities() — pure SQL, no embedding
+// ─────────────────────────────────────────────────────────────────────────────
+export const listActivitiesSqlTool = new DynamicStructuredTool({
+  name: RAG_TOOL_NAMES.LIST_SQL,
+  description:
+    'Liệt kê hoạt động CTXH trực tiếp từ database qua SQL. ' +
+    'Dùng khi user muốn XEM TẤT CẢ / DANH SÁCH hoạt động (sắp tới, đang diễn ra, hoặc toàn bộ). ' +
+    'Chính xác hơn search_semantic vì không phụ thuộc embedding. ' +
+    'Ví dụ: "liệt kê", "có gì", "tất cả hoạt động", "hoạt động nào còn mở", ' +
+    '"hoạt động nào sẽ diễn ra", "trong tương lai", "sắp tới".',
+  schema: SearchToolSchema,
+  func: async () => '[]',
+});
+
 /**
  * The full tool array to pass to `llm.bindTools()`.
  * Order matters — the LLM may default to the first tool when uncertain.
@@ -88,4 +106,5 @@ export const RAG_TOOLS = [
   filteredSearchTool,
   semanticSearchTool,
   diverseSearchTool,
+  listActivitiesSqlTool,
 ] as const;

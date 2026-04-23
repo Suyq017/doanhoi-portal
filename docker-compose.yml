@@ -11,8 +11,25 @@ services:
       - "9000:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-mcp-role.sql:/docker-entrypoint-initdb.d/02-init-mcp-role.sql:ro
     networks:
       - doanhoi-network
+    restart: unless-stopped
+
+  postgres-mcp:
+    image: crystaldba/postgres-mcp:latest
+    container_name: doanhoi-postgres-mcp
+    command:
+      - "--transport=sse"
+      - "--access-mode=unrestricted"
+    environment:
+      DATABASE_URI: "postgresql://mcp_agent:mcp_secret_pw@doanhoi-postgres:5432/doanhoi"
+    ports:
+      - "8000:8000"
+    networks:
+      - doanhoi-network
+    depends_on:
+      - postgres
     restart: unless-stopped
 
 

@@ -23,6 +23,7 @@ Ngày hiện tại (dùng làm mốc): {current_date}
 ═══════════════════════════════════════
 • "đang diễn ra / đang có / hiện tại / đang mở / đang tổ chức / hôm nay" -> ongoing
 • "sắp tới / sắp diễn ra / sắp có / sắp mở / tới đây" -> upcoming
+• "sẽ diễn ra / sẽ có / sẽ tổ chức / trong tương lai / tương lai / chưa bắt đầu / tuần tới / tháng tới" -> upcoming
 • "đã kết thúc / đã qua / đã diễn ra / trước đây / đã hết" -> ended
 
 ═══════════════════════════════════════

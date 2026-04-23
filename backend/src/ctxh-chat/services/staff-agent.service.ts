@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { DynamicStructuredTool } from '@langchain/core/tools';
+import { DynamicStructuredTool, DynamicTool } from '@langchain/core/tools';
 import { HumanMessage, AIMessage, SystemMessage, ToolMessage } from '@langchain/core/messages';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { z } from 'zod';
@@ -14,11 +14,22 @@ import { ParticipationService } from '../../ctxh/activity/services/participation
 import { NodemailerService } from '../../ctxh-mcp/notifications/nodemailer.service';
 import { checkCtxhPermission } from '../../ctxh-mcp/guards/ctxh-permission.helper';
 import { STAFF_AGENT_SYSTEM_PROMPT } from '../prompts/staff-agent.prompt';
+import { PostgresMcpClientService, ALLOWED_MCP_TOOLS } from './postgres-mcp-client.service';
+
+interface ActivitySummary {
+  activity_id: string;
+  activity_name: string;
+  organization_name: string | null;
+  pending_count: number;
+}
 
 @Injectable()
 export class StaffAgentService implements OnModuleInit {
   private readonly logger = new Logger(StaffAgentService.name);
   private llm: BaseChatModel;
+
+  /** Session-scoped cache: activity name + UUID từ get_pending_overview */
+  private readonly sessionActivityCache = new Map<string, ActivitySummary[]>();
 
   constructor(
     private readonly configService: ConfigService,
@@ -26,6 +37,7 @@ export class StaffAgentService implements OnModuleInit {
     private readonly activitiesService: ActivitiesService,
     private readonly participationService: ParticipationService,
     private readonly mailerService: NodemailerService,
+    private readonly postgresMcpClient: PostgresMcpClientService,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
@@ -43,12 +55,13 @@ export class StaffAgentService implements OnModuleInit {
     const { currentDate } = options;
 
     const historyMessages = await this.memoryService.getMessages(sessionId);
-    const tools = this.buildTools(userId);
+    const tools = this.buildTools(userId, sessionId);
     const toolMap = new Map(tools.map((t) => [t.name, t]));
     const llmWithTools = this.llm.bindTools(tools);
 
+    const cachedActivities = this.sessionActivityCache.get(sessionId) ?? [];
     const messages: any[] = [
-      new SystemMessage(STAFF_AGENT_SYSTEM_PROMPT(currentDate)),
+      new SystemMessage(STAFF_AGENT_SYSTEM_PROMPT(currentDate, cachedActivities)),
       ...historyMessages,
       new HumanMessage(message),
     ];
@@ -71,7 +84,11 @@ export class StaffAgentService implements OnModuleInit {
         let result: string;
         if (tool) {
           try {
-            result = await tool.func(tc.args);
+            // DynamicTool (MCP) expects string input; DynamicStructuredTool expects object
+            const input = tool instanceof DynamicTool
+              ? JSON.stringify(tc.args)
+              : tc.args;
+            result = await (tool as any).func(input);
           } catch (err: any) {
             result = `Lỗi: ${err?.message ?? String(err)}`;
           }
@@ -88,14 +105,23 @@ export class StaffAgentService implements OnModuleInit {
 
   // ─── Tool builders ────────────────────────────────────────────────────────
 
-  private buildTools(userId: string): DynamicStructuredTool[] {
-    return [
+  private buildTools(userId: string, sessionId: string): (DynamicStructuredTool | DynamicTool)[] {
+    const customTools: (DynamicStructuredTool | DynamicTool)[] = [
       this.buildSearchActivitiesTool(userId),
       this.buildApproveAndNotifyTool(userId),
       this.buildCreateActivityTool(userId),
+      this.buildBatchCreateActivitiesTool(userId),
+      this.buildManageActivityTool(userId),
+      this.buildGetPendingOverviewTool(userId, sessionId),
       this.buildLookupCategoryTool(),
       this.buildLookupOrganizationTool(),
     ];
+
+    const mcpTools = this.postgresMcpClient
+      .getLangChainTools()
+      .filter((t) => ALLOWED_MCP_TOOLS.has(t.name));
+
+    return [...customTools, ...mcpTools];
   }
 
   // ── Tool 1: search_activities ─────────────────────────────────────────────
@@ -327,8 +353,8 @@ export class StaffAgentService implements OnModuleInit {
         description: z.string().optional().describe('Mô tả chi tiết'),
         category_name: z.string().describe('Tên danh mục hoạt động (sẽ tự động tìm UUID)'),
         organization_name: z.string().describe('Tên đơn vị tổ chức (sẽ tự động tìm UUID)'),
-        start_date: z.string().describe('Ngày bắt đầu ISO 8601'),
-        end_date: z.string().describe('Ngày kết thúc ISO 8601'),
+        start_date: z.string().describe('Ngày giờ bắt đầu ISO 8601 (24h), ví dụ: 2026-04-23T08:00:00'),
+        end_date: z.string().describe('Ngày giờ kết thúc ISO 8601 (24h), ví dụ: 2026-04-25T17:00:00'),
         total_days: z.number().min(1).describe('Số ngày CTXH được công nhận'),
         location: z.string().max(500).optional().describe('Địa điểm tổ chức'),
         max_participants: z.number().int().min(1).optional().describe('Giới hạn số người tham gia'),
@@ -402,7 +428,391 @@ export class StaffAgentService implements OnModuleInit {
     });
   }
 
-  // ── Tool 5: lookup_category ───────────────────────────────────────────────
+  // ── Tool 5: batch_create_activities (tạo tối đa 3 hoạt động cùng lúc) ──────
+
+  private buildBatchCreateActivitiesTool(userId: string): DynamicStructuredTool {
+    const dataSource = this.dataSource;
+    const activitiesService = this.activitiesService;
+
+    const ActivityItemSchema = z.object({
+      name: z.string().min(1).max(255).describe('Tên hoạt động'),
+      description: z.string().optional().describe('Mô tả chi tiết'),
+      category_name: z.string().describe('Tên danh mục (tự động tìm UUID)'),
+      organization_name: z.string().describe('Tên đơn vị tổ chức (tự động tìm UUID)'),
+      start_date: z.string().describe('Ngày giờ bắt đầu ISO 8601 (24h), ví dụ: 2026-04-23T08:00:00'),
+      end_date: z.string().describe('Ngày giờ kết thúc ISO 8601 (24h), ví dụ: 2026-04-25T17:00:00'),
+      total_days: z.number().min(1).describe('Số ngày CTXH được công nhận'),
+      location: z.string().max(500).optional().describe('Địa điểm'),
+      max_participants: z.number().int().min(1).optional().describe('Giới hạn số người tham gia'),
+      requires_approval: z.boolean().default(false).describe('Đăng ký cần duyệt?'),
+    });
+
+    return new DynamicStructuredTool({
+      name: 'batch_create_activities',
+      description:
+        'Tạo nhiều hoạt động CTXH cùng lúc (tối đa 3). ' +
+        'Dùng khi người dùng muốn tạo 2-3 hoạt động trong một yêu cầu. ' +
+        'Mỗi hoạt động có thể có tổ chức, danh mục và thông tin khác nhau. ' +
+        'Nếu chưa rõ tên chính xác của danh mục/tổ chức, hãy dùng lookup_category hoặc lookup_organization trước. ' +
+        'Yêu cầu quyền ctxh.activities.create cho từng đơn vị tổ chức.',
+      schema: z.object({
+        activities: z
+          .array(ActivityItemSchema)
+          .min(2)
+          .max(3)
+          .describe('Danh sách 2-3 hoạt động cần tạo'),
+      }),
+      func: async ({ activities }) => {
+        const results: any[] = [];
+
+        for (const item of activities) {
+          try {
+            // Resolve category
+            const categories = await dataSource.query(
+              `SELECT id, name FROM ctxh_category WHERE name ILIKE $1 AND deleted_at IS NULL LIMIT 5`,
+              [`%${item.category_name}%`],
+            );
+            if (categories.length === 0) {
+              results.push({
+                name: item.name,
+                success: false,
+                error: `Không tìm thấy danh mục khớp với "${item.category_name}".`,
+              });
+              continue;
+            }
+            if (categories.length > 1) {
+              results.push({
+                name: item.name,
+                success: false,
+                error: `Tìm thấy ${categories.length} danh mục khớp "${item.category_name}". Hãy chỉ định chính xác hơn.`,
+                matches: categories.map((c: any) => c.name),
+              });
+              continue;
+            }
+            const category_id: string = categories[0].id;
+
+            // Resolve organization
+            const organizations = await dataSource.query(
+              `SELECT id, name, type, code FROM organizations WHERE name ILIKE $1 AND "isActive" = true LIMIT 5`,
+              [`%${item.organization_name}%`],
+            );
+            if (organizations.length === 0) {
+              results.push({
+                name: item.name,
+                success: false,
+                error: `Không tìm thấy tổ chức khớp với "${item.organization_name}".`,
+              });
+              continue;
+            }
+            if (organizations.length > 1) {
+              results.push({
+                name: item.name,
+                success: false,
+                error: `Tìm thấy ${organizations.length} tổ chức khớp "${item.organization_name}". Hãy chỉ định chính xác hơn.`,
+                matches: organizations.map((o: any) => o.name),
+              });
+              continue;
+            }
+            const organization_id: string = organizations[0].id;
+
+            // Permission check
+            const hasPermission = await checkCtxhPermission(
+              dataSource,
+              userId,
+              'ctxh.activities.create',
+              organization_id,
+            );
+            if (!hasPermission) {
+              results.push({
+                name: item.name,
+                success: false,
+                error: `Bạn không có quyền tạo hoạt động cho đơn vị "${organizations[0].name}".`,
+              });
+              continue;
+            }
+
+            const { category_name, organization_name, ...rest } = item;
+            const activity = await activitiesService.create(
+              { ...rest, category_id, organization_id },
+              userId,
+            );
+
+            results.push({
+              name: item.name,
+              success: true,
+              activity_id: activity.id,
+              status: activity.status,
+              organization: organizations[0].name,
+              category: categories[0].name,
+            });
+          } catch (err: any) {
+            results.push({
+              name: item.name,
+              success: false,
+              error: err?.message ?? 'Tạo hoạt động thất bại.',
+            });
+          }
+        }
+
+        const succeeded = results.filter((r) => r.success).length;
+        const failed = results.filter((r) => !r.success).length;
+
+        return JSON.stringify({
+          total: activities.length,
+          succeeded,
+          failed,
+          results,
+          message:
+            failed === 0
+              ? `Tạo thành công ${succeeded}/${activities.length} hoạt động.`
+              : `Tạo ${succeeded}/${activities.length} hoạt động thành công, ${failed} thất bại.`,
+        });
+      },
+    });
+  }
+
+  // ── Tool 6: manage_activity (update / delete) via MCP SQL ─────────────────
+
+  private buildManageActivityTool(userId: string): DynamicStructuredTool {
+    const dataSource = this.dataSource;
+    const mcpClient = this.postgresMcpClient;
+
+    return new DynamicStructuredTool({
+      name: 'manage_activity',
+      description:
+        'Cập nhật thông tin, thay đổi trạng thái, hoặc xoá hoạt động CTXH qua MCP Postgres. ' +
+        'action="update": cập nhật các trường được cung cấp (bao gồm status). ' +
+        'action="delete": xoá mềm hoạt động (đặt deleted_at). ' +
+        'Yêu cầu activity_id (UUID). Tra cứu bằng search_activities nếu chưa có ID.',
+      schema: z.object({
+        action: z
+          .enum(['update', 'delete'])
+          .describe('"update" cập nhật trường (kể cả status), "delete" xoá mềm'),
+        activity_id: z.string().uuid().describe('UUID của hoạt động cần thao tác'),
+        // Fields chỉ dùng khi action = 'update'
+        name: z.string().min(1).max(255).optional().describe('Tên mới'),
+        description: z.string().optional().describe('Mô tả mới'),
+        status: z
+          .enum(['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'])
+          .optional()
+          .describe('Trạng thái mới: DRAFT | ACTIVE | COMPLETED | CANCELLED'),
+        start_date: z.string().optional().describe('Ngày giờ bắt đầu mới ISO 8601 (24h), ví dụ: 2026-04-23T08:00:00'),
+        end_date: z.string().optional().describe('Ngày giờ kết thúc mới ISO 8601 (24h), ví dụ: 2026-04-25T17:00:00'),
+        location: z.string().max(500).optional().describe('Địa điểm mới'),
+        total_days: z.number().min(0).optional().describe('Số ngày CTXH mới'),
+        max_participants: z.number().int().min(1).optional().describe('Giới hạn người tham gia mới'),
+        requires_approval: z.boolean().optional().describe('Bật/tắt xét duyệt đăng ký'),
+      }),
+      func: async ({ action, activity_id, ...fields }) => {
+        try {
+          if (!mcpClient.isConnected()) {
+            return JSON.stringify({ error: 'MCP Postgres không kết nối được. Vui lòng thử lại sau.' });
+          }
+
+          // 1. Fetch activity to get organization_id for permission check
+          const rows = await mcpClient.executeSqlRows(
+            `SELECT id, name, status, organization_id, deleted_at
+             FROM ctxh_activity
+             WHERE id = '${activity_id.replace(/'/g, "''")}'
+             LIMIT 1`,
+          );
+
+          if (!Array.isArray(rows) || rows.length === 0) {
+            return JSON.stringify({ error: `Không tìm thấy hoạt động với id="${activity_id}".` });
+          }
+
+          const activity = rows[0];
+
+          if (activity.deleted_at) {
+            return JSON.stringify({ error: 'Hoạt động này đã bị xoá.' });
+          }
+
+          // 2. Permission check
+          const requiredPermission =
+            action === 'delete' ? 'ctxh.activities.delete' : 'ctxh.activities.update';
+
+          const hasPermission = await checkCtxhPermission(
+            dataSource,
+            userId,
+            requiredPermission,
+            activity.organization_id,
+          );
+          if (!hasPermission) {
+            return JSON.stringify({
+              error: `Bạn không có quyền "${requiredPermission}" cho hoạt động này.`,
+            });
+          }
+
+          // 3. Execute action via MCP SQL
+          if (action === 'delete') {
+            await mcpClient.executeSqlRows(
+              `UPDATE ctxh_activity SET deleted_at = NOW(), updated_at = NOW()
+               WHERE id = '${activity_id.replace(/'/g, "''")}'`,
+            );
+            return JSON.stringify({
+              success: true,
+              action: 'delete',
+              activity_id,
+              activity_name: activity.name,
+              message: `Đã xoá hoạt động "${activity.name}".`,
+            });
+          }
+
+          // action === 'update'
+          const updateFields: string[] = [];
+          const safe = (v: string) => v.replace(/'/g, "''");
+
+          if (fields.name !== undefined) updateFields.push(`name = '${safe(fields.name)}'`);
+          if (fields.description !== undefined) updateFields.push(`description = '${safe(fields.description)}'`);
+          if (fields.status !== undefined) updateFields.push(`status = '${fields.status}'`);
+          if (fields.start_date !== undefined) updateFields.push(`start_date = '${safe(fields.start_date)}'`);
+          if (fields.end_date !== undefined) updateFields.push(`end_date = '${safe(fields.end_date)}'`);
+          if (fields.location !== undefined) updateFields.push(`location = '${safe(fields.location)}'`);
+          if (fields.total_days !== undefined) updateFields.push(`total_days = ${fields.total_days}`);
+          if (fields.max_participants !== undefined) updateFields.push(`max_participants = ${fields.max_participants}`);
+          if (fields.requires_approval !== undefined) updateFields.push(`requires_approval = ${fields.requires_approval}`);
+
+          if (updateFields.length === 0) {
+            return JSON.stringify({ error: 'Không có trường nào được cung cấp để cập nhật.' });
+          }
+
+          updateFields.push(`updated_by = '${userId}'`, 'updated_at = NOW()');
+
+          await mcpClient.executeSqlRows(
+            `UPDATE ctxh_activity SET ${updateFields.join(', ')}
+             WHERE id = '${activity_id.replace(/'/g, "''")}'`,
+          );
+
+          return JSON.stringify({
+            success: true,
+            action: 'update',
+            activity_id,
+            activity_name: fields.name ?? activity.name,
+            updated_fields: Object.keys(fields).filter((k) => (fields as any)[k] !== undefined),
+            message: `Đã cập nhật hoạt động "${activity.name}" thành công.`,
+          });
+        } catch (err: any) {
+          return JSON.stringify({ error: err?.message ?? 'Thao tác thất bại.' });
+        }
+      },
+    });
+  }
+
+  // ── Tool 7 (new): get_pending_overview ────────────────────────────────────
+
+  private buildGetPendingOverviewTool(userId: string, sessionId: string): DynamicStructuredTool {
+    const mcpClient = this.postgresMcpClient;
+    const cache = this.sessionActivityCache;
+
+    return new DynamicStructuredTool({
+      name: 'get_pending_overview',
+      description:
+        'Lấy danh sách tối đa 10 hoạt động gần nhất có sinh viên đang chờ duyệt (PENDING). ' +
+        'Chỉ trả về hoạt động có requires_approval = true. ' +
+        'Ưu tiên hiển thị hoạt động do người dùng hiện tại tạo. ' +
+        'Có thể lọc theo tên đơn vị tổ chức hoặc danh mục. ' +
+        'Kết quả được lưu vào bộ nhớ phiên để tham chiếu khi duyệt sau.',
+      schema: z.object({
+        organization_keyword: z
+          .string()
+          .optional()
+          .describe('Lọc theo tên đơn vị tổ chức (tìm gần đúng, để trống = tất cả)'),
+        category_keyword: z
+          .string()
+          .optional()
+          .describe('Lọc theo tên danh mục (tìm gần đúng, để trống = tất cả)'),
+      }),
+      func: async ({ organization_keyword, category_keyword }) => {
+        try {
+          if (!mcpClient.isConnected()) {
+            return JSON.stringify({ error: 'MCP Postgres không kết nối được. Vui lòng thử lại sau.' });
+          }
+
+          const safe = (v: string) => v.replace(/'/g, "''");
+          const extraClauses: string[] = [];
+
+          if (organization_keyword?.trim()) {
+            extraClauses.push(`AND org.name ILIKE '%${safe(organization_keyword.trim())}%'`);
+          }
+          if (category_keyword?.trim()) {
+            extraClauses.push(`AND cat.name ILIKE '%${safe(category_keyword.trim())}%'`);
+          }
+
+          const sql = `
+            SELECT
+              ca.id AS activity_id,
+              ca.name AS activity_name,
+              ca.status,
+              ca.start_date,
+              ca.end_date,
+              ca.location,
+              ca.created_by,
+              org.name AS organization_name,
+              cat.name AS category_name,
+              pending.pending_count
+            FROM ctxh_activity ca
+            INNER JOIN (
+              SELECT activity_id, COUNT(*) AS pending_count
+              FROM ctxh_participation
+              WHERE status = 'PENDING' AND deleted_at IS NULL
+              GROUP BY activity_id
+            ) pending ON pending.activity_id = ca.id
+            LEFT JOIN organizations org ON org.id = ca.organization_id
+            LEFT JOIN ctxh_category cat ON cat.id = ca.category_id
+            WHERE ca.deleted_at IS NULL
+              AND ca.requires_approval = true
+              AND ca.status IN ('ACTIVE', 'DRAFT')
+              ${extraClauses.join(' ')}
+            ORDER BY
+              CASE WHEN ca.created_by = '${userId.replace(/'/g, "''")}' THEN 0 ELSE 1 END ASC,
+              ca.created_at DESC
+            LIMIT 10
+          `;
+
+          const rows: any[] = await mcpClient.executeSqlRows(sql);
+
+          if (!Array.isArray(rows) || rows.length === 0) {
+            cache.delete(sessionId);
+            return JSON.stringify({
+              found: 0,
+              activities: [],
+              message: 'Không có hoạt động nào đang chờ duyệt.',
+            });
+          }
+
+          // Persist to session cache
+          const summaries: ActivitySummary[] = rows.map((r) => ({
+            activity_id: r.activity_id,
+            activity_name: r.activity_name,
+            organization_name: r.organization_name ?? null,
+            pending_count: Number(r.pending_count),
+          }));
+          cache.set(sessionId, summaries);
+
+          return JSON.stringify({
+            found: rows.length,
+            activities: rows.map((r) => ({
+              activity_id: r.activity_id,
+              activity_name: r.activity_name,
+              status: r.status,
+              start_date: r.start_date,
+              end_date: r.end_date,
+              location: r.location ?? null,
+              organization_name: r.organization_name ?? null,
+              category_name: r.category_name ?? null,
+              pending_count: Number(r.pending_count),
+              is_mine: r.created_by === userId,
+            })),
+            message: `Tìm thấy ${rows.length} hoạt động có sinh viên chờ duyệt.`,
+          });
+        } catch (err: any) {
+          return JSON.stringify({ error: err?.message ?? 'Lỗi truy vấn danh sách chờ duyệt.' });
+        }
+      },
+    });
+  }
+
+  // ── Tool 8: lookup_category ───────────────────────────────────────────────
 
   private buildLookupCategoryTool(): DynamicStructuredTool {
     const dataSource = this.dataSource;
@@ -434,7 +844,7 @@ export class StaffAgentService implements OnModuleInit {
     });
   }
 
-  // ── Tool 6: lookup_organization ──────────────────────────────────────────
+  // ── Tool 9: lookup_organization ──────────────────────────────────────────
 
   private buildLookupOrganizationTool(): DynamicStructuredTool {
     const dataSource = this.dataSource;

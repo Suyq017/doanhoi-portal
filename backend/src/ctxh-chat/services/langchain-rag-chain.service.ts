@@ -5,7 +5,7 @@ import { StringOutputParser } from '@langchain/core/output_parsers';
 import { Document } from '@langchain/core/documents';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { LangChainVectorStoreService } from './langchain-vector-store.service';
-import { LangChainMemoryService } from './langchain-memory.service';
+import { LangChainMemoryService, MentionedActivity } from './langchain-memory.service';
 import { LangChainConfig } from '../config/langchain.config';
 import { CTXH_RAG_PROMPT } from '../prompts/ctxh-chat.prompts';
 import { ROUTER_AGENT_PROMPT } from '../prompts/router-agent.prompt';
@@ -16,6 +16,8 @@ import { VerifierOutputSchema } from '../dto/verifier-output.dto';
 import { RAG_TOOLS, RAG_TOOL_NAMES, RagToolName } from '../tools/rag-tools';
 import { ActivityStatus } from '@/entities/ctxh-activity.entity';
 import { CtxhFilterExtractionService } from './ctxh-filter-extraction.service';
+import { McpSqlFallbackService, StatusHint } from './mcp-sql-fallback.service';
+import { McpMetadataEnricherService } from './mcp-metadata-enricher.service';
 
 /**
  * RAG Response structure
@@ -82,6 +84,8 @@ export class LangChainRagChainService implements OnModuleInit {
     private readonly vectorStoreService: LangChainVectorStoreService,
     private readonly memoryService: LangChainMemoryService,
     private readonly filterExtractionService: CtxhFilterExtractionService,
+    private readonly mcpFallbackService: McpSqlFallbackService,
+    private readonly mcpEnricher: McpMetadataEnricherService,
   ) {}
 
   async onModuleInit() {
@@ -243,13 +247,19 @@ export class LangChainRagChainService implements OnModuleInit {
         );
       }
     } else {
-      // Use pre-filtered vector search
-      docs = await this.vectorStoreService.similaritySearchWithMetadataFilters(
-        question,
-        filters,
-        topK,
-        currentDate,
-      );
+      // Use MCP SQL filtered search (reliable JOINs on ctxh_activity)
+      // Fall back to vector store JSONB filtering if MCP returns 0 docs
+      const mcpDocs = await this.mcpFallbackService.filteredSearch(filters, topK, currentDate);
+      if (mcpDocs.length > 0) {
+        docs = mcpDocs;
+      } else {
+        docs = await this.vectorStoreService.similaritySearchWithMetadataFilters(
+          question,
+          filters,
+          topK,
+          currentDate,
+        );
+      }
     }
 
     // 4. Parallel broad-search & merge when org was auto-injected
@@ -345,8 +355,39 @@ export class LangChainRagChainService implements OnModuleInit {
             { k: topK, fetchK: topK * 4, lambda: 0.5 },
           );
 
-        // ── Fallback: model returned no tool call ──────────────────────────────────
-        default:
+        // ── list_activities_sql: pure SQL via MCP, no embedding needed ──────
+        case RAG_TOOL_NAMES.LIST_SQL: {
+          const statusHint = this.inferStatusFromQuestion(question) ?? 'all';
+          const rawJson = await this.mcpFallbackService.listActivities(statusHint, undefined, topK);
+          // Convert JSON result to Document[] so the rest of the pipeline is uniform
+          try {
+            const parsed = JSON.parse(rawJson);
+            if (parsed.found > 0) {
+              return (parsed.activities as any[]).map(
+                (a) =>
+                  new Document({
+                    pageContent: [a.name, a.organization, a.category, a.location]
+                      .filter(Boolean)
+                      .join(' — '),
+                    metadata: {
+                      activityName: a.name,
+                      status: a.status,
+                      startDate: a.start_date,
+                      endDate: a.end_date,
+                      location: a.location,
+                      totalDays: a.total_days,
+                      organizationName: a.organization,
+                      categoryName: a.category,
+                      requiresApproval: a.requires_approval,
+                      maxParticipants: a.max_participants,
+                      source: 'list_activities_sql',
+                    },
+                  }),
+              );
+            }
+          } catch {}
+          return [];
+        }
           this.logger.warn('[ToolSelector] No tool call in response — falling back to retrieveDocuments()');
           return this.retrieveDocuments(question, currentDate, topK, useMMR, userOrg);
       }
@@ -392,11 +433,54 @@ export class LangChainRagChainService implements OnModuleInit {
       return docs;
     }
 
-    // ── Verifier LLM call: propose a simplified fallback query ─────────────────
+    // ── Zero-result: chạy song song Verifier LLM + MCP SQL fallback ───────────
     this.logger.warn(
-      `[Verifier] Primary retrieval returned 0 docs — invoking verifier LLM for "${question.slice(0, 60)}…"`,
+      `[Verifier+MCP] Primary retrieval 0 docs — running parallel fallback for "${question.slice(0, 60)}…"`,
     );
 
+    const statusHint = this.inferStatusFromQuestion(question);
+
+    const [verifierResult, mcpResult] = await Promise.allSettled([
+      this.runVerifierFallback(question, currentDate, topK),
+      this.mcpFallbackService.fallbackSearch(statusHint ?? 'all', topK, currentDate),
+    ]);
+
+    const verifierDocs = verifierResult.status === 'fulfilled' ? verifierResult.value : [];
+    const mcpDocs     = mcpResult.status === 'fulfilled'     ? mcpResult.value     : [];
+
+    // Merge: MCP SQL (deterministic) ưu tiên hơn Verifier LLM (probabilistic)
+    const seenIds = new Set<string>();
+    const merged: Document[] = [];
+
+    for (const doc of mcpDocs) {
+      const id = doc.metadata?.activityId;
+      if (id && !seenIds.has(String(id))) {
+        seenIds.add(String(id));
+        merged.push(doc);
+      }
+    }
+
+    for (const doc of verifierDocs) {
+      const id = doc.metadata?.activityId;
+      if (!id || !seenIds.has(String(id))) {
+        if (id) seenIds.add(String(id));
+        merged.push(doc);
+      }
+    }
+
+    this.logger.debug(
+      `[Verifier+MCP] Merged: ${mcpDocs.length} MCP + ${verifierDocs.length} verifier → ${merged.length} total`,
+    );
+
+    return merged.slice(0, topK);
+  }
+
+  /** Verifier LLM rewrite fallback extracted into helper. */
+  private async runVerifierFallback(
+    question: string,
+    currentDate: string,
+    topK: number,
+  ): Promise<Document[]> {
     try {
       const structuredLlm = this.llm.withStructuredOutput(VerifierOutputSchema, {
         name: 'verify_retrieval',
@@ -410,36 +494,33 @@ export class LangChainRagChainService implements OnModuleInit {
         `[Verifier] verdict=${verifierResult.verdict} | supplementQuery="${verifierResult.supplementQuery}"`,
       );
 
-      // ── Semantic fallback search ───────────────────────────────────────────────
       if (verifierResult.verdict === 'NEEDS_SUPPLEMENT' && verifierResult.supplementQuery) {
-        const fallbackQuery = verifierResult.supplementQuery;
-
-        const supplementDocs = await this.vectorStoreService.similaritySearchWithDateFilter(
-          fallbackQuery,
+        return this.vectorStoreService.similaritySearchWithDateFilter(
+          verifierResult.supplementQuery,
           topK,
           currentDate,
           'all',
         );
-
-        this.logger.debug(
-          `[Verifier] Fallback semantic search returned ${supplementDocs.length} docs`,
-        );
-
-        // Deduplicate by activityId (primary docs is empty here, but guard anyway)
-        const seen = new Set(docs.map((d) => d.metadata?.activityId).filter(Boolean));
-        const newDocs = supplementDocs.filter((d) => !seen.has(d.metadata?.activityId));
-
-        return [...docs, ...newDocs].slice(0, topK);
       }
     } catch (error) {
-      // Graceful degradation: verifier failure must never crash the pipeline.
-      // Return the original empty array so generation can say "no info found".
-      this.logger.warn(
-        `[Verifier] Verifier LLM failed — returning empty docs: ${error?.message}`,
-      );
+      this.logger.warn(`[Verifier] LLM failed: ${error?.message}`);
     }
+    return [];
+  }
 
-    return docs; // empty array — generation will respond "no information found"
+  /**
+   * Infer StatusHint từ câu hỏi bằng regex — không cần LLM.
+   * Fix P0: "sẽ diễn ra", "trong tương lai" → 'upcoming'
+   */
+  private inferStatusFromQuestion(q: string): StatusHint | null {
+    const upcomingPatterns =
+      /sẽ\s*(diễn ra|tổ chức|có|mở)|trong tương lai|tương lai|sắp\s*(tới|diễn ra|có)|chuẩn bị|chưa bắt đầu|tuần tới|tháng tới|năm tới/i;
+    const ongoingPatterns =
+      /đang\s*(diễn ra|mở|tổ chức|có)|hiện tại|hiện nay|bây giờ|hôm nay|còn (mở|tuyển|nhận)|đang tuyển/i;
+
+    if (upcomingPatterns.test(q)) return 'upcoming';
+    if (ongoingPatterns.test(q)) return 'ongoing';
+    return null;
   }
 
   private normalizeActivityStatus(status: unknown): ActivityStatus | undefined {
@@ -538,7 +619,8 @@ export class LangChainRagChainService implements OnModuleInit {
       const sources = await this.retrieveDocumentsWithVerification(rewrittenQuestion, currentDate, k, useMMR, userOrg);
 
       // ── Step 6: Format context ─────────────────────────────────────────────
-      const formattedContext = this.formatDocumentsAsContext(sources, currentDate);
+      const enrichedSources = await this.mcpEnricher.enrichDocuments(sources);
+      const formattedContext = this.formatDocumentsAsContext(enrichedSources, currentDate);
 
       const userOrgInstruction = userOrg
         ? `\nNếu người dùng thuộc tổ chức "${userOrg}", hãy ưu tiên đề cập các hoạt động của tổ chức này lên trên cùng nếu có trong context.`
@@ -555,22 +637,18 @@ export class LangChainRagChainService implements OnModuleInit {
         user_org_instruction: userOrgInstruction,
       });
 
-      // ── Step 8: Post-process — track last activity + suggest registration ──
-      const recruitingActivity = this.findRecruitingActivity(sources, currentDate);
-      if (sessionId && recruitingActivity) {
-        this.memoryService.setLastMentionedActivity(
-          sessionId,
-          recruitingActivity.activityId,
-          recruitingActivity.activityName,
-          recruitingActivity.isRecruiting,
-        );
+      // ── Step 8: Post-process — track activities + suggest registration ──
+      const allActivities = this.extractActivitiesFromDocs(sources, currentDate);
+      if (sessionId && allActivities.length > 0) {
+        this.memoryService.setMentionedActivities(sessionId, allActivities);
       }
 
       // If query resolved to a single activity that is still recruiting -> suggest
       const distinctActivityIds = new Set(
         sources.map(d => d.metadata?.activityId).filter(Boolean),
       );
-      if (distinctActivityIds.size === 1 && recruitingActivity?.isRecruiting) {
+      const recruitingActivity = allActivities.find(a => a.isRecruiting);
+      if (distinctActivityIds.size === 1 && recruitingActivity) {
         response += `\n\n---\n💬 Bạn có muốn tôi đăng ký bạn vào hoạt động **${recruitingActivity.activityName}** không?`;
       }
 
@@ -662,7 +740,8 @@ export class LangChainRagChainService implements OnModuleInit {
       const sources = await this.retrieveDocumentsWithVerification(rewrittenQuestion, currentDate, k, useMMR, userOrg);
 
       // ── Step 6: Format context ─────────────────────────────────────────────
-      const formattedContext = this.formatDocumentsAsContext(sources, currentDate);
+      const enrichedSources = await this.mcpEnricher.enrichDocuments(sources);
+      const formattedContext = this.formatDocumentsAsContext(enrichedSources, currentDate);
 
       const userOrgInstruction = userOrg
         ? `\nNếu người dùng thuộc tổ chức "${userOrg}", hãy ưu tiên đề cập các hoạt động của tổ chức này lên trên cùng nếu có trong context.`
@@ -689,6 +768,12 @@ export class LangChainRagChainService implements OnModuleInit {
       if (sessionId) {
         await this.memoryService.saveInteraction(sessionId, question, fullResponse);
       }
+
+      // Track activities for future REGISTER_ACTIVITY turns
+      const allActivities = this.extractActivitiesFromDocs(sources, currentDate);
+      if (sessionId && allActivities.length > 0) {
+        this.memoryService.setMentionedActivities(sessionId, allActivities);
+      }
     } catch (error) {
       this.logger.error('RAG chain streaming failed', error);
       throw error;
@@ -712,30 +797,33 @@ export class LangChainRagChainService implements OnModuleInit {
   ): Promise<RAGResponse> {
     const intent = 'REGISTER_ACTIVITY' as const;
 
-    // ── Priority 1: last mentioned activity from session memory ──────────
+    // ── Priority 1: resolve from recent session memory ────────────────────
     if (sessionId) {
-      const last = this.memoryService.getLastMentionedActivity(sessionId);
-      if (last) {
-        this.logger.debug(
-          `[Register] Found lastMentionedActivity in session: ${last.activityName} (id=${last.activityId})`,
-        );
-        if (!last.isRecruiting) {
+      const recentActivities = this.memoryService.getMentionedActivities(sessionId);
+      if (recentActivities.length > 0) {
+        const target = this.resolveTargetActivity(rewrittenQuestion, recentActivities);
+        if (target) {
+          this.logger.debug(
+            `[Register] Resolved from memory: ${target.activityName} (id=${target.activityId})`,
+          );
+          if (!target.isRecruiting) {
+            return {
+              response: `Hoạt động **"${target.activityName}"** hiện không còn nhận đăng ký.`,
+              sources: [],
+              responseTime: Date.now() - startTime,
+              sessionId,
+              intent,
+            };
+          }
           return {
-            response: `Hoạt động **"${last.activityName}"** hiện không còn nhận đăng ký.`,
+            response: `Tôi sẽ tiến hành đăng ký bạn vào hoạt động **"${target.activityName}"**.`,
             sources: [],
             responseTime: Date.now() - startTime,
             sessionId,
             intent,
+            registrationTarget: { activityId: target.activityId, activityName: target.activityName },
           };
         }
-        return {
-          response: `Tôi sẽ tiến hành đăng ký bạn vào hoạt động **"${last.activityName}"**.`,
-          sources: [],
-          responseTime: Date.now() - startTime,
-          sessionId,
-          intent,
-          registrationTarget: { activityId: last.activityId, activityName: last.activityName },
-        };
       }
     }
 
@@ -785,8 +873,99 @@ export class LangChainRagChainService implements OnModuleInit {
   }
 
   /**
+   * Extract all unique activities from retrieved docs with their real-time recruiting status.
+   * Replaces findRecruitingActivity — returns ALL activities, not just the first recruiting one.
+   */
+  private extractActivitiesFromDocs(docs: Document[], currentDate?: string): MentionedActivity[] {
+    const today = currentDate ? new Date(currentDate) : new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const seen = new Set<string | number>();
+    const result: MentionedActivity[] = [];
+
+    for (const doc of docs) {
+      const metadata = doc.metadata || {};
+      const activityId = metadata.activityId;
+      const activityName = metadata.activityName;
+      if (!activityId || !activityName || seen.has(activityId)) continue;
+      seen.add(activityId);
+
+      const activityStatus = this.normalizeActivityStatus(metadata.status);
+      const startRaw = metadata.startDate ? new Date(metadata.startDate) : null;
+      const endRaw = metadata.endDate ? new Date(metadata.endDate) : null;
+      if (startRaw) startRaw.setHours(0, 0, 0, 0);
+      if (endRaw) endRaw.setHours(0, 0, 0, 0);
+
+      let realtimeStatus: string;
+      if (activityStatus === ActivityStatus.CANCELLED || activityStatus === ActivityStatus.COMPLETED) {
+        realtimeStatus = 'ended';
+      } else if (!startRaw || !endRaw) {
+        realtimeStatus = 'unknown';
+      } else if (today < startRaw) {
+        realtimeStatus = 'upcoming';
+      } else if (today > endRaw) {
+        realtimeStatus = 'ended';
+      } else {
+        realtimeStatus = 'ongoing';
+      }
+
+      const isRecruiting =
+        activityStatus === ActivityStatus.ACTIVE &&
+        (realtimeStatus === 'ongoing' || realtimeStatus === 'upcoming');
+
+      result.push({ activityId, activityName, isRecruiting });
+    }
+
+    return result;
+  }
+
+  /**
+   * Resolve which activity the user wants to register for.
+   * Priority: ordinal reference ("thứ 2") > name match > first recruiting activity.
+   */
+  private resolveTargetActivity(
+    question: string,
+    activities: MentionedActivity[],
+  ): MentionedActivity | null {
+    if (activities.length === 0) return null;
+
+    const q = question.toLowerCase();
+
+    // Ordinal match: "thứ nhất/1" → index 0, "thứ hai/2" → index 1, …
+    const ordinalMap: Array<[RegExp, number]> = [
+      [/\b(thứ\s*nhất|đầu\s*tiên|số\s*1|\bthứ\s*1\b)\b/, 0],
+      [/\b(thứ\s*hai|số\s*2|\bthứ\s*2\b)\b/, 1],
+      [/\b(thứ\s*ba|số\s*3|\bthứ\s*3\b)\b/, 2],
+      [/\b(thứ\s*tư|số\s*4|\bthứ\s*4\b)\b/, 3],
+      [/\b(thứ\s*năm|số\s*5|\bthứ\s*5\b)\b/, 4],
+    ];
+    for (const [pattern, index] of ordinalMap) {
+      if (pattern.test(q) && index < activities.length) {
+        return activities[index];
+      }
+    }
+
+    // Name fuzzy match: activity whose significant words all appear in the question
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+    const qNorm = normalize(q);
+    for (const activity of activities) {
+      const nameNorm = normalize(activity.activityName);
+      const significantWords = nameNorm.split(' ').filter(w => w.length > 3);
+      if (
+        qNorm.includes(nameNorm) ||
+        (significantWords.length > 0 && significantWords.every(w => qNorm.includes(w)))
+      ) {
+        return activity;
+      }
+    }
+
+    // Fallback: first recruiting activity, or just the first one
+    return activities.find(a => a.isRecruiting) ?? activities[0];
+  }
+
+  /**
    * Find the first activity in retrieved docs that is still recruiting.
-   * Reuses the same date-based status logic as formatDocumentsAsContext().
+   * @deprecated Use extractActivitiesFromDocs instead.
    */
   private findRecruitingActivity(
     docs: Document[],
@@ -894,13 +1073,16 @@ export class LangChainRagChainService implements OnModuleInit {
 
         return `[Nguồn ${index + 1}]
 Hoạt động: ${metadata.activityName || 'N/A'}
+Danh mục: ${metadata.categoryName || 'N/A'}
 Tổ chức: ${metadata.organizationName || 'N/A'}
-      ActivityStatus: ${activityStatusText}
+ActivityStatus: ${activityStatusText}
 Thời gian: ${startDateVN} - ${endDateVN} (ISO: ${startISO} đến ${endISO})
 Địa điểm: ${metadata.location || 'N/A'}
 Số ngày CTXH: ${metadata.totalDays || 'N/A'} ngày
+Yêu cầu duyệt: ${metadata.requiresApproval != null ? (metadata.requiresApproval ? 'Có' : 'Không') : 'N/A'}
+Số chỗ còn lại: ${metadata.remainingSlots != null ? metadata.remainingSlots : (metadata.maxParticipants != null ? `tối đa ${metadata.maxParticipants}` : 'Không giới hạn')}
 Trạng thái (tính đến ${currentDate || today.toISOString().split('T')[0]}): ${realtimeStatus}
-      Trạng thái tuyển thành viên: ${recruitmentStatus}
+Trạng thái tuyển thành viên: ${recruitmentStatus}
 Nội dung: ${doc.pageContent}
 ---`;
       })

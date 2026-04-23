@@ -3,6 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { InMemoryChatMessageHistory } from '@langchain/core/chat_history';
 import { HumanMessage, AIMessage, BaseMessage } from '@langchain/core/messages';
 
+/** A single activity tracked in session context. */
+export interface MentionedActivity {
+  activityId: string | number;
+  activityName: string;
+  isRecruiting: boolean;
+}
+
 /**
  * Memory entry with metadata for TTL management
  */
@@ -11,12 +18,11 @@ interface MemoryEntry {
   history: InMemoryChatMessageHistory;
   lastAccessed: Date;
   turnCount: number;
-  /** Last mentioned activity — used by REGISTER_ACTIVITY intent */
-  lastMentionedActivity?: {
-    activityId: string | number;
-    activityName: string;
-    isRecruiting: boolean;
-  };
+  /** Activities mentioned per turn — sliding window used by REGISTER_ACTIVITY intent */
+  recentMentionedActivities: Array<{
+    turnIndex: number;
+    activities: MentionedActivity[];
+  }>;
 }
 
 /**
@@ -103,6 +109,7 @@ export class LangChainMemoryService {
         history,
         lastAccessed: new Date(),
         turnCount: 0,
+        recentMentionedActivities: [],
       });
 
       this.logger.debug(`Created new memory for session: ${sessionId}`);
@@ -256,7 +263,58 @@ export class LangChainMemoryService {
   }
 
   /**
-   * Store the last mentioned activity in session for REGISTER_ACTIVITY intent
+   * Store ALL activities mentioned in one turn (sliding window of 3 turns).
+   * Called by LangChainRagChainService after each retrieval response.
+   */
+  setMentionedActivities(sessionId: string, activities: MentionedActivity[]): void {
+    if (!this.memories.has(sessionId)) {
+      this.getMemory(sessionId);
+    }
+    const entry = this.memories.get(sessionId);
+    if (!entry || activities.length === 0) return;
+
+    entry.recentMentionedActivities.push({
+      turnIndex: entry.turnCount,
+      activities,
+    });
+
+    // Keep only last 3 turns
+    if (entry.recentMentionedActivities.length > 3) {
+      entry.recentMentionedActivities = entry.recentMentionedActivities.slice(-3);
+    }
+
+    this.logger.debug(
+      `[Memory] Stored ${activities.length} activities for ${sessionId} (turn ${entry.turnCount})`,
+    );
+  }
+
+  /**
+   * Return a flat, deduplicated list of all activities from the last N turns.
+   * Most-recent turn comes first, so index 0 = "hoạt động vừa đề cập".
+   */
+  getMentionedActivities(sessionId: string, maxTurns = 3): MentionedActivity[] {
+    const entry = this.memories.get(sessionId);
+    if (!entry) return [];
+
+    const recentTurns = entry.recentMentionedActivities.slice(-maxTurns);
+    const seen = new Set<string | number>();
+    const result: MentionedActivity[] = [];
+
+    // Iterate from most-recent to oldest so newest turn wins dedup
+    for (const turn of [...recentTurns].reverse()) {
+      for (const activity of turn.activities) {
+        if (!seen.has(activity.activityId)) {
+          seen.add(activity.activityId);
+          result.push(activity);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Backward-compat: store a single activity (wraps setMentionedActivities).
    */
   setLastMentionedActivity(
     sessionId: string,
@@ -264,30 +322,14 @@ export class LangChainMemoryService {
     activityName: string,
     isRecruiting: boolean,
   ): void {
-    // Ensure session entry exists (may not exist on the very first turn
-    // because getFormattedHistory() does not create entries)
-    if (!this.memories.has(sessionId)) {
-      this.getMemory(sessionId);
-    }
-    const entry = this.memories.get(sessionId);
-    if (entry) {
-      entry.lastMentionedActivity = { activityId, activityName, isRecruiting };
-      this.logger.debug(
-        `[Memory] Stored lastMentionedActivity for ${sessionId}: ${activityName} (id=${activityId}, recruiting=${isRecruiting})`,
-      );
-    }
+    this.setMentionedActivities(sessionId, [{ activityId, activityName, isRecruiting }]);
   }
 
   /**
-   * Retrieve the last mentioned activity from session
+   * Backward-compat: return the most-recently mentioned activity.
    */
-  getLastMentionedActivity(sessionId: string): {
-    activityId: string | number;
-    activityName: string;
-    isRecruiting: boolean;
-  } | null {
-    const entry = this.memories.get(sessionId);
-    return entry?.lastMentionedActivity ?? null;
+  getLastMentionedActivity(sessionId: string): MentionedActivity | null {
+    return this.getMentionedActivities(sessionId, 1)[0] ?? null;
   }
 
   /**

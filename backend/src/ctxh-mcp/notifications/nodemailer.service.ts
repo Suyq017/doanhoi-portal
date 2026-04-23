@@ -22,7 +22,7 @@ export class NodemailerService implements OnModuleInit {
   onModuleInit() {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('MAIL_HOST'),
-      port: this.configService.get<number>('MAIL_PORT', 587),
+      port: this.configService.get<number>('MAIL_PORT'),
       secure: this.configService.get<string>('MAIL_SECURE') === 'true',
       auth: {
         user: this.configService.get<string>('MAIL_USER'),
@@ -47,7 +47,6 @@ export class NodemailerService implements OnModuleInit {
 
     const infoRows = [
       `<tr><td style="padding:6px 0;color:#555;">Tên hoạt động</td><td style="padding:6px 0;font-weight:bold;">${activityName}</td></tr>`,
-      `<tr><td style="padding:6px 0;color:#555;">Thời gian bắt đầu</td><td style="padding:6px 0;">${formattedDate}</td></tr>`,
       activityLocation ? `<tr><td style="padding:6px 0;color:#555;">Địa điểm</td><td style="padding:6px 0;">${activityLocation}</td></tr>` : '',
       `<tr><td style="padding:6px 0;color:#555;">Số ngày CTXH</td><td style="padding:6px 0;">${totalDays} ngày</td></tr>`,
     ].filter(Boolean).join('');

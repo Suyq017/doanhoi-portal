@@ -22,6 +22,9 @@ import { LangChainIngestionService } from './services/langchain-ingestion.servic
 import { CtxhFilterExtractionService } from './services/ctxh-filter-extraction.service';
 import { UserContextService } from './services/user-context.service';
 import { StaffAgentService } from './services/staff-agent.service';
+import { PostgresMcpClientService } from './services/postgres-mcp-client.service';
+import { McpSqlFallbackService } from './services/mcp-sql-fallback.service';
+import { McpMetadataEnricherService } from './services/mcp-metadata-enricher.service';
 
 // Vector Auto-Ingestion Pipeline
 import { CtxhVectorSyncService } from './services/ctxh-vector-sync.service';
@@ -62,6 +65,10 @@ import { NodemailerService } from '../ctxh-mcp/notifications/nodemailer.service'
     // Staff Agent (tool-calling chatbot for cán bộ)
     NodemailerService,
     StaffAgentService,
+    // Postgres MCP Client + dependent services
+    PostgresMcpClientService,
+    McpSqlFallbackService,
+    McpMetadataEnricherService,
     // Vector Auto-Ingestion Pipeline
     CtxhVectorSyncService,
     VectorIngestionProcessor, // Worker với concurrency: 1 per job type
