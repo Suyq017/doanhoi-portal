@@ -26,6 +26,7 @@ import { TemplatesModule } from "./templates/templates.module";
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env', '../.env'],
     }),
     EventEmitterModule.forRoot({
       wildcard: true,

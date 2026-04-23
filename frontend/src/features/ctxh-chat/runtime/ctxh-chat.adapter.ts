@@ -49,7 +49,7 @@ export const ctxhChatAdapter: ChatModelAdapter = {
     };
 
     // ── Fetch full response from non-streaming endpoint ────────────────
-    const res = await fetch(`${BACKEND}/api/ctxh-chat/message`, {
+    const res = await fetch(`${BACKEND}/ctxh-chat/message`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ message: userText, sessionId }),

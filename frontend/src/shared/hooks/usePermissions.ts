@@ -103,7 +103,9 @@ export const usePermissions = () => {
         // Check if user is super admin (system-wide access)
         isSuperAdmin: () => {
             const hasSystemAccess = hasPermission('system.access_admin');
-            const hasSuperAdminRole = auth.userRoles && auth.userRoles.some(userRole => userRole.name === 'super_admin');
+            const hasSuperAdminRole = auth.userRoles && auth.userRoles.some(userRole =>
+                userRole.name === 'super_admin' || userRole.name === 'Super Admin'
+            );
 
             return hasSystemAccess || hasSuperAdminRole;
         },// Generic permission check
