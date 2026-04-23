@@ -27,18 +27,17 @@ const TemplateListPage: React.FC = () => {
     setStatusFilter,
     setCurrentPage,
     setLimit,
+    handleNavigateToUpload,
     handleDelete,
     statusDropdownOpen,
     setStatusDropdownOpen,
     permissions,
+    hasActiveS3Config,
+    isCheckingS3Config,
     toasts,
     hideToast,
     confirmDialog,
   } = useTemplateListPage();
-
-  const handleNavigateToUpload = () => {
-    navigate('/portal/admin/templates/upload');
-  };
 
   const handleConfigure = (id: string) => {
     navigate(`/portal/admin/templates/${id}/configure`);
@@ -73,6 +72,8 @@ const TemplateListPage: React.FC = () => {
       <TemplateListHeader
         canManageTemplates={permissions.canManageTemplates}
         onNavigateToUpload={handleNavigateToUpload}
+        hasActiveS3Config={hasActiveS3Config}
+        isCheckingS3Config={isCheckingS3Config}
       />
 
       {/* Filters */}

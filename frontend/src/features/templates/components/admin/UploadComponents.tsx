@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, AlertCircle } from 'lucide-react';
+import { Upload, AlertCircle, ArrowLeft } from 'lucide-react';
 
 // Upload Header
 interface UploadHeaderProps {
@@ -9,7 +9,6 @@ interface UploadHeaderProps {
 
 export const UploadHeader: React.FC<UploadHeaderProps> = ({ onBack }) => {
     const { t } = useTranslation(['templates']);
-    const ArrowLeft = require('lucide-react').ArrowLeft;
 
     return (
         <div className="flex items-center justify-between">

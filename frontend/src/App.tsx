@@ -21,7 +21,7 @@ import {
   PaymentCampaignDetailPage
 } from './features/fee-collection';
 import { CategoryManagement, ActivityManagement, ActivityDetail, LimitConfigManagement, CtxhOldSystemImportPage } from './features/ctxh/pages';
-import { ChatbotWidget } from './features/ctxh-chat';
+import { CtxhChatPage } from './features/ctxh-chat';
 import { StudentReportsPage } from './features/student-reports';
 import FormsPage from './features/templates/pages/FormsPage';
 import TemplateListPage from './features/templates/pages/admin/TemplateListPage';
@@ -52,7 +52,6 @@ function App() {
                 path="/portal/*"
                 element={
                   <AuthGuard>
-                    <ChatbotWidget />
                     <Routes>
                       <Route
                         path="/"
@@ -175,7 +174,7 @@ function App() {
                       <Route
                         path="ctxh/categories"
                         element={
-                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access', 'ctxh.categories.view']} requireAllPermissions={false}>
                             <Layout>
                               <OrganizationStatsProvider>
                                 <CategoryManagement />
@@ -187,7 +186,7 @@ function App() {
                       <Route
                         path="ctxh/activities"
                         element={
-                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access', 'ctxh.activities.view']} requireAllPermissions={false}>
                             <Layout>
                               <OrganizationStatsProvider>
                                 <ActivityManagement />
@@ -199,7 +198,7 @@ function App() {
                       <Route
                         path="ctxh/activities/:id"
                         element={
-                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access', 'ctxh.activities.view']} requireAllPermissions={false}>
                             <Layout>
                               <OrganizationStatsProvider>
                                 <ActivityDetail />
@@ -228,6 +227,16 @@ function App() {
                               <OrganizationStatsProvider>
                                 <CtxhOldSystemImportPage />
                               </OrganizationStatsProvider>
+                            </Layout>
+                          </EnhancedProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="ctxh/chatbot"
+                        element={
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                            <Layout>
+                              <CtxhChatPage />
                             </Layout>
                           </EnhancedProtectedRoute>
                         }

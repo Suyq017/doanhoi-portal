@@ -38,7 +38,14 @@ export function useTemplateUploadPage(): UseTemplateUploadPageReturn {
             });
         },
         onError: (error: any) => {
-            showError(error?.response?.data?.message || t('common:messages.error.upload'));
+            const backendMessage = error?.response?.data?.message || error?.message;
+
+            if (typeof backendMessage === 'string' && backendMessage.includes('S3 configuration not available')) {
+                showError(t('templates:messages.s3UploadConfigRequired'));
+                return;
+            }
+
+            showError(backendMessage || t('common:messages.error.upload'));
         },
     });
 
