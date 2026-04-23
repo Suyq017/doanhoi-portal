@@ -8,6 +8,7 @@ import { organizationService } from '../../../../shared/services';
 import { Organization } from '../../../../shared/types/organization';
 import { getErrorMessage } from '../../utils';
 import { Pagination } from '../../../../shared/components';
+import { usePermissions } from '../../../../shared/hooks/usePermissions';
 
 interface CategoryDetailModalProps {
   isOpen: boolean;
@@ -22,6 +23,8 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
 }) => {
   const { t } = useTranslation('ctxh');
   const navigate = useNavigate();
+  const { user } = usePermissions();
+  const isStudentUser = user?.userType === 'student';
 
   const [activities, setActivities] = useState<CtxhActivity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -46,12 +49,17 @@ const CategoryDetailModal: React.FC<CategoryDetailModalProps> = ({
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const organizationSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const statusOptions = [
-    { value: 'DRAFT', label: t('activity.statusOptions.DRAFT') },
-    { value: 'ACTIVE', label: t('activity.statusOptions.ACTIVE') },
-    { value: 'COMPLETED', label: t('activity.statusOptions.COMPLETED') },
-    { value: 'CANCELLED', label: t('activity.statusOptions.CANCELLED') }
-  ];
+  const statusOptions = isStudentUser
+    ? [
+        { value: 'ACTIVE', label: t('activity.statusOptions.ACTIVE') },
+        { value: 'COMPLETED', label: t('activity.statusOptions.COMPLETED') }
+      ]
+    : [
+        { value: 'DRAFT', label: t('activity.statusOptions.DRAFT') },
+        { value: 'ACTIVE', label: t('activity.statusOptions.ACTIVE') },
+        { value: 'COMPLETED', label: t('activity.statusOptions.COMPLETED') },
+        { value: 'CANCELLED', label: t('activity.statusOptions.CANCELLED') }
+      ];
 
   const filteredStatuses = statusOptions.filter(status =>
     status.label.toLowerCase().includes(statusSearch.toLowerCase())

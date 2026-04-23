@@ -12,6 +12,8 @@ import { UpdateCategoryDto } from "./dto/update-category.dto";
 import { CategoryResponseDto } from "./dto/category-response.dto";
 import { plainToClass } from "class-transformer";
 
+const STUDENT_VISIBLE_ACTIVITY_STATUSES = ["ACTIVE", "COMPLETED"];
+
 @Injectable()
 export class CategoryService {
   constructor(
@@ -23,6 +25,7 @@ export class CategoryService {
     search?: string;
     page?: number;
     limit?: number;
+    user_type?: 'student' | 'staff';
   }): Promise<{
     data: CategoryResponseDto[];
     total: number;
@@ -56,6 +59,12 @@ export class CategoryService {
       );
     }
 
+    if (queryParams?.user_type === 'student') {
+      queryBuilder.andWhere("activities.status IN (:...visibleStatuses)", {
+        visibleStatuses: STUDENT_VISIBLE_ACTIVITY_STATUSES,
+      });
+    }
+
     queryBuilder.orderBy("category.created_at", "DESC");
 
     // Get total count efficiently using getCount() instead of fetching all data
@@ -86,6 +95,10 @@ export class CategoryService {
   }
 
   async findOne(id: string): Promise<CategoryResponseDto> {
+    return this.findOneWithUserType(id);
+  }
+
+  async findOneWithUserType(id: string, userType?: 'student' | 'staff'): Promise<CategoryResponseDto> {
     const category = await this.categoryRepository
       .createQueryBuilder("category")
       .leftJoin(
@@ -98,6 +111,33 @@ export class CategoryService {
       .andWhere("category.deleted_at IS NULL")
       .groupBy("category.id")
       .getRawAndEntities();
+
+    if (userType === 'student') {
+      const studentCategory = await this.categoryRepository
+        .createQueryBuilder("category")
+        .leftJoin(
+          "category.activities",
+          "activities",
+          "activities.deleted_at IS NULL AND activities.status IN (:...visibleStatuses)",
+          { visibleStatuses: STUDENT_VISIBLE_ACTIVITY_STATUSES },
+        )
+        .addSelect("COUNT(activities.id)", "activities_count")
+        .where("category.id = :id", { id })
+        .andWhere("category.deleted_at IS NULL")
+        .groupBy("category.id")
+        .getRawAndEntities();
+
+      if (!studentCategory.entities.length) {
+        throw new NotFoundException(`Danh mục với ID ${id} không tồn tại`);
+      }
+
+      const dto = plainToClass(CategoryResponseDto, studentCategory.entities[0], {
+        excludeExtraneousValues: true,
+      });
+      dto.activities_count = parseInt(studentCategory.raw[0].activities_count) || 0;
+
+      return dto;
+    }
 
     if (!category.entities.length) {
       throw new NotFoundException(`Danh mục với ID ${id} không tồn tại`);
