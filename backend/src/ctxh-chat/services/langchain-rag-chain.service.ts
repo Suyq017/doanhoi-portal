@@ -61,8 +61,9 @@ const GREETING_RESPONSE = [
   'Tôi có thể giúp bạn:',
   '\n• **Tìm kiếm hoạt động CTXH** theo thời gian, địa điểm, danh mục (hiến máu, tình nguyện, hội trại,...)',
   '\n• **Tra cứu thông tin chi tiết**: thời gian, địa điểm, số ngày CTXH được tính',
-  '\n• **Tìm hoạt động theo tổ chức/khoa** (ví dụ: hoạt động của Liên chi đoàn Khoa Máy tính)',
+  '\n• **Tìm hoạt động theo tổ chức/khoa** (ví dụ: hoạt động của Liên chi đoàn Khoa Khoa học và Kỹ thuật máy tính)',
   '\n• **Kiểm tra trạng thái**: đang mở đăng ký, đã kết thúc',
+  '\n• **Tự động gửi đăng ký hoạt động**: khi bạn hỏi về một hoạt động đang tuyển thành viên, tôi sẽ đề xuất đăng ký giúp bạn',
   '',
   '\nHãy đặt câu hỏi cho tôi nhé!',
 ].join('\n');

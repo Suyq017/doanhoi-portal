@@ -6,7 +6,7 @@ import type {
 import { authService } from '../../auth/services/authService';
 import type { CtxhChatResponse } from '../types/chat.types';
 
-const BACKEND = import.meta.env.VITE_BACKEND_API_URL || '';
+const BACKEND = import.meta.env.VITE_BACKEND_API_URL || '/api';
 
 // ── Streaming delay config ─────────────────────────────────────────────────
 // Simulates a ~60 tokens/sec typing speed.

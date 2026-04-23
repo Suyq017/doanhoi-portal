@@ -16,7 +16,6 @@ import {
   ChevronRight,
   Copy,
   RefreshCw,
-  GraduationCap,
   X,
   Trash2,
 } from 'lucide-react';
@@ -97,11 +96,11 @@ const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root className="flex w-full gap-2 px-3">
       <div
-        className={`flex size-7 shrink-0 items-center justify-center rounded-full shadow-sm transition-all ${
-          isThinking ? 'bg-doan-500/60 animate-pulse' : 'bg-doan-500'
+        className={`flex size-7 shrink-0 items-center justify-center rounded-full shadow-sm overflow-hidden transition-all ${
+          isThinking ? 'opacity-60 animate-pulse' : ''
         }`}
       >
-        <GraduationCap size={14} className="text-white" />
+        <img src="/assets/HCMCUT.png" alt="HCMUT" className="size-7 object-cover" />
       </div>
 
       <div className="min-w-0 flex-1 pt-0.5">
@@ -215,11 +214,9 @@ const BranchPicker: FC<{ className?: string }> = ({ className }) => (
 
 // ── Suggested Chips ────────────────────────────────────────────────────────
 const SUGGESTIONS = [
-  'Hoạt động CTXH sắp diễn ra?',
+  'Xin chào! Chatbot này có thể giúp gì cho tôi?',
+  'Hoạt động CTXH nào đang diễn ra?',
   'Điểm CTXH hiện tại của tôi?',
-  'Cách đăng ký hoạt động CTXH?',
-  'Quy đổi điểm rèn luyện?',
-  'Liên hệ Đoàn - Hội?',
 ];
 
 // ── Main Popup ─────────────────────────────────────────────────────────────
@@ -242,8 +239,8 @@ export function ChatbotPopup({
     >
       {/* ── Header ──────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-3">
-        <div className="flex size-9 items-center justify-center rounded-full bg-doan-500 shadow-sm">
-          <GraduationCap size={18} className="text-white" />
+        <div className="flex size-9 items-center justify-center rounded-full overflow-hidden shadow-sm">
+          <img src="/assets/HCMCUT.png" alt="HCMUT" className="size-9 object-cover" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-bold text-gray-800 leading-tight">Đoàn Hội Chatbot</h3>
@@ -273,8 +270,8 @@ export function ChatbotPopup({
           {/* Welcome */}
           <AuiIf condition={(s) => s.thread.isEmpty}>
             <div className="flex flex-col items-center px-4 pt-4">
-              <div className="flex size-12 items-center justify-center rounded-full bg-doan-500 shadow-lg shadow-doan-500/20">
-                <GraduationCap size={24} className="text-white" />
+              <div className="flex size-12 items-center justify-center rounded-full overflow-hidden shadow-lg shadow-doan-500/20">
+                <img src="/assets/HCMCUT.png" alt="HCMUT" className="size-12 object-cover" />
               </div>
               <p className="mt-3 text-center text-sm font-semibold text-gray-800">
                 Xin chào! Tôi có thể giúp gì?

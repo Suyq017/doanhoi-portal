@@ -27,7 +27,7 @@ import { StaffAgentService } from '../services/staff-agent.service';
 import type { Request } from 'express';
 
 @ApiTags('ctxh-chat')
-@Controller('api/ctxh-chat')
+@Controller('ctxh-chat')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class CtxhChatController {
