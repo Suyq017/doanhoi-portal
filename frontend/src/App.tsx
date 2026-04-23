@@ -13,7 +13,7 @@ import { OrganizationsSubDetailPage } from './features/organizations';
 import { ClassesPage } from './features/classes';
 import { PermissionsPage } from './features/permissions';
 import { SystemConfigPage } from './features/system-config';
-import { AuthProvider, AuthCallback, LoginPage, AdminLoginPage, ProtectedRoute, EnhancedProtectedRoute, AuthGuard } from './features/auth';
+import { AuthProvider, AuthCallback, LoginPage, AdminLoginPage, ProtectedRoute, EnhancedProtectedRoute, AuthGuard, useAuth } from './features/auth';
 import {
   PaymentCampaignsPage,
   PaymentResultPage,
@@ -21,7 +21,7 @@ import {
   PaymentCampaignDetailPage
 } from './features/fee-collection';
 import { CategoryManagement, ActivityManagement, ActivityDetail, LimitConfigManagement, CtxhOldSystemImportPage } from './features/ctxh/pages';
-import { ChatbotWidget } from './features/ctxh-chat';
+import { CtxhChatPage } from './features/ctxh-chat';
 import { StudentReportsPage } from './features/student-reports';
 import FormsPage from './features/templates/pages/FormsPage';
 import TemplateListPage from './features/templates/pages/admin/TemplateListPage';
@@ -31,6 +31,24 @@ import './i18n';
 import { OrganizationStatsProvider } from './features/organizations/context/OrganizationStatsContext';
 
 const queryClient = new QueryClient();
+
+const PortalHomeRoute: React.FC = () => {
+  const { auth } = useAuth();
+
+  if (auth.user?.userType === 'student') {
+    return <Navigate to="/portal/student-reports" replace />;
+  }
+
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <OrganizationStatsProvider>
+          <DashboardPage />
+        </OrganizationStatsProvider>
+      </Layout>
+    </ProtectedRoute>
+  );
+};
 
 function App() {
   return (
@@ -52,19 +70,10 @@ function App() {
                 path="/portal/*"
                 element={
                   <AuthGuard>
-                    <ChatbotWidget />
                     <Routes>
                       <Route
                         path="/"
-                        element={
-                          <ProtectedRoute>
-                            <Layout>
-                              <OrganizationStatsProvider>
-                                <DashboardPage />
-                              </OrganizationStatsProvider>
-                            </Layout>
-                          </ProtectedRoute>
-                        }
+                        element={<PortalHomeRoute />}
                       />
                       <Route
                         path="users"
@@ -175,7 +184,7 @@ function App() {
                       <Route
                         path="ctxh/categories"
                         element={
-                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access', 'ctxh.categories.view']} requireAllPermissions={false}>
                             <Layout>
                               <OrganizationStatsProvider>
                                 <CategoryManagement />
@@ -187,7 +196,7 @@ function App() {
                       <Route
                         path="ctxh/activities"
                         element={
-                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access', 'ctxh.activities.view']} requireAllPermissions={false}>
                             <Layout>
                               <OrganizationStatsProvider>
                                 <ActivityManagement />
@@ -199,7 +208,7 @@ function App() {
                       <Route
                         path="ctxh/activities/:id"
                         element={
-                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access', 'ctxh.activities.view']} requireAllPermissions={false}>
                             <Layout>
                               <OrganizationStatsProvider>
                                 <ActivityDetail />
@@ -228,6 +237,16 @@ function App() {
                               <OrganizationStatsProvider>
                                 <CtxhOldSystemImportPage />
                               </OrganizationStatsProvider>
+                            </Layout>
+                          </EnhancedProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="ctxh/chatbot"
+                        element={
+                          <EnhancedProtectedRoute requiredPermissions={['ctxh.access']}>
+                            <Layout>
+                              <CtxhChatPage />
                             </Layout>
                           </EnhancedProtectedRoute>
                         }

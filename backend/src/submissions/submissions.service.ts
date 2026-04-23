@@ -254,13 +254,7 @@ export class SubmissionsService {
         }
       }
 
-      // Extract key from URL
-      // URL format: https://s3-hcm5-r1.longvan.net/bucket-name/path/to/file.docx
-      const urlParts = fileUrl.replace(
-        `${this.s3Config.s3Endpoint}/${this.s3Config.s3Bucket}/`,
-        "",
-      );
-      const fileKey = urlParts;
+      const fileKey = this.extractObjectKey(fileUrl);
 
       const command = new GetObjectCommand({
         Bucket: this.s3Config.s3Bucket,
@@ -280,6 +274,38 @@ export class SubmissionsService {
       throw new InternalServerErrorException(
         `Failed to download template: ${error.message}`,
       );
+    }
+  }
+
+  /**
+   * Extract object key from a stored file URL in a provider-agnostic way.
+   */
+  private extractObjectKey(fileUrl: string): string {
+    if (!this.s3Config) {
+      throw new InternalServerErrorException("S3 configuration not available");
+    }
+
+    const endpoint = String(this.s3Config.s3Endpoint || "").replace(/\/+$/, "");
+    const bucket = String(this.s3Config.s3Bucket || "");
+    const normalizedUrl = String(fileUrl || "").trim();
+
+    // Preferred format used by this app: <endpoint>/<bucket>/<key>
+    const prefix = `${endpoint}/${bucket}/`;
+    if (normalizedUrl.startsWith(prefix)) {
+      return normalizedUrl.slice(prefix.length);
+    }
+
+    // Fallback for any full URL format where key is in pathname.
+    try {
+      const parsed = new URL(normalizedUrl);
+      const pathname = parsed.pathname.replace(/^\/+/, "");
+      if (pathname.startsWith(`${bucket}/`)) {
+        return pathname.slice(bucket.length + 1);
+      }
+      return pathname;
+    } catch {
+      // If value is already a key, return as-is.
+      return normalizedUrl.replace(/^\/+/, "");
     }
   }
 
@@ -384,10 +410,7 @@ export class SubmissionsService {
     // Delete output file from S3 if exists
     if (submission.outputFileUrl && this.s3Client && this.s3Config) {
       try {
-        const fileKey = submission.outputFileUrl.replace(
-          `${this.s3Config.s3Endpoint}/${this.s3Config.s3Bucket}/`,
-          "",
-        );
+        const fileKey = this.extractObjectKey(submission.outputFileUrl);
 
         const deleteCommand = new DeleteObjectCommand({
           Bucket: this.s3Config.s3Bucket,
@@ -555,12 +578,7 @@ export class SubmissionsService {
         s3Endpoint: this.s3Config.s3Endpoint,
       });
 
-      // Extract key from full S3 URL
-      // URL format: https://s3-hcm5-r1.longvan.net/19429970-documents/submissions/...
-      const urlParts = submission.outputFileUrl.split("/");
-      const bucketIndex =
-        urlParts.findIndex((part) => part.includes("longvan.net")) + 1;
-      const key = urlParts.slice(bucketIndex + 1).join("/"); // Skip bucket name, get rest
+      const key = this.extractObjectKey(submission.outputFileUrl);
 
       console.log("[SubmissionsService] Extracted key:", key);
       console.log("[SubmissionsService] Bucket name:", this.s3Config.s3Bucket);

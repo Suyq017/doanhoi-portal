@@ -64,11 +64,12 @@ export class CategoryController {
     },
   })
   async findAll(
+    @Req() req: any,
     @Query("search") search?: string,
     @Query("page") page?: number,
     @Query("limit") limit?: number,
   ) {
-    return this.categoryService.findAll({ search, page, limit });
+    return this.categoryService.findAll({ search, page, limit, user_type: req.user.userType });
   }
 
   @Get(":id")
@@ -83,8 +84,8 @@ export class CategoryController {
     status: HttpStatus.NOT_FOUND,
     description: "Danh mục không tồn tại",
   })
-  async findOne(@Param("id") id: string): Promise<CategoryResponseDto> {
-    return this.categoryService.findOne(id);
+  async findOne(@Param("id") id: string, @Req() req: any): Promise<CategoryResponseDto> {
+    return this.categoryService.findOneWithUserType(id, req.user.userType);
   }
 
   @Post()

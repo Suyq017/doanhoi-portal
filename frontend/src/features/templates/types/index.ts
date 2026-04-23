@@ -34,6 +34,7 @@ export interface UseTemplateListPageReturn {
     setCurrentPage: (page: number) => void;
     setLimit: (limit: number) => void;
     handleDelete: (id: string, name: string) => Promise<void>;
+    handleNavigateToUpload: () => void;
 
     // UI State
     statusDropdownOpen: boolean;
@@ -41,6 +42,8 @@ export interface UseTemplateListPageReturn {
 
     // Permissions
     permissions: TemplateListPermissions;
+    hasActiveS3Config: boolean;
+    isCheckingS3Config: boolean;
 
     // Toast & Dialog
     toasts: Toast[];
@@ -163,7 +166,7 @@ export interface UseFormsPageReturn {
     handleTabChange: (tabId: string) => void;
     handleSelectTemplate: (templateId: string) => void;
     handleBackToList: () => void;
-    handleSubmitSuccess: (message: string) => void;
+    handleSubmitSuccess: (message: string, status?: 'completed' | 'failed' | 'pending') => void;
     handleEditSubmission: (submission: TemplateSubmission) => void;
 
     // Toast
@@ -197,6 +200,8 @@ export interface ConfirmDialogState {
 export interface TemplateListHeaderProps {
     canManageTemplates: boolean;
     onNavigateToUpload: () => void;
+    hasActiveS3Config: boolean;
+    isCheckingS3Config: boolean;
 }
 
 export interface TemplateListFiltersProps {

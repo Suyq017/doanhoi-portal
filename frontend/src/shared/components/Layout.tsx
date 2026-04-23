@@ -50,6 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { t } = useTranslation('common');
   const permissions = usePermissions();
   const ctxhPermissions = useCtxhPermissions();
+  const isStudentUser = permissions.user?.userType === 'student';
 
   // Track initial load completion using shared state
   useEffect(() => {
@@ -132,8 +133,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     requiredPermission?: string;
     section: NavSection;
     children?: {
-      name: string;
       href: string;
+      name: string;
       icon: any;
       requiredPermission?: string;
     }[];
@@ -141,6 +142,37 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Filter navigation items based on permissions
   const getFilteredNavigation = () => {
+    const ctxhChildren: NavItem['children'] = [
+      {
+        name: t('navigation.ctxhCategories'),
+        href: '/portal/ctxh/categories',
+        icon: Database,
+        requiredPermission: 'ctxh.categories.view'
+      },
+      {
+        name: t('navigation.ctxhActivities'),
+        href: '/portal/ctxh/activities',
+        icon: Calendar,
+        requiredPermission: 'ctxh.activities.view'
+      },
+      ...(isStudentUser
+        ? []
+        : [
+            {
+              name: t('navigation.ctxhLimitConfig'),
+              href: '/portal/ctxh/limit-config',
+              icon: Settings,
+              requiredPermission: 'ctxh.config.manage'
+            },
+            {
+              name: t('navigation.ctxhImportOldSystem'),
+              href: '/portal/ctxh/import-old-system',
+              icon: Upload,
+              requiredPermission: 'ctxh.import.old_system'
+            }
+          ])
+    ];
+
     const baseNavigation: NavItem[] = [
       // === COMMON SECTION ===
       {
@@ -207,34 +239,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         name: t('navigation.ctxh'),
         key: 'ctxh',
         icon: Heart,
-        requiredPermission: 'ctxh.access',
-        section: 'admin',
-        children: [
-          {
-            name: t('navigation.ctxhCategories'),
-            href: '/portal/ctxh/categories',
-            icon: Database,
-            requiredPermission: 'ctxh.categories.view'
-          },
-          {
-            name: t('navigation.ctxhActivities'),
-            href: '/portal/ctxh/activities',
-            icon: Calendar,
-            requiredPermission: 'ctxh.activities.view'
-          },
-          {
-            name: t('navigation.ctxhLimitConfig'),
-            href: '/portal/ctxh/limit-config',
-            icon: Settings,
-            requiredPermission: 'ctxh.config.manage'
-          },
-          {
-            name: t('navigation.ctxhImportOldSystem'),
-            href: '/portal/ctxh/import-old-system',
-            icon: Upload,
-            requiredPermission: 'ctxh.import.old_system'
-          }
-        ]
+        section: isStudentUser ? 'student' : 'admin',
+        children: ctxhChildren
       },
       {
         name: t('navigation.templates'),
@@ -463,6 +469,29 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                         // If item has children (is a parent menu)
                         if ('children' in item && item.children) {
+                          if (isStudentUser && item.key === 'ctxh') {
+                            return (
+                              <div key={item.key} className="space-y-1">
+                                {item.children.map((child) => {
+                                  const ChildIcon = child.icon;
+                                  return (
+                                    <Link
+                                      key={child.name}
+                                      to={child.href}
+                                      className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(child.href)
+                                        ? 'bg-white text-doan-500'
+                                        : 'text-white text-opacity-80 hover:bg-white hover:bg-opacity-10 hover:text-white'
+                                        }`}
+                                    >
+                                      <ChildIcon className="w-4 h-4 mr-3" />
+                                      {child.name}
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            );
+                          }
+
                           const isExpanded = expandedMenus.includes(item.key!);
                           const hasActiveChild = isParentActive(item.children);
 

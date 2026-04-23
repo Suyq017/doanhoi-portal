@@ -152,7 +152,11 @@
     "processingTitle": "Biểu mẫu đang ở trạng thái \"Đang xử lý\"",
     "processingDesc": "Biểu mẫu này chưa được kích hoạt và người dùng chưa thể sử dụng. Để kích hoạt, vui lòng chọn trạng thái \"Hoạt động\" ở góc trên và nhấn \"Lưu cấu hình\".",
     "inactiveTitle": "Biểu mẫu đang tạm ngưng",
-    "inactiveDesc": "Biểu mẫu này không khả dụng với người dùng. Chuyển sang \"Hoạt động\" để kích hoạt lại."
+    "inactiveDesc": "Biểu mẫu này không khả dụng với người dùng. Chuyển sang \"Hoạt động\" để kích hoạt lại.",
+    "s3ConfigMissingShort": "Chưa có cấu hình AWS S3",
+    "s3ConfigRequiredBeforeCreate": "Chưa có cấu hình AWS S3 đang hoạt động. Vào Quản trị viên/Cấu hình hệ thống để thiết lập trước khi tạo biểu mẫu.",
+    "s3UploadConfigRequired": "Không thể tạo biểu mẫu vì hệ thống chưa có cấu hình AWS S3 đang hoạt động. Vui lòng vào Quản trị viên/Cấu hình hệ thống để cấu hình AWS S3 trước.",
+    "s3FormSubmitConfigRequired": "Không thể xử lý biểu mẫu vì hệ thống chưa có cấu hình AWS S3 đang hoạt động. Vui lòng vào Quản trị viên/Cấu hình hệ thống để cấu hình AWS S3 trước."
   },
   
   "upload": {
