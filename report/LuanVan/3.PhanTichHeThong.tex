@@ -400,17 +400,17 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
 		\hline
 		\textbf{Use Case Name} & \textbf{UC06 - Quản lý đóng phí} \\ \hline
-		\textbf{Actor(s)} & Cán bộ đơn vị, Thành viên, PayOS \\ \hline
+		\textbf{Actor(s)} & Quản trị viên, Thành viên \\ \hline
 		\textbf{Description} & Quản lý trọn luồng thu phí: tạo đợt thu, cấu hình mức phí, phân công đối tượng, kích hoạt và theo dõi thanh toán. \\ \hline
-		\textbf{Trigger} & Cán bộ đơn vị tạo đợt thu mới hoặc thành viên truy cập chức năng đóng phí. \\ \hline
+		\textbf{Trigger} & Quản trị viên tạo đợt thu mới hoặc thành viên truy cập chức năng đóng phí. \\ \hline
 		\textbf{Pre-condition(s)} & Có quyền quản lý đợt thu; đợt thu có mức phí và danh sách phân công hợp lệ; cổng thanh toán sẵn sàng khi thu online. \\ \hline
 		\textbf{Post-condition(s)} & Đợt thu được kích hoạt; giao dịch thanh toán được ghi nhận và cập nhật trạng thái trong lịch sử thu phí. \\ \hline
-		\textbf{Main Flow} & 1. Cán bộ đơn vị tạo đợt thu và nhập thông tin cơ bản.\newline
+		\textbf{Main Flow} & 1. Quản trị viên tạo đợt thu và nhập thông tin cơ bản.\newline
 		2. Cấu hình mức phí, phân công thành viên và kích hoạt đợt thu.\newline
 		3. Thành viên truy cập khoản phí của tôi và tạo thanh toán.\newline
 		4. Hệ thống tạo liên kết thanh toán.\newline
 		5. Hệ thống nhận/truy vấn trạng thái giao dịch và cập nhật kết quả. \\ \hline
-		\textbf{Alternative Flow} & Ở bước 3, thành viên có thể đóng thủ công; cán bộ đơn vị cập nhật trạng thái đã đóng trực tiếp trên hệ thống. \\ \hline
+		\textbf{Alternative Flow} & Ở bước 3, thành viên có thể đóng thủ công; quản trị viên cập nhật trạng thái đã đóng trực tiếp trên hệ thống. \\ \hline
 		\textbf{Exception} & Thiếu cấu hình trước khi kích hoạt; lỗi kết nối cổng thanh toán; giao dịch bị hủy hoặc hết hạn. \\ \hline
 	\end{tabular}
 	\caption{Bảng mô tả Use Case UC06 - Quản lý đóng phí}
@@ -435,7 +435,7 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
 		\hline
 		\textbf{Use Case Name} & \textbf{UC07.1 - Quản lý danh mục CTXH} \\ \hline
-		\textbf{Actor(s)} & Cán bộ đơn vị \\ \hline
+		\textbf{Actor(s)} & Quản trị viên / Thành viên, Sinh viên \\ \hline
 		\textbf{Description} & Quản lý danh mục phân loại hoạt động CTXH, bao gồm tạo mới, cập nhật, xem chi tiết và xóa theo điều kiện dữ liệu. \\ \hline
 		\textbf{Trigger} & Người dùng truy cập chức năng danh mục CTXH. \\ \hline
 		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập và có quyền quản lý danh mục CTXH. \\ \hline
@@ -462,16 +462,16 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
 		\hline
 		\textbf{Use Case Name} & \textbf{UC07.2 - Quản lý hoạt động CTXH} \\ \hline
-		\textbf{Actor(s)} & Cán bộ đơn vị \\ \hline
-		\textbf{Description} & Quản lý vòng đời hoạt động CTXH, bao gồm tạo, chỉnh sửa, kích hoạt và cập nhật trạng thái hoạt động. \\ \hline
+		\textbf{Actor(s)} & Quản trị viên / Thành viên, Sinh viên \\ \hline
+		\textbf{Description} & Quản lý hoạt động CTXH gồm xem danh sách/chi tiết, tạo mới, cập nhật và xóa hoạt động theo quyền. \\ \hline
 		\textbf{Trigger} & Người dùng truy cập chức năng hoạt động CTXH. \\ \hline
 		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập và có quyền quản lý hoạt động CTXH. \\ \hline
-		\textbf{Post-condition(s)} & Hoạt động được tạo mới hoặc cập nhật và hiển thị trong danh sách. \\ \hline
-		\textbf{Main Flow} & 1. Người dùng tạo hoạt động mới.\newline
-		2. Hệ thống hiển thị form nhập thông tin.\newline
-		3. Người dùng điền thông tin và lưu lại.\newline
-		4. Hệ thống kiểm tra dữ liệu và cập nhật trạng thái. \\ \hline
-		\textbf{Alternative Flow} & Người dùng có thể xem danh sách hoạt động hoặc chỉnh sửa hoạt động đã tồn tại. \\ \hline
+		\textbf{Post-condition(s)} & Hoạt động được tạo mới/cập nhật/xóa đúng theo thao tác và hiển thị lại trên danh sách. \\ \hline
+		\textbf{Main Flow} & 1. Người dùng mở danh sách hoạt động CTXH.\newline
+		2. Hệ thống hiển thị danh sách và thông tin chi tiết hoạt động được chọn.\newline
+		3. Người dùng tạo mới hoặc cập nhật hoạt động.\newline
+		4. Hệ thống kiểm tra dữ liệu và lưu thay đổi. \\ \hline
+		\textbf{Alternative Flow} & Người dùng có thể xóa hoạt động khi thỏa điều kiện nghiệp vụ. \\ \hline
 		\textbf{Exception} & Nếu dữ liệu thời gian hoặc trạng thái không hợp lệ thì hệ thống hiển thị thông báo lỗi. \\ \hline
 	\end{tabular}
 	\caption{Bảng mô tả Use Case UC07.2 - Quản lý hoạt động CTXH}
@@ -479,7 +479,7 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC07_02_nguoi_tham_gia.png}
+	\includegraphics[width=0.78\linewidth]{Images/use-case-diagram/UC07_02_nguoi_tham_gia.png}
 	\caption{UC07.3 - Quản lý người tham gia hoạt động CTXH}
 \end{figure}
 
@@ -489,17 +489,19 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
 		\hline
 		\textbf{Use Case Name} & \textbf{UC07.3 - Quản lý người tham gia hoạt động CTXH} \\ \hline
-		\textbf{Actor(s)} & Cán bộ đơn vị, Thành viên \\ \hline
-		\textbf{Description} & Quản lý danh sách tham gia và cập nhật kết quả CTXH cho từng sinh viên trong hoạt động. \\ \hline
+		\textbf{Actor(s)} & Quản trị viên / Thành viên, Sinh viên \\ \hline
+		\textbf{Description} & Quản lý toàn bộ vòng đời tham gia CTXH: đăng ký, theo dõi trạng thái, duyệt sinh viên tham gia, thêm/xóa danh sách và chấm điểm kết quả theo từng hoạt động. \\ \hline
 		\textbf{Trigger} & Người dùng truy cập màn hình người tham gia của một hoạt động. \\ \hline
 		\textbf{Pre-condition(s)} & Hoạt động đã tồn tại; người dùng có quyền quản lý người tham gia. \\ \hline
-		\textbf{Post-condition(s)} & Danh sách tham gia và kết quả được lưu, đồng thời phản ánh lên báo cáo cá nhân. \\ \hline
-		\textbf{Main Flow} & 1. Chọn hoạt động.\newline
-		2. Thêm người tham gia.\newline
-		3. Chấm điểm hoặc cập nhật kết quả.\newline
-		4. Hệ thống lưu thay đổi và cập nhật thống kê. \\ \hline
-		\textbf{Alternative Flow} & Người dùng có thể xuất danh sách tham gia mà không thay đổi dữ liệu. \\ \hline
-		\textbf{Exception} & Nếu sinh viên trùng lặp hoặc file nhập sai định dạng thì hệ thống báo lỗi. \\ \hline
+		\textbf{Post-condition(s)} & Trạng thái đăng ký, danh sách tham gia và kết quả CTXH được cập nhật; dữ liệu phản ánh lên báo cáo cá nhân. \\ \hline
+		\textbf{Main Flow} & 1. Sinh viên đăng ký tham gia hoạt động và theo dõi trạng thái đăng ký.\newline
+		2. Quản trị viên/thành viên phụ trách mở danh sách sinh viên đăng ký.\newline
+		3. Thực hiện duyệt sinh viên tham gia hoạt động.\newline
+		4. Cập nhật danh sách tham gia (thêm thủ công hoặc import file Excel).\newline
+		5. Chấm điểm ngày CTXH (thủ công hoặc bằng file Excel).\newline
+		6. Hệ thống lưu thay đổi và cập nhật thống kê. \\ \hline
+		\textbf{Alternative Flow} & Quản trị viên/thành viên phụ trách có thể xóa sinh viên khỏi hoạt động hoặc xuất danh sách sinh viên tham gia. \\ \hline
+		\textbf{Exception} & Nếu dữ liệu đăng ký không hợp lệ, sinh viên trùng lặp hoặc file nhập/chấm điểm sai định dạng thì hệ thống báo lỗi. \\ \hline
 	\end{tabular}
 	\caption{Bảng mô tả Use Case UC07.3 - Quản lý người tham gia hoạt động CTXH}
 \end{table}
@@ -509,13 +511,13 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 	\renewcommand{\arraystretch}{1.25}
 	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
 		\hline
-		\textbf{Use Case Name} & \textbf{UC07.4 - Quản lý hạn mức ngày CTXH theo chức} \\ \hline
+		\textbf{Use Case Name} & \textbf{UC07.4 - Quản lý hạn mức ngày CTXH theo tổ chức} \\ \hline
 		\textbf{Actor(s)} & Quản trị viên \\ \hline
 		\textbf{Description} & Quản trị viên thiết lập số ngày CTXH tối đa được phép cho từng tổ chức; cấu hình có thể tự động áp dụng cho tổ chức con. \\ \hline
 		\textbf{Trigger} & Quản trị viên muốn giới hạn số ngày CTXH theo tổ chức. \\ \hline
-		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập; có quyền cấu hình giới hạn; tổ chức tồn tại trong hệ thống. \\ \hline
+		\textbf{Pre-condition(s)} & Quản trị viên đã đăng nhập; có quyền cấu hình giới hạn; tổ chức tồn tại trong hệ thống. \\ \hline
 		\textbf{Post-condition(s)} & Cấu hình giới hạn được tạo và lưu lại; thông tin cấu hình được phản ánh trên hệ thống. \\ \hline
-		\textbf{Main Flow} & 1. Người dùng truy cập chức năng cấu hình giới hạn.\newline
+		\textbf{Main Flow} & 1. Quản trị viên truy cập chức năng cấu hình giới hạn.\newline
 		2. Chọn tổ chức, nhập số ngày tối đa và trạng thái.\newline
 		3. Hệ thống kiểm tra tính hợp lệ của dữ liệu.\newline
 		4. Hệ thống lưu cấu hình cho tổ chức.\newline
@@ -523,7 +525,7 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 		\textbf{Alternative Flow} & Nếu số ngày không hợp lệ hoặc tổ chức đã có cấu hình đang hoạt động, hệ thống hiển thị thông báo phù hợp. \\ \hline
 		\textbf{Exception} & Tổ chức không tồn tại thì hệ thống báo lỗi và không lưu cấu hình. \\ \hline
 	\end{tabular}
-	\caption{Bảng mô tả Use Case UC07.4 - Quản lý hạn mức ngày CTXH theo chức}
+	\caption{Bảng mô tả Use Case UC07.4 - Quản lý hạn mức ngày CTXH theo tổ chức}
 \end{table}
 
 \begin{table}[H]
@@ -553,19 +555,19 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
 		\hline
 		\textbf{Use Case Name} & \textbf{UC07.6 - Nhập dữ liệu ngày CTXH từ hệ thống cũ} \\ \hline
-			extbf{Actor(s)} & Quản trị viên \\ \hline
-			extbf{Description} & Quản trị viên nhập dữ liệu số ngày CTXH từ hệ thống cũ vào hồ sơ sinh viên bằng file Excel. \\ \hline
-			extbf{Trigger} & Quản trị viên muốn nhập dữ liệu CTXH từ hệ thống cũ khi triển khai hệ thống mới. \\ \hline
-			extbf{Pre-condition(s)} & Người dùng đã đăng nhập; có quyền nhập dữ liệu; file Excel được chuẩn bị theo mẫu. \\ \hline
-			extbf{Post-condition(s)} & Số ngày CTXH của sinh viên được cập nhật đúng theo dữ liệu nhập. \\ \hline
-			extbf{Main Flow} & 1. Người dùng vào chức năng nhập dữ liệu hệ thống cũ.\newline
+		\textbf{Actor(s)} & Quản trị viên \\ \hline
+		\textbf{Description} & Quản trị viên nhập dữ liệu số ngày CTXH từ hệ thống cũ vào hồ sơ sinh viên bằng file Excel. \\ \hline
+		\textbf{Trigger} & Quản trị viên muốn nhập dữ liệu CTXH từ hệ thống cũ khi triển khai hệ thống mới. \\ \hline
+		\textbf{Pre-condition(s)} & Quản trị viên đã đăng nhập; có quyền nhập dữ liệu; file Excel được chuẩn bị theo mẫu. \\ \hline
+		\textbf{Post-condition(s)} & Số ngày CTXH của sinh viên được cập nhật đúng theo dữ liệu nhập. \\ \hline
+		\textbf{Main Flow} & 1. Quản trị viên vào chức năng nhập dữ liệu hệ thống cũ.\newline
 		2. Tải mẫu Excel, điền dữ liệu và tải lên.\newline
 		3. Hệ thống kiểm tra dữ liệu trong file.\newline
 		4. Hệ thống hiển thị kết quả kiểm tra.\newline
-		5. Người dùng xác nhận nhập dữ liệu.\newline
+		5. Quản trị viên xác nhận nhập dữ liệu.\newline
 		6. Hệ thống cập nhật dữ liệu và thông báo kết quả. \\ \hline
-			extbf{Alternative Flow} & Nếu có dòng dữ liệu không hợp lệ, hệ thống đánh dấu lỗi và tiếp tục các dòng còn lại. \\ \hline
-			extbf{Exception} & Nếu file sai định dạng hoặc xảy ra lỗi xử lý hàng loạt thì hệ thống báo lỗi và dừng thao tác. \\ \hline
+		\textbf{Alternative Flow} & Nếu có dòng dữ liệu không hợp lệ, hệ thống đánh dấu lỗi và tiếp tục các dòng còn lại. \\ \hline
+		\textbf{Exception} & Nếu file sai định dạng hoặc xảy ra lỗi xử lý hàng loạt thì hệ thống báo lỗi và dừng thao tác. \\ \hline
 	\end{tabular}
 	\caption{Bảng mô tả Use Case UC07.6 - Nhập dữ liệu ngày CTXH từ hệ thống cũ}
 \end{table}
@@ -573,7 +575,7 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 \subsubsection{Phân hệ biểu mẫu}
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC08_01_quan_ly_bieu_mau.png}
+	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC08_01_quan_ly_bieu_mau.png.png}
 	\caption{UC08.1 - Quản lý biểu mẫu}
 \end{figure}
 
@@ -583,7 +585,7 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
 		\hline
 		\textbf{Use Case Name} & \textbf{UC08.1 - Quản lý biểu mẫu} \\ \hline
-		\textbf{Actor(s)} & Quản trị hệ thống, Cán bộ đơn vị \\ \hline
+		\textbf{Actor(s)} & Quản trị viên / Thành viên \\ \hline
 		\textbf{Description} & Quản lý biểu mẫu Word động, bao gồm tải lên template, cấu hình trường dữ liệu và quản lý danh sách biểu mẫu. \\ \hline
 		\textbf{Trigger} & Người dùng truy cập trang quản lý biểu mẫu. \\ \hline
 		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập và có quyền quản lý biểu mẫu. \\ \hline
@@ -610,16 +612,16 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
 		\hline
 		\textbf{Use Case Name} & \textbf{UC08.2 - Điền và nộp biểu mẫu} \\ \hline
-		\textbf{Actor(s)} & Thành viên \\ \hline
-		\textbf{Description} & Người dùng điền thông tin vào biểu mẫu và hệ thống tự động sinh file Word/PDF từ template. \\ \hline
+		\textbf{Actor(s)} & Quản trị viên / Người dùng \\ \hline
+		\textbf{Description} & Người dùng xem danh sách biểu mẫu có thể điền/đã điền, điền và nộp biểu mẫu, sau đó xem trước hoặc tải xuống file kết quả. \\ \hline
 		\textbf{Trigger} & Người dùng muốn điền biểu mẫu hoặc quản lý các biểu mẫu đã nộp. \\ \hline
 		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập và có ít nhất một biểu mẫu trong hệ thống. \\ \hline
-		\textbf{Post-condition(s)} & Bản ghi nộp được tạo hoặc cập nhật; file kết quả được sinh và lưu lại. \\ \hline
-		\textbf{Main Flow} & 1. Người dùng chọn biểu mẫu cần điền.\newline
-		2. Hệ thống hiển thị form tương ứng.\newline
-		3. Người dùng điền thông tin và nộp biểu mẫu.\newline
-		4. Hệ thống kiểm tra, sinh file kết quả và lưu dữ liệu. \\ \hline
-		\textbf{Alternative Flow} & Người dùng có thể chỉnh sửa biểu mẫu đã nộp hoặc xem trước tài liệu đã sinh. \\ \hline
+		\textbf{Post-condition(s)} & Bản ghi nộp được tạo/cập nhật/xóa theo thao tác; file kết quả được sinh và lưu lại để xem trước hoặc tải xuống. \\ \hline
+		\textbf{Main Flow} & 1. Người dùng xem danh sách biểu mẫu có thể điền hoặc danh sách biểu mẫu đã điền.\newline
+		2. Người dùng chọn biểu mẫu và nhập thông tin.\newline
+		3. Hệ thống kiểm tra dữ liệu, lưu bản nộp và sinh file kết quả.\newline
+		4. Người dùng xem trước hoặc tải xuống file biểu mẫu đã sinh. \\ \hline
+		\textbf{Alternative Flow} & Người dùng có thể chỉnh sửa hoặc xóa biểu mẫu đã điền trước khi nộp phiên bản mới. \\ \hline
 		\textbf{Exception} & Nếu thiếu trường bắt buộc hoặc file kết quả không thể tạo thì hệ thống báo lỗi. \\ \hline
 	\end{tabular}
 	\caption{Bảng mô tả Use Case UC08.2 - Điền và nộp biểu mẫu}
@@ -638,7 +640,7 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
 		\hline
 		\textbf{Use Case Name} & \textbf{UC09 - Tra cứu CTXH bằng Chatbot} \\ \hline
-		\textbf{Actor(s)} & Thành viên, Cán bộ đơn vị \\ \hline
+		\textbf{Actor(s)} & Người dùng, Retriever, Generator \\ \hline
 		\textbf{Description} & Hỗ trợ hỏi đáp CTXH bằng ngôn ngữ tự nhiên dựa trên dữ liệu hoạt động đã được hệ thống thu thập và chuẩn bị trước. \\ \hline
 		\textbf{Trigger} & Người dùng truy cập màn hình chatbot và gửi câu hỏi. \\ \hline
 		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập; hệ thống chatbot và dữ liệu kiến thức đang sẵn sàng. \\ \hline
@@ -732,7 +734,7 @@ Tại giao diện quản lý, quản trị viên có thể lựa chọn một tr
 Để minh họa chi tiết luồng xử lý của các chức năng chính trong module Công tác Xã hội, báo cáo trình bày ba activity diagram đại diện cho các pattern quan trọng trong hệ thống:
 \begin{itemize}
 	\item Quản lý trạng thái: tạo và chỉnh sửa hoạt động với logic chuyển đổi giữa trạng thái nháp và đang hoạt động.
-	\item Xử lý hàng loạt: chấm điểm sinh viên từ file Excel với pipeline parse, validate, preview, batch update.
+	\item Xử lý hàng loạt: thêm danh sách sinh viên từ file Excel với các bước tải file, kiểm tra hợp lệ và cập nhật danh sách tham gia hoạt động.
 	\item Cấu hình cascade: tạo cấu hình giới hạn tự động áp dụng cho tổ chức con theo cấp bậc.
 \end{itemize}
 
@@ -747,10 +749,10 @@ Activity diagram trên minh họa luồng tạo và chỉnh sửa hoạt động
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.82\linewidth]{Images/activity-diagram/UC07_02_cham_diem_excel.png}
-	\caption{Activity Diagram - Chấm điểm sinh viên từ file Excel}
+	\caption{Activity Diagram - Thêm danh sách sinh viên từ file Excel}
 \end{figure}
 
-Activity diagram này thể hiện luồng xử lý hàng loạt điểm CTXH từ file Excel theo pipeline: parse file, validate từng dòng, preview kết quả, batch update. Hệ thống xử lý theo chunk 500 dòng để tối ưu hiệu năng với file lớn, đồng thời kiểm tra các quy tắc nghiệp vụ như số ngày là bội của 0.5, không vượt giới hạn hoạt động, sinh viên tồn tại và đã đăng ký. Trong màn hình preview, các dòng lỗi được đánh dấu rõ ràng theo nguyên nhân; chỉ các dòng hợp lệ mới được cập nhật vào cơ sở dữ liệu. Nếu có lỗi trong quá trình batch update, toàn bộ transaction được rollback để bảo đảm tính nhất quán dữ liệu.
+Activity diagram này thể hiện luồng thêm danh sách sinh viên tham gia hoạt động từ file Excel. Quản trị viên/thành viên tải file theo biểu mẫu, hệ thống kiểm tra tính hợp lệ dữ liệu và phản hồi kết quả kiểm tra để người dùng chỉnh sửa nếu cần. Khi dữ liệu hợp lệ, hệ thống thêm danh sách sinh viên vào hoạt động và cập nhật báo cáo CTXH tương ứng. Luồng này nhấn mạnh bước kiểm tra dữ liệu trước khi ghi nhận chính thức để bảo đảm tính nhất quán.
 
 \begin{figure}[H]
 	\centering
@@ -890,18 +892,18 @@ Sequence diagram trên mô tả tương tác giữa các thành phần khi tạo
 Sequence diagram này thể hiện luồng xử lý phức tạp khi chấm điểm hàng loạt từ Excel. Controller nhận file upload, gọi parser service để parse file thành các chunk. Với mỗi chunk, validation service kiểm tra từng dòng: sinh viên tồn tại trong cơ sở dữ liệu, số ngày hợp lệ (bội 0.5, không âm) và không vượt giới hạn hoạt động. Kết quả validation được trả về dạng preview gồm danh sách dòng hợp lệ và dòng lỗi kèm lý do. Khi người dùng xác nhận, service bắt đầu batch update trong transaction: với mỗi dòng hợp lệ, cập nhật điểm tham gia và cộng vào tổng CTXH của sinh viên. Nếu có lỗi trong quá trình update, toàn bộ transaction được rollback để đảm bảo tính nhất quán dữ liệu.
 
 \subsubsection{Sequence Diagram - Module Biểu mẫu}
-Để minh họa chi tiết tương tác giữa các thành phần trong hệ thống, báo cáo trình bày sequence diagram đại diện cho luồng xử lý quan trọng trong module Biểu mẫu:
+Để minh họa chi tiết tương tác giữa các thành phần trong hệ thống, báo cáo trình bày sequence diagram đại diện cho luồng xử lý end-to-end trong module Biểu mẫu:
 \begin{itemize}
-	\item Tạo và cấu hình biểu mẫu: tương tác giữa người dùng, controller, parser service, S3 storage và database trong quá trình tải lên, phân tích template và cấu hình trường động.
+	\item Tạo, cấu hình, điền và nộp biểu mẫu: tương tác giữa người dùng, controller, parser service, S3 storage và database từ lúc tải lên template đến khi sinh file và lưu bản nộp.
 \end{itemize}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/UC08_01_tao_cau_hinh_bieu_mau.png}
-	\caption{Sequence Diagram - Tạo và cấu hình biểu mẫu}
+	\caption{Sequence Diagram - Tạo, cấu hình, điền và nộp biểu mẫu}
 \end{figure}
 
-Sequence diagram trên mô tả tương tác giữa các thành phần khi tạo và cấu hình biểu mẫu động. Người dùng upload file Word (\texttt{.docx}) qua Controller. Controller validate định dạng file và kích thước, sau đó gọi parser service để phân tích nội dung. Parser tìm kiếm các placeholder theo pattern \texttt{{\{field\_name\}}} trong toàn bộ cấu trúc tài liệu. Danh sách placeholder được trả về để người dùng cấu hình kiểu dữ liệu, nhãn hiển thị và thuộc tính bắt buộc hoặc tùy chọn. Sau khi hoàn tất, Controller gọi dịch vụ lưu trữ để upload file template lên S3 và nhận về URL. Cuối cùng, service lưu thông tin template và cấu hình trường vào cơ sở dữ liệu. Cơ chế transaction đảm bảo cả file và metadata được lưu thành công; nếu có lỗi sẽ rollback để đảm bảo toàn vẹn dữ liệu.
+Sequence diagram trên mô tả tương tác end-to-end của module biểu mẫu. Ở pha đầu, người dùng upload file Word (\texttt{.docx}), hệ thống parse template để trích xuất placeholder và lưu cấu hình fields cùng metadata. Ở pha tiếp theo, người dùng chọn biểu mẫu, điền dữ liệu và nộp; controller thực hiện validate, sinh file từ template, upload lên S3, sau đó lưu bản ghi submission vào cơ sở dữ liệu. Luồng này phản ánh đầy đủ cả bước cấu hình template lẫn bước sử dụng template để tạo biểu mẫu đã nộp.
 
 \subsubsection{Sequence Diagram - Chatbot hỏi-đáp hoạt động CTXH}
 \begin{figure}[H]
