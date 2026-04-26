@@ -70,7 +70,7 @@ Các diagram liên quan CTXH cần đồng bộ với logic mới để tránh l
 5. Thu phí và biểu mẫu.
 
 Khuyến nghị còn lại cho Chương 5:
-- Bổ sung thêm 1 hình chatbot giao diện hội thoại để khép đủ các nhóm màn hình đã nêu.
+- Đã bổ sung thêm 1 hình chatbot giao diện hội thoại (Chat bot RAG.png) để khép đủ các nhóm màn hình đã nêu.
 
 ### 5.2 Chương 6 - Kiểm thử
 Nên thêm tối thiểu 4 hình:
@@ -120,6 +120,7 @@ Khuyến nghị ghi rõ trong mô tả use case:
 1. Bổ sung minh chứng cho Chương 6 (kiểm thử) và Chương 7 (triển khai) theo checklist ưu tiên.
 2. Thêm 1 bảng định lượng ở Chương 8 (trước/sau số hóa, không dùng khảo sát).
 3. Bổ sung thêm 1 hình chatbot vào Chương 5 để khớp mô tả "nhóm chatbot".
+   - Đã hoàn tất với ảnh Chat bot RAG.png.
 4. Chạy build PDF 2 lượt và rà lại caption, tham chiếu, tràn dòng.
 
 ## 9) Kết luận cuối
@@ -163,10 +164,6 @@ Bản hiện tại đã tốt và có thể bảo vệ ổn.
 
 \*Ghi chú: do hệ thống chưa go-live production, chấp nhận minh chứng ở mức deployment plan + staging run thay cho số liệu production thực tế.\*
 
-### 3. Bổ sung 1 hình chatbot cho Chương 5 (để đủ theo mô tả nhóm màn hình)
-**Cần thêm 1 ảnh screenshot:**
-- (5.4) Màn hình hội thoại chatbot CTXH (kèm minh chứng trả lời có nguồn nếu có)
-
 ## ⚠️ CẦN XỬ LÝ TRƯỚC KHI NỘP (bắt buộc)
 
 1. **Build PDF lần cuối** và rà lại:
@@ -191,7 +188,7 @@ Bản hiện tại đã tốt và có thể bảo vệ ổn.
 - [x] UC07.3 đã cập nhật rõ mô tả auto-accept và max_participants
 - [x] Thêm ảnh Chương 5 vào phần hiện thực giao diện
 - [ ] Thêm ảnh Chương 6 và minh chứng triển khai dự kiến/staging cho Chương 7
-- [ ] Bổ sung 1 ảnh chatbot ở Chương 5
+- [x] Bổ sung 1 ảnh chatbot ở Chương 5
 - [ ] Rà soát caption, tham chiếu toàn file
 - [ ] PDF build 2 lần, kiểm tra tràn dòng, hiển thị ảnh
 - [ ] Chuẩn bị file nộp: PDF + source + ảnh
