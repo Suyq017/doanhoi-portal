@@ -436,15 +436,17 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 		\hline
 		\textbf{Use Case Name} & \textbf{UC07.1 - Quản lý danh mục CTXH} \\ \hline
 		\textbf{Actor(s)} & Quản trị viên / Thành viên, Sinh viên \\ \hline
-		\textbf{Description} & Quản lý danh mục phân loại hoạt động CTXH, bao gồm tạo mới, cập nhật, xem chi tiết và xóa theo điều kiện dữ liệu. \\ \hline
+		\textbf{Description} & Quản lý danh mục phân loại hoạt động CTXH, bao gồm tạo mới, cập nhật, xem chi tiết và xóa theo điều kiện dữ liệu; hỗ trợ truy cập trực tiếp (direct view) từ danh mục sang danh sách hoạt động và chi tiết hoạt động tương ứng. \\ \hline
 		\textbf{Trigger} & Người dùng truy cập chức năng danh mục CTXH. \\ \hline
 		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập và có quyền quản lý danh mục CTXH. \\ \hline
 		\textbf{Post-condition(s)} & Danh mục CTXH được tạo mới, cập nhật hoặc xóa theo thao tác đã thực hiện. \\ \hline
 		\textbf{Main Flow} & 1. Người dùng mở danh sách danh mục.\newline
 		2. Hệ thống hiển thị danh sách danh mục và thông tin liên quan.\newline
-		3. Người dùng chọn tạo mới, chỉnh sửa hoặc xóa danh mục.\newline
-		4. Hệ thống kiểm tra dữ liệu và lưu thay đổi. \\ \hline
-		\textbf{Alternative Flow} & Người dùng có thể xem chi tiết danh mục và danh sách hoạt động thuộc danh mục. \\ \hline
+		3. Người dùng chọn xem chi tiết danh mục để mở danh sách hoạt động thuộc danh mục (direct view).\newline
+		4. Từ danh sách hoạt động, người dùng mở chi tiết hoạt động và chuyển sang màn hình danh sách người tham gia của hoạt động đã chọn.\newline
+		5. Người dùng có quyền phù hợp có thể tạo mới, chỉnh sửa hoặc xóa danh mục.\newline
+		6. Hệ thống kiểm tra dữ liệu và lưu thay đổi. \\ \hline
+		\textbf{Alternative Flow} & Sinh viên có thể xin tham gia hoạt động trực tiếp từ màn hình chi tiết hoạt động khi đi từ danh mục. \\ \hline
 		\textbf{Exception} & Nếu danh mục đã có hoạt động liên kết thì hệ thống không cho xóa. \\ \hline
 	\end{tabular}
 	\caption{Bảng mô tả Use Case UC07.1 - Quản lý danh mục CTXH}
@@ -463,15 +465,17 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 		\hline
 		\textbf{Use Case Name} & \textbf{UC07.2 - Quản lý hoạt động CTXH} \\ \hline
 		\textbf{Actor(s)} & Quản trị viên / Thành viên, Sinh viên \\ \hline
-		\textbf{Description} & Quản lý hoạt động CTXH gồm xem danh sách/chi tiết, tạo mới, cập nhật và xóa hoạt động theo quyền. \\ \hline
+		\textbf{Description} & Quản lý hoạt động CTXH gồm xem danh sách/chi tiết, tạo mới, cập nhật và xóa hoạt động theo quyền; hỗ trợ direct view từ danh mục sang chi tiết hoạt động, danh sách người tham gia và luồng xin tham gia hoạt động. \\ \hline
 		\textbf{Trigger} & Người dùng truy cập chức năng hoạt động CTXH. \\ \hline
 		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập và có quyền quản lý hoạt động CTXH. \\ \hline
 		\textbf{Post-condition(s)} & Hoạt động được tạo mới/cập nhật/xóa đúng theo thao tác và hiển thị lại trên danh sách. \\ \hline
 		\textbf{Main Flow} & 1. Người dùng mở danh sách hoạt động CTXH.\newline
-		2. Hệ thống hiển thị danh sách và thông tin chi tiết hoạt động được chọn.\newline
-		3. Người dùng tạo mới hoặc cập nhật hoạt động.\newline
-		4. Hệ thống kiểm tra dữ liệu và lưu thay đổi. \\ \hline
-		\textbf{Alternative Flow} & Người dùng có thể xóa hoạt động khi thỏa điều kiện nghiệp vụ. \\ \hline
+		2. Hệ thống hiển thị danh sách và thông tin chi tiết hoạt động được chọn (bao gồm truy cập từ danh mục).\newline
+		3. Người dùng mở danh sách người tham gia của hoạt động để theo dõi hoặc quản lý theo quyền.\newline
+		4. Sinh viên có thể xin tham gia hoạt động từ màn hình chi tiết hoạt động.\newline
+		5. Người dùng có quyền quản lý tạo mới hoặc cập nhật hoạt động.\newline
+		6. Hệ thống kiểm tra dữ liệu và lưu thay đổi. \\ \hline
+		\textbf{Alternative Flow} & Người dùng có quyền quản lý có thể xóa hoạt động khi thỏa điều kiện nghiệp vụ; nếu không có quyền thì chỉ xem chi tiết và danh sách người tham gia. \\ \hline
 		\textbf{Exception} & Nếu dữ liệu thời gian hoặc trạng thái không hợp lệ thì hệ thống hiển thị thông báo lỗi. \\ \hline
 	\end{tabular}
 	\caption{Bảng mô tả Use Case UC07.2 - Quản lý hoạt động CTXH}
@@ -490,18 +494,21 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 		\hline
 		\textbf{Use Case Name} & \textbf{UC07.3 - Quản lý người tham gia hoạt động CTXH} \\ \hline
 		\textbf{Actor(s)} & Quản trị viên / Thành viên, Sinh viên \\ \hline
-		\textbf{Description} & Quản lý toàn bộ vòng đời tham gia CTXH: đăng ký, theo dõi trạng thái, duyệt sinh viên tham gia, thêm/xóa danh sách và chấm điểm kết quả theo từng hoạt động. \\ \hline
+		\textbf{Description} & Quản lý toàn bộ vòng đời tham gia CTXH: đăng ký, theo dõi trạng thái, duyệt sinh viên tham gia, thêm/xóa danh sách và chấm điểm kết quả theo từng hoạt động; hỗ trợ cấu hình duyệt tự động (auto-accept) và giới hạn số lượng tối đa người tham gia (max participants). \\ \hline
 		\textbf{Trigger} & Người dùng truy cập màn hình người tham gia của một hoạt động. \\ \hline
 		\textbf{Pre-condition(s)} & Hoạt động đã tồn tại; người dùng có quyền quản lý người tham gia. \\ \hline
 		\textbf{Post-condition(s)} & Trạng thái đăng ký, danh sách tham gia và kết quả CTXH được cập nhật; dữ liệu phản ánh lên báo cáo cá nhân. \\ \hline
 		\textbf{Main Flow} & 1. Sinh viên đăng ký tham gia hoạt động và theo dõi trạng thái đăng ký.\newline
-		2. Quản trị viên/thành viên phụ trách mở danh sách sinh viên đăng ký.\newline
-		3. Thực hiện duyệt sinh viên tham gia hoạt động.\newline
-		4. Cập nhật danh sách tham gia (thêm thủ công hoặc import file Excel).\newline
-		5. Chấm điểm ngày CTXH (thủ công hoặc bằng file Excel).\newline
-		6. Hệ thống lưu thay đổi và cập nhật thống kê. \\ \hline
-		\textbf{Alternative Flow} & Quản trị viên/thành viên phụ trách có thể xóa sinh viên khỏi hoạt động hoặc xuất danh sách sinh viên tham gia. \\ \hline
-		\textbf{Exception} & Nếu dữ liệu đăng ký không hợp lệ, sinh viên trùng lặp hoặc file nhập/chấm điểm sai định dạng thì hệ thống báo lỗi. \\ \hline
+		2. Hệ thống kiểm tra số lượng hiện tại so với max participants trước khi ghi nhận đăng ký hoặc thêm vào danh sách.\newline
+		3. Nếu hoạt động bật auto-accept thì hệ thống tự động chuyển trạng thái sang đã duyệt; nếu không thì chuyển sang chờ duyệt.\newline
+		4. Quản trị viên/thành viên phụ trách mở danh sách đăng ký và duyệt các trường hợp chờ duyệt (hệ thống kiểm tra lại max participants trước khi xác nhận duyệt).\newline
+		5. Cập nhật danh sách tham gia (thêm thủ công hoặc import file Excel) và chỉ lưu các bản ghi hợp lệ theo giới hạn số lượng.\newline
+		6. Chấm điểm ngày CTXH (thủ công hoặc bằng file Excel).\newline
+		7. Hệ thống lưu thay đổi và cập nhật thống kê. \\ \hline
+		\textbf{Alternative Flow} & Ở bước quản lý danh sách, quản trị viên/thành viên phụ trách có thể:\newline
+		-- Xóa sinh viên khỏi hoạt động (hệ thống kiểm tra nếu còn chỗ thì tự động duyệt đăng ký chờ).\newline
+		-- Xuất danh sách sinh viên tham gia ra file Excel để phục vụ vận hành hoặc in biểu mẫu. \\ \hline
+		\textbf{Exception} & Nếu dữ liệu đăng ký không hợp lệ, sinh viên trùng lặp, vượt max participants, hoặc file nhập/chấm điểm sai định dạng thì hệ thống báo lỗi và không cập nhật bản ghi lỗi. \\ \hline
 	\end{tabular}
 	\caption{Bảng mô tả Use Case UC07.3 - Quản lý người tham gia hoạt động CTXH}
 \end{table}

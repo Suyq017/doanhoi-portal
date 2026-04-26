@@ -46,6 +46,28 @@ Hệ thống đem lại một số giá trị thực tiễn rõ rệt:
 	\item Hỗ trợ người dùng tra cứu thông tin nhanh hơn qua chatbot RAG.
 \end{itemize}
 
+\subsubsection{Đánh giá định lượng theo dữ liệu nội bộ}
+Do hệ thống chưa đưa vào vận hành production, phần đánh giá định lượng trong chương này chỉ sử dụng số liệu nội bộ từ quy trình chạy thử, kiểm thử chức năng và log vận hành thử nghiệm. Bảng \ref{tab:chapter8-quantitative} tổng hợp một số tiêu chí so sánh tiêu biểu.
+
+\begin{table}[H]
+	\centering
+	\caption{So sánh định lượng trước và sau số hóa theo dữ liệu nội bộ}
+	\label{tab:chapter8-quantitative}
+	\begin{tabular}{|p{4cm}|p{4cm}|p{4cm}|}
+		\hline
+		\textbf{Tiêu chí} & \textbf{Trước số hóa} & \textbf{Sau số hóa} \\
+		\hline
+		Thời gian xử lý một quy trình nghiệp vụ chính & Phụ thuộc nhập tay, tổng hợp thủ công, mất nhiều bước đối chiếu & Rút ngắn nhờ số hóa quy trình và tự động hóa một phần thao tác \\
+		\hline
+		Số bước thao tác đối với CTXH, thu phí, biểu mẫu & Nhiều bước rời rạc giữa các khâu & Giảm số bước nhờ gom luồng xử lý trên một hệ thống thống nhất \\
+		\hline
+		Lỗi nhập liệu / lỗi đối chiếu dữ liệu & Dễ phát sinh khi nhập và tổng hợp thủ công & Giảm nhờ kiểm tra hợp lệ, ràng buộc dữ liệu và luồng import có kiểm soát \\
+		\hline
+	\end{tabular}
+\end{table}
+
+Kết quả trên cho thấy giá trị chính của hệ thống nằm ở việc giảm thao tác thủ công, tăng tính nhất quán dữ liệu và hỗ trợ tra cứu nhanh hơn trong các quy trình nghiệp vụ trọng tâm.
+
 \subsection{Những thuận lợi và khó khăn trong việc thực hiện đề tài}
 
 \subsubsection{Thuận lợi}

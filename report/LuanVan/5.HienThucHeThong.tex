@@ -90,6 +90,7 @@ Các module quản trị dữ liệu nền hiện thực đầy đủ CRUD, phâ
 \subsubsection{Module CTXH}
 Module CTXH bao gồm quản lý danh mục, hoạt động, người tham gia, cấu hình giới hạn và báo cáo:
 \begin{itemize}
+	\item \texttt{/ctxh/categories}: tạo/sửa/xóa/xem danh mục phân loại hoạt động CTXH.
 	\item \texttt{/ctxh/activities}: tạo/sửa/xóa/lọc hoạt động theo trạng thái, thời gian, tổ chức, danh mục.
 	\item \texttt{/ctxh/limit-config}: quản lý cấu hình số ngày CTXH tối đa theo tổ chức.
 	\item \texttt{/ctxh/import/old-system}: validate và nhập dữ liệu CTXH từ hệ thống cũ.
@@ -124,14 +125,6 @@ Quy trình hiện thực:
 	\item Người dùng điền biểu mẫu động.
 	\item Backend render file Word, lưu file lên S3 và lưu metadata vào database.
 \end{enumerate}
-
-\subsubsection{Module xuất dữ liệu và cấu hình hạ tầng}
-Ngoài các module nghiệp vụ chính, hệ thống có:
-\begin{itemize}
-	\item \texttt{/export/*}: xuất danh sách người dùng hoặc thành viên tổ chức ra Excel.
-	\item \texttt{/aws-s3-config/*}: quản lý cấu hình S3 active, kiểm tra kết nối và cập nhật cấu hình lưu trữ.
-\end{itemize}
-Nhóm API này đóng vai trò hỗ trợ vận hành thực tế, giúp hệ thống linh hoạt trước yêu cầu tích hợp và khai thác dữ liệu định kỳ.
 
 \subsubsection{Bảng tổng hợp API chính theo module}
 Để thuận tiện theo dõi ở góc độ triển khai, bảng sau tổng hợp các nhóm API đại diện đang vận hành trong hệ thống.
@@ -356,11 +349,158 @@ Hệ thống giao diện đã hiện thực các nhóm màn hình:
 \begin{itemize}
 	\item \textbf{Nhóm xác thực:} đăng nhập nội bộ, callback OAuth, quản lý phiên.
 	\item \textbf{Nhóm quản trị dữ liệu nền:} người dùng, tổ chức, khoa, lớp, vai trò và quyền.
-	\item \textbf{Nhóm CTXH:} danh mục, hoạt động, danh sách tham gia, chấm điểm, import từ hệ cũ, báo cáo.
+	\item \textbf{Nhóm quản lý công tác xã hội:} danh mục, hoạt động, danh sách tham gia, chấm điểm, import từ hệ cũ, báo cáo.
 	\item \textbf{Nhóm thu phí:} campaign, mức phí, phân công, theo dõi trạng thái thanh toán.
 	\item \textbf{Nhóm biểu mẫu:} quản lý template, cấu hình field, nộp biểu mẫu, tải file sinh tự động.
 	\item \textbf{Nhóm chatbot:} giao diện hội thoại, hiển thị nguồn tham chiếu và lịch sử session.
 \end{itemize}
+
+\subsubsection{Minh họa giao diện theo phân hệ}
+Các hình dưới đây minh họa giao diện đã hiện thực theo từng nhóm chức năng chính trong hệ thống.
+
+\textbf{Nhóm xác thực.}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Đăng nhập/Login.png}
+	\caption{Giao diện đăng nhập hệ thống}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Đăng nhập/Login-Admin.png}
+	\caption{Giao diện đăng nhập quản trị viên}
+\end{figure}
+
+\textbf{Nhóm dashboard và cấu hình hệ thống.}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Dashboard.png}
+	\caption{Giao diện dashboard tổng quan}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Phân quyền RBAC.png}
+	\caption{Màn hình quản lý phân quyền RBAC}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/S3 config.png}
+	\caption{Màn hình cấu hình hệ thống S3}
+\end{figure}
+
+\textbf{Nhóm quản trị dữ liệu nền.}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Danh mục dữ liệu/Users.png}
+	\caption{Giao diện quản lý người dùng}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Danh mục dữ liệu/Organizations.png}
+	\caption{Giao diện quản lý tổ chức}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Danh mục dữ liệu/Departments.png}
+	\caption{Giao diện quản lý đơn vị/khoa}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Danh mục dữ liệu/Classes.png}
+	\caption{Giao diện quản lý lớp học}
+\end{figure}
+
+\textbf{Nhóm quản lý công tác xã hội.}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/CTXH/CTXH-Categories.png}
+	\caption{Giao diện quản lý danh mục CTXH}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/CTXH/CTXH-Activities.png}
+	\caption{Giao diện quản lý hoạt động CTXH theo danh mục}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/CTXH/Participant - Tổng quan.png}
+	\caption{Giao diện chi tiết hoạt động (tab tổng quan)}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/CTXH/Participant - Danh sách tham gia.png}
+	\caption{Giao diện danh sách sinh viên tham gia hoạt động CTXH}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/CTXH/Participant - Danh sách đăng ký chờ duyệt.png}
+	\caption{Giao diện danh sách đăng ký chờ duyệt của hoạt động CTXH}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/CTXH/CTXH-Category detail.png}
+	\caption{Màn hình xem chi tiết danh mục và danh sách hoạt động thuộc danh mục}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/CTXH/CTXH-Limit Config.png}
+	\caption{Giao diện cấu hình giới hạn ngày CTXH}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/CTXH/CTXH- Import from old system.png}
+	\caption{Giao diện nhập dữ liệu CTXH từ hệ thống cũ}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/CTXH/CTXH - Student report.png}
+	\caption{Giao diện báo cáo CTXH cá nhân của sinh viên}
+\end{figure}
+
+\textbf{Nhóm thu phí.}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Module Thu phí/Trang Quản lý đóng phí.png}
+	\caption{Giao diện quản lý đóng phí theo đợt}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Module Thu phí/Trang đóng phí của tôi.png}
+	\caption{Giao diện đóng phí của sinh viên}
+\end{figure}
+
+\textbf{Nhóm biểu mẫu.}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Trang biểu mẫu/Trang quản lý biểu mẫu.png}
+	\caption{Giao diện quản lý biểu mẫu}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Trang biểu mẫu/Trang biểu mẫu - Danh sách biểu mẫu.png}
+	\caption{Giao diện danh sách biểu mẫu có thể điền}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Trang biểu mẫu/Trang biểu mẫu - Biểu mẫu của tôi.png}
+	\caption{Giao diện theo dõi biểu mẫu của tôi}
+\end{figure}
 
 \subsubsection{Hiện thực trải nghiệm cho tác vụ dữ liệu lớn}
 Các tác vụ nghiệp vụ có dữ liệu lớn được hiện thực với cơ chế giảm tải ở UI:

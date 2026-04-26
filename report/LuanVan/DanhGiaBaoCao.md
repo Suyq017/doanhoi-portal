@@ -1,10 +1,10 @@
 # Đánh giá tổng thể báo cáo luận văn (bản cập nhật)
 
 ## 1) Phạm vi rà soát
-- Đã quét lại toàn bộ cấu trúc từ Chương 1 đến Chương 9.
+- Đã quét lại toàn bộ cấu trúc từ Chương 1 đến Chương 9, bao gồm cả phần tài liệu tham khảo.
 - Đã đối chiếu các phần phân tích, thiết kế, hiện thực, kiểm thử, triển khai và tổng kết.
 - Đã rà nhanh mật độ hình ảnh theo chương để xác định chỗ thiếu minh họa.
-- Trạng thái hiện tại: tài liệu biên dịch thành công, khoảng 104 trang.
+- Trạng thái hiện tại: tài liệu biên dịch thành công, khoảng 105 trang.
 
 ## 2) Kết luận nhanh
 Bản thảo hiện tại đã ở mức tốt và đủ nền để bảo vệ. Mạch logic giữa Chương 3 -> Chương 4 -> Chương 5 rõ ràng, nội dung bám sát hệ thống thực tế, và các chương cuối đã có chất lượng thực chất hơn.
@@ -42,16 +42,16 @@ Bản thảo hiện tại đã ở mức tốt và đủ nền để bảo vệ.
 ### 4.1 Thiếu hình ở các chương kỹ thuật hậu kỳ
 Qua quét nhanh số lượng figure:
 - Chương 2: 14 hình
-- Chương 3: 30 hình
+- Chương 3: 33 hình
 - Chương 4: 2 hình
-- Chương 5: 0 hình
+- Chương 5: 23 hình
 - Chương 6: 0 hình
 - Chương 7: 0 hình
 - Chương 8: 0 hình
 
 Nhận xét:
-- Chương 2 và 3 khá dày hình.
-- Chương 5, 6, 7 thiếu minh họa trực quan dù đây là các chương hội đồng thường hỏi sâu.
+- Chương 2, 3 và 5 đã có mật độ hình minh họa tốt.
+- Chương 6, 7, 8 vẫn thiếu minh chứng trực quan và số liệu định lượng.
 
 ### 4.2 Phần kiểm thử và triển khai còn thiên mô tả
 Chương 6 và 7 hiện có nội dung, nhưng nếu không có bằng chứng ảnh/số liệu đi kèm thì vẫn dễ bị hỏi phản biện sâu về mức độ "đã chạy thật".
@@ -62,10 +62,15 @@ Các diagram liên quan CTXH cần đồng bộ với logic mới để tránh l
 ## 5) Danh sách hình ảnh nên bổ sung (ưu tiên cao)
 
 ### 5.1 Chương 5 - Hiện thực hệ thống
-Nên thêm tối thiểu 3 hình:
-1. Ảnh tổng quan màn hình hệ thống mới (portal/dashboard).
-2. Ảnh một luồng nghiệp vụ đầy đủ từ giao diện đến kết quả (ví dụ tạo hoạt động hoặc nộp biểu mẫu).
-3. Ảnh module chatbot hoặc màn hình tương tác chatbot.
+Đã bổ sung đầy đủ cụm ảnh giao diện theo phân hệ (23 hình), gồm:
+1. Nhóm xác thực và đăng nhập quản trị.
+2. Dashboard, phân quyền RBAC, cấu hình S3.
+3. Dữ liệu nền (người dùng, tổ chức, đơn vị/khoa, lớp).
+4. CTXH theo flow nghiệp vụ (danh mục -> hoạt động -> chi tiết -> tham gia -> đăng ký).
+5. Thu phí và biểu mẫu.
+
+Khuyến nghị còn lại cho Chương 5:
+- Bổ sung thêm 1 hình chatbot giao diện hội thoại để khép đủ các nhóm màn hình đã nêu.
 
 ### 5.2 Chương 6 - Kiểm thử
 Nên thêm tối thiểu 4 hình:
@@ -81,7 +86,7 @@ Nên thêm tối thiểu 3 hình:
 3. Ảnh hoặc bảng tài nguyên chạy thực tế (CPU, RAM, latency).
 
 ### 5.4 Chương 8 - Tổng kết
-Nên thêm 1 hình hoặc 1 bảng so sánh trước/sau số hóa để tăng tính định lượng kết luận.
+Nên thêm 1 bảng so sánh trước/sau số hóa để tăng tính định lượng kết luận. Vì chưa có khảo sát nội bộ, bảng chỉ nên dùng các chỉ số đo được từ quy trình nội bộ hoặc log chạy thử, không đưa tiêu chí mức độ hài lòng.
 
 ## 6) Ghi chú bắt buộc: cập nhật diagram CTXH
 Cần chỉnh đồng bộ các Use Case/Activity/Sequence của phân hệ CTXH theo 3 thay đổi sau:
@@ -112,9 +117,9 @@ Khuyến nghị ghi rõ trong mô tả use case:
 | **Tổng thể** | **8.6/10** | Bảo vệ tốt; có thể lên 8.9 nếu bổ sung đúng mục |
 
 ## 8) Việc nên làm tiếp theo (thực dụng)
-1. Cập nhật toàn bộ diagram CTXH theo 3 thay đổi nghiệp vụ mới.
-2. Bổ sung hình minh chứng cho Chương 5, 6, 7 theo danh sách ưu tiên ở trên.
-3. Thêm 1-2 bảng định lượng ngắn ở Chương 6 và Chương 7.
+1. Bổ sung minh chứng cho Chương 6 (kiểm thử) và Chương 7 (triển khai) theo checklist ưu tiên.
+2. Thêm 1 bảng định lượng ở Chương 8 (trước/sau số hóa, không dùng khảo sát).
+3. Bổ sung thêm 1 hình chatbot vào Chương 5 để khớp mô tả "nhóm chatbot".
 4. Chạy build PDF 2 lượt và rà lại caption, tham chiếu, tràn dòng.
 
 ## 9) Kết luận cuối
@@ -130,49 +135,37 @@ Bản hiện tại đã tốt và có thể bảo vệ ổn.
 # DANH SÁCH CÔNG VIỆC CẤP BẢO VỆ (Còn cần làm)
 
 ## ✅ Hoàn tất (24/04/2026)
-1. [x] Rà soát và sửa lại diagram/caption trong Chương 3 (Activity, Sequence, Use Case)
-2. [x] Đồng bộ actor trong bảng Use Case với diagram
-3. [x] Cập nhật mô tả Use Case CTXH (UC07.2, UC07.3) để khớp với hình
+1. [x] Hoàn thiện nội dung Chương 8 theo hướng đánh giá định lượng nội bộ, không sử dụng dữ liệu khảo sát (26/04/2026)
+2. [x] Rà soát và sửa lại diagram/caption trong Chương 3 (Activity, Sequence, Use Case)
+3. [x] Đồng bộ actor trong bảng Use Case với diagram
+4. [x] Cập nhật mô tả Use Case CTXH (UC07.2, UC07.3) để khớp với hình
+5. [x] Bổ sung rõ mô tả UC07.3 về luồng duyệt theo auto-accept và ràng buộc max_participants (26/04/2026)
+6. [x] Bổ sung luồng direct view trong UC07.1 và UC07.2 (danh mục -> hoạt động -> danh sách người tham gia, kèm luồng xin tham gia) (26/04/2026)
+7. [x] Xác nhận Activity "Tạo hoạt động" đã bao gồm auto-accept và max participants; Sequence giữ mô tả tổng quát theo phạm vi báo cáo (26/04/2026)
+8. [x] Bổ sung ảnh Chương 5 (23 hình) theo toàn bộ phân hệ giao diện đã cung cấp (26/04/2026)
+9. [x] Chuẩn hóa caption ảnh Chương 5 theo tên mô tả ngắn gọn, bỏ tiền tố "Bước" (26/04/2026)
+10. [x] Sắp xếp lại flow ảnh CTXH theo thứ tự nghiệp vụ để tăng khả năng theo dõi khi đọc (26/04/2026)
 
 ## ⏳ CẦN LÀM NGAY (ưu tiên cao)
 
-### 1. Cập nhật diagram CTXH theo thay đổi nghiệp vụ
-**Deadline: Trước khi build PDF lần cuối**
-- Thêm 3 trường mới vào Use Case UC07.x (hoạt động CTXH):
-  - Auto-accept: duyệt sinh viên tự động hay cần phê duyệt thủ công
-  - Max participants: giới hạn số lượng tối đa người tham gia
-  - Direct view: cho phép xem chi tiết hoạt động từ danh mục
-- Cập nhật Activity Diagram "Tạo hoạt động" để thêm 2 trường này
-- Cập nhật Sequence Diagram "Tạo và chỉnh sửa hoạt động CTXH" nếu có logic rẽ nhánh
-- ⚠️ **Ghi chú**: Cần đặc biệt chỉnh phần mô tả UC07.1, UC07.2, UC07.3 để nêu rõ:
-  - Luồng duyệt sinh viên: nếu auto-accept thì tự động, nếu false thì chờ admin duyệt
-  - Ràng buộc max_participants: kiểm tra trước khi add hoặc khi xác nhận duyệt
-
-### 2. Bổ sung hình minh chứng cho Chương 5 - Hiện thực
-**Cần thêm 3 ảnh screenshot:**
-- (5.1) Tổng quan dashboard/portal main page
-- (5.2) Một luồng nghiệp vụ đầy đủ (ví dụ: tạo hoạt động -> đăng ký -> xem danh sách)
-- (5.3) Module chatbot hoặc màn hình tra cứu CTXH qua chatbot
-
-### 3. Bổ sung minh chứng cho Chương 6 - Kiểm thử
+### 1. Bổ sung minh chứng cho Chương 6 - Kiểm thử
 **Cần thêm 4 ảnh hoặc bảng kết quả:**
 - (6.1) Kết quả test API (Postman collection run hoặc Newman output)
 - (6.2) Kết quả test chức năng web (ít nhất 1 ca test main flow)
 - (6.3) Kết quả test quyền truy cập RBAC (negative case: truy cập không có quyền)
 - (6.4) Kết quả test tải/hiệu năng (k6 script hoặc tương đương, biểu đồ latency)
 
-### 4. Bổ sung hình/metric cho Chương 7 - Triển khai & Vận hành
+### 2. Bổ sung hình/metric cho Chương 7 - Triển khai & Vận hành
 **Cần thêm 3 ảnh hoặc diagram:**
-- (7.1) Sơ đồ topology production (request flow từ client → nginx → docker → backend → DB)
-- (7.2) Dashboard Grafana hoặc Prometheus với metric thực (CPU, RAM, latency, request rate)
-- (7.3) Bảng hoặc ảnh resource thực tế đang chạy (hoặc dự tính: CPU, RAM, storage cần)
+- (7.1) Sơ đồ topology triển khai dự kiến (request flow từ client → nginx → docker → backend → DB)
+- (7.2) Ảnh dashboard giám sát ở môi trường local/staging (Prometheus/Grafana) hoặc ảnh cấu hình monitoring đã chạy được
+- (7.3) Bảng tài nguyên dự kiến khi vận hành (CPU, RAM, storage, ngưỡng người dùng đồng thời)
 
-### 5. Bổ sung tính định lượng Chương 8 - Tổng kết
-**Cần thêm 1 bảng so sánh:**
-- Bảng so sánh trước/sau số hóa:
-  - Thời gian xử lý (hoạt động, thu phí, biểu mẫu)
-  - Lỗi nhập dữ liệu (số lượng hoặc tỷ lệ giảm)
-  - Độ hài lòng người dùng (nếu có khảo sát)
+\*Ghi chú: do hệ thống chưa go-live production, chấp nhận minh chứng ở mức deployment plan + staging run thay cho số liệu production thực tế.\*
+
+### 3. Bổ sung 1 hình chatbot cho Chương 5 (để đủ theo mô tả nhóm màn hình)
+**Cần thêm 1 ảnh screenshot:**
+- (5.4) Màn hình hội thoại chatbot CTXH (kèm minh chứng trả lời có nguồn nếu có)
 
 ## ⚠️ CẦN XỬ LÝ TRƯỚC KHI NỘP (bắt buộc)
 
@@ -195,8 +188,10 @@ Bản hiện tại đã tốt và có thể bảo vệ ổn.
 ## 📋 CHECKLIST CUỐI CÙNG (Trước khi gửi)
 
 - [ ] Cập nhật UC07 diagram xong, build PDF thành công
-- [ ] Thêm ảnh Chương 5, 6, 7 vào folder Images
-- [ ] Bảng so sánh định lượng ở Chương 8
+- [x] UC07.3 đã cập nhật rõ mô tả auto-accept và max_participants
+- [x] Thêm ảnh Chương 5 vào phần hiện thực giao diện
+- [ ] Thêm ảnh Chương 6 và minh chứng triển khai dự kiến/staging cho Chương 7
+- [ ] Bổ sung 1 ảnh chatbot ở Chương 5
 - [ ] Rà soát caption, tham chiếu toàn file
 - [ ] PDF build 2 lần, kiểm tra tràn dòng, hiển thị ảnh
 - [ ] Chuẩn bị file nộp: PDF + source + ảnh
