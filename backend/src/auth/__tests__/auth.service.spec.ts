@@ -1,4 +1,5 @@
 import { AuthService } from "../auth.service";
+import { UnauthorizedException } from "@nestjs/common";
 
 describe("AuthService", () => {
   const createUsersServiceMock = () => ({
@@ -59,6 +60,15 @@ describe("AuthService", () => {
     expect(result.refreshToken).toBeUndefined();
   });
 
+  it("should return null when user is missing, inactive, or password invalid", async () => {
+    usersService.findByEmail.mockResolvedValueOnce(null).mockResolvedValueOnce({ isActive: false }).mockResolvedValueOnce({ isActive: true });
+    usersService.validatePassword.mockResolvedValueOnce(false);
+
+    await expect(service.validateUser("missing@example.com", "x")).resolves.toBeNull();
+    await expect(service.validateUser("inactive@example.com", "x")).resolves.toBeNull();
+    await expect(service.validateUser("bad@example.com", "x")).resolves.toBeNull();
+  });
+
   it("should issue access and refresh tokens on login", async () => {
     jwtService.sign
       .mockReturnValueOnce("access-token")
@@ -73,6 +83,56 @@ describe("AuthService", () => {
     expect(usersService.updateRefreshToken).toHaveBeenCalledWith("user-1", "refresh-token");
     expect(result.accessToken).toBe("access-token");
     expect(result.refreshToken).toBe("refresh-token");
+  });
+
+  it("should refresh token and reject invalid refresh tokens", async () => {
+    jwtService.verify.mockReturnValue({ email: "test@example.com" });
+    usersService.findByEmail.mockResolvedValue({
+      id: "user-1",
+      email: "test@example.com",
+      isActive: true,
+      refreshToken: "rt",
+    });
+    jwtService.sign.mockReturnValue("new-access");
+
+    await expect(service.refreshToken("rt")).resolves.toEqual({ accessToken: "new-access" });
+
+    usersService.findByEmail.mockResolvedValue({
+      id: "user-1",
+      email: "test@example.com",
+      isActive: true,
+      refreshToken: "other",
+    });
+    await expect(service.refreshToken("rt")).rejects.toBeInstanceOf(UnauthorizedException);
+
+    jwtService.verify.mockImplementation(() => {
+      throw new Error("bad token");
+    });
+    await expect(service.refreshToken("bad")).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it("should logout by clearing refresh token", async () => {
+    await service.logout("user-1");
+    expect(usersService.updateRefreshToken).toHaveBeenCalledWith("user-1", null);
+  });
+
+  it("should handle google login existing and missing users", async () => {
+    usersService.findByEmail.mockResolvedValueOnce({
+      id: "user-1",
+      email: "test@example.com",
+      fullName: "Test User",
+      authProvider: "LOCAL",
+      googleId: null,
+    });
+    jest.spyOn(service, "login").mockResolvedValue({ accessToken: "a", refreshToken: "r", user: {} } as never);
+
+    await service.googleLogin({ id: "google-1", emails: [{ value: "test@example.com" }], name: "Test" });
+    expect(usersService.updateGoogleId).toHaveBeenCalledWith("user-1", "google-1");
+
+    usersService.findByEmail.mockResolvedValueOnce(null);
+    await expect(
+      service.googleLogin({ id: "google-2", emails: [{ value: "missing@example.com" }], name: "Missing" }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it("should return permissions grouped by role", async () => {
@@ -96,5 +156,14 @@ describe("AuthService", () => {
         permissions: [{ code: "users.view", isActive: true }],
       }),
     ]);
+  });
+
+  it("should return empty permissions when user has no roles", async () => {
+    rolesService.getUserRoles.mockResolvedValue([]);
+
+    const result = await service.getUserPermissions("user-1");
+
+    expect(result.roles).toEqual([]);
+    expect(result.organizationId).toBeUndefined();
   });
 });

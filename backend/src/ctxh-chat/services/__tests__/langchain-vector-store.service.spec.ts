@@ -6,12 +6,22 @@ import { createMockDocument, createMockVectorStore } from './mocks/vector-store.
 import { Document } from '@langchain/core/documents';
 
 // Create mock vector store instance
-const mockVectorStoreInstance = createMockVectorStore();
+let mockVectorStoreInstance: ReturnType<typeof createMockVectorStore>;
+let mockPgClient: {
+  connect: jest.Mock;
+  query: jest.Mock;
+  end: jest.Mock;
+};
+
+// Mock pg Client used by addDocuments/metadata-filtered search
+jest.mock('pg', () => ({
+  Client: jest.fn().mockImplementation(() => mockPgClient),
+}));
 
 // Mock PGVectorStore
 jest.mock('@langchain/community/vectorstores/pgvector', () => ({
   PGVectorStore: {
-    initialize: jest.fn().mockResolvedValue(mockVectorStoreInstance),
+    initialize: jest.fn().mockImplementation(async () => mockVectorStoreInstance),
   },
 }));
 
@@ -37,6 +47,7 @@ jest.mock('../../config/langchain.config', () => ({
       user: 'test_user',
       password: 'test_password',
     }),
+    getEmbeddingDimension: jest.fn().mockReturnValue(768),
   },
 }));
 
@@ -46,6 +57,12 @@ describe('LangChainVectorStoreService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockVectorStoreInstance = createMockVectorStore();
+    mockPgClient = {
+      connect: jest.fn().mockResolvedValue(undefined),
+      query: jest.fn().mockResolvedValue({ rows: [] }),
+      end: jest.fn().mockResolvedValue(undefined),
+    };
     mockConfigService = createMockConfigService();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -107,7 +124,7 @@ describe('LangChainVectorStoreService', () => {
 
       expect(results).toBeDefined();
       expect(Array.isArray(results)).toBe(true);
-      expect(mockVectorStoreInstance.similaritySearch).toHaveBeenCalledWith(query, k);
+      expect(mockVectorStoreInstance.similaritySearchWithScore).toHaveBeenCalledWith(query, k * 3);
     });
 
     it('should use default k value if not provided', async () => {
@@ -115,7 +132,7 @@ describe('LangChainVectorStoreService', () => {
 
       await service.similaritySearch(query);
 
-      expect(mockVectorStoreInstance.similaritySearch).toHaveBeenCalledWith(query, 5);
+      expect(mockVectorStoreInstance.similaritySearchWithScore).toHaveBeenCalledWith(query, 15);
     });
   });
 
@@ -132,14 +149,16 @@ describe('LangChainVectorStoreService', () => {
 
       expect(results).toBeDefined();
       expect(Array.isArray(results)).toBe(true);
-      expect(mockVectorStoreInstance.similaritySearchWithScore).toHaveBeenCalledWith(query, k);
+      expect(mockVectorStoreInstance.similaritySearchWithScore).toHaveBeenCalledWith(query, k * 3);
     });
 
     it('should return tuples of [Document, score]', async () => {
       const results = await service.similaritySearchWithScore('test', 2);
 
       results.forEach(([doc, score]) => {
-        expect(doc).toBeInstanceOf(Document);
+        expect(doc).toBeDefined();
+        expect(typeof doc.pageContent).toBe('string');
+        expect(typeof doc.metadata?.score).toBe('number');
         expect(typeof score).toBe('number');
       });
     });
@@ -158,13 +177,15 @@ describe('LangChainVectorStoreService', () => {
 
       await service.addDocuments(documents);
 
-      expect(mockVectorStoreInstance.addDocuments).toHaveBeenCalledWith(documents);
+      expect(mockPgClient.connect).toHaveBeenCalled();
+      expect(mockPgClient.query).toHaveBeenCalled();
     });
 
     it('should handle empty document array', async () => {
       await service.addDocuments([]);
 
-      expect(mockVectorStoreInstance.addDocuments).toHaveBeenCalledWith([]);
+      expect(mockPgClient.connect).not.toHaveBeenCalled();
+      expect(mockPgClient.query).not.toHaveBeenCalled();
     });
   });
 
@@ -183,10 +204,7 @@ describe('LangChainVectorStoreService', () => {
     it('should pass k parameter to retriever', () => {
       service.getRetriever(10);
 
-      expect(mockVectorStoreInstance.asRetriever).toHaveBeenCalledWith({
-        k: 10,
-        searchType: 'similarity',
-      });
+      expect(mockVectorStoreInstance.asRetriever).toHaveBeenCalledWith(10);
     });
 
     it('should throw error when not initialized', () => {
@@ -254,8 +272,8 @@ describe('LangChainVectorStoreService', () => {
 
     it('should throw error when adding documents fails', async () => {
       await service.initialize();
-      
-      mockVectorStoreInstance.addDocuments.mockRejectedValueOnce(
+
+      mockPgClient.query.mockRejectedValueOnce(
         new Error('Add documents failed')
       );
 

@@ -1,3 +1,4 @@
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import * as XLSX from "xlsx";
 import { OrganizationImportService } from "../../organization-import.service";
 
@@ -7,12 +8,14 @@ describe("OrganizationImportService", () => {
   });
 
   const createUsersRepositoryMock = () => ({
+    findOne: jest.fn(),
     find: jest.fn(),
   });
 
   const createUserOrganizationsRepositoryMock = () => ({
     create: jest.fn((value) => value),
     find: jest.fn(),
+    findOne: jest.fn(),
     save: jest.fn(async (value) => value),
   });
 
@@ -73,6 +76,66 @@ describe("OrganizationImportService", () => {
     ]);
   });
 
+  it("should reject upload for invalid extension", async () => {
+    await expect(
+      service.processUploadedFile({ originalname: "members.txt", buffer: Buffer.from("x") } as never, "org-1", 3),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it("should reject upload when organization does not exist", async () => {
+    organizationsRepository.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.processUploadedFile({ originalname: "members.xlsx", buffer: Buffer.from("x") } as never, "org-missing", 3),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it("should reject executeImport when session is missing", async () => {
+    await expect(service.executeImport("missing")).rejects.toThrow(
+      "Session không tồn tại hoặc đã hết hạn",
+    );
+  });
+
+  it("should reject executeImport when session is not validated", async () => {
+    (service as any).importSessions.set("session-1", {
+      sessionId: "session-1",
+      organizationId: "org-1",
+      data: [{ studentCode: "SV001" }],
+      validationResults: [],
+      createdAt: new Date(),
+    });
+
+    await expect(service.executeImport("session-1")).rejects.toThrow(
+      "Dữ liệu chưa được validate. Vui lòng validate trước khi import",
+    );
+  });
+
+  it("should reject validateImportData when session is missing", async () => {
+    await expect(service.validateImportData("missing")).rejects.toThrow(
+      "Session không tồn tại hoặc đã hết hạn",
+    );
+  });
+
+  it("should validate data and mark missing user as invalid", async () => {
+    organizationsRepository.findOne.mockResolvedValue({ id: "org-1" });
+    const upload = await service.processUploadedFile(
+      {
+        originalname: "members.xlsx",
+        buffer: createExcelBuffer([["Mã số sinh viên"], ["SV404"]]),
+      } as never,
+      "org-1",
+      3,
+    );
+    usersRepository.find.mockResolvedValue([]);
+    userOrganizationsRepository.find.mockResolvedValue([]);
+
+    const validation = await service.validateImportData(upload.sessionId);
+
+    expect(validation).toHaveLength(1);
+    expect(validation[0].isValid).toBe(false);
+    expect(validation[0].errors[0]).toContain("Không tìm thấy sinh viên");
+  });
+
   it("should execute import and skip already existing members", async () => {
     organizationsRepository.findOne.mockResolvedValue({ id: "org-1" });
     usersRepository.find.mockResolvedValue([
@@ -99,5 +162,9 @@ describe("OrganizationImportService", () => {
     expect(results.failed).toBe(0);
     expect(userOrganizationsRepository.create).toHaveBeenCalledTimes(1);
     expect(userOrganizationsRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  it("should throw for invalid template level", () => {
+    expect(() => service.generateTemplate(1)).toThrow(BadRequestException);
   });
 });

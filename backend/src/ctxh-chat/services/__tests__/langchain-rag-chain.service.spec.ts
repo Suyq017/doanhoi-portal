@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { LangChainRagChainService, RAGResponse } from '../langchain-rag-chain.service';
 import { LangChainVectorStoreService } from '../langchain-vector-store.service';
 import { LangChainMemoryService } from '../langchain-memory.service';
+import { CtxhFilterExtractionService } from '../ctxh-filter-extraction.service';
 import { createMockConfigService } from './mocks/config.service.mock';
 import { createMockVectorStoreService, createMockDocument } from './mocks/vector-store.mock';
 import { Document } from '@langchain/core/documents';
@@ -45,6 +46,7 @@ jest.mock('../../config/langchain.config', () => ({
     getLLM: jest.fn().mockReturnValue({
       invoke: jest.fn().mockResolvedValue({ content: 'AI response' }),
     }),
+    isUsingLocalModel: jest.fn().mockReturnValue(true),
     getRAGConfig: jest.fn().mockReturnValue({
       topK: 5,
       temperature: 0.7,
@@ -66,6 +68,11 @@ describe('LangChainRagChainService', () => {
   let service: LangChainRagChainService;
   let vectorStoreService: ReturnType<typeof createMockVectorStoreService>;
   let memoryService: Partial<LangChainMemoryService>;
+  let filterExtractionService: {
+    extractFilters: jest.Mock;
+    resolveDateRange: jest.Mock;
+    isEmpty: jest.Mock;
+  };
   let mockConfigService: ReturnType<typeof createMockConfigService>;
 
   beforeEach(async () => {
@@ -84,6 +91,12 @@ describe('LangChainRagChainService', () => {
       getSessionMetadata: jest.fn().mockReturnValue({ exists: true, turnCount: 0, lastAccessed: new Date() }),
     };
 
+    filterExtractionService = {
+      extractFilters: jest.fn().mockResolvedValue({}),
+      resolveDateRange: jest.fn().mockImplementation((filters) => filters),
+      isEmpty: jest.fn().mockReturnValue(true),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LangChainRagChainService,
@@ -98,6 +111,10 @@ describe('LangChainRagChainService', () => {
         {
           provide: LangChainMemoryService,
           useValue: memoryService,
+        },
+        {
+          provide: CtxhFilterExtractionService,
+          useValue: filterExtractionService,
         },
       ],
     }).compile();
@@ -207,7 +224,7 @@ describe('LangChainRagChainService', () => {
 
       await service.invoke(question);
 
-      expect(vectorStoreService.similaritySearch).toHaveBeenCalled();
+      expect(vectorStoreService.similaritySearchWithDateFilter).toHaveBeenCalled();
     });
 
     it('should return sources from search', async () => {
@@ -215,7 +232,7 @@ describe('LangChainRagChainService', () => {
         createMockDocument('Source 1'),
         createMockDocument('Source 2'),
       ];
-      vectorStoreService.similaritySearch.mockResolvedValue(mockSources);
+      vectorStoreService.similaritySearchWithDateFilter.mockResolvedValue(mockSources);
 
       const result = await service.invoke('Test');
 
@@ -317,7 +334,7 @@ describe('LangChainRagChainService', () => {
     });
 
     it('should handle vector store search errors', async () => {
-      vectorStoreService.similaritySearch.mockRejectedValue(
+      vectorStoreService.similaritySearchWithDateFilter.mockRejectedValue(
         new Error('Search failed')
       );
 

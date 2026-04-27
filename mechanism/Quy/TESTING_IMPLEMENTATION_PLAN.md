@@ -214,3 +214,63 @@ Kế hoạch được xem là hoàn thành khi:
 - Backend hiện đã có sẵn nền tảng Jest nên có thể triển khai ngay, không cần thay đổi kiến trúc lớn.
 - Frontend có thể làm sau nếu thời gian hạn chế.
 - Phần chatbot nên ưu tiên mock thay vì phụ thuộc vào LLM thật để tránh test không ổn định.
+
+## 10. Tiến độ thực tế (cập nhật đến 27/04/2026)
+
+### 10.1 Trạng thái tổng quan
+
+- Đã tạo và sử dụng nhánh triển khai kiểm thử riêng (`testing`).
+- Đã triển khai nhiều vòng test backend non-chat theo hướng unit/service-level với mock repository và mock dependency.
+- Đã chạy thành công bộ `test:core` và `test:core:cov` sau mỗi đợt mở rộng test.
+- Đã tiếp tục bơm test cho các service có branch logic cao như `auth`, `templates`, `submissions`, `classes`, và nhóm import/batch ở `users` và `classes`.
+
+### 10.2 Kết quả định lượng hiện tại
+
+- Tổng số test suite non-chat đang pass: `61`.
+- Tổng số test case non-chat đang pass: `499`.
+- Coverage non-chat backend hiện tại:
+	- Statements: `46.14%`.
+	- Branches: `40.61%`.
+	- Functions: `43.64%`.
+	- Lines: `45.96%`.
+
+### 10.3 Những phần đã hiện thực
+
+- Đã bổ sung test cho các cụm nghiệp vụ chính: auth, users, organizations, departments, classes, roles, dashboard, metrics, templates, submissions, export, aws-config, payos, payment-history, payment-fee-level, payment-assignment, payment-campaign, payment-campaign-payos-config, limit-config.
+- Đã mở rộng các nhánh validate/exception path thay vì chỉ test happy path.
+- Đã tăng độ dày test cho các service có nhiều rẽ nhánh và query/filter logic.
+
+### 10.4 Trạng thái cảnh báo/lỗi khi chạy test
+
+- Cảnh báo `ts-jest` về `hybrid module kind` đã được xử lý bằng cách bật `isolatedModules` trong TypeScript config.
+- Một số dòng `console.log`/`console.error` từ code nghiệp vụ vẫn xuất hiện trong terminal khi test chạy (đây là log runtime, không phải test fail).
+- Ở các test có expected error path, đã giảm nhiễu đầu ra bằng cách mock logger hoặc mock `console.error` tại test setup.
+
+### 10.5 Cập nhật mở rộng test gần nhất
+
+- Đã bổ sung thêm test cho `templates`, `submissions`, `auth`, và `classes` để bơm thêm branch coverage ở các service có logic nghiệp vụ và filter/query phức tạp.
+- Các nhánh mới đã cover thêm:
+	- `auth`: validate user fail/ok, refresh token success/fail, logout, google login, permissions khi không có role.
+	- `templates`: parse template không có placeholder, invalid docx, upload lỗi cấu hình S3, find/update/configure/delete paths.
+	- `submissions`: create/update/submit, generate/download/public URL, cache miss, delete, transform date/date_parts.
+	- `classes`: create/update/remove/bulk delete, filter/query default path, missing department/class, batch retry logic, session expiry và batch guards.
+- Đã chạy lại `npm test -- --coverage --runInBand` sau các vòng bổ sung và suite non-chat vẫn pass toàn bộ.
+
+## 11. Hướng tiếp tục triển khai
+
+### 11.1 Mục tiêu vòng kế tiếp
+
+- Tăng coverage non-chat backend lên mức cao hơn theo ưu tiên branch coverage.
+- Duy trì nguyên tắc: thêm test diện rộng trước, chạy coverage tổng đúng 1 lần ở cuối mỗi vòng.
+
+### 11.2 Thứ tự ưu tiên tiếp theo
+
+1. Hoàn thiện test cho các service import/batch còn ít bao phủ ở nhóm `ctxh`, `departments`, `users` và `classes`.
+2. Bổ sung test cho các service CTXH non-chat có nhiều nhánh điều kiện và thống kê.
+3. Bổ sung integration test API lõi bằng `supertest` cho các endpoint quan trọng (auth, users, organizations, payment, templates, submissions).
+
+### 11.3 Chuẩn vận hành cho các vòng sau
+
+- Mỗi vòng triển khai gồm: chọn module ưu tiên -> thêm test theo branch -> chạy test targeted -> chạy coverage tổng 1 lần -> ghi nhận số liệu.
+- Giữ phạm vi non-chat cho nhánh này; chatbot RAG được tách riêng theo kế hoạch phân công.
+- Cập nhật lại số liệu và danh sách module đã bao phủ vào file kế hoạch sau mỗi vòng lớn để phục vụ viết luận văn.

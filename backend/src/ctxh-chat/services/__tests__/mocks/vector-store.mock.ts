@@ -65,6 +65,16 @@ export const createMockVectorStoreService = () => {
     isInitialized: jest.fn().mockReturnValue(true),
     initialize: jest.fn().mockResolvedValue(undefined),
     similaritySearch: mockVectorStore.similaritySearch,
+    similaritySearchWithDateFilter: jest
+      .fn()
+      .mockImplementation((query: string, k = 5) =>
+        mockVectorStore.similaritySearch(query, k),
+      ),
+    similaritySearchWithMetadataFilters: jest
+      .fn()
+      .mockImplementation((query: string, _filters: unknown, k = 5) =>
+        mockVectorStore.similaritySearch(query, k),
+      ),
     similaritySearchWithScore: mockVectorStore.similaritySearchWithScore,
     addDocuments: mockVectorStore.addDocuments,
     maxMarginalRelevanceSearch: mockVectorStore.maxMarginalRelevanceSearch,
