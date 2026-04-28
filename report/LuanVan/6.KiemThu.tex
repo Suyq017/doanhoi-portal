@@ -23,6 +23,18 @@ Môi trường kiểm thử giao diện và API được chuẩn hóa để bả
 
 Các ca kiểm thử được thực hiện theo hướng \textit{black-box}: thao tác từ UI/API và đối chiếu kết quả thực tế với kết quả mong đợi theo yêu cầu chức năng đã phân tích ở Chương 3.
 
+\subsubsection{Kiểm thử tự động bằng Jest}
+Bên cạnh các ca kiểm thử thủ công theo luồng nghiệp vụ, nhóm bổ sung kiểm thử tự động ở tầng backend để tăng độ tin cậy và khả năng tái lập của kết quả. Hệ thống đã tích hợp sẵn Jest, ts-jest và supertest trong cấu hình dự án, cho phép kiểm thử cả logic đơn vị lẫn API tích hợp.
+
+Phạm vi kiểm thử tự động tập trung vào các thành phần có độ rủi ro cao hoặc có nhiều xử lý nghiệp vụ:
+\begin{itemize}
+	\item \textbf{Unit test}: kiểm tra các hàm xử lý logic độc lập, đặc biệt là các bước truy vấn, chuyển đổi và validate dữ liệu.
+	\item \textbf{Integration test}: kiểm tra controller/service thông qua NestJS testing module và gọi API bằng supertest để xác nhận hợp đồng request/response.
+	\item \textbf{Kiểm thử chuyên biệt cho CTXH RAG}: kiểm tra các service truy hồi, bộ nhớ hội thoại và pipeline ingest bằng dữ liệu mô phỏng để hạn chế phụ thuộc vào mô hình sinh ngẫu nhiên.
+\end{itemize}
+
+Việc bổ sung lớp kiểm thử này giúp giảm nguy cơ lỗi hồi quy khi cập nhật các module như users, organizations, CTXH và ctxh-chat, đồng thời hỗ trợ báo cáo kết quả theo hướng định lượng hơn thông qua số lượng test case và mức bao phủ mã nguồn khi cần.
+
 \subsubsection{Kiểm thử chức năng trang xác thực và phân quyền}
 
 \begin{table}[H]

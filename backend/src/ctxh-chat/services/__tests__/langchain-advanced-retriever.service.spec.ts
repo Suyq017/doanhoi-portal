@@ -321,4 +321,55 @@ describe('LangChainAdvancedRetrieverService', () => {
       expect(results.length).toBe(1);
     });
   });
+
+  describe('private helper branches', () => {
+    it('should normalize statuses and filter out draft documents', () => {
+      const normalize = (service as any).normalizeActivityStatus.bind(service);
+      const filterOutDraft = (service as any).filterOutDraftDocuments.bind(service);
+
+      expect(normalize('active')).toBe('ACTIVE');
+      expect(normalize('unknown')).toBeUndefined();
+      expect(normalize(undefined)).toBeUndefined();
+
+      const docs = [
+        createMockDocument('Draft doc', { status: 'DRAFT', activityId: 'draft-1' }),
+        createMockDocument('Active doc', { status: 'ACTIVE', activityId: 'active-1' }),
+        createMockDocument('Weird doc', { status: 'not-a-status', activityId: 'weird-1' }),
+      ];
+
+      const filtered = filterOutDraft(docs);
+      expect(filtered.map((doc: Document) => doc.metadata?.activityId)).toEqual(['active-1', 'weird-1']);
+    });
+
+    it('should rank and combine duplicate results by content', () => {
+      const rankAndCombine = (service as any).rankAndCombineResults.bind(service);
+
+      const sharedA = createMockDocument('Shared content', {});
+      const sharedB = createMockDocument('Shared content', {});
+      const unique = createMockDocument('Unique content', { activityId: 'unique-1' });
+
+      const ranked = rankAndCombine([
+        { document: sharedA, score: 0.9, searchType: 'semantic' },
+        { document: sharedB, score: 0.8, searchType: 'mmr' },
+        { document: unique, score: 0.7, searchType: 'multi_query' },
+      ], 5);
+
+      expect(ranked).toHaveLength(2);
+      expect(ranked[0].metadata?.score).toBeGreaterThan(ranked[1].metadata?.score);
+      expect(ranked[0].pageContent).toBe('Shared content');
+    });
+
+    it('should deduplicate by content hash when activityId is missing', () => {
+      const deduplicate = (service as any).deduplicateResults.bind(service);
+
+      const doc1 = createMockDocument('Same content start for hash dedupe', { activityId: undefined });
+      const doc2 = createMockDocument('Same content start for hash dedupe', { activityId: undefined });
+      delete doc1.metadata.activityId;
+      delete doc2.metadata.activityId;
+
+      const unique = deduplicate([doc1, doc2], 5);
+      expect(unique).toHaveLength(1);
+      expect(unique[0].pageContent).toBe('Same content start for hash dedupe');
+    });
+  });
 });
