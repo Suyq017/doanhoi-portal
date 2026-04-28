@@ -3,10 +3,8 @@ import type {
   ChatModelRunOptions,
   ChatModelRunResult,
 } from '@assistant-ui/react';
-import { authService } from '../../auth/services/authService';
+import { apiClient } from '../../../shared/services/apiClient';
 import type { CtxhChatResponse } from '../types/chat.types';
-
-const BACKEND = import.meta.env.VITE_BACKEND_API_URL || '/api';
 
 // ── Streaming delay config ─────────────────────────────────────────────────
 // Simulates a ~60 tokens/sec typing speed.
@@ -42,22 +40,13 @@ export const ctxhChatAdapter: ChatModelAdapter = {
         ?.custom as Record<string, unknown> | undefined
     )?.sessionId as string | undefined;
 
-    const token = authService.getAccessToken();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-
     // ── Fetch full response from non-streaming endpoint ────────────────
-    const res = await fetch(`${BACKEND}/ctxh-chat/message`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ message: userText, sessionId }),
-      signal: abortSignal,
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data: CtxhChatResponse = await res.json();
+    // apiClient handles 401 → token refresh → retry automatically
+    const data = await apiClient.post<CtxhChatResponse>(
+      '/ctxh-chat/message',
+      { message: userText, sessionId },
+      { signal: abortSignal },
+    );
 
     // ── Simulate streaming: yield tokens progressively ─────────────────
     const tokens = tokenize(data.response);

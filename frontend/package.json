@@ -52,6 +52,7 @@
     "react-i18next": "^15.5.3",
     "react-query": "^3.39.3",
     "react-router-dom": "^6.20.1",
+    "remark-gfm": "^4.0.1",
     "tailwind-merge": "^2.1.0",
     "validator": "^13.15.15",
     "xlsx": "^0.18.5",

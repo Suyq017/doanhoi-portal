@@ -109,10 +109,13 @@ export class StaffAgentService implements OnModuleInit {
     const customTools: (DynamicStructuredTool | DynamicTool)[] = [
       this.buildSearchActivitiesTool(userId),
       this.buildGetPendingParticipantsTool(),
+      this.buildGetApprovedParticipantsTool(),
       this.buildApproveAndNotifyTool(userId),
+      this.buildRejectRegistrationTool(userId),
       this.buildCreateActivityTool(userId),
       this.buildBatchCreateActivitiesTool(userId),
       this.buildManageActivityTool(userId),
+      this.buildSendNotificationEmailTool(userId),
       this.buildGetPendingOverviewTool(userId, sessionId),
       this.buildLookupCategoryTool(),
       this.buildLookupOrganizationTool(),
@@ -234,6 +237,40 @@ export class StaffAgentService implements OnModuleInit {
     });
   }
 
+  // ── Tool 2b: get_approved_participants ────────────────────────────────────
+
+  private buildGetApprovedParticipantsTool(): DynamicStructuredTool {
+    const participationService = this.participationService;
+    return new DynamicStructuredTool({
+      name: 'get_approved_participants',
+      description:
+        'Lấy danh sách sinh viên ĐÃ ĐƯỢC DUYỆT (APPROVED) của một hoạt động cụ thể. ' +
+        'Trả về participation_id, tên sinh viên, mã số, ngày đăng ký.',
+      schema: z.object({
+        activity_id: z.string().describe('UUID của hoạt động cần lấy danh sách APPROVED'),
+      }),
+      func: async ({ activity_id }) => {
+        try {
+          const allParticipants = await participationService.findByActivity(activity_id);
+          const approved = allParticipants.filter((p: any) => p.status === 'APPROVED');
+          return JSON.stringify({
+            activity_id,
+            approved_count: approved.length,
+            participants: approved.map((p: any) => ({
+              participation_id: p.id,
+              student_name: p.student?.full_name ?? null,
+              student_code: p.student_code ?? null,
+              email: p.student?.email ?? null,
+              registered_at: p.created_at,
+            })),
+          });
+        } catch (err: any) {
+          return JSON.stringify({ error: err?.message ?? 'Lỗi truy vấn danh sách sinh viên đã duyệt.' });
+        }
+      },
+    });
+  }
+
   // ── Tool 3: approve_and_notify ────────────────────────────────────────────
 
   private buildApproveAndNotifyTool(userId: string): DynamicStructuredTool {
@@ -245,19 +282,34 @@ export class StaffAgentService implements OnModuleInit {
     return new DynamicStructuredTool({
       name: 'approve_and_notify',
       description:
-        'Duyệt hàng loạt đăng ký PENDING và gửi email xác nhận cho sinh viên được duyệt. ' +
+        'Duyệt đăng ký PENDING và gửi email xác nhận cho sinh viên được duyệt. ' +
+        'Hỗ trợ 4 cách chọn sinh viên: (1) participation_ids trực tiếp, ' +
+        '(2) student_names tên sinh viên (tìm gần đúng), ' +
+        '(3) student_codes danh sách MSSV, ' +
+        '(4) approve_all=true để duyệt tất cả PENDING. ' +
         'Yêu cầu quyền ctxh.activities.manage_participants.',
       schema: z.object({
         activity_id: z.string().describe('UUID hoạt động'),
         participation_ids: z
           .array(z.string())
-          .min(1)
-          .max(200)
-          .describe('Danh sách participation_id cần duyệt'),
+          .optional()
+          .describe('Danh sách participation_id cần duyệt. Dùng khi đã biết IDs từ get_pending_participants.'),
+        student_names: z
+          .array(z.string())
+          .optional()
+          .describe('Tên sinh viên cần duyệt (tìm gần đúng). VD: ["Nguyễn Văn A", "Trần B"]'),
+        student_codes: z
+          .array(z.string())
+          .optional()
+          .describe('Mã số sinh viên (MSSV) cần duyệt. VD: ["2012345", "2012678"]'),
+        approve_all: z
+          .boolean()
+          .optional()
+          .describe('Duyệt TẤT CẢ sinh viên đang PENDING trong hoạt động. Dùng khi staff muốn duyệt hết.'),
         send_email_notification: z.boolean().default(true).describe('Gửi email xác nhận cho sinh viên'),
         email_custom_message: z.string().optional().describe('Nội dung bổ sung trong email'),
       }),
-      func: async ({ activity_id, participation_ids, send_email_notification, email_custom_message }) => {
+      func: async ({ activity_id, participation_ids, student_names, student_codes, approve_all, send_email_notification, email_custom_message }) => {
         try {
           // 1. Fetch activity via service
           const activity = await activitiesService.findOne(activity_id);
@@ -279,25 +331,68 @@ export class StaffAgentService implements OnModuleInit {
             return JSON.stringify({ error: 'Bạn không có quyền duyệt đăng ký cho hoạt động này.' });
           }
 
-          // 3. Collect email addresses before approving (status changes to APPROVED after)
+          // 3. Fetch all pending to resolve filters and collect emails
+          const allPending = await participationService.findPendingByActivity(activity_id);
+
+          // 4. Resolve target participation IDs from filter options
+          let targetIds: string[];
+
+          if (participation_ids && participation_ids.length > 0) {
+            targetIds = participation_ids;
+          } else if (approve_all) {
+            targetIds = allPending.map((p: any) => p.id);
+            if (targetIds.length === 0) {
+              return JSON.stringify({ message: 'Không có sinh viên nào đang chờ duyệt trong hoạt động này.', approved: 0 });
+            }
+          } else if (student_names && student_names.length > 0) {
+            const matched = allPending.filter((p: any) =>
+              student_names.some((name) =>
+                p.student?.full_name?.toLowerCase().includes(name.toLowerCase()),
+              ),
+            );
+            if (matched.length === 0) {
+              return JSON.stringify({
+                error: `Không tìm thấy sinh viên nào khớp tên: ${student_names.join(', ')}`,
+                pending_students: allPending.map((p: any) => ({
+                  id: p.id,
+                  name: p.student?.full_name,
+                  student_code: p.student_code,
+                })),
+              });
+            }
+            targetIds = matched.map((p: any) => p.id);
+          } else if (student_codes && student_codes.length > 0) {
+            const matched = allPending.filter((p: any) => student_codes.includes(p.student_code));
+            if (matched.length === 0) {
+              return JSON.stringify({
+                error: `Không tìm thấy MSSV nào trong danh sách PENDING: ${student_codes.join(', ')}`,
+              });
+            }
+            targetIds = matched.map((p: any) => p.id);
+          } else {
+            return JSON.stringify({
+              error: 'Cần cung cấp ít nhất một trong: participation_ids, student_names, student_codes, hoặc approve_all=true.',
+            });
+          }
+
+          // 5. Collect email addresses before approving
           let emailSet = new Set<string>();
           if (send_email_notification) {
-            const pending = await participationService.findPendingByActivity(activity_id);
             emailSet = new Set(
-              pending
-                .filter((p: any) => participation_ids.includes(p.id) && p.student?.email)
+              allPending
+                .filter((p: any) => targetIds.includes(p.id) && p.student?.email)
                 .map((p: any) => p.student.email as string),
             );
           }
 
-          // 4. Batch approve
+          // 6. Batch approve
           const batchResult = await participationService.approveParticipationsBatch(
             activity_id,
-            participation_ids,
+            targetIds,
             userId,
           );
 
-          // 5. Send single BCC email to all approved students
+          // 7. Send single BCC email to all approved students
           let emailsSent = 0;
           let emailsFailed = 0;
 
@@ -332,6 +427,159 @@ export class StaffAgentService implements OnModuleInit {
           });
         } catch (err: any) {
           return JSON.stringify({ error: err?.message ?? 'Duyệt đăng ký thất bại.' });
+        }
+      },
+    });
+  }
+
+  // ── Tool 3b: reject_registration ─────────────────────────────────────────
+
+  private buildRejectRegistrationTool(userId: string): DynamicStructuredTool {
+    const dataSource = this.dataSource;
+    const activitiesService = this.activitiesService;
+    const participationService = this.participationService;
+    const mailerService = this.mailerService;
+
+    return new DynamicStructuredTool({
+      name: 'reject_registration',
+      description:
+        'Từ chối đăng ký CTXH của sinh viên đang ở trạng thái PENDING. ' +
+        'Hỗ trợ 4 cách chọn sinh viên: (1) participation_ids trực tiếp, ' +
+        '(2) student_names tên sinh viên (tìm gần đúng), ' +
+        '(3) student_codes MSSV, ' +
+        '(4) reject_all=true để từ chối tất cả PENDING. ' +
+        'Ghi lý do từ chối và gửi email thông báo cho sinh viên. ' +
+        'Yêu cầu quyền ctxh.activities.manage_participants.',
+      schema: z.object({
+        activity_id: z.string().uuid().describe('UUID hoạt động'),
+        participation_ids: z
+          .array(z.string().uuid())
+          .optional()
+          .describe('Danh sách participation IDs cần từ chối. Dùng khi đã biết IDs từ get_pending_participants.'),
+        student_names: z
+          .array(z.string())
+          .optional()
+          .describe('Tên sinh viên cần từ chối (tìm gần đúng). VD: ["Nguyễn Văn A", "Trần B"]'),
+        student_codes: z
+          .array(z.string())
+          .optional()
+          .describe('Mã số sinh viên (MSSV) cần từ chối. VD: ["2012345", "2012678"]'),
+        reject_all: z
+          .boolean()
+          .optional()
+          .describe('Từ chối TẤT CẢ sinh viên đang PENDING trong hoạt động.'),
+        reason: z
+          .string()
+          .optional()
+          .describe('Lý do từ chối (ghi vào note của participation và gửi trong email)'),
+        send_email_notification: z
+          .boolean()
+          .default(true)
+          .describe('Gửi email thông báo từ chối cho sinh viên'),
+      }),
+      func: async ({ activity_id, participation_ids, student_names, student_codes, reject_all, reason, send_email_notification }) => {
+        try {
+          // 1. Fetch activity
+          const activity = await activitiesService.findOne(activity_id);
+
+          // 2. Permission check
+          const hasPermission = await checkCtxhPermission(
+            dataSource,
+            userId,
+            'ctxh.activities.manage_participants',
+            activity.organization_id,
+          );
+          if (!hasPermission) {
+            return JSON.stringify({ error: 'Bạn không có quyền từ chối đăng ký cho hoạt động này.' });
+          }
+
+          // 3. Fetch all pending to resolve filters and collect emails
+          const allPending = await participationService.findPendingByActivity(activity_id);
+
+          // 4. Resolve target IDs
+          let targetIds: string[];
+
+          if (participation_ids && participation_ids.length > 0) {
+            targetIds = participation_ids;
+          } else if (reject_all) {
+            targetIds = allPending.map((p: any) => p.id);
+            if (targetIds.length === 0) {
+              return JSON.stringify({ message: 'Không có sinh viên nào đang chờ duyệt trong hoạt động này.', rejected: 0 });
+            }
+          } else if (student_names && student_names.length > 0) {
+            const matched = allPending.filter((p: any) =>
+              student_names.some((name) =>
+                p.student?.full_name?.toLowerCase().includes(name.toLowerCase()),
+              ),
+            );
+            if (matched.length === 0) {
+              return JSON.stringify({
+                error: `Không tìm thấy sinh viên nào khớp tên: ${student_names.join(', ')}`,
+                pending_students: allPending.map((p: any) => ({
+                  id: p.id,
+                  name: p.student?.full_name,
+                  student_code: p.student_code,
+                })),
+              });
+            }
+            targetIds = matched.map((p: any) => p.id);
+          } else if (student_codes && student_codes.length > 0) {
+            const matched = allPending.filter((p: any) => student_codes.includes(p.student_code));
+            if (matched.length === 0) {
+              return JSON.stringify({
+                error: `Không tìm thấy MSSV nào trong danh sách PENDING: ${student_codes.join(', ')}`,
+              });
+            }
+            targetIds = matched.map((p: any) => p.id);
+          } else {
+            return JSON.stringify({
+              error: 'Cần cung cấp ít nhất một trong: participation_ids, student_names, student_codes, hoặc reject_all=true.',
+            });
+          }
+
+          // 5. Collect emails BEFORE rejecting
+          let emailSet = new Set<string>();
+          if (send_email_notification) {
+            emailSet = new Set(
+              allPending
+                .filter((p: any) => targetIds.includes(p.id) && p.student?.email)
+                .map((p: any) => p.student.email as string),
+            );
+          }
+
+          // 6. Batch reject
+          const result = await participationService.rejectParticipationsBatch(
+            targetIds,
+            userId,
+            reason,
+          );
+
+          // 7. Send rejection email
+          let emailsSent = 0;
+          if (send_email_notification && result.successful.length > 0) {
+            const emails = Array.from(emailSet);
+            if (emails.length > 0) {
+              const sent = await mailerService.sendRejectionEmail({
+                bcc: emails.join(', '),
+                activityName: activity.name,
+                reason: reason ?? 'Không đủ điều kiện tham gia',
+              });
+              if (sent) emailsSent = emails.length;
+            }
+          }
+
+          return JSON.stringify({
+            success: true,
+            activity_id,
+            activity_name: activity.name,
+            rejected: result.successful.length,
+            failed: result.failed.length,
+            reason: reason ?? null,
+            emails_sent: emailsSent,
+            failed_details: result.failed,
+          });
+        } catch (err: any) {
+          return JSON.stringify({ error: err?.message ?? 'Từ chối đăng ký thất bại.' });
         }
       },
     });
@@ -572,18 +820,18 @@ export class StaffAgentService implements OnModuleInit {
     });
   }
 
-  // ── Tool 6: manage_activity (update / delete) via MCP SQL ─────────────────
+  // ── Tool 6: manage_activity (update / delete) via service layer ───────────
 
   private buildManageActivityTool(userId: string): DynamicStructuredTool {
     const dataSource = this.dataSource;
-    const mcpClient = this.postgresMcpClient;
+    const activitiesService = this.activitiesService;
 
     return new DynamicStructuredTool({
       name: 'manage_activity',
       description:
-        'Cập nhật thông tin, thay đổi trạng thái, hoặc xoá hoạt động CTXH qua MCP Postgres. ' +
+        'Cập nhật thông tin, thay đổi trạng thái, hoặc xoá hoạt động CTXH. ' +
         'action="update": cập nhật các trường được cung cấp (bao gồm status). ' +
-        'action="delete": xoá mềm hoạt động (đặt deleted_at). ' +
+        'action="delete": xoá mềm hoạt động (kiểm tra không còn SV tham gia trước khi xoá). ' +
         'Yêu cầu activity_id (UUID). Tra cứu bằng search_activities nếu chưa có ID.',
       schema: z.object({
         action: z
@@ -606,27 +854,8 @@ export class StaffAgentService implements OnModuleInit {
       }),
       func: async ({ action, activity_id, ...fields }) => {
         try {
-          if (!mcpClient.isConnected()) {
-            return JSON.stringify({ error: 'MCP Postgres không kết nối được. Vui lòng thử lại sau.' });
-          }
-
-          // 1. Fetch activity to get organization_id for permission check
-          const rows = await mcpClient.executeSqlRows(
-            `SELECT id, name, status, organization_id, deleted_at
-             FROM ctxh_activity
-             WHERE id = '${activity_id.replace(/'/g, "''")}'
-             LIMIT 1`,
-          );
-
-          if (!Array.isArray(rows) || rows.length === 0) {
-            return JSON.stringify({ error: `Không tìm thấy hoạt động với id="${activity_id}".` });
-          }
-
-          const activity = rows[0];
-
-          if (activity.deleted_at) {
-            return JSON.stringify({ error: 'Hoạt động này đã bị xoá.' });
-          }
+          // 1. Fetch activity via service (validates existence & soft-delete)
+          const activity = await activitiesService.findOne(activity_id);
 
           // 2. Permission check
           const requiredPermission =
@@ -644,12 +873,13 @@ export class StaffAgentService implements OnModuleInit {
             });
           }
 
-          // 3. Execute action via MCP SQL
+          // 3. Execute via service layer (triggers events + validation)
           if (action === 'delete') {
-            await mcpClient.executeSqlRows(
-              `UPDATE ctxh_activity SET deleted_at = NOW(), updated_at = NOW()
-               WHERE id = '${activity_id.replace(/'/g, "''")}'`,
-            );
+            // activitiesService.remove() will:
+            // - Check active participants (throws ConflictException if any)
+            // - Soft delete with deleted_by audit
+            // - Emit ACTIVITY_EVENTS.DELETED → vector sync deletes embedding
+            await activitiesService.remove(activity_id, userId);
             return JSON.stringify({
               success: true,
               action: 'delete',
@@ -660,37 +890,32 @@ export class StaffAgentService implements OnModuleInit {
           }
 
           // action === 'update'
-          const updateFields: string[] = [];
-          const safe = (v: string) => v.replace(/'/g, "''");
+          // Build updateDto with only provided fields
+          const updateDto: Record<string, any> = {};
+          for (const [key, value] of Object.entries(fields)) {
+            if (value !== undefined) updateDto[key] = value;
+          }
 
-          if (fields.name !== undefined) updateFields.push(`name = '${safe(fields.name)}'`);
-          if (fields.description !== undefined) updateFields.push(`description = '${safe(fields.description)}'`);
-          if (fields.status !== undefined) updateFields.push(`status = '${fields.status}'`);
-          if (fields.start_date !== undefined) updateFields.push(`start_date = '${safe(fields.start_date)}'`);
-          if (fields.end_date !== undefined) updateFields.push(`end_date = '${safe(fields.end_date)}'`);
-          if (fields.location !== undefined) updateFields.push(`location = '${safe(fields.location)}'`);
-          if (fields.total_days !== undefined) updateFields.push(`total_days = ${fields.total_days}`);
-          if (fields.max_participants !== undefined) updateFields.push(`max_participants = ${fields.max_participants}`);
-          if (fields.requires_approval !== undefined) updateFields.push(`requires_approval = ${fields.requires_approval}`);
-
-          if (updateFields.length === 0) {
+          if (Object.keys(updateDto).length === 0) {
             return JSON.stringify({ error: 'Không có trường nào được cung cấp để cập nhật.' });
           }
 
-          updateFields.push(`updated_by = '${userId}'`, 'updated_at = NOW()');
-
-          await mcpClient.executeSqlRows(
-            `UPDATE ctxh_activity SET ${updateFields.join(', ')}
-             WHERE id = '${activity_id.replace(/'/g, "''")}'`,
-          );
+          // activitiesService.update() will:
+          // - Validate category if category_id changes
+          // - Check duplicate name within same category
+          // - Validate org day limit if total_days/status changes
+          // - Emit ACTIVITY_EVENTS.STATUS_CHANGED if status changes
+          // - Emit ACTIVITY_EVENTS.UPDATED → vector sync re-embeds
+          // - Set updated_by, updated_at automatically
+          const updated = await activitiesService.update(activity_id, updateDto as any, userId);
 
           return JSON.stringify({
             success: true,
             action: 'update',
             activity_id,
-            activity_name: fields.name ?? activity.name,
-            updated_fields: Object.keys(fields).filter((k) => (fields as any)[k] !== undefined),
-            message: `Đã cập nhật hoạt động "${activity.name}" thành công.`,
+            activity_name: updated.name,
+            updated_fields: Object.keys(updateDto),
+            message: `Đã cập nhật hoạt động "${updated.name}" thành công.`,
           });
         } catch (err: any) {
           return JSON.stringify({ error: err?.message ?? 'Thao tác thất bại.' });
@@ -699,10 +924,99 @@ export class StaffAgentService implements OnModuleInit {
     });
   }
 
-  // ── Tool 7 (new): get_pending_overview ────────────────────────────────────
+  // ── Tool 7 (new): send_notification_email ──────────────────────────────
+
+  private buildSendNotificationEmailTool(userId: string): DynamicStructuredTool {
+    const dataSource = this.dataSource;
+    const activitiesService = this.activitiesService;
+    const participationService = this.participationService;
+    const mailerService = this.mailerService;
+
+    return new DynamicStructuredTool({
+      name: 'send_notification_email',
+      description:
+        'Gửi email thông báo chung cho tất cả sinh viên đang tham gia (PENDING hoặc APPROVED) của một hoạt động. ' +
+        'Dùng khi cán bộ muốn thông báo thay đổi, chỉnh sửa, hoặc huỷ hoạt động cho sinh viên. ' +
+        'Cán bộ tự cung cấp tiêu đề và nội dung email.',
+      schema: z.object({
+        activity_id: z.string().describe('UUID hoạt động cần gửi thông báo'),
+        subject: z.string().describe('Tiêu đề email (ví dụ: "Thông báo huỷ hoạt động Quét rác")'),
+        body: z.string().describe('Nội dung email thông báo (plain text, hỗ trợ xuống dòng)'),
+      }),
+      func: async ({ activity_id, subject, body }) => {
+        try {
+          // 1. Fetch activity
+          const activity = await activitiesService.findOne(activity_id);
+
+          // 2. Permission check
+          const hasPermission = await checkCtxhPermission(
+            dataSource,
+            userId,
+            'ctxh.activities.manage_participants',
+            activity.organization_id,
+          );
+          if (!hasPermission) {
+            return JSON.stringify({ error: 'Bạn không có quyền gửi thông báo cho hoạt động này.' });
+          }
+
+          // 3. Fetch all participants (PENDING + APPROVED)
+          const allParticipants = await participationService.findByActivity(activity_id);
+          const activeParticipants = allParticipants.filter(
+            (p: any) => p.status === 'PENDING' || p.status === 'APPROVED',
+          );
+
+          if (activeParticipants.length === 0) {
+            return JSON.stringify({
+              success: false,
+              message: 'Không có sinh viên nào đang tham gia (PENDING/APPROVED) trong hoạt động này.',
+              emails_sent: 0,
+            });
+          }
+
+          // 4. Collect emails
+          const emails = activeParticipants
+            .map((p: any) => p.student?.email)
+            .filter(Boolean);
+
+          const uniqueEmails = [...new Set(emails)] as string[];
+
+          if (uniqueEmails.length === 0) {
+            return JSON.stringify({
+              success: false,
+              message: 'Không tìm thấy email của sinh viên nào trong hoạt động này.',
+              emails_sent: 0,
+            });
+          }
+
+          // 5. Send notification email
+          const bccList = uniqueEmails.join(', ');
+          const sent = await mailerService.sendNotificationEmail({
+            bcc: bccList,
+            subject,
+            body,
+          });
+
+          return JSON.stringify({
+            success: sent,
+            activity_id,
+            activity_name: activity.name,
+            total_recipients: uniqueEmails.length,
+            emails_sent: sent ? uniqueEmails.length : 0,
+            message: sent
+              ? `Đã gửi email thông báo đến ${uniqueEmails.length} sinh viên.`
+              : 'Gửi email thất bại. Vui lòng thử lại.',
+          });
+        } catch (err: any) {
+          return JSON.stringify({ error: err?.message ?? 'Gửi email thông báo thất bại.' });
+        }
+      },
+    });
+  }
+
+  // ── Tool 8 (new): get_pending_overview ────────────────────────────────────
 
   private buildGetPendingOverviewTool(userId: string, sessionId: string): DynamicStructuredTool {
-    const mcpClient = this.postgresMcpClient;
+    const dataSource = this.dataSource;
     const cache = this.sessionActivityCache;
 
     return new DynamicStructuredTool({
@@ -725,19 +1039,20 @@ export class StaffAgentService implements OnModuleInit {
       }),
       func: async ({ organization_keyword, category_keyword }) => {
         try {
-          if (!mcpClient.isConnected()) {
-            return JSON.stringify({ error: 'MCP Postgres không kết nối được. Vui lòng thử lại sau.' });
-          }
-
-          const safe = (v: string) => v.replace(/'/g, "''");
+          const params: any[] = [];
           const extraClauses: string[] = [];
 
           if (organization_keyword?.trim()) {
-            extraClauses.push(`AND org.name ILIKE '%${safe(organization_keyword.trim())}%'`);
+            params.push(`%${organization_keyword.trim()}%`);
+            extraClauses.push(`AND org.name ILIKE $${params.length}`);
           }
           if (category_keyword?.trim()) {
-            extraClauses.push(`AND cat.name ILIKE '%${safe(category_keyword.trim())}%'`);
+            params.push(`%${category_keyword.trim()}%`);
+            extraClauses.push(`AND cat.name ILIKE $${params.length}`);
           }
+
+          params.push(userId);
+          const userIdIdx = params.length;
 
           const sql = `
             SELECT
@@ -765,12 +1080,12 @@ export class StaffAgentService implements OnModuleInit {
               AND ca.status IN ('ACTIVE', 'DRAFT')
               ${extraClauses.join(' ')}
             ORDER BY
-              CASE WHEN ca.created_by = '${userId.replace(/'/g, "''")}' THEN 0 ELSE 1 END ASC,
+              CASE WHEN ca.created_by = $${userIdIdx} THEN 0 ELSE 1 END ASC,
               ca.created_at DESC
             LIMIT 10
           `;
 
-          const rows: any[] = await mcpClient.executeSqlRows(sql);
+          const rows: any[] = await dataSource.query(sql, params);
 
           if (!Array.isArray(rows) || rows.length === 0) {
             cache.delete(sessionId);

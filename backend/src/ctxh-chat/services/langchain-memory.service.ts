@@ -23,6 +23,15 @@ interface MemoryEntry {
     turnIndex: number;
     activities: MentionedActivity[];
   }>;
+  /**
+   * Activity pending explicit user confirmation before registering.
+   * Set when chatbot shows details + asks "Bạn có muốn đăng ký không?".
+   * Cleared once user confirms or cancels.
+   */
+  pendingRegistration?: {
+    activityId: string | number;
+    activityName: string;
+  };
 }
 
 /**
@@ -330,6 +339,34 @@ export class LangChainMemoryService {
    */
   getLastMentionedActivity(sessionId: string): MentionedActivity | null {
     return this.getMentionedActivities(sessionId, 1)[0] ?? null;
+  }
+
+  /** Store an activity waiting for explicit user confirmation before registering. */
+  setPendingRegistration(
+    sessionId: string,
+    activityId: string | number,
+    activityName: string,
+  ): void {
+    const entry = this.memories.get(sessionId);
+    if (entry) {
+      entry.pendingRegistration = { activityId, activityName };
+      entry.lastAccessed = new Date();
+    }
+  }
+
+  /** Retrieve the pending registration (null if none). */
+  getPendingRegistration(
+    sessionId: string,
+  ): { activityId: string | number; activityName: string } | null {
+    return this.memories.get(sessionId)?.pendingRegistration ?? null;
+  }
+
+  /** Clear pending registration (after user confirms or cancels). */
+  clearPendingRegistration(sessionId: string): void {
+    const entry = this.memories.get(sessionId);
+    if (entry) {
+      delete entry.pendingRegistration;
+    }
   }
 
   /**

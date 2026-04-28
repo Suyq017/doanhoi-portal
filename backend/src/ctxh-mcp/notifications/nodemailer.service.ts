@@ -12,6 +12,18 @@ export interface ApprovalEmailData {
   customMessage?: string;
 }
 
+export interface RejectionEmailData {
+  bcc: string;
+  activityName: string;
+  reason: string;
+}
+
+export interface NotificationEmailData {
+  bcc: string;
+  subject: string;
+  body: string;
+}
+
 @Injectable()
 export class NodemailerService implements OnModuleInit {
   private readonly logger = new Logger(NodemailerService.name);
@@ -77,6 +89,77 @@ export class NodemailerService implements OnModuleInit {
       return true;
     } catch (error) {
       this.logger.error(`Failed to send approval email: ${error.message}`);
+      return false;
+    }
+  }
+
+  async sendRejectionEmail(data: RejectionEmailData): Promise<boolean> {
+    const { bcc, activityName, reason } = data;
+
+    if (!bcc.length) return true;
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
+        <h2 style="color:#c62828;">Thông báo Từ chối Đăng ký Hoạt động CTXH</h2>
+        <p>Đăng ký của bạn vào hoạt động <strong>"${activityName}"</strong> đã <strong style="color:#c62828;">KHÔNG ĐƯỢC CHẤP THUẬN</strong>.</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+          <tr><td style="padding:6px 0;color:#555;">Tên hoạt động</td><td style="padding:6px 0;font-weight:bold;">${activityName}</td></tr>
+          <tr><td style="padding:6px 0;color:#555;">Lý do</td><td style="padding:6px 0;">${reason}</td></tr>
+        </table>
+        <p>Nếu có thắc mắc, vui lòng liên hệ nhân viên phụ trách.</p>
+        <hr style="margin:24px 0;" />
+        <p style="font-size:12px;color:#666;">
+          Email này được gửi tự động từ Hệ thống Quản lý CTXH. Vui lòng không reply trực tiếp.
+        </p>
+      </div>`;
+
+    const senderAddress = this.configService.get<string>('MAIL_USER');
+
+    try {
+      await this.transporter.sendMail({
+        from: `"${this.configService.get('MAIL_FROM_NAME', 'Hệ thống CTXH')}" <${senderAddress}>`,
+        to: senderAddress,
+        bcc: bcc,
+        subject: `[CTXH] Đăng ký hoạt động "${activityName}" không được chấp thuận`,
+        html,
+      });
+      this.logger.log(`Rejection email sent (bcc: "${bcc}") | activity: "${activityName}"`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send rejection email: ${error.message}`);
+      return false;
+    }
+  }
+
+  async sendNotificationEmail(data: NotificationEmailData): Promise<boolean> {
+    const { bcc, subject, body } = data;
+
+    if (!bcc.length) return true;
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
+        <h2 style="color:#1a73e8;">${subject}</h2>
+        <div style="margin:16px 0;white-space:pre-line;line-height:1.6;">${body}</div>
+        <hr style="margin:24px 0;" />
+        <p style="font-size:12px;color:#666;">
+          Email này được gửi tự động từ Hệ thống Quản lý CTXH. Vui lòng không reply trực tiếp.
+        </p>
+      </div>`;
+
+    const senderAddress = this.configService.get<string>('MAIL_USER');
+
+    try {
+      await this.transporter.sendMail({
+        from: `"${this.configService.get('MAIL_FROM_NAME', 'Hệ thống CTXH')}" <${senderAddress}>`,
+        to: senderAddress,
+        bcc: bcc,
+        subject: `[CTXH] ${subject}`,
+        html,
+      });
+      this.logger.log(`Notification email sent (bcc count: ${bcc.split(',').length}) | subject: "${subject}"`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send notification email: ${error.message}`);
       return false;
     }
   }
