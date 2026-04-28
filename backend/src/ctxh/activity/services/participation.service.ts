@@ -591,6 +591,65 @@ export class ParticipationService {
     return results;
   }
 
+  /**
+   * Từ chối 1 đăng ký PENDING → đổi status sang CANCELLED + ghi lý do
+   */
+  async rejectParticipation(
+    participationId: string,
+    rejectedBy: string,
+    reason?: string,
+  ): Promise<void> {
+    const participation = await this.participationRepository.findOne({
+      where: { id: participationId, deleted_at: IsNull() },
+    });
+
+    if (!participation) {
+      throw new NotFoundException(
+        `Không tìm thấy đăng ký với id="${participationId}".`,
+      );
+    }
+
+    if (participation.status !== ParticipationStatus.PENDING) {
+      throw new BadRequestException(
+        `Chỉ có thể từ chối đăng ký đang ở trạng thái PENDING. Hiện tại: ${participation.status}`,
+      );
+    }
+
+    await this.participationRepository.update(participationId, {
+      status: ParticipationStatus.CANCELLED,
+      note: reason ?? 'Bị từ chối bởi nhân viên',
+      updated_by: rejectedBy,
+      updated_at: new Date(),
+    });
+  }
+
+  /**
+   * Từ chối hàng loạt
+   */
+  async rejectParticipationsBatch(
+    participationIds: string[],
+    rejectedBy: string,
+    reason?: string,
+  ): Promise<{
+    successful: string[];
+    failed: { id: string; error: string }[];
+    total: number;
+  }> {
+    const successful: string[] = [];
+    const failed: { id: string; error: string }[] = [];
+
+    for (const pid of participationIds) {
+      try {
+        await this.rejectParticipation(pid, rejectedBy, reason);
+        successful.push(pid);
+      } catch (err: any) {
+        failed.push({ id: pid, error: err.message });
+      }
+    }
+
+    return { successful, failed, total: participationIds.length };
+  }
+
   private async validateCapacity(
     activityId: string,
     maxParticipants: number | null,

@@ -12,10 +12,8 @@ export function ChatbotWidget() {
 
   return (
     <>
-      {/* Popup */}
-      {isOpen && (
-        <ChatbotPopupWrapper onClose={toggle} runtimeRef={runtimeRef} />
-      )}
+      {/* Popup — always mounted to preserve conversation history; hidden via CSS when closed */}
+      <ChatbotPopupWrapper isOpen={isOpen} onClose={toggle} runtimeRef={runtimeRef} />
 
       {/* Floating Button */}
       <button
@@ -46,9 +44,11 @@ export function ChatbotWidget() {
 }
 
 function ChatbotPopupWrapper({
+  isOpen,
   onClose,
   runtimeRef,
 }: {
+  isOpen: boolean;
   onClose: () => void;
   runtimeRef: React.MutableRefObject<ReturnType<typeof useLocalRuntime> | null>;
 }) {
@@ -63,8 +63,12 @@ function ChatbotPopupWrapper({
   }, [runtime]);
 
   return (
-    <AssistantRuntimeProvider runtime={runtime}>
-      <ChatbotPopup onClose={onClose} onClear={handleClear} />
-    </AssistantRuntimeProvider>
+    // Use visibility+pointer-events instead of conditional rendering so the
+    // runtime (and its conversation history) is never destroyed on close.
+    <div className={isOpen ? '' : 'invisible pointer-events-none'}>
+      <AssistantRuntimeProvider runtime={runtime}>
+        <ChatbotPopup onClose={onClose} onClear={handleClear} />
+      </AssistantRuntimeProvider>
+    </div>
   );
 }

@@ -383,7 +383,8 @@ export class LangChainRagChainService implements OnModuleInit {
         // ── list_activities_sql: pure SQL via MCP, no embedding needed ──────
         case RAG_TOOL_NAMES.LIST_SQL: {
           const statusHint = this.inferStatusFromQuestion(question) ?? 'all';
-          const rawJson = await this.mcpFallbackService.listActivities(statusHint, undefined, topK);
+          // Use a large limit for list queries — do NOT use topK (which is for semantic search)
+          const rawJson = await this.mcpFallbackService.listActivities(statusHint, undefined, 50);
           // Convert JSON result to Document[] so the rest of the pipeline is uniform
           try {
             const parsed = JSON.parse(rawJson);
@@ -395,6 +396,7 @@ export class LangChainRagChainService implements OnModuleInit {
                       .filter(Boolean)
                       .join(' — '),
                     metadata: {
+                      activityId: a.id,
                       activityName: a.name,
                       status: a.status,
                       startDate: a.start_date,
@@ -405,6 +407,9 @@ export class LangChainRagChainService implements OnModuleInit {
                       categoryName: a.category,
                       requiresApproval: a.requires_approval,
                       maxParticipants: a.max_participants,
+                      approvedCount: a.approved_count,
+                      pendingCount: a.pending_count,
+                      totalRegistered: a.total_registered,
                       source: 'list_activities_sql',
                     },
                   }),
@@ -832,9 +837,74 @@ export class LangChainRagChainService implements OnModuleInit {
   ): Promise<RAGResponse> {
     const intent = 'REGISTER_ACTIVITY' as const;
 
+    // ── Priority 0: check if user is confirming a pending registration ────
+    // If a previous turn asked "Bạn có muốn đăng ký X không?" and the user
+    // now replies with a confirmation word ("có", "đồng ý", "xác nhận", "ok", "oke"),
+    // proceed with the registration immediately.
+    if (sessionId) {
+      const pending = this.memoryService.getPendingRegistration(sessionId);
+      if (pending) {
+        const q = originalQuestion.toLowerCase().trim();
+        const isConfirmation = /^(có|co|ok|oke|đồng ý|dong y|xác nhận|xac nhan|đăng ký đi|dang ky di|yes|ừ|uh|uhm)/.test(q);
+        const isCancellation = /^(không|khong|thôi|thoi|hủy|huy|cancel|no)/.test(q);
+
+        if (isConfirmation) {
+          this.memoryService.clearPendingRegistration(sessionId);
+          return {
+            response: `Tôi sẽ tiến hành đăng ký bạn vào hoạt động **"${pending.activityName}"**.`,
+            sources: [],
+            responseTime: Date.now() - startTime,
+            sessionId,
+            intent,
+            registrationTarget: { activityId: pending.activityId, activityName: pending.activityName },
+          };
+        }
+
+        if (isCancellation) {
+          this.memoryService.clearPendingRegistration(sessionId);
+          return {
+            response: `Đã hủy. Nếu bạn muốn đăng ký hoạt động khác, hãy cho tôi biết tên hoạt động.`,
+            sources: [],
+            responseTime: Date.now() - startTime,
+            sessionId,
+            intent,
+          };
+        }
+
+        // User said something else — treat as a new registration request, clear old pending
+        this.memoryService.clearPendingRegistration(sessionId);
+      }
+    }
+
+    // ── Helper: build activity detail block for confirmation prompt ───────
+    const buildConfirmationPrompt = (
+      activityName: string,
+      meta: Record<string, any>,
+    ): string => {
+      const fmt = (d: string | undefined) => {
+        if (!d) return null;
+        try {
+          return new Date(d).toLocaleDateString('vi-VN');
+        } catch {
+          return d;
+        }
+      };
+      const lines: string[] = [
+        `Tôi tìm thấy hoạt động sau:`,
+        ``,
+        `**${activityName}**`,
+      ];
+      if (meta.organizationName) lines.push(`- Tổ chức: ${meta.organizationName}`);
+      if (meta.categoryName)     lines.push(`- Danh mục: ${meta.categoryName}`);
+      if (meta.startDate || meta.endDate)
+        lines.push(`- Thời gian: ${fmt(meta.startDate) ?? '?'} – ${fmt(meta.endDate) ?? '?'}`);
+      if (meta.location)         lines.push(`- Địa điểm: ${meta.location}`);
+      if (meta.totalDays)        lines.push(`- Số ngày: ${meta.totalDays}`);
+      lines.push(``, `Bạn có muốn đăng ký hoạt động này không? (Trả lời **"có"** để xác nhận hoặc **"không"** để hủy.)`);
+      return lines.join('\n');
+    };
+
     // ── Priority 1: resolve from recent session memory ────────────────────
-    // Use originalQuestion for ordinal/name resolution — the Router Agent rewrites
-    // the question for semantic retrieval and may strip ordinal references like "số 4".
     if (sessionId) {
       const recentActivities = this.memoryService.getMentionedActivities(sessionId);
       if (recentActivities.length > 0) {
@@ -852,20 +922,22 @@ export class LangChainRagChainService implements OnModuleInit {
               intent,
             };
           }
+          // Always ask for confirmation — never auto-register
+          this.memoryService.setPendingRegistration(sessionId, target.activityId, target.activityName);
+          const confirmPrompt = buildConfirmationPrompt(target.activityName, {});
           return {
-            response: `Tôi sẽ tiến hành đăng ký bạn vào hoạt động **"${target.activityName}"**.`,
+            response: confirmPrompt,
             sources: [],
             responseTime: Date.now() - startTime,
             sessionId,
             intent,
-            registrationTarget: { activityId: target.activityId, activityName: target.activityName },
+            // Do NOT set registrationTarget — wait for user confirmation
           };
         }
       }
     }
 
     // ── Priority 2: run retrieval to find the mentioned activity ─────────
-    // Use rewrittenQuestion here for better semantic retrieval quality.
     this.logger.debug('[Register] No memory match — running retrieval for registration target');
     const sources = await this.retrieveDocumentsWithVerification(
       rewrittenQuestion, currentDate, topK, useMMR, userOrg,
@@ -900,13 +972,44 @@ export class LangChainRagChainService implements OnModuleInit {
       };
     }
 
+    // ── Safety check: verify found activity name shares keywords with user's query ──
+    const stopWords = new Set([
+      'đăng', 'ký', 'cho', 'tôi', 'vào', 'hoạt', 'động', 'muốn',
+      'giúp', 'hãy', 'bạn', 'với', 'các', 'này', 'đó', 'của',
+    ]);
+    const normalize = (s: string) =>
+      s.toLowerCase().replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
+    const queryKeywords = normalize(originalQuestion)
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !stopWords.has(w));
+    const nameNorm = normalize(target.activityName);
+    const hasOverlap = queryKeywords.some(kw => nameNorm.includes(kw));
+
+    if (!hasOverlap && queryKeywords.length > 0) {
+      // No keyword overlap — ask without storing pending (ambiguous, may be wrong activity)
+      return {
+        response:
+          `Tôi tìm thấy hoạt động **"${target.activityName}"**. ` +
+          `Đây có phải hoạt động bạn muốn đăng ký không? (Trả lời "có" để xác nhận hoặc cho tôi biết tên cụ thể hơn.)`,
+        sources,
+        responseTime: Date.now() - startTime,
+        sessionId,
+        intent,
+      };
+    }
+
+    // Activity found and keywords match — show details and ask for confirmation
+    const firstDocMeta = sources[0]?.metadata ?? {};
+    if (sessionId) {
+      this.memoryService.setPendingRegistration(sessionId, target.activityId, target.activityName);
+    }
     return {
-      response: `Tôi sẽ đăng ký bạn vào hoạt động **"${target.activityName}"**.`,
+      response: buildConfirmationPrompt(target.activityName, firstDocMeta),
       sources,
       responseTime: Date.now() - startTime,
       sessionId,
       intent,
-      registrationTarget: { activityId: target.activityId, activityName: target.activityName },
+      // Do NOT set registrationTarget — wait for user confirmation
     };
   }
 
@@ -1039,13 +1142,16 @@ export class LangChainRagChainService implements OnModuleInit {
       }
 
       // Accept if at least one keyword matched (for short queries like "cse jobfair").
+      // IMPORTANT: Return null when score = 0 — do NOT fall back to first activity
+      // to avoid registering a completely unrelated activity.
       if (bestScore > 0 && bestActivity) {
         return bestActivity;
       }
+      return null;
     }
 
-    // Fallback: first recruiting activity, or just the first one
-    return activities.find(a => a.isRecruiting) ?? activities[0];
+    // No extractable keywords — cannot safely resolve; return null to trigger clarification.
+    return null;
   }
 
   /**
@@ -1165,6 +1271,9 @@ Thời gian: ${startDateVN} - ${endDateVN} (ISO: ${startISO} đến ${endISO})
 Địa điểm: ${metadata.location || 'N/A'}
 Số ngày CTXH: ${metadata.totalDays || 'N/A'} ngày
 Yêu cầu duyệt: ${metadata.requiresApproval != null ? (metadata.requiresApproval ? 'Có' : 'Không') : 'N/A'}
+Tổng đã đăng ký (pending+approved): ${metadata.totalRegistered != null ? metadata.totalRegistered : 'N/A'}${metadata.maxParticipants != null ? ` / ${metadata.maxParticipants}` : ''}
+Số đã được duyệt: ${metadata.approvedCount != null ? metadata.approvedCount : 'N/A'}
+Số đang chờ duyệt: ${metadata.pendingCount != null ? metadata.pendingCount : 'N/A'}
 Số chỗ còn lại: ${metadata.remainingSlots != null ? metadata.remainingSlots : (metadata.maxParticipants != null ? `tối đa ${metadata.maxParticipants}` : 'Không giới hạn')}
 Trạng thái (tính đến ${currentDate || today.toISOString().split('T')[0]}): ${realtimeStatus}
 Trạng thái tuyển thành viên: ${recruitmentStatus}

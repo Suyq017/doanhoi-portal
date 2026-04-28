@@ -8,6 +8,7 @@ import {
   useMessage,
 } from '@assistant-ui/react';
 import { MarkdownTextPrimitive } from '@assistant-ui/react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   ArrowUp,
   Check,
@@ -29,7 +30,10 @@ interface CustomMeta {
 // ── Markdown renderer (light theme) ────────────────────────────────────────
 const MarkdownText: FC = memo(() => {
   return (
-    <MarkdownTextPrimitive className="prose prose-sm max-w-none text-gray-800 prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-code:text-doan-500 prose-headings:text-gray-900 prose-a:text-hsv-500 prose-strong:text-gray-900" />
+    <MarkdownTextPrimitive
+      remarkPlugins={[remarkGfm]}
+      className="prose prose-sm max-w-none text-gray-800 prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-code:text-doan-500 prose-headings:text-gray-900 prose-a:text-hsv-500 prose-strong:text-gray-900"
+    />
   );
 });
 MarkdownText.displayName = 'MarkdownText';

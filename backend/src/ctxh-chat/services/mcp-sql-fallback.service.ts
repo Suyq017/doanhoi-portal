@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { Document } from '@langchain/core/documents';
 import { PostgresMcpClientService } from './postgres-mcp-client.service';
 import { MetadataFilters } from '../dto/filter-extraction.dto';
@@ -10,7 +12,10 @@ export type StatusHint = 'upcoming' | 'ongoing' | 'all';
 export class McpSqlFallbackService {
   private readonly logger = new Logger(McpSqlFallbackService.name);
 
-  constructor(private readonly mcpClient: PostgresMcpClientService) {}
+  constructor(
+    private readonly mcpClient: PostgresMcpClientService,
+    @InjectDataSource() private readonly dataSource: DataSource,
+  ) {}
 
   /**
    * Fallback khi vector search trả 0 kết quả.
@@ -21,11 +26,6 @@ export class McpSqlFallbackService {
     limit: number = 10,
     currentDate: string = new Date().toISOString().split('T')[0],
   ): Promise<Document[]> {
-    if (!this.mcpClient.isConnected()) {
-      this.logger.warn('[MCP Fallback] MCP client not connected, skipping SQL fallback');
-      return [];
-    }
-
     const whereClause = this.buildStatusWhereClause(statusHint, currentDate);
 
     const sql = `
@@ -53,7 +53,7 @@ export class McpSqlFallbackService {
     `;
 
     try {
-      const rows = await this.mcpClient.executeSqlRows(sql);
+      const rows = await this.dataSource.query(sql);
 
       if (!Array.isArray(rows) || rows.length === 0) {
         this.logger.debug('[MCP Fallback] SQL returned 0 rows');
@@ -106,10 +106,6 @@ export class McpSqlFallbackService {
     organizationKeyword?: string,
     limit: number = 10,
   ): Promise<string> {
-    if (!this.mcpClient.isConnected()) {
-      return JSON.stringify({ error: 'MCP client not connected.' });
-    }
-
     const today = new Date().toISOString().split('T')[0];
     let whereExtra = this.buildStatusWhereClause(statusHint, today);
 
@@ -120,6 +116,7 @@ export class McpSqlFallbackService {
 
     const sql = `
       SELECT
+        ca.id              AS activity_id,
         ca.name            AS activity_name,
         ca.status,
         ca.start_date,
@@ -129,19 +126,24 @@ export class McpSqlFallbackService {
         ca.requires_approval,
         ca.max_participants,
         org.name           AS organization_name,
-        cat.name           AS category_name
+        cat.name           AS category_name,
+        COUNT(cp.id) FILTER (WHERE cp.status = 'APPROVED')  AS approved_count,
+        COUNT(cp.id) FILTER (WHERE cp.status = 'PENDING')   AS pending_count,
+        COUNT(cp.id) FILTER (WHERE cp.status IN ('APPROVED','PENDING','REGISTERED')) AS total_registered
       FROM ctxh_activity ca
       LEFT JOIN organizations org ON org.id = ca.organization_id
       LEFT JOIN ctxh_category cat ON cat.id = ca.category_id
+      LEFT JOIN ctxh_participation cp ON cp.activity_id = ca.id
       WHERE ca.deleted_at IS NULL
         AND ca.status IN ('ACTIVE', 'DRAFT')
         ${whereExtra}
+      GROUP BY ca.id, org.name, cat.name
       ORDER BY ca.start_date ASC
       LIMIT ${limit};
     `;
 
     try {
-      const rows = await this.mcpClient.executeSqlRows(sql);
+      const rows = await this.dataSource.query(sql);
       if (!Array.isArray(rows) || rows.length === 0) {
         return JSON.stringify({
           found: 0,
@@ -152,6 +154,7 @@ export class McpSqlFallbackService {
       return JSON.stringify({
         found: rows.length,
         activities: rows.map((r: any) => ({
+          id: r.activity_id,
           name: r.activity_name,
           status: r.status,
           start_date: r.start_date,
@@ -160,6 +163,9 @@ export class McpSqlFallbackService {
           total_days: r.total_days,
           requires_approval: r.requires_approval,
           max_participants: r.max_participants ?? null,
+          approved_count: Number(r.approved_count ?? 0),
+          pending_count: Number(r.pending_count ?? 0),
+          total_registered: Number(r.total_registered ?? 0),
           organization: r.organization_name,
           category: r.category_name,
         })),
@@ -179,11 +185,6 @@ export class McpSqlFallbackService {
     limit: number = 10,
     currentDate: string = new Date().toISOString().split('T')[0],
   ): Promise<Document[]> {
-    if (!this.mcpClient.isConnected()) {
-      this.logger.warn('[MCP FilteredSearch] MCP client not connected, skipping');
-      return [];
-    }
-
     const whereClause = this.buildFilteredWhereClause(filters, currentDate);
     if (whereClause === null) {
       // Tất cả filters rỗng — caller nên dùng vector search
@@ -215,7 +216,7 @@ export class McpSqlFallbackService {
     `;
 
     try {
-      const rows = await this.mcpClient.executeSqlRows(sql);
+      const rows = await this.dataSource.query(sql);
 
       if (!Array.isArray(rows) || rows.length === 0) {
         this.logger.debug('[MCP FilteredSearch] SQL returned 0 rows');
@@ -336,11 +337,6 @@ export class McpSqlFallbackService {
     filters: MetadataFilters,
     currentDate: string = new Date().toISOString().split('T')[0],
   ): Promise<string[] | null> {
-    if (!this.mcpClient.isConnected()) {
-      this.logger.warn('[MCP EmbeddingFilter] MCP client not connected, skipping');
-      return null;
-    }
-
     const whereClause = this.buildEmbeddingMetadataWhereClause(filters, currentDate);
     if (whereClause === null) {
       // All filters empty — signal to caller to skip constrained search
@@ -355,7 +351,7 @@ export class McpSqlFallbackService {
     `;
 
     try {
-      const rows = await this.mcpClient.executeSqlRows(sql);
+      const rows = await this.dataSource.query(sql);
 
       if (!Array.isArray(rows) || rows.length === 0) {
         this.logger.debug('[MCP EmbeddingFilter] SQL returned 0 activity_ids');
@@ -454,18 +450,17 @@ export class McpSqlFallbackService {
    * Returns an empty Set when MCP is offline or userId is falsy.
    */
   async queryEnrolledActivityIds(userId: string): Promise<Set<string>> {
-    if (!userId || !this.mcpClient.isConnected()) return new Set();
+    if (!userId) return new Set();
 
-    const safeId = userId.replace(/'/g, "''");
     const sql = `
       SELECT DISTINCT activity_id
       FROM ctxh_participation
-      WHERE student_id = '${safeId}'
+      WHERE student_id = $1
         AND status IN ('PENDING', 'APPROVED', 'REGISTERED');
     `;
 
     try {
-      const rows = await this.mcpClient.executeSqlRows(sql);
+      const rows = await this.dataSource.query(sql, [userId]);
       const ids = (rows ?? []).map((r: any) => String(r.activity_id)).filter(Boolean);
       this.logger.debug(
         `[EnrolledFilter] userId=${userId} already enrolled in ${ids.length} activities`,

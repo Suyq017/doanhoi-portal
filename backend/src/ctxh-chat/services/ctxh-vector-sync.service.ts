@@ -1,7 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 // import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   ActivityCreatedEvent,
@@ -57,14 +59,62 @@ const JOB_OPTIONS = {
  * Also owns the scheduled safety-net cron jobs.
  */
 @Injectable()
-export class CtxhVectorSyncService {
+export class CtxhVectorSyncService implements OnApplicationBootstrap {
   private readonly logger = new Logger(CtxhVectorSyncService.name);
 
   constructor(
     @InjectQueue(VECTOR_QUEUE)
     private readonly vectorQueue: Queue<VectorJobPayload>,
     private readonly ingestionService: LangChainIngestionService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
+
+  /**
+   * On startup: find activities that have no embedding in ctxh_embedding
+   * and queue an upsert job for each. This catches rows inserted via raw SQL
+   * (seeds, migrations) that bypassed the event-driven pipeline.
+   * Runs non-blocking — backend boot is not delayed.
+   */
+  async onApplicationBootstrap(): Promise<void> {
+    // Fire-and-forget — do not await so startup is not blocked
+    this.syncMissingEmbeddingsOnStartup().catch((err) =>
+      this.logger.error('Startup embedding sync failed', err),
+    );
+  }
+
+  private async syncMissingEmbeddingsOnStartup(): Promise<void> {
+    try {
+      const rows: Array<{ id: string; name: string }> = await this.dataSource.query(`
+        SELECT ca.id, ca.name
+        FROM ctxh_activity ca
+        WHERE ca.deleted_at IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM ctxh_embeddings ce
+            WHERE ce.activity_id = ca.id
+          )
+        ORDER BY ca.created_at ASC
+      `);
+
+      if (rows.length === 0) {
+        this.logger.log('✅ [startup] All activities already have embeddings.');
+        return;
+      }
+
+      this.logger.log(
+        `🔍 [startup] Found ${rows.length} activities without embeddings — queuing upsert jobs.`,
+      );
+
+      for (const row of rows) {
+        await this.addUpsertJob(row.id, row.name, 'startup:missing-embedding');
+      }
+
+      this.logger.log(
+        `📥 [startup] Queued ${rows.length} upsert jobs for missing embeddings.`,
+      );
+    } catch (err: any) {
+      this.logger.error('[startup] Failed to sync missing embeddings', err?.message);
+    }
+  }
 
   // ─── Event Listeners -> Add to BullMQ (non-blocking) ────────────
 

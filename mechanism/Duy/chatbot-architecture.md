@@ -1,6 +1,8 @@
 # Kiến trúc Chatbot AI CTXH — Hướng dẫn cho người mới
 
 > Tài liệu giải thích toàn bộ hệ thống chatbot AI tư vấn hoạt động Công tác xã hội (CTXH) trong dự án Đoàn Hội Portal. Dành cho developer mới tham gia dự án.
+>
+> **Cập nhật lần cuối:** 28/04/2026
 
 ---
 
@@ -12,12 +14,13 @@
 4. [Backend — RAG Pipeline (student)](#4-backend--rag-pipeline-student)
 5. [Backend — Staff Agent](#5-backend--staff-agent)
 6. [Backend — MCP (Model Context Protocol)](#6-backend--mcp-model-context-protocol)
-7. [Vector Embedding & Sync](#7-vector-embedding--sync)
-8. [LLM & Embedding Provider](#8-llm--embedding-provider)
-9. [Cây thư mục chi tiết](#9-cây-thư-mục-chi-tiết)
-10. [Data Flow chi tiết](#10-data-flow-chi-tiết)
-11. [Biến môi trường](#11-biến-môi-trường)
-12. [Thuật ngữ](#12-thuật-ngữ)
+7. [Backend — Postgres MCP Client & Enrichment](#7-backend--postgres-mcp-client--enrichment)
+8. [Vector Embedding & Sync](#8-vector-embedding--sync)
+9. [LLM & Embedding Provider](#9-llm--embedding-provider)
+10. [Cây thư mục chi tiết](#10-cây-thư-mục-chi-tiết)
+11. [Data Flow chi tiết](#11-data-flow-chi-tiết)
+12. [Biến môi trường](#12-biến-môi-trường)
+13. [Thuật ngữ](#13-thuật-ngữ)
 
 ---
 
@@ -30,13 +33,13 @@ Chatbot AI giúp **sinh viên** và **cán bộ Đoàn Hội** tương tác vớ
 | Người dùng | Có thể làm gì qua chatbot |
 |-----------|---------------------------|
 | **Sinh viên** | Hỏi về hoạt động CTXH (tìm kiếm, lọc theo thời gian/khoa/địa điểm), đăng ký tham gia |
-| **Cán bộ** | Tìm hoạt động mình quản lý, xem danh sách chờ duyệt, duyệt đăng ký + gửi email, tạo hoạt động mới |
+| **Cán bộ** | Tìm hoạt động mình quản lý, xem danh sách chờ/đã duyệt, duyệt/từ chối đăng ký + gửi email, tạo/cập nhật/xóa hoạt động, tạo batch hoạt động, gửi email thông báo chung, tra cứu danh mục/tổ chức |
 
 ### Công nghệ chính
 
 | Thành phần | Công nghệ |
 |-----------|-----------|
-| Frontend chat UI | `@assistant-ui/react` (v0.12) — thư viện chat UI composable |
+| Frontend chat UI | `@assistant-ui/react` (v0.12), `remark-gfm` (GFM tables), `@tailwindcss/typography` |
 | Backend framework | NestJS (TypeScript) |
 | AI/LLM | LangChain.js — orchestration framework cho LLM |
 | LLM provider | **Ollama** (local: Qwen) hoặc **Google Gemini** (cloud) — chuyển đổi qua env var |
@@ -66,8 +69,8 @@ Chatbot AI giúp **sinh viên** và **cán bộ Đoàn Hội** tương tác vớ
 │   CtxhChatController                                                │
 │       │                                                             │
 │       ├── userType === 'staff'?                                     │
-│       │       └── StaffAgentService (tool-calling loop)             │
-│       │             └── 4 tools: search/pending/approve/create      │
+│       │       └── StaffAgentService (tool-calling loop, 10 vòng)    │
+│       │             └── 12 custom tools + MCP Postgres tools        │
 │       │                                                             │
 │       └── userType === 'student'?                                   │
 │               └── LangChainRagChainService (RAG pipeline)           │
@@ -75,19 +78,26 @@ Chatbot AI giúp **sinh viên** và **cán bộ Đoàn Hội** tương tác vớ
 │                     ├── Step 1: Load chat history                   │
 │                     ├── Step 2: Router Agent (intent detection)     │
 │                     ├── Step 3-4: GREETING/CHITCHAT → trả lời ngay │
+│                     ├── Step 4.5: REGISTER_ACTIVITY → đăng ký      │
 │                     ├── Step 5: Tool selection + Retrieval          │
 │                     ├── Step 6: Format context                      │
 │                     ├── Step 7: Generate response (LLM)             │
 │                     └── Step 8: Save memory + return                │
 │                                                                     │
 │   ┌─────────────────────────────────────────────────────────────┐   │
-│   │  Supporting Services                                         │   │
+│   │  Supporting Services (14 service classes)                    │   │
 │   │  ├── UniversalLLMService (Ollama ↔ Gemini)                  │   │
 │   │  ├── UniversalEmbeddingsService (Ollama ↔ Gemini)           │   │
 │   │  ├── LangChainVectorStoreService (pgvector search)          │   │
-│   │  ├── LangChainMemoryService (session history)               │   │
+│   │  ├── LangChainMemoryService (session history + activity     │   │
+│   │  │   tracking per turn)                                      │   │
+│   │  ├── LangChainAdvancedRetrieverService (multi-query, hybrid)│   │
 │   │  ├── CtxhFilterExtractionService (NLU filter parsing)       │   │
-│   │  └── LangChainIngestionService (activity → embedding)       │   │
+│   │  ├── LangChainIngestionService (activity → embedding)       │   │
+│   │  ├── UserContextService (org/department info)               │   │
+│   │  ├── PostgresMcpClientService (MCP Postgres client - SSE)   │   │
+│   │  ├── McpSqlFallbackService (SQL fallback khi vector = 0)    │   │
+│   │  └── McpMetadataEnricherService (enrich documents)          │   │
 │   └─────────────────────────────────────────────────────────────┘   │
 │                                                                     │
 │   ┌─────────────────────────────────────────────────────────────┐   │
@@ -109,6 +119,9 @@ Chatbot AI giúp **sinh viên** và **cán bộ Đoàn Hội** tương tác vớ
 │   Redis                                                             │
 │   ├── BullMQ queues     (embedding jobs)                            │
 │   └── Rate limiting     (request throttle)                          │
+│                                                                     │
+│   Postgres MCP Server (crystaldba/postgres-mcp via SSE)             │
+│   └── Staff Agent queries SQL trực tiếp qua MCP                    │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -122,26 +135,48 @@ Chatbot AI giúp **sinh viên** và **cán bộ Đoàn Hội** tương tác vớ
 frontend/src/features/ctxh-chat/
 ├── components/
 │   ├── ChatbotWidget.tsx      ← Nút floating + quản lý mở/đóng popup
-│   ├── ChatbotPopup.tsx       ← Cửa sổ chat chính (messages, input, suggestions)
+│   ├── ChatbotPopup.tsx       ← Cửa sổ chat dạng popup (compact)
+│   ├── CtxhThread.tsx         ← Thread chat full-page (larger, dùng cho CtxhChatPage)
 │   ├── SourceCard.tsx         ← Card hiển thị nguồn tham khảo
-│   └── SourceList.tsx         ← Danh sách source cards
+│   └── SourceList.tsx         ← Danh sách source cards (collapsible)
 ├── runtime/
 │   └── ctxh-chat.adapter.ts   ← Adapter kết nối backend với @assistant-ui/react
 ├── types/
 │   └── chat.types.ts           ← TypeScript interfaces (CtxhChatResponse, CtxhSource, ...)
 ├── pages/
-│   └── CtxhChatPage.tsx        ← Trang chat full-screen (chưa dùng)
-└── index.ts                    ← Barrel export
+│   └── CtxhChatPage.tsx        ← Trang chat full-screen (dùng CtxhThread)
+└── index.ts                    ← Barrel export (3 public exports)
 ```
 
 ### 3.2 Cách hoạt động
 
-**ChatbotWidget** là component được render trên **mọi trang** trong portal (App.tsx). Nó hiển thị nút tròn ở góc dưới bên phải:
+**ChatbotWidget** là component được render trên **mọi trang** trong portal (App.tsx). Nó hiển thị nút tròn ở góc dưới bên phải với animation chuyển đổi icon:
 
 ```
 Bấm nút → isOpen = true → render ChatbotPopup
+  Icon MessageCircle xoay ra (rotate-90 + scale-0 + opacity-0)
+  Icon X xoay vào (rotate-0 + scale-100 + opacity-100)
 Bấm lại → isOpen = false → ẩn popup
+  Icon ngược lại
 ```
+
+**Hai giao diện chat (2 thread UIs):**
+
+| Component | Dùng trong | Kích thước | Avatar |
+|-----------|-----------|-----------|--------|
+| **ChatbotPopup** | ChatbotWidget (popup floating) | Responsive: 33vw → 50vw → full-screen | HCMCUT.png |
+| **CtxhThread** | CtxhChatPage (full-page) | `calc(100vh - 64px)` | Graduation cap icon (doan-500) |
+
+Cả hai đều sử dụng `@assistant-ui/react` primitives nhưng khác layout và kích thước.
+
+**Markdown rendering:**
+
+Cả hai component đều dùng `MarkdownTextPrimitive` từ `@assistant-ui/react-markdown` (sử dụng `react-markdown` bên dưới). Để hỗ trợ **bảng GFM** (GitHub Flavored Markdown), cần truyền `remarkPlugins={[remarkGfm]}` vào component (package `remark-gfm`). Nếu thiếu plugin này, bảng markdown sẽ hiển thị dạng raw text pipe-delimited.
+
+**Table styling:**
+
+- Plugin `@tailwindcss/typography` được cài và thêm vào `tailwind.config.js` → kích hoạt các class `prose`
+- Custom CSS trong `globals.css` cho `.prose table`: viền, padding, zebra stripes (dòng chẵn/lẻ), hover highlight, horizontal scroll cho bảng rộng
 
 **ChatbotPopup** sử dụng thư viện `@assistant-ui/react` để render giao diện chat. Thư viện này cung cấp các "primitive" (thành phần cơ bản):
 
@@ -151,8 +186,19 @@ Bấm lại → isOpen = false → ẩn popup
 | `ThreadPrimitive.Viewport` | Vùng hiển thị messages (auto-scroll) |
 | `ThreadPrimitive.Messages` | Render danh sách messages |
 | `MessagePrimitive.Root/Content` | Render 1 message (user hoặc AI) |
-| `ComposerPrimitive.Root/Input/Send` | Ô nhập + nút gửi |
+| `ComposerPrimitive.Root/Input/Send` | Ô nhập + nút gửi/cancel (dựa vào thread.isRunning) |
 | `ActionBarPrimitive` | Nút reload / copy trên message |
+| `BranchPicker` | Chuyển giữa các nhánh (Trước/Sau) |
+
+**Tính năng UX nổi bật:**
+
+| Tính năng | Chi tiết |
+|-----------|---------|
+| Thinking animation | Hiển thị khi `message.status?.type === 'running' && textContent.length === 0` |
+| Thinking text cycle | "Đang suy nghĩ" → "Đang tìm kiếm" → "Đang tổng hợp" (mỗi 1.8s) |
+| Welcome screen | Hiển thị khi thread rỗng (AuiIf condition), có suggestion chips |
+| Follow-up suggestions | Render từ `message.metadata.custom.followUpSuggestions` |
+| Responsive | Desktop 33vw/480px → Tablet 50vw → Mobile full-screen |
 
 **ctxh-chat.adapter.ts** là cầu nối giữa `@assistant-ui/react` và backend:
 
@@ -163,13 +209,16 @@ export const ctxhChatAdapter: ChatModelAdapter = {
     // 1. Lấy tin nhắn cuối cùng của user
     // 2. Lấy sessionId từ metadata message trước (để tiếp tục hội thoại)
     // 3. POST /ctxh-chat/message { message, sessionId }
+    //    — kèm Authorization: Bearer token nếu đã đăng nhập
     // 4. Nhận response → giả lập streaming bằng cách yield từng token (16ms/token)
+    //    — Tokenize bằng regex /(\s+)/ (word + whitespace)
+    //    — Chỉ delay trên non-whitespace tokens
     // 5. Yield cuối cùng kèm metadata (sessionId, followUpSuggestions)
   }
 };
 ```
 
-> **Tại sao giả lập streaming?** Backend chưa hỗ trợ SSE (Server-Sent Events). Adapter nhận toàn bộ response rồi "nhỏ giọt" từng từ ra UI để tạo hiệu ứng typing tự nhiên (~60 ký tự/giây).
+> **Tại sao giả lập streaming?** Backend có endpoint SSE (`GET /ctxh-chat/stream`) nhưng frontend adapter hiện vẫn dùng POST + simulated streaming. Adapter nhận toàn bộ response rồi "nhỏ giọt" từng từ ra UI để tạo hiệu ứng typing tự nhiên (~60 ký tự/giây). Comment trong code ghi: *"When the backend gains a real SSE endpoint, replace this"*.
 
 ### 3.3 Luồng dữ liệu trên Frontend
 
@@ -231,14 +280,19 @@ Step 4.5: REGISTER_ACTIVITY → Xử lý đăng ký
 │
 Step 5: Retrieve Documents (3 sub-steps)
 │   5a. Tool Selection (1 LLM call)
-│       LLM chọn 1 trong 3 chiến lược tìm kiếm:
+│       LLM chọn 1 trong 4 chiến lược tìm kiếm:
 │       ┌─────────────────────┬───────────────────────────────────┐
 │       │ search_with_filters │ Câu hỏi có tiêu chí cụ thể      │
 │       │                     │ (thời gian, địa điểm, khoa, ...) │
 │       ├─────────────────────┼───────────────────────────────────┤
 │       │ search_semantic     │ Câu hỏi chung, tìm theo nghĩa   │
+│       │                     │ (nhanh nhất — skip filter extract)│
 │       ├─────────────────────┼───────────────────────────────────┤
 │       │ search_diverse      │ Muốn xem nhiều loại hoạt động    │
+│       │                     │ (MMR — kết quả đa dạng)          │
+│       ├─────────────────────┼───────────────────────────────────┤
+│       │ list_activities_sql │ Liệt kê / xem tất cả hoạt động  │
+│       │                     │ (SQL trực tiếp, không dùng embed) │
 │       └─────────────────────┴───────────────────────────────────┘
 │
 │   5b. Filter Extraction (1 LLM call, nếu chọn search_with_filters)
@@ -301,7 +355,7 @@ Khi `userType === 'staff'`, controller chuyển sang `StaffAgentService` thay v�
 
 ### 5.1 Agent Loop
 
-Staff Agent sử dụng **tool-calling loop** (tối đa 10 vòng lặp):
+Staff Agent sử dụng **tool-calling loop** (tối đa 10 vòng lặp, 12 custom tools + MCP tools):
 
 ```
 Vòng 1: LLM nhận câu hỏi → quyết định gọi tool nào
@@ -317,14 +371,25 @@ Vòng 3: LLM thấy đủ thông tin → trả lời bằng text (không gọi t
          → Kết thúc loop
 ```
 
-### 5.2 Bốn tools của Staff Agent
+### 5.2 Mười hai custom tools + MCP tools của Staff Agent
 
-| Tool | Chức năng | Khi nào gọi |
-|------|-----------|-------------|
-| `search_my_activities` | Tìm hoạt động cán bộ đã tạo (lọc theo keyword/status) | "Hoạt động hiến máu của tôi" |
-| `get_pending_participants` | Lấy danh sách SV chờ duyệt | "Ai đang chờ duyệt?" |
-| `approve_and_notify` | Duyệt batch + gửi email | "Duyệt tất cả" |
-| `create_activity` | Tạo hoạt động mới | "Tạo hoạt động mới tên là..." |
+| # | Tool | Chức năng | Khi nào gọi |
+|---|------|-----------|-------------|
+| 1 | `search_activities` | Tìm hoạt động (lọc keyword/status/ongoing) + kèm pending count | "Hoạt động hiến máu đang diễn ra" |
+| 2 | `get_pending_participants` | Lấy danh sách SV chờ duyệt (PENDING) của 1 hoạt động | "Ai đang chờ duyệt hoạt động X?" |
+| 3 | `get_approved_participants` | Lấy danh sách SV đã duyệt (APPROVED) của 1 hoạt động | "Ai đã được duyệt hoạt động X?" |
+| 4 | `approve_and_notify` | Duyệt batch + gửi email BCC xác nhận | "Duyệt tất cả đăng ký" |
+| 5 | `reject_registration` | Từ chối batch + gửi email BCC với lý do | "Từ chối đăng ký sinh viên A" |
+| 6 | `create_activity` | Tạo hoạt động mới (resolve tên category/org → UUID tự động) | "Tạo hoạt động mới tên là..." |
+| 7 | `batch_create_activities` | Tạo 2-3 hoạt động cùng lúc | "Tạo 3 hoạt động cho tuần tới" |
+| 8 | `manage_activity` | Cập nhật thông tin/trạng thái hoặc xóa mềm hoạt động | "Đổi địa điểm hoạt động X", "Hủy hoạt động Y" |
+| 9 | `send_notification_email` | Gửi email thông báo chung cho tất cả SV đang tham gia (PENDING + APPROVED) | "Gửi email cho mọi người là hoạt động đã hủy" |
+| 10 | `get_pending_overview` | Danh sách 10 hoạt động có SV chờ duyệt (ưu tiên hoạt động của user) | "Hoạt động nào đang chờ duyệt?" |
+| 11 | `lookup_category` | Tra cứu danh mục CTXH (fuzzy search) | Trước khi tạo hoạt động |
+| 12 | `lookup_organization` | Tra cứu tổ chức (fuzzy search) | Trước khi tạo hoạt động |
+| + | MCP Postgres tools | `mcp_execute_sql`, `mcp_list_schemas`, `mcp_list_objects`, `mcp_get_object_details` | Truy vấn SQL nâng cao |
+
+> **Session Activity Cache:** `get_pending_overview` lưu kết quả vào `sessionActivityCache` (Map per session). Khi duyệt sau đó, LLM tham chiếu cache này để xác định đúng hoạt động mà không cần hỏi lại.
 
 ### 5.3 Quy trình bắt buộc khi duyệt
 
@@ -335,20 +400,53 @@ LLM được hướng dẫn qua prompt phải tuân thủ 3 bước:
 
 → LLM **không được** tự ý duyệt mà chưa hỏi cán bộ.
 
+### 5.4 Gửi email thông báo cho sinh viên
+
+Khi cán bộ muốn thông báo thay đổi/chỉnh sửa/hủy hoạt động cho sinh viên:
+
+```
+Cán bộ: "Hủy hoạt động Quét rác và gửi email cho mọi người là hoạt động đã hủy vì thời tiết"
+    ↓
+Agent tự extract:
+  - subject: "Thông báo hủy hoạt động Quét rác"
+  - body: "Hoạt động Quét rác đã bị hủy vì lý do thời tiết."
+    ↓
+Gọi manage_activity(action="update", status="CANCELLED")
+    ↓
+Gọi send_notification_email(activity_id, subject, body)
+    ↓
+Email gửi BCC đến TẤT CẢ sinh viên PENDING + APPROVED
+```
+
+→ Agent tự extract tiêu đề + nội dung từ yêu cầu, **không hỏi lại** nếu đã rõ.
+→ Nếu cán bộ yêu cầu hủy + gửi email → thực hiện **cả hai** thao tác.
+
 ---
 
 ## 6. Backend — MCP (Model Context Protocol)
 
 ### MCP là gì?
 
-MCP là chuẩn giao thức cho phép LLM gọi tools qua HTTP. Dự án có 2 MCP server:
+MCP là chuẩn giao thức cho phép LLM gọi tools qua HTTP. Dự án có **2 MCP server** (cho external clients) + **1 MCP client** (kết nối Postgres MCP):
+
+| Thành phần | Loại | Mục đích |
+|-----------|------|---------|
+| Student MCP Server | Server | Expose 3 tools cho external AI agents (student context) |
+| Staff MCP Server | Server | Expose 3 tools cho external AI agents (staff context) |
+| PostgresMcpClientService | Client | Kết nối MCP Postgres server qua SSE cho Staff Agent |
+
+### MCP Servers (cho external clients)
 
 | Server | Endpoint | Tools |
 |--------|----------|-------|
 | Student MCP | `POST /mcp/student/*` | extract-filters, search-activities, register-activity |
 | Staff MCP | `POST /mcp/staff/*` | create-activity, query-managed-activities, auto-approve-notify |
 
-### Cấu trúc file
+> **Lưu ý quan trọng:** Chatbot (ChatbotWidget) sử dụng RAG pipeline + Staff Agent qua `/ctxh-chat/message`. Các MCP server endpoints dành cho **external AI clients** (IDE plugins, CLI tools).
+>
+> **Staff Agent ≠ Staff MCP Server.** Staff Agent có 12 custom tools + MCP Postgres tools. Staff MCP Server chỉ có 3 tools đơn giản cho external clients.
+
+### Cấu trúc file MCP
 
 ```
 backend/src/ctxh-mcp/
@@ -368,9 +466,9 @@ backend/src/ctxh-mcp/
 │       ├── query-managed-activities.tool.ts ← Xem hoạt động quản lý
 │       └── auto-approve-notify.tool.ts ← Duyệt + gửi email
 ├── notifications/
-│   └── nodemailer.service.ts         ← Gửi email notification
+│   └── nodemailer.service.ts         ← Gửi email (approval/rejection/notification BCC batch)
 ├── guards/
-│   └── ctxh-permission.helper.ts     ← Kiểm tra quyền
+│   └── ctxh-permission.helper.ts     ← Kiểm tra quyền CTXH
 ├── types/
 │   └── mcp-context.types.ts          ← Type definitions
 └── ctxh-mcp.module.ts                ← NestJS module
@@ -380,9 +478,64 @@ backend/src/ctxh-mcp/
 
 ---
 
-## 7. Vector Embedding & Sync
+## 7. Backend — Postgres MCP Client & Enrichment
 
-### 7.1 Embedding là gì?
+### 7.1 PostgresMcpClientService
+
+Kết nối đến một **Postgres MCP server bên ngoài** (crystaldba/postgres-mcp) qua SSE:
+
+```
+Staff Agent Tool (manage_activity, get_pending_overview)
+    → PostgresMcpClientService.executeSqlRows(sql)
+        → SSE transport → Postgres MCP Server
+            → PostgreSQL query
+```
+
+**Tính năng:**
+- Kết nối qua SSE (`POSTGRES_MCP_SSE_URL` env var)
+- Discover tools tự động khi khởi tạo
+- **Security:** Block SQL chứa `DROP`, `TRUNCATE`, `ALTER`, `GRANT`, `REVOKE`, `CREATE ROLE`, `pg_read_file`
+- Parse Python repr output từ crystaldba/postgres-mcp: `UUID('...')`, `Decimal('...')`, `datetime.datetime()`, `True/False/None`
+- **Graceful degradation:** Nếu MCP server không available → log warning, tools trả lỗi
+
+**Allowlist tools:**
+- `mcp_execute_sql` — Chạy SQL query
+- `mcp_list_schemas` — Liệt kê schemas
+- `mcp_list_objects` — Liệt kê tables/views
+- `mcp_get_object_details` — Chi tiết 1 object
+
+### 7.2 McpSqlFallbackService
+
+Khi **vector search trả về 0 kết quả**, fallback sang SQL trực tiếp:
+
+```
+RAG Pipeline → vector search → 0 documents
+    → McpSqlFallbackService.fallbackSearch(query)
+        → SQL query không dùng embedding → Documents[]
+    → hoặc .listActivities(orgFilter?) 
+        → Liệt kê activities SQL-based
+```
+
+### 7.3 McpMetadataEnricherService
+
+Enrichment sau khi vector search:
+
+```
+Documents[] (từ vector search)
+    → McpMetadataEnricherService.enrichDocuments(docs)
+        → 1 MCP SQL call (batch)
+        → Thêm: requiresApproval, maxParticipants, remainingSlots, categoryName
+    → Documents[] (enriched)
+```
+
+- Batch enrichment qua single MCP call (tối ưu)
+- Graceful degradation khi MCP fail (trả về docs gốc)
+
+---
+
+## 8. Vector Embedding & Sync
+
+### 8.1 Embedding là gì?
 
 **Embedding** = biểu diễn văn bản dưới dạng vector số (mảng 1024 số thực). Hai đoạn văn bản có nghĩa giống nhau → vector gần nhau → tìm được qua cosine similarity.
 
@@ -392,7 +545,7 @@ backend/src/ctxh-mcp/
 "Bài toán tích phân"                   →  [0.89, 0.22, -0.71, ...]  ← xa!
 ```
 
-### 7.2 Pipeline: Activity → Embedding
+### 8.2 Pipeline: Activity → Embedding
 
 Khi một hoạt động CTXH được tạo/sửa/xóa trong database:
 
@@ -404,19 +557,31 @@ Khi một hoạt động CTXH được tạo/sửa/xóa trong database:
    afterInsert() / afterUpdate() / beforeRemove()
        ↓
 3. EventEmitter2
-   emit(ACTIVITY_EVENTS.CREATED / UPDATED / DELETED)
+   emit(ACTIVITY_EVENTS.CREATED / UPDATED / DELETED / RESTORED / STATUS_CHANGED)
        ↓
-4. CtxhVectorSyncService (@OnEvent listener)
-   Kiểm tra: có thay đổi content fields không?
-   (name, description, location, startDate, endDate, status)
-   Nếu có → addUpsertJob() / addDeleteJob()
+4. CtxhVectorSyncService (@OnEvent listener — 5 events)
+   ├── ActivityCreatedEvent       → UPSERT job
+   ├── ActivityUpdatedEvent       → UPSERT (chỉ khi CONTENT_FIELDS thay đổi)
+   ├── ActivityDeletedEvent       → DELETE job
+   ├── ActivityRestoredEvent      → UPSERT job
+   └── ActivityStatusChangedEvent → UPSERT job
+   
+   Content fields (trigger re-embed):
+   name, description, location, start_date, end_date, total_days,
+   category_id, organization_id, status
+   
+   Non-content fields (bỏ qua): view_count, updated_at, ...
        ↓
 5. BullMQ Queue ('vectorize_queue')
    Job được đẩy vào queue Redis
-   Concurrency: 1 (xử lý tuần tự, tránh race condition)
+   Dedup: jobId = "upsert_{activityId}" (tránh duplicate)
+   Concurrency: 1 (xử lý tuần tự, tránh Ollama rate limit)
        ↓
 6. VectorIngestionProcessor (@Process)
    Nhận job → gọi ingestionService
+   Retry: 3 lần, exponential backoff (2s → 4s → 8s)
+   removeOnComplete: true (tránh Redis jobId collision)
+   removeOnFail: 50 (giữ 50 job lỗi gần nhất)
        ↓
 7. LangChainIngestionService
    processActivity(activityId):
@@ -428,7 +593,7 @@ Khi một hoạt động CTXH được tạo/sửa/xóa trong database:
    f. Lưu vào bảng ctxh_embeddings (pgvector)
 ```
 
-### 7.3 Bảng ctxh_embeddings
+### 8.3 Bảng ctxh_embeddings
 
 ```sql
 CREATE TABLE ctxh_embeddings (
@@ -446,13 +611,14 @@ CREATE TABLE ctxh_embeddings (
 CREATE INDEX ON ctxh_embeddings USING ivfflat (embedding vector_cosine_ops);
 ```
 
-### 7.4 Tìm kiếm Vector (3 phương pháp)
+### 8.4 Tìm kiếm Vector (4 phương pháp)
 
 | Phương pháp | Service Method | Khi nào dùng |
 |------------|----------------|-------------|
-| **Semantic Search** | `similaritySearchWithScore()` | Câu hỏi chung, tìm theo nghĩa |
+| **Semantic Search** | `similaritySearchWithDateFilter()` | Câu hỏi chung, tìm theo nghĩa (tự lọc DRAFT) |
 | **Filtered Search** | `similaritySearchWithMetadataFilters()` | Có tiêu chí cụ thể (khoa, ngày, địa điểm) |
 | **MMR (Maximal Marginal Relevance)** | `maxMarginalRelevanceSearch()` | Muốn kết quả đa dạng, không trùng lặp |
+| **SQL Fallback** | `McpSqlFallbackService.listActivities()` | Liệt kê tất cả, không phụ thuộc embedding |
 
 **Filtered Search** đặc biệt vì nó build **SQL WHERE clause động**:
 
@@ -469,9 +635,9 @@ LIMIT 5;
 
 ---
 
-## 8. LLM & Embedding Provider
+## 9. LLM & Embedding Provider
 
-### 8.1 Hệ thống toggle
+### 9.1 Hệ thống toggle
 
 Dự án hỗ trợ **2 provider**, chuyển đổi qua biến môi trường:
 
@@ -485,7 +651,7 @@ USE_LOCAL_MODEL_EMBEDDING=false → Google Gemini Embeddings
 
 > **LLM và Embedding có thể dùng provider khác nhau.** Ví dụ: LLM = Gemini (cloud, chất lượng cao) + Embedding = Ollama (local, miễn phí).
 
-### 8.2 Kiến trúc abstraction
+### 9.2 Kiến trúc abstraction
 
 ```
 UniversalLLMService           UniversalEmbeddingsService
@@ -503,7 +669,7 @@ UniversalLLMService           UniversalEmbeddingsService
 
 Các service khác (RAG chain, vector store, ...) **không biết** đang dùng Ollama hay Gemini — chỉ gọi `universalLLMService.getLLM()` và nhận `BaseChatModel`.
 
-### 8.3 Tại sao cần 2 provider?
+### 9.3 Tại sao cần 2 provider?
 
 | | Ollama (Local) | Gemini (Cloud) |
 |---|---|----|
@@ -515,7 +681,7 @@ Các service khác (RAG chain, vector store, ...) **không biết** đang dùng 
 
 ---
 
-## 9. Cây thư mục chi tiết
+## 10. Cây thư mục chi tiết
 
 ### Backend — ctxh-chat/ (module chính)
 
@@ -534,12 +700,26 @@ backend/src/ctxh-chat/
 │
 ├── 📁 controllers/                     ← HTTP endpoints
 │   └── ctxh-chat.controller.ts         ← POST /ctxh-chat/message (entry point)
-│                                          GET /ctxh-chat/memory/:sessionId
-│                                          DELETE /ctxh-chat/memory/:sessionId
+│                                          SSE  /ctxh-chat/stream (streaming)
+│                                          GET  /ctxh-chat/history/:sessionId
+│                                          DELETE /ctxh-chat/session/:sessionId
+│                                          POST /ctxh-chat/ingestion/full
+│                                          POST /ctxh-chat/ingestion/incremental
+│                                          POST /ctxh-chat/ingestion/activity/:id
+│                                          DELETE /ctxh-chat/ingestion/activity/:id
+│                                          GET  /ctxh-chat/ingestion/stats
+│                                          GET  /ctxh-chat/ingestion/queue-status
+│                                          POST /ctxh-chat/ingestion/force-sync-all
+│                                          GET  /ctxh-chat/health
+│                                          GET  /ctxh-chat/health/vector-store
+│                                          GET  /ctxh-chat/health/models
+│                                          GET  /ctxh-chat/stats/memory
+│                                          GET  /ctxh-chat/stats/sessions
 │
 ├── 📁 dto/                             ← Data Transfer Objects (request/response shapes)
 │   ├── chat-request.dto.ts             ← { message, sessionId? }
 │   ├── chat-response.dto.ts            ← { response, sources[], sessionId, followUpSuggestions }
+│   ├── chat.dto.ts                     ← Shared DTO types
 │   ├── router-output.dto.ts            ← { intent, rewrittenQuestion } (Zod schema)
 │   ├── verifier-output.dto.ts          ← { verdict, supplementQuery } (Zod schema)
 │   ├── filter-extraction.dto.ts        ← { status[], orgKeywords[], dateRange } (Zod schema)
@@ -553,44 +733,54 @@ backend/src/ctxh-chat/
 │
 ├── 📁 interceptors/                    ← NestJS interceptors
 │   └── rate-limit.interceptor.ts       ← Redis-based rate limiting (30 req/min default)
+│                                          Per-user OR per-IP, atomic Redis MULTI
+│                                          Returns HTTP 429 + X-RateLimit-* headers
 │
 ├── 📁 processors/                      ← BullMQ job processors
 │   └── vector-ingestion.processor.ts   ← Worker: xử lý upsert/delete/full_sync jobs
+│                                          Concurrency: 1, 3 retries, exponential backoff
 │
 ├── 📁 prompts/                         ← LLM prompt templates (QUAN TRỌNG!)
 │   ├── ctxh-chat.prompts.ts            ← CTXH_RAG_PROMPT — prompt chính cho RAG
 │   │                                      (system instructions, format rules, context injection)
 │   ├── router-agent.prompt.ts          ← Intent detection + question rewriting
 │   ├── filter-extraction.prompt.ts     ← Parse câu hỏi → structured filters
-│   ├── tool-selector.prompt.ts         ← Chọn 1/3 search tools
+│   ├── tool-selector.prompt.ts         ← Chọn 1/4 search tools
 │   ├── retrieval-verifier.prompt.ts    ← Khi 0 kết quả, đề xuất query fallback
+│   ├── staff-agent.prompt.ts           ← Staff tool-calling prompt (nhận currentDate + cached activities)
 │   └── index.ts
 │
-├── 📁 services/                        ← Business logic (PHẦN CHÍNH)
-│   ├── universal-llm.service.ts        ← Abstraction LLM (Ollama ↔ Gemini)
-│   ├── universal-embeddings.service.ts ← Abstraction Embedding
-│   ├── langchain-vector-store.service.ts ← pgvector CRUD + 3 search methods
-│   ├── langchain-memory.service.ts     ← Session history + lastMentionedActivity
-│   ├── langchain-advanced-retriever.service.ts ← Advanced retrieval strategies
-│   ├── ctxh-filter-extraction.service.ts ← NLU: câu hỏi → filters (dùng LLM)
-│   ├── langchain-rag-chain.service.ts  ← ⭐ MAIN: RAG pipeline 8 bước
-│   ├── staff-agent.service.ts          ← ⭐ Staff tool-calling agent
-│   ├── langchain-ingestion.service.ts  ← Activity → embedding conversion
-│   ├── ctxh-vector-sync.service.ts     ← Event listener → queue jobs
-│   ├── user-context.service.ts         ← Lấy thông tin user (org, department)
+├── 📁 services/                        ← Business logic (14 SERVICE CLASSES)
+│   ├── universal-llm.service.ts        ← Abstraction LLM (Ollama ↔ Gemini) + health check
+│   ├── universal-embeddings.service.ts ← Abstraction Embedding + health check
+│   ├── langchain-vector-store.service.ts ← pgvector CRUD + 3 search methods + auto DRAFT filter
+│   ├── langchain-memory.service.ts     ← Session history + MentionedActivity tracking per turn
+│   │                                      (max 1000 sessions, 30min TTL, 5min cleanup cycle)
+│   ├── langchain-advanced-retriever.service.ts ← Multi-query search + hybrid search + dedup
+│   ├── ctxh-filter-extraction.service.ts ← NLU: câu hỏi → filters (dùng LLM + Zod)
+│   ├── langchain-rag-chain.service.ts  ← ⭐ MAIN: RAG pipeline 8 bước (student flow)
+│   ├── staff-agent.service.ts          ← ⭐ Staff ReACT agent (12 custom tools + MCP tools)
+│   ├── langchain-ingestion.service.ts  ← Activity → embedding conversion + full/incremental
+│   ├── ctxh-vector-sync.service.ts     ← Event listener (5 events) → queue jobs
+│   ├── user-context.service.ts         ← Lấy thông tin user (org, department, training dept)
+│   ├── postgres-mcp-client.service.ts  ← MCP Postgres client (SSE, tool discovery, SQL guard)
+│   ├── mcp-sql-fallback.service.ts     ← SQL fallback khi vector search = 0 kết quả
+│   ├── mcp-metadata-enricher.service.ts ← Enrich documents (slots, category, approval status)
 │   ├── index.ts
-│   └── 📁 __tests__/                  ← Unit tests (6 spec files)
+│   └── 📁 __tests__/                  ← Unit tests
 │
 ├── 📁 subscribers/                     ← TypeORM event subscribers
 │   └── ctxh-activity.subscriber.ts     ← Activity CRUD events → embedding sync
 │
 ├── 📁 tools/                           ← LLM tool definitions
-│   └── rag-tools.ts                    ← 3 search tools cho tool selector
+│   └── rag-tools.ts                    ← 4 search tools cho tool selector
+│                                          (search_with_filters, search_semantic,
+│                                           search_diverse, list_activities_sql)
 │
 └── ctxh-chat.module.ts                 ← NestJS module registration
 ```
 
-### Backend — ctxh-mcp/
+### Backend — ctxh-mcp/ (MCP servers cho external clients)
 
 ```
 backend/src/ctxh-mcp/
@@ -602,11 +792,17 @@ backend/src/ctxh-mcp/
 │   └── staff.server.ts                 ← Tạo staff MCP server (3 tools)
 ├── 📁 tools/
 │   ├── 📁 student/                     ← 3 student tools
+│   │   ├── extract-filters.tool.ts
+│   │   ├── search-activities.tool.ts
+│   │   └── register-activity.tool.ts
 │   └── 📁 staff/                       ← 3 staff tools
+│       ├── create-activity.tool.ts
+│       ├── query-managed-activities.tool.ts
+│       └── auto-approve-notify.tool.ts
 ├── 📁 notifications/
-│   └── nodemailer.service.ts           ← Gửi email xác nhận
+│   └── nodemailer.service.ts           ← Gửi email xác nhận/từ chối/thông báo chung (BCC batch)
 ├── 📁 guards/
-│   └── ctxh-permission.helper.ts       ← Check quyền CTXH
+│   └── ctxh-permission.helper.ts       ← Check quyền CTXH (dùng chung bởi Staff Agent)
 ├── 📁 types/
 │   └── mcp-context.types.ts
 └── ctxh-mcp.module.ts
@@ -618,23 +814,29 @@ backend/src/ctxh-mcp/
 frontend/src/features/ctxh-chat/
 ├── 📁 components/
 │   ├── ChatbotWidget.tsx               ← Nút floating (bottom-right) + toggle popup
-│   ├── ChatbotPopup.tsx                ← Chat UI chính (messages, input, suggestions)
-│   ├── SourceCard.tsx                  ← Card hiển thị 1 source
-│   └── SourceList.tsx                  ← List các source cards
+│   │                                      Animated icon (MessageCircle ↔ X rotate transition)
+│   ├── ChatbotPopup.tsx                ← Chat UI compact (popup, responsive breakpoints)
+│   │                                      Avatar: HCMCUT.png, thinking dots size-1.5
+│   ├── CtxhThread.tsx                  ← Chat UI full-page (larger, dùng cho CtxhChatPage)
+│   │                                      Avatar: graduation cap (doan-500), thinking dots size-2
+│   │                                      Follow-up suggestion buttons, branch picker
+│   ├── SourceCard.tsx                  ← Card hiển thị 1 source (name, org, score %, progress bar)
+│   └── SourceList.tsx                  ← List collapsible "{count} nguồn tham khảo"
 ├── 📁 runtime/
-│   └── ctxh-chat.adapter.ts           ← ChatModelAdapter (POST → simulated streaming)
+│   └── ctxh-chat.adapter.ts           ← ChatModelAdapter (POST → simulated streaming 16ms/token)
+│                                          Kèm Authorization: Bearer token
 ├── 📁 types/
 │   └── chat.types.ts                  ← CtxhChatResponse, CtxhSource, MessageMetadata
 ├── 📁 pages/
-│   └── CtxhChatPage.tsx               ← Full-screen chat (chưa route)
-└── index.ts                           ← Barrel exports
+│   └── CtxhChatPage.tsx               ← Full-screen chat (height: calc(100vh - 64px))
+└── index.ts                           ← Barrel exports (3 public: CtxhChatPage, ctxhChatAdapter, ChatbotWidget)
 ```
 
 ---
 
-## 10. Data Flow chi tiết
+## 11. Data Flow chi tiết
 
-### 10.1 Student hỏi câu hỏi
+### 11.1 Student hỏi câu hỏi
 
 ```
 ┌──────────────┐     POST /ctxh-chat/message      ┌──────────────────┐
@@ -726,9 +928,9 @@ frontend/src/features/ctxh-chat/
 └──────────────┘
 ```
 
-**Tổng cộng: 3-4 LLM calls mỗi câu hỏi RAG_QUERY** (Router + Tool Selector + Filter Extraction + RAG Generation).
+**Tổng cộng: 3-4 LLM calls mỗi câu hỏi RAG_QUERY** (Router + Tool Selector + [Filter Extraction nếu cần] + RAG Generation). Tool `list_activities_sql` bỏ qua cả Filter Extraction lẫn vector search.
 
-### 10.2 Activity thay đổi → Embedding cập nhật
+### 11.2 Activity thay đổi → Embedding cập nhật
 
 ```
 Admin tạo/sửa activity
@@ -776,7 +978,7 @@ Admin tạo/sửa activity
 
 ---
 
-## 11. Biến môi trường
+## 12. Biến môi trường
 
 ### LLM & Embedding (bắt buộc)
 
@@ -825,11 +1027,14 @@ DB_NAME=doanhoi_portal
 # Redis (cho BullMQ + rate limiting)
 REDIS_HOST=localhost
 REDIS_PORT=6379
+
+# Postgres MCP Server (cho Staff Agent tools)
+POSTGRES_MCP_SSE_URL=http://localhost:3100/sse   # crystaldba/postgres-mcp SSE endpoint
 ```
 
 ---
 
-## 12. Thuật ngữ
+## 13. Thuật ngữ
 
 | Thuật ngữ | Giải thích |
 |-----------|-----------|
@@ -841,14 +1046,22 @@ REDIS_PORT=6379
 | **MMR** | Maximal Marginal Relevance — thuật toán cân bằng giữa relevance và diversity |
 | **Intent** | Ý định của user (RAG_QUERY, GREETING, CHITCHAT, REGISTER_ACTIVITY) |
 | **MCP** | Model Context Protocol — chuẩn để LLM gọi tools qua HTTP |
+| **MCP Client** | Phía gọi MCP server (PostgresMcpClientService kết nối Postgres MCP server) |
+| **MCP Server** | Phía expose tools cho external clients (Student/Staff MCP servers) |
+| **SSE** | Server-Sent Events — giao thức streaming one-way từ server |
 | **BullMQ** | Thư viện job queue dựa trên Redis |
 | **Tool Calling** | LLM quyết định gọi function nào thay vì chỉ trả lời text |
+| **ReACT Loop** | Reasoning + Acting — LLM suy luận → gọi tool → nhận kết quả → lặp (tối đa 10 vòng) |
 | **Zod** | Thư viện TypeScript validate schema — dùng để ép LLM trả đúng format |
+| **Structured Output** | Buộc LLM trả JSON theo schema cụ thể (thay vì text tự do) |
 | **CTXH** | Công tác xã hội — hoạt động phục vụ cộng đồng bắt buộc cho sinh viên |
 | **SessionId** | ID theo dõi hội thoại — cho phép chatbot nhớ context qua nhiều lượt |
-| **Structured Output** | Buộc LLM trả JSON theo schema cụ thể (thay vì text tự do) |
+| **MentionedActivity** | Hoạt động được nhắc đến trong turn — tracked per turn cho REGISTER_ACTIVITY |
 | **Prompt Template** | Mẫu prompt với biến (placeholder) được inject lúc runtime |
 | **Ingestion** | Quá trình đưa dữ liệu vào hệ thống (activity → chunking → embedding → store) |
+| **SQL Fallback** | Khi vector search không có kết quả → truy vấn SQL trực tiếp thay thế |
+| **Metadata Enrichment** | Bổ sung thêm thông tin (slots, approval, category) vào documents sau retrieval |
+| **Graceful Degradation** | Hệ thống vẫn hoạt động khi 1 thành phần lỗi (MCP down → skip enrichment) |
 
 ---
 
@@ -863,3 +1076,9 @@ REDIS_PORT=6379
 4. **Xem logs** — Service có logging chi tiết. Tìm `this.logger` trong RAG chain service để xem pipeline đang chạy step nào.
 
 5. **Thay đổi hành vi AI** — 90% thay đổi hành vi chỉ cần sửa file trong `prompts/`. Không cần sửa code logic.
+
+6. **Staff Agent tools** — Xem `staff-agent.service.ts` → `buildTools()` để hiểu 12 custom tools + MCP tools.
+
+7. **Health check** — Gọi `GET /ctxh-chat/health` và `GET /ctxh-chat/health/models` để kiểm tra toàn bộ pipeline.
+
+8. **MCP debug** — Nếu Staff Agent tools lỗi MCP, check `POSTGRES_MCP_SSE_URL` và xem logs `PostgresMcpClientService`.
