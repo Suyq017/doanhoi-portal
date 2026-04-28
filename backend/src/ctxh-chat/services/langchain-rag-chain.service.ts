@@ -8,16 +8,12 @@ import { LangChainVectorStoreService } from './langchain-vector-store.service';
 import { LangChainMemoryService, MentionedActivity } from './langchain-memory.service';
 import { LangChainConfig } from '../config/langchain.config';
 import { CTXH_RAG_PROMPT } from '../prompts/ctxh-chat.prompts';
-import { ROUTER_AGENT_PROMPT } from '../prompts/router-agent.prompt';
 import { RETRIEVAL_VERIFIER_PROMPT } from '../prompts/retrieval-verifier.prompt';
-import { TOOL_SELECTOR_PROMPT } from '../prompts/tool-selector.prompt';
-import { RouterOutput, RouterOutputSchema } from '../dto/router-output.dto';
 import { VerifierOutputSchema } from '../dto/verifier-output.dto';
-import { RAG_TOOLS, RAG_TOOL_NAMES, RagToolName } from '../tools/rag-tools';
 import { ActivityStatus } from '@/entities/ctxh-activity.entity';
-import { CtxhFilterExtractionService } from './ctxh-filter-extraction.service';
 import { McpSqlFallbackService, StatusHint } from './mcp-sql-fallback.service';
 import { McpMetadataEnricherService } from './mcp-metadata-enricher.service';
+import { CtxhAgentService, AgentSearchParams, AgentRegisterParams } from './ctxh-agent.service';
 
 /**
  * RAG Response structure
@@ -27,8 +23,8 @@ export interface RAGResponse {
   sources: Document[];
   responseTime: number;
   sessionId?: string;
-  /** Intent detected by the Router Agent — useful for debugging and analytics */
-  intent?: RouterOutput['intent'];
+  /** Intent detected by the agent — useful for debugging and analytics */
+  intent?: 'RAG_QUERY' | 'GREETING' | 'CHITCHAT' | 'REGISTER_ACTIVITY';
   /** Set when intent is REGISTER_ACTIVITY and target activity is found */
   registrationTarget?: {
     activityId: string | number;
@@ -59,11 +55,11 @@ const GREETING_RESPONSE = [
   'Xin chào bạn! Tôi là trợ lý ảo chuyên tư vấn về các hoạt động **Công tác Xã hội (CTXH)** tại Đại học Bách Khoa TP.HCM.',
   '',
   'Tôi có thể giúp bạn:',
-  '\n• **Tìm kiếm hoạt động CTXH** theo thời gian, địa điểm, danh mục (hiến máu, tình nguyện, hội trại,...)',
-  '\n• **Tra cứu thông tin chi tiết**: thời gian, địa điểm, số ngày CTXH được tính',
-  '\n• **Tìm hoạt động theo tổ chức/khoa** (ví dụ: hoạt động của Liên chi đoàn Khoa Khoa học và Kỹ thuật máy tính)',
-  '\n• **Kiểm tra trạng thái**: đang mở đăng ký, đã kết thúc',
-  '\n• **Tự động gửi đăng ký hoạt động**: khi bạn hỏi về một hoạt động đang tuyển thành viên, tôi sẽ đề xuất đăng ký giúp bạn',
+  '\n- **Tìm kiếm hoạt động CTXH** theo thời gian, địa điểm, danh mục (hiến máu, tình nguyện, hội trại,...)',
+  '\n- **Tra cứu thông tin chi tiết**: thời gian, địa điểm, số ngày CTXH được tính',
+  '\n- **Tìm hoạt động theo tổ chức/khoa** (ví dụ: hoạt động của Liên chi đoàn Khoa Khoa học và Kỹ thuật máy tính)',
+  '\n- **Kiểm tra trạng thái**: đang mở đăng ký, đã kết thúc',
+  '\n- **Tự động gửi đăng ký hoạt động**: khi bạn hỏi về một hoạt động đang tuyển thành viên, tôi sẽ đề xuất đăng ký giúp bạn',
   '',
   '\nHãy đặt câu hỏi cho tôi nhé!',
 ].join('\n');
@@ -84,7 +80,7 @@ export class LangChainRagChainService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly vectorStoreService: LangChainVectorStoreService,
     private readonly memoryService: LangChainMemoryService,
-    private readonly filterExtractionService: CtxhFilterExtractionService,
+    private readonly agentService: CtxhAgentService,
     private readonly mcpFallbackService: McpSqlFallbackService,
     private readonly mcpEnricher: McpMetadataEnricherService,
   ) {}
@@ -139,146 +135,112 @@ export class LangChainRagChainService implements OnModuleInit {
   }
 
   /**
-   * Router Agent: combines question rewriting + intent classification in one LLM call.
+   * Execute a search based on the agent's decision.
    *
-   * Replaces the old `processQuestion()` + `buildQuestionRewriteChain()` pair.
-   * Returns both a standalone rewritten question AND an intent label so the
-   * caller can short-circuit the expensive retrieval path for CHITCHAT queries.
+   * Replaces three separate steps (router → filter extraction → tool selection)
+   * with a single dispatch on the mode the LLM already chose.
    *
-   * Optimised for Qwen running on Ollama:
-   *  - Uses `withStructuredOutput` (Zod) — avoids brittle JSON string parsing.
-   *  - Prompt includes `/no_think` to suppress Qwen's reasoning block output.
-   *  - Falls back gracefully: on error, treats the question as RAG_QUERY unchanged.
+   * Org-injection: if the agent did NOT extract an org AND userOrg is available,
+   * inject it and run a parallel broad search so faculty-level + school-wide results
+   * are both included.
    */
-  private async routeQuestion(
-    question: string,
-    chatHistory: string,
-  ): Promise<RouterOutput> {
-    try {
-      const structuredLlm = this.llm.withStructuredOutput(RouterOutputSchema, {
-        name: 'route_question',
-      });
-
-      const chain = ROUTER_AGENT_PROMPT.pipe(structuredLlm);
-
-      const result = await chain.invoke({
-        question,
-        chat_history: chatHistory,
-      }) as RouterOutput;
-
-      this.logger.debug(
-        `[RouterAgent] intent=${result.intent} | rewritten="${result.rewrittenQuestion.slice(0, 80)}"`,
-      );
-
-      return result;
-    } catch (error) {
-      // Graceful degradation: if the router fails (e.g. malformed JSON from model),
-      // treat as RAG_QUERY with the original question so the user still gets an answer.
-      this.logger.warn(
-        `[RouterAgent] Failed to route question, falling back to RAG_QUERY: ${error?.message}`,
-      );
-      return {
-        rewrittenQuestion: question,
-        intent: 'RAG_QUERY',
-      };
-    }
-  }
-
-  /**
-   * Extract filters and retrieve relevant documents.
-   *
-   * Org-injection logic:
-   * - If the student does NOT mention a department in their question AND `userOrg` is provided
-   *   (from their training department in the DB), inject it into `organizationKeywords` so the
-   *   search automatically scopes to their own faculty.
-   * - If the filtered search returns 0 results because of that auto-injected org filter,
-   *   we retry without it so the student still gets a useful answer.
-   * - If the student explicitly mentions a department, the LLM extracts it — we never override.
-   */
-  private async retrieveDocuments(
-    question: string,
+  private async executeSearchDecision(
+    params: AgentSearchParams,
     currentDate: string,
     topK: number,
-    useMMR: boolean,
     userOrg?: string,
-    userId?: string,
   ): Promise<Document[]> {
-    // 1. Extract structured metadata filters via LLM
-    let filters = await this.filterExtractionService.extractFilters(
-      question,
-      currentDate,
-    );
+    const { rewrittenQuestion, mode } = params;
 
-    // 2. Resolve relative date expressions ("hôm nay", "tuần này") into concrete bounds
-    if (filters.dateRange && currentDate) {
-      filters = this.filterExtractionService.resolveDateRange(
-        filters,
-        currentDate,
+    // ── list_all: pure SQL, no embedding needed ──────────────────────────────
+    if (mode === 'list_all') {
+      const statusHint = this.statusHintFromParams(params);
+      const rawJson = await this.mcpFallbackService.listActivities(statusHint, params.organizationName, topK);
+      try {
+        const parsed = JSON.parse(rawJson);
+        if (parsed.found > 0) {
+          return (parsed.activities as any[]).map(
+            (a) =>
+              new Document({
+                pageContent: [a.name, a.organization, a.category, a.location]
+                  .filter(Boolean)
+                  .join(' — '),
+                metadata: {
+                  activityName: a.name,
+                  status: a.status,
+                  startDate: a.start_date,
+                  endDate: a.end_date,
+                  location: a.location,
+                  totalDays: a.total_days,
+                  organizationName: a.organization,
+                  categoryName: a.category,
+                  requiresApproval: a.requires_approval,
+                  maxParticipants: a.max_participants,
+                  source: 'list_activities_sql',
+                },
+              }),
+          );
+        }
+      } catch {}
+      return [];
+    }
+
+    // ── diverse: MMR for variety ─────────────────────────────────────────────
+    if (mode === 'diverse') {
+      return this.vectorStoreService.maxMarginalRelevanceSearch(
+        rewrittenQuestion,
+        { k: topK, fetchK: topK * 4, lambda: 0.5 },
       );
     }
 
-    // 3. Org injection: if student did not mention a department, use their training dept
-    const userMentionedOrg = (filters.organizationKeywords?.length ?? 0) > 0;
-    let orgInjected = false;
+    // ── semantic: pure embedding similarity, no filters ──────────────────────
+    if (mode === 'semantic') {
+      return this.vectorStoreService.similaritySearchWithDateFilter(
+        rewrittenQuestion,
+        topK,
+        currentDate,
+        'all',
+      );
+    }
 
-    if (!userMentionedOrg && userOrg) {
-      filters = { ...filters, organizationKeywords: [userOrg] };
-      orgInjected = true;
+    // ── filtered: SQL-constrained pgvector search ─────────────────────────────
+    // Convert AgentSearchParams to MetadataFilters for MCP compatibility.
+    let filters = this.agentService.toMetadataFilters(params);
+
+    // Org injection: if agent did not extract an org AND userOrg is provided,
+    // inject user's department to scope results to their faculty.
+    const orgInjected = !params.organizationName && !!userOrg;
+    if (orgInjected) {
+      filters = { ...filters, organizationKeywords: [userOrg!] };
       this.logger.debug(`[OrgFilter] Injected user dept: "${userOrg}"`);
     }
 
-    this.logger.debug(
-      `Extracted filters: ${JSON.stringify(filters)}`,
+    this.logger.debug(`[Agent] Executing filtered search, filters: ${JSON.stringify(filters)}`);
+
+    const activityIds = await this.mcpFallbackService.queryEmbeddingActivityIds(
+      filters,
+      currentDate,
     );
 
     let docs: Document[];
-
-    if (this.filterExtractionService.isEmpty(filters)) {
-      // No meaningful filters — fall back to standard search
-      if (useMMR) {
-        docs = await this.vectorStoreService.maxMarginalRelevanceSearch(
-          question,
-          { k: topK, fetchK: topK * 4, lambda: 0.5 },
-        );
-      } else {
-        docs = await this.vectorStoreService.similaritySearchWithDateFilter(
-          question,
-          topK,
-          currentDate,
-          'all',
-        );
-      }
+    if (activityIds === null) {
+      // MCP returned null (filters empty or disconnected) → semantic fallback
+      docs = await this.vectorStoreService.similaritySearchWithDateFilter(
+        rewrittenQuestion,
+        topK,
+        currentDate,
+        'all',
+      );
     } else {
-      // Stage 1 — MCP SQL resolves matching activity IDs from ctxh_embeddings.metadata
-      // Stage 2 — pgvector ranks those candidates by semantic relevance
-      const activityIds = await this.mcpFallbackService.queryEmbeddingActivityIds(
-        filters,
+      docs = await this.vectorStoreService.similaritySearchConstrainedByIds(
+        rewrittenQuestion,
+        activityIds,
+        topK,
         currentDate,
       );
-
-      if (activityIds === null) {
-        // MCP returned null (filters empty or client disconnected) → unfiltered semantic search
-        docs = await this.vectorStoreService.similaritySearchWithDateFilter(
-          question,
-          topK,
-          currentDate,
-          'all',
-        );
-      } else {
-        // activityIds may be an empty array (no matches) — constrained search handles that
-        docs = await this.vectorStoreService.similaritySearchConstrainedByIds(
-          question,
-          activityIds,
-          topK,
-          currentDate,
-        );
-      }
     }
 
-    // 4. Parallel broad-search & merge when org was auto-injected
-    // Reason: query "hiến máu" with org="KTMT" returns KTMT results (>0, no retry),
-    // but misses activities from Đoàn trường / Hội sinh viên.
-    // -> Always also run broad search (no org filter) and merge results.
+    // Parallel broad-search & merge when org was auto-injected
     if (orgInjected) {
       const filtersWithoutOrg = { ...filters, organizationKeywords: [] };
       const broadIds = await this.mcpFallbackService.queryEmbeddingActivityIds(
@@ -287,26 +249,25 @@ export class LangChainRagChainService implements OnModuleInit {
       );
       const broadDocs = broadIds !== null
         ? await this.vectorStoreService.similaritySearchConstrainedByIds(
-            question,
+            rewrittenQuestion,
             broadIds,
             topK,
             currentDate,
           )
         : await this.vectorStoreService.similaritySearchWithDateFilter(
-            question,
+            rewrittenQuestion,
             topK,
             currentDate,
             'all',
           );
 
-      // Merge: keep org-specific docs first, append broad docs not already present
       const seenIds = new Set(docs.map(d => d.metadata?.activityId).filter(Boolean));
       const newDocs = broadDocs.filter(d => !seenIds.has(d.metadata?.activityId));
       const orgCount = docs.length;
       docs = [...docs, ...newDocs].slice(0, topK);
 
       this.logger.debug(
-        `[OrgFilter] Parallel merge: ${orgCount} org-specific + ${newDocs.length} broad -> total ${docs.length}`,
+        `[OrgFilter] Merge: ${orgCount} org-specific + ${newDocs.length} broad → total ${docs.length}`,
       );
     }
 
@@ -314,141 +275,20 @@ export class LangChainRagChainService implements OnModuleInit {
   }
 
   /**
-   * Dynamic Tool Selection (Phase 3 — Option A: Lightweight bindTools).
+   * Retrieve-Then-Verify: wraps executeSearchDecision() with an LLM-driven fallback.
    *
-   * Asks the LLM to select ONE search tool from {search_with_filters,
-   * search_semantic, search_diverse} by calling `llm.bindTools(RAG_TOOLS)`.
-   * We parse the resulting `tool_calls[0].name` and execute the matching
-   * VectorStore method ourselves — no AgentExecutor, no loop.
-   *
-   * Tool routing:
-   *  search_with_filters -> retrieveDocuments()   (filter extraction + SQL WHERE)
-   *  search_semantic     -> similaritySearchWithDateFilter() (no filter extraction)
-   *  search_diverse      -> maxMarginalRelevanceSearch() (MMR, diverse results)
-   *
-   * Fallback hierarchy (graceful degradation):
-   *  1. No tool_call returned -> retrieveDocuments() with useMMR flag
-   *  2. bindTools() / invoke() throws -> retrieveDocuments() with useMMR flag
-   *
-   * Optimised for Qwen / Ollama:
-   *  - /no_think in TOOL_SELECTOR_PROMPT prevents reasoning block pollution.
-   *  - Tool descriptions carry the selection examples (prompt is minimal).
-   *  - Fallback ensures correctness even when model ignores tool calling.
-   */
-  private async selectAndExecuteTool(
-    question: string,
-    currentDate: string,
-    topK: number,
-    useMMR: boolean,
-    userOrg?: string,
-    userId?: string,
-  ): Promise<Document[]> {
-    try {
-      // Bind all 3 search tools to a dedicated LLM call
-      const llmWithTools = this.llm.bindTools([...RAG_TOOLS]);
-      const chain = TOOL_SELECTOR_PROMPT.pipe(llmWithTools);
-
-      const result = await chain.invoke({
-        question,
-        current_date: currentDate,
-      });
-
-      // Parse which tool the LLM selected
-      const toolCalls = (result as any).tool_calls as Array<{ name: string; args: Record<string, any> }> | undefined;
-      const selectedTool = toolCalls?.[0]?.name as RagToolName | undefined;
-
-      this.logger.debug(`[ToolSelector] Selected: ${selectedTool ?? 'none — using fallback'}`);
-
-      switch (selectedTool) {
-        // ── search_with_filters: LLM extracts metadata filters then runs SQL-filtered search ─
-        case RAG_TOOL_NAMES.FILTERED_SEARCH:
-          return this.retrieveDocuments(question, currentDate, topK, false, userOrg, userId);
-
-        // ── search_semantic: pure embedding similarity, skips filter extraction ──────────
-        case RAG_TOOL_NAMES.SEMANTIC_SEARCH:
-          return this.vectorStoreService.similaritySearchWithDateFilter(
-            question,
-            topK,
-            currentDate,
-            'all',
-          );
-
-        // ── search_diverse: MMR for variety when user wants broad overview ───────────
-        case RAG_TOOL_NAMES.DIVERSE_SEARCH:
-          return this.vectorStoreService.maxMarginalRelevanceSearch(
-            question,
-            { k: topK, fetchK: topK * 4, lambda: 0.5 },
-          );
-
-        // ── list_activities_sql: pure SQL via MCP, no embedding needed ──────
-        case RAG_TOOL_NAMES.LIST_SQL: {
-          const statusHint = this.inferStatusFromQuestion(question) ?? 'all';
-          const rawJson = await this.mcpFallbackService.listActivities(statusHint, undefined, topK);
-          // Convert JSON result to Document[] so the rest of the pipeline is uniform
-          try {
-            const parsed = JSON.parse(rawJson);
-            if (parsed.found > 0) {
-              return (parsed.activities as any[]).map(
-                (a) =>
-                  new Document({
-                    pageContent: [a.name, a.organization, a.category, a.location]
-                      .filter(Boolean)
-                      .join(' — '),
-                    metadata: {
-                      activityName: a.name,
-                      status: a.status,
-                      startDate: a.start_date,
-                      endDate: a.end_date,
-                      location: a.location,
-                      totalDays: a.total_days,
-                      organizationName: a.organization,
-                      categoryName: a.category,
-                      requiresApproval: a.requires_approval,
-                      maxParticipants: a.max_participants,
-                      source: 'list_activities_sql',
-                    },
-                  }),
-              );
-            }
-          } catch {}
-          return [];
-        }
-          this.logger.warn('[ToolSelector] No tool call in response — falling back to retrieveDocuments()');
-          return this.retrieveDocuments(question, currentDate, topK, useMMR, userOrg);
-      }
-    } catch (error) {
-      // Graceful degradation: bindTools / invoke failure must never crash the pipeline.
-      this.logger.warn(
-        `[ToolSelector] Tool selection failed — falling back to retrieveDocuments(): ${error?.message}`,
-      );
-      return this.retrieveDocuments(question, currentDate, topK, useMMR, userOrg, userId);
-    }
-  }
-
-  /**
-   * Retrieve-Then-Verify: wraps retrieveDocuments() with an LLM-driven fallback.
-   *
-   * Strategy (per Phase 2 design decisions):
-   *  - Insufficient threshold : docs.length === 0
-   *  - When insufficient      : Verifier LLM proposes a stripped-down semantic query;
-   *                             we re-run similaritySearchWithDateFilter (no hard filters)
-   *                             and merge the results, deduplicating by activityId.
-   *  - When sufficient        : Pass-through, no extra LLM call (zero added latency).
-   *
-   * Optimised for Qwen / Ollama:
-   *  - Verifier uses withStructuredOutput + /no_think prompt.
-   *  - Falls back gracefully: if the verifier itself fails, the original (empty)
-   *    docs array is returned so the generation step can respond "no info found".
+   * Strategy:
+   *  - Sufficient (docs.length > 0) : pass-through, no extra LLM call
+   *  - Zero-result                  : parallel Verifier LLM + MCP SQL fallback → merge
    */
   private async retrieveDocumentsWithVerification(
-    question: string,
+    searchParams: AgentSearchParams,
     currentDate: string,
     topK: number,
-    useMMR: boolean,
     userOrg?: string,
     userId?: string,
   ): Promise<Document[]> {
-    // Pre-fetch enrolled IDs once — shared across all retrieval paths below
+    // Pre-fetch enrolled IDs once
     const enrolledIds = userId
       ? await this.mcpFallbackService.queryEnrolledActivityIds(userId)
       : new Set<string>();
@@ -456,10 +296,8 @@ export class LangChainRagChainService implements OnModuleInit {
     const filterEnrolled = (d: Document) =>
       enrolledIds.size === 0 || !enrolledIds.has(String(d.metadata?.activityId));
 
-    // ── Dynamic Tool Selection (Phase 3) then Verify (Phase 2) ────────────
-    const docs = await this.selectAndExecuteTool(question, currentDate, topK, useMMR, userOrg, userId);
+    const docs = await this.executeSearchDecision(searchParams, currentDate, topK, userOrg);
 
-    // ── Fast-path: results exist -> apply enrolled filter then return ──────────
     if (docs.length > 0) {
       const filtered = docs.filter(filterEnrolled);
       this.logger.debug(
@@ -468,22 +306,23 @@ export class LangChainRagChainService implements OnModuleInit {
       return filtered;
     }
 
-    // ── Zero-result: chạy song song Verifier LLM + MCP SQL fallback ───────────
+    // Zero-result: run parallel Verifier LLM + MCP SQL fallback
     this.logger.warn(
-      `[Verifier+MCP] Primary retrieval 0 docs — running parallel fallback for "${question.slice(0, 60)}…"`,
+      `[Verifier+MCP] Primary retrieval 0 docs — running parallel fallback for "${searchParams.rewrittenQuestion.slice(0, 60)}…"`,
     );
 
-    const statusHint = this.inferStatusFromQuestion(question);
+    const statusHint = this.statusHintFromParams(searchParams);
+    const fallbackFilters = this.agentService.toMetadataFilters(searchParams);
 
     const [verifierResult, mcpResult] = await Promise.allSettled([
-      this.runVerifierFallback(question, currentDate, topK),
-      this.mcpFallbackService.fallbackSearch(statusHint ?? 'all', topK, currentDate),
+      this.runVerifierFallback(searchParams.rewrittenQuestion, currentDate, topK),
+      this.mcpFallbackService.fallbackSearch(statusHint, topK, currentDate, fallbackFilters),
     ]);
 
     const verifierDocs = verifierResult.status === 'fulfilled' ? verifierResult.value : [];
-    const mcpDocs     = mcpResult.status === 'fulfilled'     ? mcpResult.value     : [];
+    const mcpDocs      = mcpResult.status === 'fulfilled'      ? mcpResult.value      : [];
 
-    // Merge: MCP SQL (deterministic) ưu tiên hơn Verifier LLM (probabilistic)
+    // Merge: MCP SQL (deterministic) takes priority
     const seenIds = new Set<string>();
     const merged: Document[] = [];
 
@@ -510,7 +349,7 @@ export class LangChainRagChainService implements OnModuleInit {
     return merged.filter(filterEnrolled).slice(0, topK);
   }
 
-  /** Verifier LLM rewrite fallback extracted into helper. */
+  /** Verifier LLM rewrite fallback. */
   private async runVerifierFallback(
     question: string,
     currentDate: string,
@@ -544,18 +383,27 @@ export class LangChainRagChainService implements OnModuleInit {
   }
 
   /**
-   * Infer StatusHint từ câu hỏi bằng regex — không cần LLM.
-   * Fix P0: "sẽ diễn ra", "trong tương lai" → 'upcoming'
+   * Derive a StatusHint for MCP fallback from AgentSearchParams.
+   * Replaces the old regex-based inferStatusFromQuestion().
    */
-  private inferStatusFromQuestion(q: string): StatusHint | null {
-    const upcomingPatterns =
-      /sẽ\s*(diễn ra|tổ chức|có|mở)|trong tương lai|tương lai|sắp\s*(tới|diễn ra|có)|chuẩn bị|chưa bắt đầu|tuần tới|tháng tới|năm tới/i;
-    const ongoingPatterns =
-      /đang\s*(diễn ra|mở|tổ chức|có)|hiện tại|hiện nay|bây giờ|hôm nay|còn (mở|tuyển|nhận)|đang tuyển/i;
+  private statusHintFromParams(params: AgentSearchParams): StatusHint {
+    if (!params.status?.length) return 'all';
+    if (params.status.includes('upcoming') && !params.status.includes('ongoing')) return 'upcoming';
+    if (params.status.includes('ongoing') && !params.status.includes('upcoming')) return 'ongoing';
+    return 'all';
+  }
 
-    if (upcomingPatterns.test(q)) return 'upcoming';
-    if (ongoingPatterns.test(q)) return 'ongoing';
-    return null;
+  /**
+   * Map AgentDecision.action to the legacy RAGResponse intent strings
+   * for backwards compatibility with the controller and downstream consumers.
+   */
+  private decisionToIntent(action: string): RAGResponse['intent'] {
+    switch (action) {
+      case 'search':   return 'RAG_QUERY';
+      case 'register': return 'REGISTER_ACTIVITY';
+      case 'greeting': return 'GREETING';
+      default:         return 'CHITCHAT';
+    }
   }
 
   private normalizeActivityStatus(status: unknown): ActivityStatus | undefined {
@@ -602,13 +450,13 @@ export class LangChainRagChainService implements OnModuleInit {
         chatHistory = await this.memoryService.getFormattedHistory(sessionId);
       }
 
-      // ── Step 2: Router Agent — rewrite + classify intent ───────────────────
-      const routerOutput = await this.routeQuestion(question, chatHistory);
-      const { rewrittenQuestion, intent } = routerOutput;
+      // ── Step 2: Agent Decision — intent + search params in one call ──────────
+      const decision = await this.agentService.decide(question, chatHistory, currentDate);
+      const intent = this.decisionToIntent(decision.action);
 
-      // ── Step 3: GREETING — friendly intro, no retrieval needed ───────────────
-      if (intent === 'GREETING') {
-        this.logger.debug('[RouterAgent] GREETING intent — returning intro response');
+      // ── Step 3: GREETING ──────────────────────────────────────────────────────
+      if (decision.action === 'greeting') {
+        this.logger.debug('[Agent] GREETING — returning intro response');
         if (sessionId) {
           await this.memoryService.saveInteraction(sessionId, question, GREETING_RESPONSE);
         }
@@ -621,9 +469,9 @@ export class LangChainRagChainService implements OnModuleInit {
         };
       }
 
-      // ── Step 4: CHITCHAT early-exit (no retrieval needed) ────────────────────
-      if (intent === 'CHITCHAT') {
-        this.logger.debug('[RouterAgent] CHITCHAT intent — skipping retrieval');
+      // ── Step 4: CHITCHAT early-exit ───────────────────────────────────────────
+      if (decision.action === 'out_of_scope') {
+        this.logger.debug('[Agent] CHITCHAT — skipping retrieval');
         if (sessionId) {
           await this.memoryService.saveInteraction(sessionId, question, CHITCHAT_REJECTION);
         }
@@ -636,11 +484,11 @@ export class LangChainRagChainService implements OnModuleInit {
         };
       }
 
-      // ── Step 4.5: REGISTER_ACTIVITY — find target activity, hand off to controller ──
-      if (intent === 'REGISTER_ACTIVITY') {
-        this.logger.debug('[RouterAgent] REGISTER_ACTIVITY intent — looking up activity');
+      // ── Step 4.5: REGISTER_ACTIVITY ───────────────────────────────────────────
+      if (decision.action === 'register') {
+        this.logger.debug('[Agent] REGISTER_ACTIVITY — looking up activity');
         const registrationResult = await this.handleRegistrationIntent(
-          question, rewrittenQuestion, sessionId, currentDate, k, useMMR, startTime, userOrg,
+          question, decision.params, sessionId, currentDate, k, startTime, userOrg,
         );
         if (sessionId) {
           await this.memoryService.saveInteraction(sessionId, question, registrationResult.response);
@@ -648,8 +496,8 @@ export class LangChainRagChainService implements OnModuleInit {
         return registrationResult;
       }
 
-      // ── Step 5: Retrieve documents (with Retrieve-Then-Verify) ──────────
-      const sources = await this.retrieveDocumentsWithVerification(rewrittenQuestion, currentDate, k, useMMR, userOrg, userId);
+      // ── Step 5: Retrieve documents (search) ────────────────────────────────
+      const sources = await this.retrieveDocumentsWithVerification(decision.params, currentDate, k, userOrg, userId);
 
       // ── Step 6: Format context ─────────────────────────────────────────────
       const enrichedSources = await this.mcpEnricher.enrichDocuments(sources);
@@ -661,7 +509,7 @@ export class LangChainRagChainService implements OnModuleInit {
 
       // ── Step 7: Generate response ──────────────────────────────────────────
       let response = await this.ragChain.invoke({
-        question: rewrittenQuestion,
+        question: decision.params.rewrittenQuestion,
         chat_history: chatHistory,
         context: formattedContext,
         current_date: currentDate,
@@ -733,13 +581,13 @@ export class LangChainRagChainService implements OnModuleInit {
         chatHistory = await this.memoryService.getFormattedHistory(sessionId);
       }
 
-      // ── Step 2: Router Agent — rewrite + classify intent ───────────────────
-      const routerOutput = await this.routeQuestion(question, chatHistory);
-      const { rewrittenQuestion, intent } = routerOutput;
+      // ── Step 2: Agent Decision — intent + search params in one call ──────────
+      const decision = await this.agentService.decide(question, chatHistory, currentDate);
+      const intent = this.decisionToIntent(decision.action);
 
-      // ── Step 3: GREETING — friendly intro, no retrieval needed (stream) ──────
-      if (intent === 'GREETING') {
-        this.logger.debug('[RouterAgent] GREETING intent — returning intro response (stream)');
+      // ── Step 3: GREETING ──────────────────────────────────────────────────────
+      if (decision.action === 'greeting') {
+        this.logger.debug('[Agent] GREETING — returning intro response (stream)');
         yield GREETING_RESPONSE;
         if (sessionId) {
           await this.memoryService.saveInteraction(sessionId, question, GREETING_RESPONSE);
@@ -747,9 +595,9 @@ export class LangChainRagChainService implements OnModuleInit {
         return;
       }
 
-      // ── Step 4: CHITCHAT early-exit — yield single token then return ──────────
-      if (intent === 'CHITCHAT') {
-        this.logger.debug('[RouterAgent] CHITCHAT intent — skipping retrieval (stream)');
+      // ── Step 4: CHITCHAT early-exit ───────────────────────────────────────────
+      if (decision.action === 'out_of_scope') {
+        this.logger.debug('[Agent] CHITCHAT — skipping retrieval (stream)');
         yield CHITCHAT_REJECTION;
         if (sessionId) {
           await this.memoryService.saveInteraction(sessionId, question, CHITCHAT_REJECTION);
@@ -757,11 +605,11 @@ export class LangChainRagChainService implements OnModuleInit {
         return;
       }
 
-      // ── Step 4.5: REGISTER_ACTIVITY — yield confirmation, let controller act ───
-      if (intent === 'REGISTER_ACTIVITY') {
-        this.logger.debug('[RouterAgent] REGISTER_ACTIVITY intent — handling in stream');
+      // ── Step 4.5: REGISTER_ACTIVITY ───────────────────────────────────────────
+      if (decision.action === 'register') {
+        this.logger.debug('[Agent] REGISTER_ACTIVITY — handling in stream');
         const registrationResult = await this.handleRegistrationIntent(
-          question, rewrittenQuestion, sessionId, currentDate, k, useMMR, Date.now(), userOrg,
+          question, decision.params, sessionId, currentDate, k, Date.now(), userOrg,
         );
         yield registrationResult.response;
         if (sessionId) {
@@ -770,8 +618,8 @@ export class LangChainRagChainService implements OnModuleInit {
         return;
       }
 
-      // ── Step 5: Retrieve documents (with Retrieve-Then-Verify) ──────────
-      const sources = await this.retrieveDocumentsWithVerification(rewrittenQuestion, currentDate, k, useMMR, userOrg, userId);
+      // ── Step 5: Retrieve documents (search) ────────────────────────────────
+      const sources = await this.retrieveDocumentsWithVerification(decision.params, currentDate, k, userOrg, userId);
 
       // ── Step 6: Format context ─────────────────────────────────────────────
       const enrichedSources = await this.mcpEnricher.enrichDocuments(sources);
@@ -783,7 +631,7 @@ export class LangChainRagChainService implements OnModuleInit {
 
       // ── Step 7: Stream response ────────────────────────────────────────────
       const stream = await this.ragChain.stream({
-        question: rewrittenQuestion,
+        question: decision.params.rewrittenQuestion,
         chat_history: chatHistory,
         context: formattedContext,
         current_date: currentDate,
@@ -798,15 +646,15 @@ export class LangChainRagChainService implements OnModuleInit {
         yield chunk;
       }
 
-      // Save to memory after streaming completes
-      if (sessionId) {
-        await this.memoryService.saveInteraction(sessionId, question, fullResponse);
-      }
-
       // Track activities for future REGISTER_ACTIVITY turns
       const allActivities = this.extractActivitiesFromDocs(sources, currentDate);
       if (sessionId && allActivities.length > 0) {
         this.memoryService.setMentionedActivities(sessionId, allActivities);
+      }
+
+      // Save to memory after streaming completes
+      if (sessionId) {
+        await this.memoryService.saveInteraction(sessionId, question, fullResponse);
       }
     } catch (error) {
       this.logger.error('RAG chain streaming failed', error);
@@ -822,11 +670,10 @@ export class LangChainRagChainService implements OnModuleInit {
    */
   private async handleRegistrationIntent(
     originalQuestion: string,
-    rewrittenQuestion: string,
+    registerParams: AgentRegisterParams,
     sessionId: string | undefined,
     currentDate: string,
     topK: number,
-    useMMR: boolean,
     startTime: number,
     userOrg?: string,
   ): Promise<RAGResponse> {
@@ -865,10 +712,14 @@ export class LangChainRagChainService implements OnModuleInit {
     }
 
     // ── Priority 2: run retrieval to find the mentioned activity ─────────
-    // Use rewrittenQuestion here for better semantic retrieval quality.
+    // Use activityContext for better semantic retrieval quality.
     this.logger.debug('[Register] No memory match — running retrieval for registration target');
+    const searchParams: AgentSearchParams = {
+      rewrittenQuestion: registerParams.activityContext,
+      mode: 'semantic',
+    };
     const sources = await this.retrieveDocumentsWithVerification(
-      rewrittenQuestion, currentDate, topK, useMMR, userOrg,
+      searchParams, currentDate, topK, userOrg,
     );
 
     const target = this.findRecruitingActivity(sources, currentDate);
@@ -1156,6 +1007,10 @@ export class LangChainRagChainService implements OnModuleInit {
         const startISO = startRaw ? startRaw.toISOString().split('T')[0] : 'N/A';
         const endISO = endRaw ? endRaw.toISOString().split('T')[0] : 'N/A';
 
+        const activityUrl = metadata.activityId
+          ? `${process.env.FRONTEND_URL || ''}/portal/ctxh/activities/${metadata.activityId}`
+          : null;
+
         return `[Nguồn ${index + 1}]
 Hoạt động: ${metadata.activityName || 'N/A'}
 Danh mục: ${metadata.categoryName || 'N/A'}
@@ -1167,7 +1022,7 @@ Số ngày CTXH: ${metadata.totalDays || 'N/A'} ngày
 Yêu cầu duyệt: ${metadata.requiresApproval != null ? (metadata.requiresApproval ? 'Có' : 'Không') : 'N/A'}
 Số chỗ còn lại: ${metadata.remainingSlots != null ? metadata.remainingSlots : (metadata.maxParticipants != null ? `tối đa ${metadata.maxParticipants}` : 'Không giới hạn')}
 Trạng thái (tính đến ${currentDate || today.toISOString().split('T')[0]}): ${realtimeStatus}
-Trạng thái tuyển thành viên: ${recruitmentStatus}
+Trạng thái tuyển thành viên: ${recruitmentStatus}${activityUrl ? `\nLink chi tiết: ${activityUrl}` : ''}
 Nội dung: ${doc.pageContent}
 ---`;
       })

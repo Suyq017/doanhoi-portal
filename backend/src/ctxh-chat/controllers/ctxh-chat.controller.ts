@@ -24,6 +24,7 @@ import { ChatRequestDto, ChatResponseDto } from '../dto';
 import { ParticipationService } from '../../ctxh/activity/services/participation.service';
 import { UserContextService } from '../services/user-context.service';
 import { StaffAgentService } from '../services/staff-agent.service';
+import { FollowUpSuggestionsService } from '../services/follow-up-suggestions.service';
 import type { Request } from 'express';
 
 @ApiTags('ctxh-chat')
@@ -42,6 +43,7 @@ export class CtxhChatController {
     private readonly participationService: ParticipationService,
     private readonly userContextService: UserContextService,
     private readonly staffAgentService: StaffAgentService,
+    private readonly followUpSuggestionsService: FollowUpSuggestionsService,
   ) {}
 
   // ========== RAG CHAT ENDPOINTS ==========
@@ -109,33 +111,49 @@ export class CtxhChatController {
       }
     );
 
-    // ── Handle REGISTER_ACTIVITY: call ParticipationService on behalf of user ──
-    if (response.intent === 'REGISTER_ACTIVITY' && response.registrationTarget) {
-      try {
-        await this.participationService.registerSelf(
-          String(response.registrationTarget.activityId),
-          userId,
-        );
-        response.response = `Đã đăng ký thành công bạn vào hoạt động **${response.registrationTarget.activityName}**! Bạn có thể xem tại trang báo cáo cá nhân để xem các hoạt động đã đăng ký.`;
-      } catch (err: any) {
-        const errorMsg = err?.message || 'Vui lòng thử lại sau.';
-        response.response = `Không thể đăng ký: ${errorMsg}`;
-      }
-    }
-
-    // Generate follow-up suggestions based on response
-    const followUpSuggestions = this.generateFollowUpSuggestions(response.response);
+    // ── Handle REGISTER_ACTIVITY + generate follow-up suggestions in parallel ──
+    const [followUpSuggestions] = await Promise.all([
+      this.followUpSuggestionsService.generate(chatRequestDto.message, response.response),
+      (async () => {
+        if (response.intent === 'REGISTER_ACTIVITY' && response.registrationTarget) {
+          try {
+            await this.participationService.registerSelf(
+              String(response.registrationTarget.activityId),
+              userId,
+            );
+            response.response = `Đã đăng ký thành công bạn vào hoạt động **${response.registrationTarget.activityName}**! Bạn có thể xem tại trang báo cáo cá nhân để xem các hoạt động đã đăng ký.`;
+          } catch (err: any) {
+            const errorMsg = err?.message || 'Vui lòng thử lại sau.';
+            response.response = `Không thể đăng ký: ${errorMsg}`;
+          }
+        }
+      })(),
+    ]);
 
     return {
       sessionId: response.sessionId || sessionId,
       response: response.response,
-      sources: response.sources.map(doc => ({
-        activityId: doc.metadata?.activityId,
-        activityName: doc.metadata?.activityName,
-        organizationName: doc.metadata?.organizationName,
-        content: doc.pageContent.substring(0, 200) + '...',
-        similarityScore: doc.metadata?.score ?? 0,
-      })),
+      sources: response.sources.map(doc => {
+        const meta = doc.metadata || {};
+        const status = (meta.status ?? '').toUpperCase();
+        const today = new Date(currentDate);
+        today.setHours(0, 0, 0, 0);
+        const startDate = meta.startDate ? new Date(meta.startDate) : null;
+        const endDate = meta.endDate ? new Date(meta.endDate) : null;
+        if (startDate) startDate.setHours(0, 0, 0, 0);
+        if (endDate) endDate.setHours(0, 0, 0, 0);
+        const isActive = status === 'ACTIVE';
+        const isOngoing = !!(startDate && endDate && today >= startDate && today <= endDate);
+        const isUpcoming = !!(startDate && today < startDate);
+        return {
+          activityId: meta.activityId,
+          activityName: meta.activityName,
+          organizationName: meta.organizationName,
+          content: doc.pageContent.substring(0, 200) + '...',
+          similarityScore: meta.score ?? 0,
+          isRecruiting: isActive && (isOngoing || isUpcoming),
+        };
+      }),
       responseTime: response.responseTime,
       timestamp: new Date(),
       followUpSuggestions,
@@ -423,30 +441,6 @@ export class CtxhChatController {
   }
 
   // ========== HELPER METHODS ==========
-
-  /**
-   * Generate follow-up suggestions based on response
-   */
-  private generateFollowUpSuggestions(response: string): string[] {
-    const suggestions: string[] = [];
-    
-    if (response.includes('hoạt động') || response.includes('CTXH')) {
-      suggestions.push('Cho tôi biết thêm chi tiết về hoạt động này');
-      suggestions.push('Làm sao để đăng ký tham gia?');
-    }
-    
-    if (response.includes('ngày') || response.includes('thời gian')) {
-      suggestions.push('Có hoạt động nào khác trong tháng này không?');
-    }
-    
-    if (suggestions.length === 0) {
-      suggestions.push('Có hoạt động CTXH nào đang mở đăng ký?');
-      suggestions.push('Tìm hoạt động CTXH theo địa điểm');
-      suggestions.push('Hoạt động nào có nhiều ngày CTXH nhất?');
-    }
-    
-    return suggestions.slice(0, 3);
-  }
 
   /**
    * Calculate confidence based on number of sources

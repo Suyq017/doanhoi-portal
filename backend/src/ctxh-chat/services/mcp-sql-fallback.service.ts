@@ -20,13 +20,23 @@ export class McpSqlFallbackService {
     statusHint: StatusHint = 'all',
     limit: number = 10,
     currentDate: string = new Date().toISOString().split('T')[0],
+    filters?: MetadataFilters,
   ): Promise<Document[]> {
     if (!this.mcpClient.isConnected()) {
       this.logger.warn('[MCP Fallback] MCP client not connected, skipping SQL fallback');
       return [];
     }
 
-    const whereClause = this.buildStatusWhereClause(statusHint, currentDate);
+    let whereClause = this.buildStatusWhereClause(statusHint, currentDate);
+
+    // Apply org filter if provided — keeps fallback scoped to the same org as primary search
+    if (filters?.organizationKeywords?.length) {
+      const orgParts = filters.organizationKeywords.map((kw) => {
+        const safe = kw.replace(/'/g, "''");
+        return `org.name ILIKE '%${safe}%'`;
+      });
+      whereClause += ` AND (${orgParts.join(' OR ')})`;
+    }
 
     const sql = `
       SELECT

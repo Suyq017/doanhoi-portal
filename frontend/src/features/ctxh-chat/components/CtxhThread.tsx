@@ -19,17 +19,33 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { type FC, memo, forwardRef, useEffect, useState } from 'react';
+import type { CtxhSource } from '../types/chat.types';
 
 // ── Custom metadata type ───────────────────────────────────────────────────
 interface CustomMeta {
   followUpSuggestions?: string[];
-  sessionId?: string;
-}
+  sessionId?: string;  sources?: CtxhSource[];}
 
 // ── Markdown renderer (light theme) ────────────────────────────────────────
+const preprocessMarkdown = (text: string) =>
+  text.replace(/(?<!\n)\n(?!\n)(?!- )/g, '\n\n');
+
+const handleMarkdownClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const link = (e.target as HTMLElement).closest('a');
+  if (link?.href) {
+    e.preventDefault();
+    window.open(link.href, '_blank', 'noopener,noreferrer');
+  }
+};
+
 const MarkdownText: FC = memo(() => {
   return (
-    <MarkdownTextPrimitive className="prose prose-sm max-w-none text-gray-800 prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-code:text-doan-500 prose-headings:text-gray-900 prose-a:text-hsv-500 prose-strong:text-gray-900" />
+    <div onClick={handleMarkdownClick}>
+      <MarkdownTextPrimitive
+        preprocess={preprocessMarkdown}
+        className="prose prose-sm max-w-none text-gray-800 prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-code:text-doan-500 prose-headings:text-gray-900 prose-a:text-hsv-500 prose-a:underline prose-a:font-medium prose-strong:text-gray-900"
+      />
+    </div>
   );
 });
 MarkdownText.displayName = 'MarkdownText';
@@ -174,6 +190,31 @@ const AssistantMessage: FC = () => {
             ))}
           </div>
         )}
+
+        {/* Register buttons for recruiting activities */}
+        {(() => {
+          const recruitingSources = (custom.sources ?? [])
+            .filter((s) => s.isRecruiting && s.activityId && s.activityName)
+            .filter((s, i, arr) => arr.findIndex((x) => x.activityId === s.activityId) === i);
+          if (recruitingSources.length === 0) return null;
+          return (
+            <div className="mt-3 flex flex-col gap-2">
+              {recruitingSources.map((s) => (
+                <ThreadPrimitive.Suggestion
+                  key={s.activityId}
+                  prompt={`Đăng ký tôi vào hoạt động "${s.activityName}"`}
+                  autoSend
+                  asChild
+                >
+                  <button className="flex items-center gap-2 self-start rounded-full border border-doan-500/40 bg-doan-500/5 px-4 py-1.5 text-xs font-medium text-doan-500 shadow-sm transition-colors hover:bg-doan-500 hover:text-white">
+                    <span>📋</span>
+                    <span>Đăng ký: {s.activityName}</span>
+                  </button>
+                </ThreadPrimitive.Suggestion>
+              ))}
+            </div>
+          );
+        })()}
       </div>
     </MessagePrimitive.Root>
   );

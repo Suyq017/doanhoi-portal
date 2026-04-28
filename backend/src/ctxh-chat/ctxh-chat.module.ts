@@ -25,6 +25,8 @@ import { StaffAgentService } from './services/staff-agent.service';
 import { PostgresMcpClientService } from './services/postgres-mcp-client.service';
 import { McpSqlFallbackService } from './services/mcp-sql-fallback.service';
 import { McpMetadataEnricherService } from './services/mcp-metadata-enricher.service';
+import { FollowUpSuggestionsService } from './services/follow-up-suggestions.service';
+import { CtxhAgentService } from './services/ctxh-agent.service';
 
 // Vector Auto-Ingestion Pipeline
 import { CtxhVectorSyncService } from './services/ctxh-vector-sync.service';
@@ -61,7 +63,9 @@ import { NodemailerService } from '../ctxh-mcp/notifications/nodemailer.service'
     LangChainAdvancedRetrieverService,
     LangChainIngestionService,
     CtxhFilterExtractionService,
+    CtxhAgentService,
     UserContextService,
+    FollowUpSuggestionsService,
     // Staff Agent (tool-calling chatbot for cán bộ)
     NodemailerService,
     StaffAgentService,

@@ -72,7 +72,7 @@ export class ActivitiesController {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition":
-        'attachment; filename="template-danh-sach-sinh-vien.xlsx"',
+        'attachment; filename="mau-danh-sach-sinh-vien.xlsx"',
     });
 
     res.send(buffer);

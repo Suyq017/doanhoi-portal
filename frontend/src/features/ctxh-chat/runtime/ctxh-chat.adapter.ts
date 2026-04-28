@@ -86,6 +86,7 @@ export const ctxhChatAdapter: ChatModelAdapter = {
           custom: {
             followUpSuggestions: data.followUpSuggestions,
             sessionId: data.sessionId,
+            sources: data.sources,
           },
         },
       };

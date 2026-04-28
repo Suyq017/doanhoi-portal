@@ -1,4 +1,5 @@
 import { type FC, memo, forwardRef, useEffect, useState } from 'react';
+import type { CtxhSource } from '../types/chat.types';
 import {
   ThreadPrimitive,
   MessagePrimitive,
@@ -24,11 +25,28 @@ import {
 interface CustomMeta {
   followUpSuggestions?: string[];
   sessionId?: string;
+  sources?: CtxhSource[];
 }
 
 // ── Markdown ───────────────────────────────────────────────────────────────
+const preprocessMarkdown = (text: string) =>
+  text.replace(/(?<!\n)\n(?!\n)(?!- )/g, '\n\n');
+
+const handleMarkdownClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const link = (e.target as HTMLElement).closest('a');
+  if (link?.href) {
+    e.preventDefault();
+    window.open(link.href, '_blank', 'noopener,noreferrer');
+  }
+};
+
 const MarkdownText: FC = memo(() => (
-  <MarkdownTextPrimitive className="prose prose-sm max-w-none text-gray-800 prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-code:text-doan-500 prose-headings:text-gray-900 prose-a:text-hsv-500 prose-strong:text-gray-900" />
+  <div onClick={handleMarkdownClick}>
+    <MarkdownTextPrimitive
+      preprocess={preprocessMarkdown}
+      className="prose prose-sm max-w-none text-gray-800 prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-code:text-doan-500 prose-headings:text-gray-900 prose-a:text-hsv-500 prose-a:underline prose-a:font-medium prose-strong:text-gray-900"
+    />
+  </div>
 ));
 MarkdownText.displayName = 'MarkdownText';
 
@@ -163,6 +181,29 @@ const AssistantMessage: FC = () => {
             ))}
           </div>
         )}
+
+        {(() => {
+          const recruitingSources = (custom.sources ?? [])
+            .filter((s) => s.isRecruiting && s.activityId && s.activityName)
+            .filter((s, i, arr) => arr.findIndex((x) => x.activityId === s.activityId) === i);
+          if (recruitingSources.length === 0) return null;
+          return (
+            <div className="mt-2 flex flex-col gap-1.5">
+              {recruitingSources.map((s) => (
+                <ThreadPrimitive.Suggestion
+                  key={s.activityId}
+                  prompt={`Đăng ký tôi vào hoạt động "${s.activityName}"`}
+                  autoSend
+                  asChild
+                >
+                  <button className="flex items-center gap-1.5 self-start rounded-full border border-doan-500/40 bg-doan-500/5 px-3 py-1 text-[11px] font-medium text-doan-500 transition-colors hover:bg-doan-500 hover:text-white">
+                    <span>Đăng ký: {s.activityName}</span>
+                  </button>
+                </ThreadPrimitive.Suggestion>
+              ))}
+            </div>
+          );
+        })()}
       </div>
     </MessagePrimitive.Root>
   );
@@ -229,10 +270,10 @@ export function ChatbotPopup({
 }) {
   return (
     <div
-      className="fixed bottom-24 right-6 z-[9998] flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl
-        w-[min(33vw,480px)] min-w-[360px] h-[min(66vh,720px)] min-h-[500px]
-        max-[1023px]:w-[50vw] max-[1023px]:h-[70vh]
-        max-[767px]:inset-0 max-[767px]:w-full max-[767px]:h-full max-[767px]:rounded-none max-[767px]:min-w-0 max-[767px]:min-h-0"
+      className="fixed bottom-6 right-6 z-[9998] flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl
+        w-[50vw] min-w-[360px] h-[calc(100vh-3rem)] max-h-[900px]
+        max-[1023px]:w-[60vw]
+        max-[767px]:inset-0 max-[767px]:w-full max-[767px]:h-full max-[767px]:rounded-none max-[767px]:min-w-0"
       style={{
         animation: 'chatbot-slide-up 200ms ease-out',
       }}

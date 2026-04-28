@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-// import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   ActivityCreatedEvent,
   ActivityUpdatedEvent,
@@ -125,19 +125,19 @@ export class CtxhVectorSyncService {
    * Chạy mỗi giờ: incremental sync — bắt các activity thay đổi bị bỏ sót.
    * Sử dụng runIncrementalUpdate() qua BullMQ để vẫn giữ concurrency: 1.
    */
-  // @Cron(CronExpression.EVERY_HOUR)
-  // async scheduledIncrementalSync(): Promise<void> {
-  //   this.logger.log('⏰ [cron] Hourly incremental sync — adding to queue');
-  //   await this.vectorQueue.add(
-  //     VECTOR_JOB.FULL_SYNC,
-  //     {
-  //       activityId: 'incremental',
-  //       triggeredBy: 'cron:hourly',
-  //       timestamp: new Date().toISOString(),
-  //     },
-  //     { ...JOB_OPTIONS, jobId: 'incremental_sync_latest' },
-  //   );
-  // }
+  @Cron(CronExpression.EVERY_HOUR)
+  async scheduledIncrementalSync(): Promise<void> {
+    this.logger.log('⏰ [cron] Hourly incremental sync — adding to queue');
+    await this.vectorQueue.add(
+      VECTOR_JOB.FULL_SYNC,
+      {
+        activityId: 'incremental',
+        triggeredBy: 'cron:hourly',
+        timestamp: new Date().toISOString(),
+      },
+      { ...JOB_OPTIONS, jobId: 'incremental_sync_latest' },
+    );
+  }
 
   /**
    * Chạy lúc 2:00 AM mỗi ngày: full re-index để đảm bảo consistency.

@@ -11,3 +11,4 @@ export * from './langchain-ingestion.service';
 
 // User context
 export * from './user-context.service';
+export * from './follow-up-suggestions.service';
