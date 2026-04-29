@@ -1,0 +1,70 @@
+\section{Tổng kết, đánh giá và hướng phát triển đề tài}
+\subsection{Đánh giá kết quả đạt được}
+\subsubsection{Đối với nhiệm vụ của đề tài}
+\begin{enumerate}[-]
+    \item Tìm hiểu các nghiệp vụ và tìm kiếm các tính năng hữu ích để xây dựng ứng dụng bán hàng thời trang và trang quản lý bán hàng.
+    \item Tìm hiểu và vận dụng các kỹ năng lập trình front-end website để tạo ra những giao diện hiện đại, dễ dàng sử dụng, đẹp mắt.
+    \item Tìm hiểu, học hỏi và vận dụng kĩ năng lập trình mobile app để xây dựng ứng dụng cho người dùng có thể mua hàng, nhận thông báo mua hàng.
+    \item Tìm hiểu, học hỏi và vận dụng kĩ năng lập trình back-end để xây dựng server bán hàng thời trang
+    \item Tích hợp API với các bên thứ ba để xây dựng tiện ích gửi mail thông báo cho người dùng và áp dụng thanh toán trực tuyến.
+    \item Triển khai server ở Google Cloud, và trang web quản lý ở CloudFare. Bên cạnh đó còn cấu hình tên miền cho server và trang web
+    \item Triển khai thành công ứng dụng mobile mua hàng dưới dạng file APK và IOS.
+\end{enumerate}
+\subsubsection{Đối với cơ sở lý thuyết và công nghệ}
+Để hiện thực hệ thống, chúng tôi tìm hiểu các công nghệ phù hợp với những yêu cầu nghiệp vụ. Qua quá trình đó, chúng tôi có cơ hội tìm tòi, học hỏi những công nghệ phát triển web, ứng dụng di động và công nghệ hiện thực cho máy chủ, cụ thể như sau:
+\begin{enumerate}[-]
+    \item Đối với web, chúng tôi đã sử dụng ReactJS kèm theo Redux cho việc quản lý state, cách triển khai ứng dụng React 
+    \item Đối với ứng dụng di động, chúng tôi đã sử dụng React Native kèm theo Redux cho việc quản lý state, React Query cho việc lưu trữ dữ liệu tạm thời API
+    \item  Đối với server back-end, chúng tôi hiện thực bằng ExpressJS, sử dụng Postgres lưu trữ cơ sở dữ liệu và Neo4j để lưu trữ dữ liệu dưới dạng quan hệ. Ngoài ra còn 1 server để được hiện thực bằng Fast API (Python) dùng cho việc phân tích hình ảnh, kèm theo đó là tích hợp các dịch vụ hỗ trợ việc triển khai hệ thống:
+    \begin{enumerate}[+]
+        \item Dịch vụ cung cấp tên miền: TenTen
+        \item Dịch vụ Email: Google
+        \item Dịch vụ lưu trữ: AWS S3
+        \item Dịch vụ thanh toán đa năng: PayOS
+    \end{enumerate}
+\end{enumerate}
+\subsubsection{Đối với quy trình phát triển phần mềm}
+Từ những nền tảng công nghệ, chúng tôi tiến hành thực hiện những bước để phát triển hệ thống:
+\begin{enumerate}[-]
+    \item Tìm hiểu nghiệp vụ và phân tích các chức năng có trong hệ thống.
+    \item Thiết kế cơ sở dữ liệu, và kiến trúc hệ thống
+    \item Thiết kế giao diện người dùng Figma
+    \item Hiện thực hệ thống bao gồm server, web và ứng dụng di động
+    \item Kiểm thử hệ thống
+    \item Triển khai hệ thống
+\end{enumerate}
+\subsubsection{Đối với lợi ích thực tế}
+\begin{enumerate}[-]
+    \item Trải nghiệm mua sắm tốt hơn cho người dùng: Các tính năng gợi ý sản phẩm và tìm kiếm bằng hình ảnh giúp cải thiện trải nghiệm mua sắm của người dùng. Thay vì phải tìm kiếm sản phẩm thủ công, người dùng có thể nhận được gợi ý sản phẩm phù hợp dựa trên sở thích và lựa chọn của họ.
+\end{enumerate}
+\subsection{Những thuận lợi và khó khăn trong việc thực hiện đề tài}
+\subsubsection{Thuận lợi}
+\begin{itemize}
+    \item \textbf{Sự hỗ trợ từ giảng viên hướng dẫn}
+\end{itemize}
+  Với sự tận tâm và kiến thức chuyên môn của thầy Phan Trọng Nhân, thầy đã hỗ trợ, hướng dẫn và giúp nhóm định hướng trong quá trình thực hiện đề tài. Đây là nguồn động lực rất lớn giúp nhóm vượt qua những khó khăn để hoàn thành tốt đề tài.
+ 
+\begin{itemize}
+    \item \textbf{Tinh thần đồng đội và khả năng làm việc nhóm}
+\end{itemize}
+Trong quá trình thực hiện đề tài, tinh thần đồng đội mạnh mẽ đã giúp chúng tôi làm việc một cách hiệu quả hơn bằng cách chia sẻ kiến thức và kinh nghiệm. Mỗi thành viên trong nhóm không ngừng hỗ trợ lẫn nhau, đồng thời tôn trọng và đánh giá cao những đóng góp của từng thành viên. Điều này giúp chúng tôi vượt qua những thách thức và khó khăn trong quá trình thực hiện, tạo điều kiện cho sự thành công của đề tài.
+\subsubsection{Khó khăn}
+\begin{itemize}
+    \item \textbf{Tính phức tạp của hệ thống thời trang}
+\end{itemize}
+Việc tìm hiểu và áp dụng các phương pháp quản lý hiệu quả trong ngành công nghiệp thời trang đòi hỏi đòi hỏi sự kết hợp giữa kiến thức về quản lý kinh doanh và sự hiểu biết sâu sắc về ngành công nghiệp thời trang. Ngoài ra, việc tích hợp công nghệ vào quá trình quản lý và hỗ trợ bán hàng cũng đòi hỏi sự đầu tư, tinh chỉnh liên tục để đảm bảo tính hiệu quả trong hoạt động kinh doanh thời trang.
+\begin{itemize}
+    \item \textbf{Thiếu nguồn lực và thiếu kinh nghiệm}
+\end{itemize}
+Việc phát triển hệ thống đã gặp một số khó
+khăn về nguồn lực, điều này đã hạn chế khả năng phát triển hệ thống. Bên cạnh đó, sự thiếu kinh nghiệm trong lĩnh vực quản lý và bán hàng thời trang đã làm chậm quá trình tiến hành và yêu cầu chúng tôi phải tìm hiểu và học hỏi nhanh chóng từ các nguồn tài liệu và thực tiễn.
+\subsection{Hướng phát triển đề tài}
+Với phiên bản hiện tại, nhóm chúng tôi xin đề xuất một số hướng phát triển và mở rộng cho hệ thống nếu sau này:
+\begin{enumerate}[-]
+\item Ứng dụng công nghệ thực tế ảo (VR) và thực tế tăng cường (AR): Tạo ra các phòng thử đồ ảo, giúp khách hàng có thể thử trang phục mà không cần đến trực tiếp cửa hàng.
+\item Chatbot và dịch vụ khách hàng tự động: Phát triển các chatbot thông minh có khả năng trả lời các câu hỏi thường gặp của khách hàng, hỗ trợ trong quá trình mua sắm và xử lý các vấn đề phát sinh một cách nhanh chóng.
+\item Tích hợp trí tuệ nhân tạo (AI): Sử dụng AI để phân tích dữ liệu khách hàng, dự đoán xu hướng thời trang và cá nhân hóa trải nghiệm mua sắm của từng khách hàng. AI có thể giúp đề xuất sản phẩm phù hợp với sở thích và lịch sử mua sắm của khách hàng.
+\item Tính năng tư vấn thời trang: Cung cấp dịch vụ tư vấn thời trang trực tuyến thông qua các chuyên gia hoặc AI, giúp khách hàng lựa chọn trang phục phù hợp với phong cách và nhu cầu cá nhân.
+\item Tích hợp các hình thức thanh toán liên kết thẻ ngân hàng, thẻ tín dụng, Visa để người dùng có thể thanh toán chỉ bằng 1 chạm.
+
+\end{enumerate}

@@ -1,0 +1,300 @@
+\label{sec:rag-design}
+\subsubsection{Tổng quan Chatbot}
+
+% --------------------- PHẦN 1 -----------------
+Hệ thống quản lý Đoàn – Hội tại Trường Đại học Bách khoa TP.HCM hiện đang quản lý hàng trăm hoạt động Công tác xã hội (CTXH) diễn ra mỗi năm, được tổ chức bởi các đơn vị khác nhau như Đoàn trường, các Đoàn Khoa, Liên Chi hội sinh viên. Mỗi hoạt động có nhiều thuộc tính thông tin: tên hoạt động, mô tả chi tiết, danh mục (xuân tình nguyện, mùa hè xanh, hiến máu, \ldots), tổ chức đơn vị, thời gian tổ chức, số ngày CTXH được công nhận, địa điểm, và trạng thái hoạt động.
+
+Sinh viên thường gặp khó khăn khi:
+\begin{itemize}
+    \item Tìm kiếm hoạt động CTXH phù hợp với sở thích và thời gian của bản thân
+    \item Tra cứu thông tin chi tiết về các hoạt động đang diễn ra
+    \item Lọc hoạt động theo tiêu chí cụ thể (địa điểm, đơn vị tổ chức, loại hình hoạt động)
+    \item Nhận được tư vấn nhanh chóng về các hoạt động mà không cần liên hệ trực tiếp với ban tổ chức.
+\end{itemize}
+
+Phương pháp tìm kiếm truyền thống dựa trên từ khóa (keyword search) không đủ linh hoạt để xử lý các câu hỏi dạng ngôn ngữ tự nhiên như "Có hoạt động nào đang diễn ra ở cơ sở 1 không?" hay "Hoạt động hiến máu tình nguyện được bao nhiêu ngày CTXH".
+
+Để giải quyết vấn đề trên, module chatbot hỏi–đáp CTXH được phát triển với các mục tiêu:
+
+\begin{itemize}
+    \item Hỗ trợ sinh viên tra cứu thông tin hoạt động CTXH bằng ngôn ngữ tự nhiên
+    \item Tìm kiếm ngữ nghĩa (semantic search) các hoạt động phù hợp với ý định câu hỏi
+    \item Cung cấp câu trả lời chi tiết kèm nguồn thông tin và gợi ý liên quan
+    \item Duy trì lịch sử hội thoại để hỗ trợ các câu hỏi nhiều vòng (multi-turn conversation)
+    \item Đảm bảo câu trả lời chỉ dựa trên dữ liệu thực tế của hệ thống, tránh tạo ra thông tin sai lệch
+\end{itemize}
+
+Retrieval Augmented Generation (RAG) được lựa chọn vì các lý do sau:
+\begin{itemize}
+    \item \textbf{Tính chính xác:} RAG đảm bảo câu trả lời luôn dựa trên dữ liệu thực tế từ cơ sở dữ liệu hoạt động CTXH, giảm thiểu hiện tượng "hallucination" (tạo ra thông tin không có thật) thường gặp khi sử dụng LLM thuần túy.
+    \item \textbf{Tính cập nhật:} Khi dữ liệu hoạt động CTXH thay đổi (thêm mới, cập nhật), hệ thống tự động cập nhật vector store mà không cần huấn luyện lại mô hình ngôn ngữ.
+
+    \item \textbf{Khả năng kiểm soát:} Mỗi câu trả lời đều có thể truy vết nguồn gốc (source attribution), giúp người dùng và quản trị viên xác minh tính chính xác.
+    \item \textbf{Hiệu quả về chi phí:} Không cần fine-tune mô hình LLM lớn, chỉ cần sử dụng embedding và generation API.
+\end{itemize}
+
+% ------------------------- PHÀN 2 ------------------------------------
+\subsubsection{Tổng quan giải pháp Chatbot RAG}
+
+RAG là kiến trúc kết hợp hai bước chính:
+\begin{itemize}
+    \item \textbf{Retrieval (Truy xuất):} Tìm kiếm các tài liệu/thông tin liên quan nhất đến câu hỏi từ vector store
+    \item \textbf{Generation (Sinh câu trả lời):} Sử dụng Large Language Model (LLM) để tạo câu trả lời dựa trên thông tin đã truy xuất
+\end{itemize}
+
+Pipeline RAG đảm bảo mô hình ngôn ngữ không tự tạo ra thông tin mà phải dựa vào context cụ thể được cung cấp từ cơ sở dữ liệu. Điều này là một cải tiến lớn so với LLM thông thường vì dữ liệu CTXH trả lời cho người dùng cần phải chính xác, không được tự ý bịa đặt. Nhóm đã lập bảng so sánh giữa 2 mô hình AI như sau:
+
+\begin{table}[H]
+\centering
+
+\label{tab:compare-llm-rag}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|p{0.25\textwidth}|p{0.32\textwidth}|p{0.32\textwidth}|}
+\hline
+\textbf{Tiêu chí} & \textbf{LLM thuần túy} & \textbf{RAG (Retrieval-Augmented Generation)} \\ 
+\hline
+Nguồn thông tin &
+Dữ liệu huấn luyện sẵn có, mang tính chung chung và có thể đã lỗi thời &
+Cơ sở dữ liệu nội bộ hoặc nguồn dữ liệu thời gian thực được truy xuất khi cần \\ 
+\hline
+Độ chính xác &
+Dễ xảy ra hiện tượng hallucination (tạo thông tin không có thật) &
+Độ chính xác cao do câu trả lời dựa trên dữ liệu thực tế được truy xuất \\ 
+\hline
+Khả năng cập nhật &
+Cần huấn luyện lại mô hình hoặc fine-tuning khi dữ liệu thay đổi &
+Dữ liệu được cập nhật linh hoạt thông qua vector store mà không cần huấn luyện lại \\ 
+\hline
+Khả năng truy vết nguồn &
+Không thể truy vết nguồn thông tin cụ thể của câu trả lời &
+Có thể truy vết rõ ràng nguồn dữ liệu được sử dụng để tạo câu trả lời \\ 
+\hline
+Chi phí &
+Chi phí cao do yêu cầu tài nguyên lớn cho quá trình huấn luyện hoặc fine-tuning &
+Chi phí thấp hơn, chủ yếu sử dụng API của mô hình ngôn ngữ và hệ thống truy xuất \\ 
+\hline
+\end{tabular}
+\caption{So sánh giữa LLM thuần túy và RAG}
+\end{table}
+
+% ------------------- PHẦN 4 ----------------------------------
+\subsubsection{Quy trình tự động chuyển đổi dữ liệu sang vector embedding}
+Hệ thống sử dụng \textbf{TypeORM Entity Subscriber} để tự động theo dõi và đồng bộ embeddings khi có thay đổi dữ liệu. \textbf{Hình \ref{fig:sequence-chatbot-1}} minh họa chi tiết quy trình tự động chuyển đổi dữ liệu CTXH sang dạng vector embedding. Trigger tự động embedding như sau:
+
+\begin{enumerate}
+    \item \textbf{Activity mới được tạo (INSERT):}
+    \begin{itemize}
+        \item Điều kiện: \texttt{status = 'ACTIVE'}
+        \item Hành động: Tự động tạo embedding và lưu vào vector store
+    \end{itemize}
+    
+    \item \textbf{Activity được cập nhật (UPDATE):}
+    \begin{itemize}
+        \item Điều kiện: Có thay đổi ở các trường: \texttt{name}, \texttt{description}, \texttt{start\_date}, \texttt{end\_date}, \texttt{location}, hoặc \texttt{total\_days}
+        \item Hành động: Tạo lại embedding mới và cập nhật vector store
+    \end{itemize}
+    
+    \item \textbf{Activity bị xóa (DELETE):}
+    \begin{itemize}
+        \item Hành động: Xóa embedding tương ứng khỏi vector store
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Hiệu suất AI Processing:}
+\begin{itemize}
+    \item Thời gian tạo embedding: $\sim$200-300ms/activity (Gemini API)
+    \item Vector dimension: 768 chiều (text-embedding-004)
+    \item Batch processing: Có thể xử lý 100 activities/batch khi khởi tạo hệ thống
+\end{itemize}
+
+% ------------------------ PHẦN 5 -----------------------------------
+\subsubsection{Quy trình xử lý câu hỏi của người dùng với AI}
+Luồng xử lý câu hỏi của Chatbot RAG được mô tả chi tiết trong \textbf{hình \ref{fig:sequence-chatbot-2}}. Quy trình bao gồm các bước sau:
+\textbf{Bước 1: Quản lý Session}
+\begin{itemize}
+    \item Input: \texttt{query}, \texttt{userId}, \texttt{sessionId} (optional)
+    \item Nếu có \texttt{sessionId}: Lấy session từ Redis
+    \item Nếu không có: Tạo session mới với UUID
+    \item Session chứa: userId, messages[], summary, metadata
+\end{itemize}
+
+\textbf{Bước 2: Tạo Query Embedding bằng AI}
+\begin{itemize}
+    \item Input: Câu hỏi người dùng (text)
+    \item AI Processing:
+    \begin{enumerate}
+        \item Gọi Google Gemini API \texttt{embedContent()}
+        \item Model: \texttt{text-embedding-004} chuyển văn bản thành vector 768 chiều
+        \item AI hiểu ngữ nghĩa câu hỏi, không phụ thuộc từ khóa
+    \end{enumerate}
+    \item Output: Query vector[768] đại diện cho ý nghĩa câu hỏi
+\end{itemize}
+
+\textbf{Bước 3: Vector Similarity Search với AI}
+\begin{itemize}
+    \item Input: Query vector từ bước 2
+    \item Process:
+    \begin{enumerate}
+        \item Query PostgreSQL với pgVector (similarity $> 0.7$)
+        \item Lambda = 0.7 (cân bằng độ liên quan vs độ đa dạng)
+        \item Chọn 5 documents tốt nhất
+    \end{enumerate}
+    \item Output: Top-5 hoạt động đa dạng, phù hợp nhất
+\end{itemize}
+
+\textbf{Bước 4: Lấy Context Hội thoại}
+\begin{itemize}
+    \item Lấy lịch sử tin nhắn từ session
+    \item Nếu hội thoại quá dài ($>20$ messages):
+    \begin{enumerate}
+        \item Gọi AI Gemini để tóm tắt lịch sử
+        \item Giữ lại 10 messages gần nhất + summary
+    \end{enumerate}
+    \item Output: Lịch sử hội thoại được tối ưu
+\end{itemize}
+
+\textbf{Bước 5: AI Generate Câu trả lời (Core RAG)}
+\begin{itemize}
+    \item Xây dựng prompt cho AI
+    \item Gọi \textbf{Google Gemini 2.5 Pro API} \texttt{generateContent()}
+    \item AI xử lý:
+    \begin{itemize}
+        \item Phân tích câu hỏi và context
+        \item Tổng hợp thông tin từ 5 activities
+        \item Tạo câu trả lời tự nhiên, dễ hiểu
+        \item Trả lời đúng ngữ cảnh hội thoại nhiều vòng
+    \end{itemize}
+    \item Output: Câu trả lời AI sinh ra
+\end{itemize}
+
+% ----------------------------------- PHẦN 6 ---------------------------------
+\subsubsection{Kết quả đạt được}
+\textbf{a. Các chức năng chatbot đã thực hiện}
+\begin{itemize}
+    \item \textbf{Hỏi--đáp ngôn ngữ tự nhiên:} Sinh viên có thể đặt câu hỏi tự do như ``Có hoạt động nào dành cho sinh viên khoa học máy tính không?'', ``Tôi muốn tham gia hoạt động về môi trường''.
+    \item \textbf{Tìm kiếm ngữ nghĩa:} Hệ thống hiểu được ý định câu hỏi mà không yêu cầu từ khóa chính xác.
+    \item \textbf{Lọc theo tiêu chí:} Hỗ trợ lọc theo đơn vị tổ chức, trạng thái hoạt động và khoảng thời gian.
+    \item \textbf{Source attribution:} Mỗi câu trả lời đều kèm danh sách hoạt động được sử dụng làm nguồn, bao gồm liên kết chi tiết và \textit{confidence score}.
+    \item \textbf{Follow-up suggestions:} Đề xuất tối đa 3 hành động tiếp theo như đăng ký tham gia hoặc xem các hoạt động liên quan.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{b. Kết quả kiểm thử API backend}
+
+\textbf{Unit Tests:} 59/59 test cases đạt (100\%).
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Service} & \textbf{Tests} & \textbf{Status} & \textbf{Coverage} \\
+\midrule
+CtxhRetrievalService & 12/12 & PASS & Vector search, MMR, filters \\
+ConversationService & 14/14 & PASS & Session CRUD, summarization \\
+CtxhChatService & 16/16 &  PASS & RAG pipeline, error handling \\
+ResponseFormatterService & 17/17 &  PASS & Markdown, sources, suggestions \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Các API endpoint đã kiểm thử:}
+\begin{itemize}
+    \item \texttt{POST /api/ctxh-chat/message}: Gửi câu hỏi và nhận câu trả lời.
+    \item \texttt{GET /api/ctxh-chat/history/:sessionId}: Lấy lịch sử hội thoại.
+    \item \texttt{DELETE /api/ctxh-chat/session/:sessionId}: Xóa phiên làm việc.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{c. Khả năng trả lời câu hỏi Công tác xã hội (CTXH)}
+\begin{itemize}
+    \item \textbf{Theo chủ đề:} ``Có hoạt động nào về môi trường không?'', ``Tôi muốn tham gia hoạt động hiến máu''.
+    \item \textbf{Theo địa điểm:} ``Hoạt động nào diễn ra ở cơ sở 1?'', ``Có hoạt động nào ở quận 10 không?''.
+    \item \textbf{Theo thời gian:} ``Hoạt động nào trong tháng này?'', ``Hoạt động sắp diễn ra''.
+    \item \textbf{Theo đơn vị tổ chức:} ``Đoàn khoa Khoa học Máy tính có hoạt động gì?''.
+    \item \textbf{Tìm kiếm kết hợp:} ``Có hoạt động về cộng đồng ở cơ sở 2 trong tháng 12 không?'', ``Tôi muốn tham gia hoạt động 2 ngày CTXH về môi trường''.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{d. Đánh giá độ chính xác và mức độ phù hợp}
+
+\textbf{Độ chính xác về nội dung:}
+\begin{itemize}
+    \item Chatbot chỉ trả lời dựa trên dữ liệu thực tế từ cơ sở dữ liệu.
+    \item Không ghi nhận hiện tượng sinh thông tin sai lệch (hallucination) trong các kịch bản kiểm thử.
+    \item Cơ chế trích dẫn dữ liệu nguồn cho phép xác minh đầy đủ nguồn thông tin.
+\end{itemize}
+
+\textbf{Độ phù hợp của kết quả:}
+\begin{itemize}
+    \item Ngưỡng tương đồng (similarity threshold) 0.7 giúp lọc các kết quả có chất lượng.
+    \item Trong Top-5 kết quả trả về, thường có từ 3 đến 4 hoạt động thực sự phù hợp với câu hỏi.
+\end{itemize}
+
+% ----------------------------------- PHẦN 7 --------------------------------
+\subsubsection{Giới hạn của Chatbot}
+Theo thiết kế hiện tại, Chatbot không trả lời được các câu hỏi sau:
+
+\begin{itemize}
+    \item \textbf{Thông tin về deadline đăng ký}\\
+    Lý do: Thông tin deadline thường thay đổi linh hoạt và phụ thuộc vào việc quản trị viên có thêm dữ liệu về deadline đăng ký trong mục mô tả khi tạo hoạt động CTXH hay không
+    
+    \item \textbf{Thông tin về quy trình cập nhật ngày CTXH}\\
+    Lý do: Thông tin về quy trình quản lý nội bộ không phải dữ liệu CTXH
+    
+    \item \textbf{Câu hỏi ngoài phạm vi CTXH}\\
+    Lý do: Chatbot RAG chỉ thiết kế cho việc truy vấn thông tin hoạt động CTXH nên không trả lời câu hỏi nằm ngoài phạm vi dữ liệu hoạt động CTXH
+\end{itemize}
+
+% -------------------------------- PHẦN 8 ------------------------------------
+\subsubsection{Kết luận}
+\begin{enumerate}
+    \item \textbf{Về mặt kỹ thuật:}
+    
+        \begin{itemize}
+            \item Áp dụng kiến trúc RAG hiện đại với vector search và LLM
+            \item Tích hợp đầy đủ: PostgreSQL pgVector, Google Gemini API
+            \item Đảm bảo chất lượng code với 100\% unit test coverage
+        \end{itemize}
+        
+    \item \textbf{Về mặt chức năng:}
+    
+        \begin{itemize}
+            \item Giải quyết bài toán tra cứu thông tin CTXH bằng ngôn ngữ tự nhiên
+            \item Tìm kiếm ngữ nghĩa vượt trội so với keyword search truyền thống
+            \item Cung cấp dữ liệu CTXH chi tiết khi trả lời để đảm bảo tính minh bạch
+        \end{itemize}
+        
+\end{enumerate}
+
+Chatbot RAG còn là một thành phần quan trọng trong Cổng thông tin Đoàn -- Hội:
+
+\begin{enumerate}
+    \item \textbf{Tăng cường trải nghiệm người dùng:}
+        \begin{itemize}
+            \item Sinh viên không cần duyệt qua hàng trăm hoạt động
+            \item Tra cứu nhanh chóng bằng ngôn ngữ tự nhiên
+            \item Nhận gợi ý hoạt động phù hợp
+        \end{itemize}
+        
+    \item \textbf{Giảm tải công việc quản lý:}
+        \begin{itemize}
+            \item Tự động trả lời câu hỏi thường gặp
+            \item Giảm số lượng email/tin nhắn gửi cho quản trị viên để hỏi thông tin
+            \item Ban tổ chức tập trung vào công việc quan trọng hơn
+        \end{itemize}
+
+    \item \textbf{Nền tảng cho tương lai:}
+        \begin{itemize}
+            \item Có thể mở rộng sang các lĩnh vực khác
+            \item Tích lũy dữ liệu hành vi tra cứu của người dùng để cải thiện
+            \item Nền tảng cho các tính năng AI tiếp theo
+        \end{itemize}
+\end{enumerate}
+
+%---------------------- PHẦN 9 -------------------------------------------------
+\subsubsection{Định hướng phát triển Chatbot}
+\begin{itemize}
+    \item Tích hợp vào giao diện người dùng
+    \item Triển khai hệ thống CTXH để có thêm dữ liệu cho Chatbot
+    \item Thiết lập kịch bản kiểm thử
+\end{itemize}

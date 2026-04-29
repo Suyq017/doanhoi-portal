@@ -1,0 +1,54 @@
+\section{Cơ sở lý thuyết và công nghệ}
+
+\subsection{Cơ sở lý thuyết} Dự án được xây dựng dựa trên các khái niệm cốt lõi của Hệ thống thông tin quản lý (MIS) và Chuyển đổi số, cụ thể bao gồm:
+
+\begin{itemize} \item \textbf{Mô hình quản lý dữ liệu tập trung (Centralized Data Management):} \begin{itemize} \item Xây dựng hệ thống lưu trữ thống nhất cho dữ liệu Đoàn viên, Hội viên, hoạt động và tài chính. \item Giải quyết tình trạng dữ liệu phân mảnh, trùng lặp trên sổ sách giấy và mạng xã hội. \item Tăng tốc độ tra cứu và đảm bảo tính chính xác của thông tin. \end{itemize}
+
+\item \textbf{Lý thuyết chuyển đổi số trong tổ chức giáo dục (Digital Maturity Model - DMM):}
+\begin{itemize}
+    \item Số hóa quy trình nghiệp vụ để nâng cao hiệu quả hoạt động.
+    \item Đảm bảo nguyên tắc \textit{accountability} trong quản lý tài chính thông qua minh bạch hóa số liệu.
+    \item Ứng dụng Xử lý ngôn ngữ tự nhiên (NLP) để tự động hóa hỗ trợ sinh viên 24/7.
+\end{itemize}
+
+\item \textbf{An toàn thông tin và Kiểm soát truy cập:}
+\begin{itemize}
+    \item Áp dụng mô hình \textbf{CIA Triad} (Confidentiality - Integrity - Availability) để bảo vệ tính bảo mật, toàn vẹn và sẵn sàng của hệ thống định danh điện tử.
+    \item Sử dụng cơ chế \textbf{Phân quyền dựa trên vai trò (RBAC)}: Đảm bảo cán bộ chỉ truy cập dữ liệu phù hợp với chức năng, giảm thiểu rủi ro sai lệch dữ liệu.
+\end{itemize}
+\end{itemize}
+
+\subsection{Công nghệ} Dựa trên nền tảng lý thuyết, dự án áp dụng kiến trúc ứng dụng web hiện đại với các công nghệ sau:
+
+\begin{itemize} \item \textbf{Giao diện người dùng (Front-end): ReactJS} \begin{itemize} \item Xây dựng giao diện web động, phản hồi tốt trên đa thiết bị. \item Tái sử dụng thành phần (components) giúp sinh viên tiếp cận thông tin tập trung. \item Kết hợp \textbf{Redux} (quản lý trạng thái) và \textbf{Material-UI} (giao diện trực quan). \end{itemize}
+
+\item \textbf{Xử lý nghiệp vụ (Back-end): NestJS \& TypeORM}
+\begin{itemize}
+    \item \textbf{NestJS}: Framework Node.js (TypeScript) với kiến trúc module, tối ưu cho API RESTful quy mô lớn.
+    \item \textbf{TypeORM}: Ánh xạ dữ liệu (\textit{User, Activity, Finance}) vào cơ sở dữ liệu, tự động hóa xác minh định danh và thống kê.
+\end{itemize}
+
+\item \textbf{Lưu trữ dữ liệu (Database): PostgreSQL}
+\begin{itemize}
+    \item Hệ quản trị CSDL quan hệ mã nguồn mở, độ tin cậy cao.
+    \item Hỗ trợ truy vấn phức tạp và đánh chỉ mục hiệu quả, thay thế hoàn toàn Excel thủ công.
+\end{itemize}
+
+\item \textbf{Triển khai \& Vận hành (DevOps): Docker \& GitLab CI/CD}
+\begin{itemize}
+    \item \textbf{Docker}: Đóng gói ứng dụng (containerization) đảm bảo môi trường nhất quán.
+    \item \textbf{GitLab CI/CD}: Tự động hóa quy trình xây dựng, kiểm thử và triển khai (update) hệ thống.
+\end{itemize}
+
+\item \textbf{Thanh toán điện tử: PayOS API}
+\begin{itemize}
+    \item Tích hợp cổng thanh toán trực tuyến cho hội phí và các khoản thu chi.
+    \item Minh bạch hóa dòng tiền, giảm rủi ro thất thoát tiền mặt.
+\end{itemize}
+
+\item \textbf{Trí tuệ nhân tạo: AI Chatbot}
+\begin{itemize}
+    \item Sử dụng mô hình Chat Bot RAG (Retrieval-Augmented Generation - Tạo sinh Tăng cường Truy xuất) với cốt lõi là framework LangChain.js
+    \item Tự động giải đáp thắc mắc về quy chế, hoạt động, giảm tải cho cán bộ quản lý.
+\end{itemize}
+\end{itemize}

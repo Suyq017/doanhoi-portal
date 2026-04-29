@@ -1,0 +1,16 @@
+# Generated build artifacts
+build/
+
+# Generated output in root
+main.pdf
+
+# Common LaTeX temp files in root (in case manual compile is used)
+*.aux
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.synctex.gz
+*.toc
