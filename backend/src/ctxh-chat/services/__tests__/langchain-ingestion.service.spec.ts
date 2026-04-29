@@ -1,3 +1,103 @@
+import { LangChainIngestionService } from '../langchain-ingestion.service';
+
+describe('LangChainIngestionService', () => {
+  let svc: LangChainIngestionService;
+  const configService: any = { get: jest.fn().mockReturnValue(50) };
+  const vectorStoreService: any = { addDocuments: jest.fn(), isInitialized: jest.fn().mockReturnValue(true) };
+  const activityRepository: any = { find: jest.fn(), findOne: jest.fn(), count: jest.fn() };
+  const embeddingRepository: any = { clear: jest.fn(), delete: jest.fn(), count: jest.fn(), findOne: jest.fn() };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    svc = new LangChainIngestionService(
+      configService,
+      vectorStoreService,
+      activityRepository,
+      embeddingRepository,
+    );
+  });
+
+  it('runFullIngestion returns early when no activities', async () => {
+    activityRepository.find.mockResolvedValue([]);
+    const res = await svc.runFullIngestion();
+    expect(res.totalActivities).toBe(0);
+    expect(res.processedActivities).toBe(0);
+  });
+
+  it('runFullIngestion processes activities and calls vector store', async () => {
+    const act = { id: 'a1', name: 'A1', organization: { name: 'Org' }, category: { name: 'Cat' }, start_date: new Date(), end_date: new Date(), total_days: 1, location: 'X', status: 'ACTIVE', description: 'd' };
+    activityRepository.find.mockResolvedValue([act]);
+    embeddingRepository.clear.mockResolvedValue(undefined);
+    vectorStoreService.addDocuments.mockResolvedValue(undefined);
+
+    const res = await svc.runFullIngestion();
+    expect(embeddingRepository.clear).toHaveBeenCalled();
+    expect(vectorStoreService.addDocuments).toHaveBeenCalled();
+    expect(res.processedActivities).toBe(1);
+    expect(res.totalEmbeddings).toBeGreaterThan(0);
+  });
+
+  it('runFullIngestion collects errors when batch add fails', async () => {
+    const act = { id: 'a2', name: 'A2', organization: {}, category: {}, start_date: new Date(), end_date: new Date(), total_days: 1 };
+    activityRepository.find.mockResolvedValue([act]);
+    embeddingRepository.clear.mockResolvedValue(undefined);
+    vectorStoreService.addDocuments.mockRejectedValue(new Error('VS fail'));
+
+    const res = await svc.runFullIngestion();
+    expect(res.errors.length).toBeGreaterThan(0);
+  });
+
+  it('processActivity throws when activity not found and succeeds when found', async () => {
+    activityRepository.findOne.mockResolvedValue(null);
+    await expect(svc.processActivity('missing')).rejects.toThrow(/not found/);
+
+    const act = { id: 'a3', name: 'A3', organization: {}, category: {}, start_date: new Date(), end_date: new Date(), total_days: 2 };
+    activityRepository.findOne.mockResolvedValue(act);
+    embeddingRepository.delete.mockResolvedValue(undefined);
+    vectorStoreService.addDocuments.mockResolvedValue(undefined);
+
+    await expect(svc.processActivity('a3')).resolves.toBeUndefined();
+    expect(embeddingRepository.delete).toHaveBeenCalledWith({ activityId: 'a3' });
+    expect(vectorStoreService.addDocuments).toHaveBeenCalled();
+  });
+
+  it('deleteActivity calls embeddingRepository.delete', async () => {
+    embeddingRepository.delete.mockResolvedValue(undefined);
+    await svc.deleteActivity('a4');
+    expect(embeddingRepository.delete).toHaveBeenCalledWith({ activityId: 'a4' });
+  });
+
+  it('getIngestionStats returns counts and lastUpdated', async () => {
+    embeddingRepository.count.mockResolvedValue(10);
+    activityRepository.count.mockResolvedValue(5);
+    embeddingRepository.findOne.mockResolvedValue({ createdAt: new Date('2020-01-01') });
+
+    const s = await svc.getIngestionStats();
+    expect(s.totalEmbeddings).toBe(10);
+    expect(s.totalActivities).toBe(5);
+    expect(s.lastUpdated).toBeInstanceOf(Date);
+  });
+
+  it('healthCheck reports healthy when vector store and DB ok', async () => {
+    vectorStoreService.isInitialized.mockReturnValue(true);
+    embeddingRepository.count.mockResolvedValue(2);
+    const res = await svc.healthCheck();
+    expect(res.status).toBe('healthy');
+    expect(res.vectorStore).toBe(true);
+    expect(res.database).toBe(true);
+  });
+
+  it('healthCheck reports unhealthy when vector store not initialized', async () => {
+    vectorStoreService.isInitialized.mockImplementation(() => { throw new Error('nope'); });
+    embeddingRepository.count.mockRejectedValue(new Error('db error'));
+    const res = await svc.healthCheck();
+    expect(res.status).toBe('unhealthy');
+    expect(res.vectorStore).toBe(false);
+    expect(res.database).toBe(false);
+  });
+});
+
+export {};
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';

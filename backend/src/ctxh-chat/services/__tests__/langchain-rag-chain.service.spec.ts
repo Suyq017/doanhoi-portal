@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { LangChainRagChainService, RAGResponse } from '../langchain-rag-chain.service';
 import { LangChainVectorStoreService } from '../langchain-vector-store.service';
 import { LangChainMemoryService } from '../langchain-memory.service';
+import { CtxhFilterExtractionService } from '../ctxh-filter-extraction.service';
 import { createMockConfigService } from './mocks/config.service.mock';
 import { createMockVectorStoreService, createMockDocument } from './mocks/vector-store.mock';
 import { Document } from '@langchain/core/documents';
@@ -45,6 +46,7 @@ jest.mock('../../config/langchain.config', () => ({
     getLLM: jest.fn().mockReturnValue({
       invoke: jest.fn().mockResolvedValue({ content: 'AI response' }),
     }),
+    isUsingLocalModel: jest.fn().mockReturnValue(true),
     getRAGConfig: jest.fn().mockReturnValue({
       topK: 5,
       temperature: 0.7,
@@ -62,10 +64,33 @@ jest.mock('../../prompts/ctxh-chat.prompts', () => ({
   },
 }));
 
+jest.mock('../../prompts/router-agent.prompt', () => ({
+  ROUTER_AGENT_PROMPT: {
+    pipe: jest.fn(),
+  },
+}));
+
+jest.mock('../../prompts/retrieval-verifier.prompt', () => ({
+  RETRIEVAL_VERIFIER_PROMPT: {
+    pipe: jest.fn(),
+  },
+}));
+
+jest.mock('../../prompts/tool-selector.prompt', () => ({
+  TOOL_SELECTOR_PROMPT: {
+    pipe: jest.fn(),
+  },
+}));
+
 describe('LangChainRagChainService', () => {
   let service: LangChainRagChainService;
   let vectorStoreService: ReturnType<typeof createMockVectorStoreService>;
   let memoryService: Partial<LangChainMemoryService>;
+  let filterExtractionService: {
+    extractFilters: jest.Mock;
+    resolveDateRange: jest.Mock;
+    isEmpty: jest.Mock;
+  };
   let mockConfigService: ReturnType<typeof createMockConfigService>;
 
   beforeEach(async () => {
@@ -84,6 +109,12 @@ describe('LangChainRagChainService', () => {
       getSessionMetadata: jest.fn().mockReturnValue({ exists: true, turnCount: 0, lastAccessed: new Date() }),
     };
 
+    filterExtractionService = {
+      extractFilters: jest.fn().mockResolvedValue({}),
+      resolveDateRange: jest.fn().mockImplementation((filters) => filters),
+      isEmpty: jest.fn().mockReturnValue(true),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LangChainRagChainService,
@@ -98,6 +129,10 @@ describe('LangChainRagChainService', () => {
         {
           provide: LangChainMemoryService,
           useValue: memoryService,
+        },
+        {
+          provide: CtxhFilterExtractionService,
+          useValue: filterExtractionService,
         },
       ],
     }).compile();
@@ -207,7 +242,7 @@ describe('LangChainRagChainService', () => {
 
       await service.invoke(question);
 
-      expect(vectorStoreService.similaritySearch).toHaveBeenCalled();
+      expect(vectorStoreService.similaritySearchWithDateFilter).toHaveBeenCalled();
     });
 
     it('should return sources from search', async () => {
@@ -215,7 +250,7 @@ describe('LangChainRagChainService', () => {
         createMockDocument('Source 1'),
         createMockDocument('Source 2'),
       ];
-      vectorStoreService.similaritySearch.mockResolvedValue(mockSources);
+      vectorStoreService.similaritySearchWithDateFilter.mockResolvedValue(mockSources);
 
       const result = await service.invoke('Test');
 
@@ -317,7 +352,7 @@ describe('LangChainRagChainService', () => {
     });
 
     it('should handle vector store search errors', async () => {
-      vectorStoreService.similaritySearch.mockRejectedValue(
+      vectorStoreService.similaritySearchWithDateFilter.mockRejectedValue(
         new Error('Search failed')
       );
 
@@ -331,6 +366,106 @@ describe('LangChainRagChainService', () => {
       const result = await service.invoke('test', 'session-id');
       expect(result).toBeDefined();
       expect(result.response).toBeDefined();
+    });
+  });
+
+  describe('router and retrieval branches', () => {
+    beforeEach(async () => {
+      await service.initializeChains();
+    });
+
+    it('should fall back to RAG_QUERY when router fails', async () => {
+      const routerPrompt = require('../../prompts/router-agent.prompt').ROUTER_AGENT_PROMPT;
+      const routerChain = {
+        invoke: jest.fn().mockRejectedValue(new Error('router failed')),
+      };
+      routerPrompt.pipe.mockReturnValue(routerChain);
+
+      const llm = {
+        withStructuredOutput: jest.fn().mockReturnValue({}),
+      } as any;
+      (service as any).llm = llm;
+
+      const result = await (service as any).routeQuestion('Câu hỏi test', '');
+
+      expect(result.intent).toBe('RAG_QUERY');
+      expect(result.rewrittenQuestion).toBe('Câu hỏi test');
+    });
+
+    it('should select filtered search, semantic search, diverse search and fallback routes', async () => {
+      const toolPrompt = require('../../prompts/tool-selector.prompt').TOOL_SELECTOR_PROMPT;
+      const toolChain = { invoke: jest.fn() };
+      toolPrompt.pipe.mockReturnValue(toolChain);
+
+      const retrieveSpy = jest.spyOn(service as any, 'retrieveDocuments').mockResolvedValue([createMockDocument('filtered')]);
+      const semanticSpy = jest.spyOn(vectorStoreService, 'similaritySearchWithDateFilter').mockResolvedValue([createMockDocument('semantic')]);
+      const diverseSpy = jest.spyOn(vectorStoreService, 'maxMarginalRelevanceSearch').mockResolvedValue([createMockDocument('diverse')]);
+
+      (service as any).llm = {
+        bindTools: jest.fn().mockReturnValue({}),
+      } as any;
+
+      toolChain.invoke.mockResolvedValueOnce({ tool_calls: [{ name: 'search_with_filters', args: {} }] });
+      expect(await (service as any).selectAndExecuteTool('q', '2026-04-28', 3, true)).toHaveLength(1);
+      expect(retrieveSpy).toHaveBeenCalledWith('q', '2026-04-28', 3, false);
+
+      toolChain.invoke.mockResolvedValueOnce({ tool_calls: [{ name: 'search_semantic', args: {} }] });
+      expect(await (service as any).selectAndExecuteTool('q', '2026-04-28', 4, true)).toEqual([expect.objectContaining({ pageContent: 'semantic' })]);
+      expect(semanticSpy).toHaveBeenCalledWith('q', 4, '2026-04-28', 'all');
+
+      toolChain.invoke.mockResolvedValueOnce({ tool_calls: [{ name: 'search_diverse', args: {} }] });
+      expect(await (service as any).selectAndExecuteTool('q', '2026-04-28', 5, false)).toEqual([expect.objectContaining({ pageContent: 'diverse' })]);
+      expect(diverseSpy).toHaveBeenCalledWith('q', { k: 5, fetchK: 20, lambda: 0.5 });
+
+      toolChain.invoke.mockResolvedValueOnce({ tool_calls: [] });
+      expect(await (service as any).selectAndExecuteTool('q', '2026-04-28', 2, true)).toHaveLength(1);
+      expect(retrieveSpy).toHaveBeenCalledWith('q', '2026-04-28', 2, true);
+
+      toolChain.invoke.mockRejectedValueOnce(new Error('tool failed'));
+      expect(await (service as any).selectAndExecuteTool('q', '2026-04-28', 2, false)).toHaveLength(1);
+      expect(retrieveSpy).toHaveBeenCalledWith('q', '2026-04-28', 2, false);
+    });
+  });
+
+  describe('formatting helpers and intent branches', () => {
+    beforeEach(async () => {
+      await service.initializeChains();
+    });
+
+    it('should format empty and dated contexts with status fields', () => {
+      const emptyContext = (service as any).formatDocumentsAsContext([]);
+      expect(emptyContext).toContain('Không có thông tin CTXH liên quan');
+
+      const context = (service as any).formatDocumentsAsContext([
+        createMockDocument('Nội dung', {
+          activityName: 'Hoạt động A',
+          organizationName: 'Khoa A',
+          status: 'ACTIVE',
+          startDate: '2026-04-27T00:00:00.000Z',
+          endDate: '2026-04-29T00:00:00.000Z',
+          location: 'Hội trường',
+          totalDays: 2,
+          registrationLink: 'https://example.com',
+        }),
+      ], '2026-04-28');
+
+      expect(context).toContain('Hoạt động A');
+      expect(context).toContain('Đang diễn ra');
+      expect(context).toContain('Còn tuyển thành viên');
+    });
+
+    it('should short-circuit greeting and chitchat intents in invoke and stream', async () => {
+      jest.spyOn(service as any, 'routeQuestion').mockResolvedValueOnce({ rewrittenQuestion: 'x', intent: 'GREETING' });
+      const greeting = await service.invoke('xin chào', 'session-1');
+      expect(greeting.intent).toBe('GREETING');
+      expect(greeting.response).toContain('Xin chào bạn!');
+
+      jest.spyOn(service as any, 'routeQuestion').mockResolvedValueOnce({ rewrittenQuestion: 'x', intent: 'CHITCHAT' });
+      const chunks: string[] = [];
+      for await (const chunk of service.stream('thời tiết', 'session-2')) {
+        chunks.push(chunk);
+      }
+      expect(chunks.join('')).toContain('Xin lỗi, tôi chỉ hỗ trợ');
     });
   });
 
