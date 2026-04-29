@@ -1,0 +1,1 @@
+export { CTXH_AGENT_PROMPT as ROUTER_AGENT_PROMPT } from './ctxh-agent.prompt';

@@ -227,12 +227,12 @@ Kế hoạch được xem là hoàn thành khi:
 
 ### 10.2 Kết quả định lượng hiện tại
 
-- Tổng số test suite backend đang pass: `79`.
-- Tổng số test case backend đang pass: `897` (↑ từ 878).
-- Coverage statements backend hiện tại: `64.55%` (↑ từ 64.44%, target 70%).
-- Coverage branches: `58.39%` (↑ từ 58.32%).
-- Coverage functions: `62.52%` (↑ từ 62.46%).
-- Coverage lines: `64.69%` (↑ từ 64.57%).
+- Tổng số test suite backend đang pass: `63` (NON-ctxh-chat).
+- Tổng số test case backend đang pass: `678`.
+- Coverage statements backend hiện tại: `51.09%` (NON-ctxh-chat, target 70%).
+- Coverage branches: `48.86%`.
+- Coverage functions: `49.72%`.
+- Coverage lines: `51.09%`.
 
 ### 10.3 Những phần đã hiện thực (cập nhật vòng mới)
 
@@ -247,6 +247,9 @@ Kế hoạch được xem là hoàn thành khi:
   
 - **organizations/__tests__/organizations.service.spec.ts**: Thêm 1 test case cho nhánh recursive member removal với child organizations
   - Test `removeMember` recursive: xóa từ parent → xóa từ child → dừng khi không còn children
+
+- **users/__tests__/users.controller.spec.ts**: Thêm 28 controller tests covering CRUD, template download, import session, batch import, and error handling paths.
+- **dashboard/__tests__/dashboard.service.spec.ts**: Thêm 2 S3 statistics tests covering success path với và không có custom endpoint.
 
 **Mới bơm thêm trong vòng này (trước):**
 
@@ -355,6 +358,13 @@ Kế hoạch được xem là hoàn thành khi:
 - `payment-assignment.controller` (low branches) → error/edge branch coverage
 
 **Medium Priority (50-70% coverage, +3-8%):**
+
+### 11.3 Chiến lược bổ sung cho ctxh-chat
+
+- Ưu tiên các file thuần hoặc ít phụ thuộc để lấy coverage rẻ trước: `google-genai-embeddings.ts`, `rate-limit.interceptor.ts`, `chat.dto.ts`, các file index/export.
+- Mock hoàn toàn Google GenAI và Redis; không kéo MCP, RAG chain, hay LLM thật vào unit test.
+- Mục tiêu vòng chatbot đầu tiên là chuyển các file 0% quan trọng sang có coverage nền tảng, rồi mới mở rộng dần sang controller/service nếu còn ROI tốt.
+- Đã hiện thực bước đầu cho đúng chiến lược này bằng 3 spec mới: `google-genai-embeddings.spec.ts`, `rate-limit.interceptor.spec.ts`, `chat.dto.spec.ts`.
 - `payment-history.service` (estimated 60-65% after expansion) → refine QueryBuilder edge cases
 - `users.service` (47.36%) → test validation, batch import, permission filtering
 - `export.service` (should be high already, refine filter branches)
@@ -381,7 +391,32 @@ Kế hoạch được xem là hoàn thành khi:
 - For controllers, verify status/message/payload and invalid input handling.
 - Avoid adding tests that only increase statements without improving branch coverage.
 
-## 12. Cập nhật nhanh — 29/04/2026
+## 12. Cập nhật nhanh — 29/04/2026 (late session)
+
+**Session hiện tại (ongoing):**
+- Mục tiêu: Expand weak services identified (users 47.36%, export, payment-admin/campaign)
+- Đã hoàn thành:
+  - **organizations.services.batch-import.service.spec.ts**: +1 test for transaction rollback error path (8 tests total)
+  - **organizations.__tests__.organization-import.service.spec.ts**: +2 tests for invalid records flow (8 tests total)
+  - **organizations.__tests__.organizations.service.spec.ts**: +1 test for recursive member removal (9 tests total)
+  - **users.__tests__.users.service.spec.ts**: +10 tests covering:
+    - lastLogin timestamp on refresh token update
+    - findByEmail with relation loading
+    - birthDate conversion during create/update
+    - blank role IDs skipping in legacy assignment
+    - Basic field updates without role changes
+  - Total this session: **+14 new tests** (all pass locally)
+- Status after changes:
+  - `npm test --testPathIgnorePatterns="ctxh"`: **62 suites, 648 tests, ALL PASS** ✅
+  - Coverage (NON-ctxh-chat): 64.55% statements, 58.39% branches, 62.52% functions
+  - ctxh-chat has 6 suites failing due to MCP SDK module resolution (known issue, out of scope this session)
+- Bước tiếp theo:
+  - Focus trên export.service, payment-campaign, payment-admin để reach +0.5-1% coverage
+  - OR shift to simpler edge cases ở roles, dashboard nếu lower hanging fruit
+
+---
+
+## 12a. Cập nhật cũ — 29/04/2026 (earlier)
 
 - Tình trạng hiện tại: Hoàn thành vòng mở rộng lớn cho 3 services payment: payment-campaign-payos-config, payment-history, payment-fee-level.
 - Kết quả ổn định: `npm run test:cov` chạy pass toàn bộ 839 tests ở 77 suites; coverage statements tăng từ 61.68% → 62.4% (gap còn 7.6% tới 70%).

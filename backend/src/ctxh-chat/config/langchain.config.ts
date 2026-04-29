@@ -19,14 +19,27 @@ export class LangChainConfig {
    * Check if using local LLM (Ollama)
    */
   static isUsingLocalLLM(configService: ConfigService): boolean {
-    return configService.get('USE_LOCAL_MODEL_LLM') === 'true';
+    return this.readBooleanConfig(configService, [
+      'USE_LOCAL_MODEL_LLM',
+      'USE_LOCAL_MODEL',
+    ]);
+  }
+
+  /**
+   * Backward-compatible alias used by older tests and services.
+   */
+  static isUsingLocalModel(configService: ConfigService): boolean {
+    return this.readBooleanConfig(configService, ['USE_LOCAL_MODEL']);
   }
 
   /**
    * Check if using local Embeddings (Ollama)
    */
   static isUsingLocalEmbedding(configService: ConfigService): boolean {
-    return configService.get('USE_LOCAL_MODEL_EMBEDDING') === 'true';
+    return this.readBooleanConfig(configService, [
+      'USE_LOCAL_MODEL_EMBEDDING',
+      'USE_LOCAL_MODEL',
+    ]);
   }
 
   /**
@@ -58,9 +71,12 @@ export class LangChainConfig {
 
       return new ChatGoogleGenerativeAI({
         apiKey,
-        model: configService.get('GEMINI_MODEL'),
+        model: configService.get('RAG_CHAT_MODEL') ?? configService.get('GEMINI_MODEL'),
         temperature: parseFloat(configService.get('RAG_TEMPERATURE')),
-        // maxOutputTokens: parseInt(configService.get('RAG_MAX_OUTPUT_TOKENS'), 10),
+        maxOutputTokens: this.readNumberConfig(configService, [
+          'RAG_MAX_OUTPUT_TOKENS',
+          'GEMINI_MAX_OUTPUT_TOKENS',
+        ]),
       });
     }
   }
@@ -91,10 +107,10 @@ export class LangChainConfig {
       return new GoogleGenAIEmbeddings({
         apiKey,
         model: configService.get('GEMINI_EMBEDDING_MODEL'),
-        outputDimensionality: parseInt(
-          configService.get('GEMINI_EMBEDDING_DIMENSION'),
-          10,
-        ),
+        outputDimensionality: this.readNumberConfig(configService, [
+          'GEMINI_EMBEDDING_DIMENSION',
+          'RAG_EMBEDDING_DIMENSION',
+        ]),
       });
     }
   }
@@ -117,9 +133,15 @@ export class LangChainConfig {
     const useLocalModel = this.isUsingLocalEmbedding(configService);
     
     if (useLocalModel) {
-      return parseInt(configService.get('OLLAMA_EMBEDDING_DIMENSION'), 10);
+      return this.readNumberConfig(configService, [
+        'OLLAMA_EMBEDDING_DIMENSION',
+        'RAG_EMBEDDING_DIMENSION',
+      ]);
     } else {
-      return parseInt(configService.get('GEMINI_EMBEDDING_DIMENSION'), 10);
+      return this.readNumberConfig(configService, [
+        'GEMINI_EMBEDDING_DIMENSION',
+        'RAG_EMBEDDING_DIMENSION',
+      ]);
     }
   }
 
@@ -147,5 +169,26 @@ export class LangChainConfig {
       enableMemory: configService.get<boolean>('RAG_ENABLE_MEMORY'),
       memoryWindowSize: configService.get<number>('RAG_MEMORY_WINDOW_SIZE'),
     };
+  }
+
+  private static readBooleanConfig(
+    configService: ConfigService,
+    keys: string[],
+  ): boolean {
+    return keys.some((key) => configService.get(key) === 'true');
+  }
+
+  private static readNumberConfig(
+    configService: ConfigService,
+    keys: string[],
+  ): number {
+    for (const key of keys) {
+      const value = configService.get(key);
+      if (value !== undefined && value !== null && value !== '') {
+        return parseInt(value, 10);
+      }
+    }
+
+    return Number.NaN;
   }
 }

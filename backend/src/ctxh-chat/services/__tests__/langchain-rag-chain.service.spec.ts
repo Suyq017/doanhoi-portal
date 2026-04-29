@@ -4,6 +4,9 @@ import { LangChainRagChainService, RAGResponse } from '../langchain-rag-chain.se
 import { LangChainVectorStoreService } from '../langchain-vector-store.service';
 import { LangChainMemoryService } from '../langchain-memory.service';
 import { CtxhFilterExtractionService } from '../ctxh-filter-extraction.service';
+import { CtxhAgentService } from '../ctxh-agent.service';
+import { McpSqlFallbackService } from '../mcp-sql-fallback.service';
+import { McpMetadataEnricherService } from '../mcp-metadata-enricher.service';
 import { createMockConfigService } from './mocks/config.service.mock';
 import { createMockVectorStoreService, createMockDocument } from './mocks/vector-store.mock';
 import { Document } from '@langchain/core/documents';
@@ -47,11 +50,24 @@ jest.mock('../../config/langchain.config', () => ({
       invoke: jest.fn().mockResolvedValue({ content: 'AI response' }),
     }),
     isUsingLocalModel: jest.fn().mockReturnValue(true),
+    isUsingLocalLLM: jest.fn().mockReturnValue(true),
     getRAGConfig: jest.fn().mockReturnValue({
       topK: 5,
       temperature: 0.7,
     }),
   },
+}));
+
+jest.mock('../../services/mcp-sql-fallback.service', () => ({
+  McpSqlFallbackService: class {},
+}));
+
+jest.mock('../../services/mcp-metadata-enricher.service', () => ({
+  McpMetadataEnricherService: class {},
+}));
+
+jest.mock('../../services/ctxh-agent.service', () => ({
+  CtxhAgentService: class {},
 }));
 
 // Mock prompts
@@ -91,6 +107,10 @@ describe('LangChainRagChainService', () => {
     resolveDateRange: jest.Mock;
     isEmpty: jest.Mock;
   };
+  let agentService: {
+    decide: jest.Mock;
+    toMetadataFilters: jest.Mock;
+  };
   let mockConfigService: ReturnType<typeof createMockConfigService>;
 
   beforeEach(async () => {
@@ -107,12 +127,45 @@ describe('LangChainRagChainService', () => {
       getFormattedHistory: jest.fn().mockResolvedValue(''),
       getMessages: jest.fn().mockResolvedValue([]),
       getSessionMetadata: jest.fn().mockReturnValue({ exists: true, turnCount: 0, lastAccessed: new Date() }),
+      getPendingRegistration: jest.fn().mockReturnValue(false),
+      setMentionedActivities: jest.fn(),
     };
 
     filterExtractionService = {
       extractFilters: jest.fn().mockResolvedValue({}),
       resolveDateRange: jest.fn().mockImplementation((filters) => filters),
       isEmpty: jest.fn().mockReturnValue(true),
+    };
+
+    agentService = {
+      decide: jest.fn().mockImplementation(async (question: string) => {
+        if (question.includes('xin chào')) {
+          return { action: 'greeting', params: { rewrittenQuestion: question } };
+        }
+
+        if (question.includes('thời tiết')) {
+          return { action: 'out_of_scope', params: { rewrittenQuestion: question } };
+        }
+
+        if (question.includes('MMR')) {
+          return {
+            action: 'search',
+            params: {
+              rewrittenQuestion: question,
+              mode: 'diverse',
+            },
+          };
+        }
+
+        return {
+          action: 'search',
+          params: {
+            rewrittenQuestion: question,
+            mode: 'filtered',
+          },
+        };
+      }),
+      toMetadataFilters: jest.fn().mockReturnValue({}),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -133,6 +186,22 @@ describe('LangChainRagChainService', () => {
         {
           provide: CtxhFilterExtractionService,
           useValue: filterExtractionService,
+        },
+        {
+          provide: CtxhAgentService,
+          useValue: agentService,
+        },
+        {
+          provide: McpSqlFallbackService,
+          useValue: {
+            queryEmbeddingActivityIds: jest.fn().mockResolvedValue(null),
+          },
+        },
+        {
+          provide: McpMetadataEnricherService,
+          useValue: {
+            enrichDocuments: jest.fn().mockImplementation(async (documents: unknown[]) => documents),
+          },
         },
       ],
     }).compile();
@@ -375,55 +444,39 @@ describe('LangChainRagChainService', () => {
     });
 
     it('should fall back to RAG_QUERY when router fails', async () => {
-      const routerPrompt = require('../../prompts/router-agent.prompt').ROUTER_AGENT_PROMPT;
-      const routerChain = {
-        invoke: jest.fn().mockRejectedValue(new Error('router failed')),
-      };
-      routerPrompt.pipe.mockReturnValue(routerChain);
-
-      const llm = {
-        withStructuredOutput: jest.fn().mockReturnValue({}),
-      } as any;
-      (service as any).llm = llm;
-
-      const result = await (service as any).routeQuestion('Câu hỏi test', '');
+      const result = await (service as any).routeQuestion('Câu hỏi test', '', '2026-04-28');
 
       expect(result.intent).toBe('RAG_QUERY');
       expect(result.rewrittenQuestion).toBe('Câu hỏi test');
     });
 
     it('should select filtered search, semantic search, diverse search and fallback routes', async () => {
-      const toolPrompt = require('../../prompts/tool-selector.prompt').TOOL_SELECTOR_PROMPT;
-      const toolChain = { invoke: jest.fn() };
-      toolPrompt.pipe.mockReturnValue(toolChain);
-
-      const retrieveSpy = jest.spyOn(service as any, 'retrieveDocuments').mockResolvedValue([createMockDocument('filtered')]);
-      const semanticSpy = jest.spyOn(vectorStoreService, 'similaritySearchWithDateFilter').mockResolvedValue([createMockDocument('semantic')]);
+      const filteredSpy = jest.spyOn(vectorStoreService, 'similaritySearchWithDateFilter').mockResolvedValue([createMockDocument('semantic')]);
       const diverseSpy = jest.spyOn(vectorStoreService, 'maxMarginalRelevanceSearch').mockResolvedValue([createMockDocument('diverse')]);
 
-      (service as any).llm = {
-        bindTools: jest.fn().mockReturnValue({}),
-      } as any;
+      await (service as any).executeSearchDecision(
+        { rewrittenQuestion: 'q', mode: 'filtered' },
+        '2026-04-28',
+        3,
+        'Khoa A',
+      );
+      expect(filteredSpy).toHaveBeenCalledWith('q', 3, '2026-04-28', 'all');
 
-      toolChain.invoke.mockResolvedValueOnce({ tool_calls: [{ name: 'search_with_filters', args: {} }] });
-      expect(await (service as any).selectAndExecuteTool('q', '2026-04-28', 3, true)).toHaveLength(1);
-      expect(retrieveSpy).toHaveBeenCalledWith('q', '2026-04-28', 3, false);
+      await (service as any).executeSearchDecision(
+        { rewrittenQuestion: 'q', mode: 'semantic' },
+        '2026-04-28',
+        4,
+        'Khoa A',
+      );
+      expect(filteredSpy).toHaveBeenCalledWith('q', 4, '2026-04-28', 'all');
 
-      toolChain.invoke.mockResolvedValueOnce({ tool_calls: [{ name: 'search_semantic', args: {} }] });
-      expect(await (service as any).selectAndExecuteTool('q', '2026-04-28', 4, true)).toEqual([expect.objectContaining({ pageContent: 'semantic' })]);
-      expect(semanticSpy).toHaveBeenCalledWith('q', 4, '2026-04-28', 'all');
-
-      toolChain.invoke.mockResolvedValueOnce({ tool_calls: [{ name: 'search_diverse', args: {} }] });
-      expect(await (service as any).selectAndExecuteTool('q', '2026-04-28', 5, false)).toEqual([expect.objectContaining({ pageContent: 'diverse' })]);
+      await (service as any).executeSearchDecision(
+        { rewrittenQuestion: 'q', mode: 'diverse' },
+        '2026-04-28',
+        5,
+        'Khoa A',
+      );
       expect(diverseSpy).toHaveBeenCalledWith('q', { k: 5, fetchK: 20, lambda: 0.5 });
-
-      toolChain.invoke.mockResolvedValueOnce({ tool_calls: [] });
-      expect(await (service as any).selectAndExecuteTool('q', '2026-04-28', 2, true)).toHaveLength(1);
-      expect(retrieveSpy).toHaveBeenCalledWith('q', '2026-04-28', 2, true);
-
-      toolChain.invoke.mockRejectedValueOnce(new Error('tool failed'));
-      expect(await (service as any).selectAndExecuteTool('q', '2026-04-28', 2, false)).toHaveLength(1);
-      expect(retrieveSpy).toHaveBeenCalledWith('q', '2026-04-28', 2, false);
     });
   });
 
@@ -455,12 +508,12 @@ describe('LangChainRagChainService', () => {
     });
 
     it('should short-circuit greeting and chitchat intents in invoke and stream', async () => {
-      jest.spyOn(service as any, 'routeQuestion').mockResolvedValueOnce({ rewrittenQuestion: 'x', intent: 'GREETING' });
+      agentService.decide.mockResolvedValueOnce({ action: 'greeting', params: { rewrittenQuestion: 'x' } });
       const greeting = await service.invoke('xin chào', 'session-1');
       expect(greeting.intent).toBe('GREETING');
       expect(greeting.response).toContain('Xin chào bạn!');
 
-      jest.spyOn(service as any, 'routeQuestion').mockResolvedValueOnce({ rewrittenQuestion: 'x', intent: 'CHITCHAT' });
+      agentService.decide.mockResolvedValueOnce({ action: 'out_of_scope', params: { rewrittenQuestion: 'x' } });
       const chunks: string[] = [];
       for await (const chunk of service.stream('thời tiết', 'session-2')) {
         chunks.push(chunk);

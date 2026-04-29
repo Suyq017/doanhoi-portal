@@ -1,6 +1,19 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { DashboardService } from "../dashboard.service";
 
+const mockSend = jest.fn();
+
+function createMockS3Client() {
+  return {
+    send: mockSend,
+  };
+}
+
+jest.mock("@aws-sdk/client-s3", () => ({
+  S3Client: jest.fn().mockImplementation(() => createMockS3Client()),
+  ListObjectsV2Command: jest.fn().mockImplementation((input) => input),
+}));
+
 describe("DashboardService", () => {
   const createUsersServiceMock = () => ({
     findAll: jest.fn() as any,
@@ -24,6 +37,7 @@ describe("DashboardService", () => {
     organizationsService = createOrganizationsServiceMock();
     awsConfigService = createAwsConfigServiceMock();
     service = new DashboardService(usersService as never, organizationsService as never, awsConfigService as never);
+    mockSend.mockReset();
   });
 
   describe("getDashboardStats", () => {
@@ -292,6 +306,77 @@ describe("DashboardService", () => {
       const stats = await service.getS3Statistics();
 
       expect(stats).toBeNull();
+    });
+
+    it("should return S3 stats for active config without custom endpoint", async () => {
+      awsConfigService.getActiveConfig.mockResolvedValue({
+        s3Bucket: "test-bucket",
+        region: "ap-southeast-1",
+        accessKeyId: "access-key",
+        secretAccessKey: "secret-key",
+        s3Endpoint: null,
+      });
+
+      mockSend.mockResolvedValue({
+        Contents: [
+          {
+            Key: "avatars/user-1.png",
+            Size: 2048,
+            LastModified: new Date("2024-01-15T00:00:00Z"),
+          },
+          {
+            Key: "documents/report.pdf",
+            Size: 1024,
+            LastModified: new Date("2024-02-15T00:00:00Z"),
+          },
+          {
+            Key: "misc/file.txt",
+            Size: 512,
+            LastModified: new Date("2024-02-18T00:00:00Z"),
+          },
+        ],
+      });
+
+      const stats = await service.getS3Statistics();
+      const { S3Client } = require("@aws-sdk/client-s3");
+
+      expect(S3Client).toHaveBeenCalledWith({
+        region: "ap-southeast-1",
+        credentials: {
+          accessKeyId: "access-key",
+          secretAccessKey: "secret-key",
+        },
+      });
+      expect(stats?.totalFiles).toBe(3);
+      expect(stats?.folderStats.avatars.count).toBe(1);
+      expect(stats?.folderStats.documents.count).toBe(1);
+      expect(stats?.folderStats.others.count).toBe(1);
+      expect(stats?.monthlyStats).toHaveLength(2);
+    });
+
+    it("should include custom endpoint when configured", async () => {
+      awsConfigService.getActiveConfig.mockResolvedValue({
+        s3Bucket: "test-bucket",
+        region: "ap-southeast-1",
+        accessKeyId: "access-key",
+        secretAccessKey: "secret-key",
+        s3Endpoint: "http://localhost:9000",
+      });
+
+      mockSend.mockResolvedValue({ Contents: [] });
+
+      await service.getS3Statistics();
+      const { S3Client } = require("@aws-sdk/client-s3");
+
+      expect(S3Client).toHaveBeenCalledWith({
+        region: "ap-southeast-1",
+        credentials: {
+          accessKeyId: "access-key",
+          secretAccessKey: "secret-key",
+        },
+        endpoint: "http://localhost:9000",
+        forcePathStyle: true,
+      });
     });
   });
 });

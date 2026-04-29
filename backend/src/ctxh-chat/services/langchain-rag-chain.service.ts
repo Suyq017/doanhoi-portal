@@ -408,6 +408,17 @@ export class LangChainRagChainService implements OnModuleInit {
     }
   }
 
+  private async routeQuestion(question: string, chatHistory: string, currentDate: string) {
+    const decision = await this.agentService.decide(question, chatHistory, currentDate);
+
+    return {
+      action: decision.action,
+      intent: this.decisionToIntent(decision.action),
+      params: decision.params ?? { rewrittenQuestion: question, mode: 'filtered' },
+      rewrittenQuestion: decision.params?.rewrittenQuestion ?? question,
+    };
+  }
+
   private normalizeActivityStatus(status: unknown): ActivityStatus | undefined {
     if (!status || typeof status !== 'string') {
       return undefined;
@@ -453,7 +464,7 @@ export class LangChainRagChainService implements OnModuleInit {
       }
 
       // ── Step 2: Agent Decision — intent + search params in one call ──────────
-      const decision = await this.agentService.decide(question, chatHistory, currentDate);
+      const decision = await this.routeQuestion(question, chatHistory, currentDate);
       const intent = this.decisionToIntent(decision.action);
 
       // ── Step 2.5: Pending registration override ───────────────────────────────
@@ -602,7 +613,7 @@ export class LangChainRagChainService implements OnModuleInit {
       }
 
       // ── Step 2: Agent Decision — intent + search params in one call ──────────
-      const decision = await this.agentService.decide(question, chatHistory, currentDate);
+      const decision = await this.routeQuestion(question, chatHistory, currentDate);
       const intent = this.decisionToIntent(decision.action);
 
       // ── Step 2.5: Pending registration override ───────────────────────────────

@@ -7,6 +7,7 @@ jest.mock('../../config/langchain.config', () => ({
       withStructuredOutput: jest.fn().mockReturnValue({}),
     }),
     isUsingLocalModel: jest.fn().mockReturnValue(true),
+    isUsingLocalLLM: jest.fn().mockReturnValue(true),
   },
 }));
 

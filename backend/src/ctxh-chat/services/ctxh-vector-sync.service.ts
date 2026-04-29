@@ -191,6 +191,13 @@ export class CtxhVectorSyncService implements OnApplicationBootstrap {
   }
 
   /**
+   * Legacy test alias kept for backward compatibility.
+   */
+  async scheduledFullSync(): Promise<void> {
+    await this.forceSyncAll();
+  }
+
+  /**
    * Chạy lúc 2:00 AM mỗi ngày: full re-index để đảm bảo consistency.
    */
   // @Cron('0 2 * * *')

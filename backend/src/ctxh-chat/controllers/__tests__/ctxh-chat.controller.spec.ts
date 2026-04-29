@@ -1,3 +1,11 @@
+jest.mock('../../services/langchain-rag-chain.service', () => ({
+  LangChainRagChainService: class {},
+}));
+
+jest.mock('../../services/staff-agent.service', () => ({
+  StaffAgentService: class {},
+}));
+
 import { CtxhChatController } from '../ctxh-chat.controller';
 
 describe('CtxhChatController', () => {
@@ -37,6 +45,12 @@ describe('CtxhChatController', () => {
   let vectorSyncService: {
     getQueueStatus: jest.Mock;
     forceSyncAll: jest.Mock;
+  };
+  let userContextService: {
+    getTrainingDepartmentName: jest.Mock;
+  };
+  let followUpSuggestionsService: {
+    generate: jest.Mock;
   };
 
   beforeEach(() => {
@@ -83,6 +97,18 @@ describe('CtxhChatController', () => {
       forceSyncAll: jest.fn(),
     };
 
+    userContextService = {
+      getTrainingDepartmentName: jest.fn().mockResolvedValue('Khoa CNTT'),
+    };
+
+    followUpSuggestionsService = {
+      generate: jest.fn().mockResolvedValue([
+        'Cho tôi biết thêm chi tiết về hoạt động này',
+        'Làm sao để đăng ký tham gia?',
+        'Có hoạt động nào khác trong tháng này không?',
+      ]),
+    };
+
     controller = new CtxhChatController(
       ragChainService as any,
       memoryService as any,
@@ -91,6 +117,10 @@ describe('CtxhChatController', () => {
       universalEmbeddingsService as any,
       universalLLMService as any,
       vectorSyncService as any,
+      {} as any,
+      userContextService as any,
+      {} as any,
+      followUpSuggestionsService as any,
     );
   });
 
