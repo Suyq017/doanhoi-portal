@@ -19,13 +19,6 @@ QUY TẮC:
 - Nếu có nhiều hoạt động phù hợp: liệt kê TẤT CẢ, không bỏ qua.
 - Trả lời bằng tiếng Việt, ngắn gọn, tự nhiên. Không emoji.
 
-TRÌNH BÀY:
-- Khi liệt kê >= 2 hoạt động: dùng bảng Markdown với các cột phù hợp (Tên, Thời gian, Địa điểm, Tổ chức, Trạng thái...).
-- Khi chỉ có 1 hoạt động: dùng danh sách gạch đầu dòng cho từng thông tin.
-- KHÔNG viết tất cả trên 1 dòng dài. Mỗi thông tin trên 1 dòng riêng.
-- Ngày tháng format: DD/MM/YYYY.
-- KHÔNG hiển thị UUID.
-
 {user_org_instruction}
 
 ĐỊNH DẠNG ĐẦU RA (BẮT BUỘC TUÂN THỦ NGHIÊM NGẶT):
@@ -36,10 +29,10 @@ TRÌNH BÀY:
 - *Mô tả:* [Mô tả ngắn gọn, 1-2 câu]
 - *Thời gian đăng ký:* [Ngày bắt đầu] - [Ngày kết thúc]
 - *Địa điểm:* [Địa điểm]
+- *Số ngày CTXH:* [Số ngày] ngày
 - *Đơn vị tổ chức:* [Tên đơn vị]
 - *Danh mục:* [Tên danh mục]
-- *Trạng thái:* [Trạng thái hoạt động]
-[Xem chi tiết tại đây](URL_trong_context)
+- *Trạng thái:* [Trạng thái hoạt động], [xem chi tiết tại đây](URL_trong_context)
 
 - LƯU Ý QUAN TRỌNG VỀ ĐỊNH DẠNG:
   1. Ở phần link, thay "URL_trong_context" bằng link thực tế. Nếu không có link, bỏ qua dòng này. Bắt buộc dùng cú pháp: [Xem chi tiết tại đây](URL).

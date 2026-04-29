@@ -174,15 +174,6 @@ export class LangChainVectorStoreService implements OnModuleInit {
     try {
       const rawResults = await this.vectorStore.similaritySearchWithScore(query, k * 3);
 
-      // Debug: log the first few raw scores to verify what PGVectorStore actually returns
-      if (rawResults.length > 0) {
-        const sample = rawResults.slice(0, 3).map(([doc, s]) => ({
-          activity: doc.metadata?.activityName,
-          rawScore: s,
-        }));
-        this.logger.debug(`RAW scores from PGVectorStore (cosine distance): ${JSON.stringify(sample)}`);
-      }
-
       const filteredResults = rawResults
         .filter(([doc]) => this.shouldIncludeInRetrieval(doc))
         .map(([doc, cosineDistance]) => {

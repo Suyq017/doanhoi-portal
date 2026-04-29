@@ -28,29 +28,12 @@ interface CustomMeta {
   sessionId?: string;  sources?: CtxhSource[];}
 
 // ── Markdown renderer (light theme) ────────────────────────────────────────
-const preprocessMarkdown = (text: string) =>
-  text.replace(/(?<!\n)\n(?!\n)(?!- )/g, '\n\n');
-
-const handleMarkdownClick = (e: React.MouseEvent<HTMLDivElement>) => {
-  const link = (e.target as HTMLElement).closest('a');
-  if (link?.href) {
-    e.preventDefault();
-    window.open(link.href, '_blank', 'noopener,noreferrer');
-  }
-};
-
-const MarkdownText: FC = memo(() => {
-  return (
-
-    <div onClick={handleMarkdownClick}>
-      <MarkdownTextPrimitive
-        preprocess={preprocessMarkdown}
-        className="prose prose-sm max-w-none text-gray-800 prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-code:text-doan-500 prose-headings:text-gray-900 prose-a:text-hsv-500 prose-a:underline prose-a:font-medium prose-strong:text-gray-900"
-      />
-    </div>
-
-  );
-});
+const MarkdownText: FC = memo(() => (
+  <MarkdownTextPrimitive
+    remarkPlugins={[remarkGfm]}
+    className="prose prose-sm max-w-none text-gray-800 prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-code:text-doan-500 prose-headings:text-gray-900 prose-a:text-hsv-500 prose-strong:text-gray-900"
+  />
+));
 MarkdownText.displayName = 'MarkdownText';
 
 // ── Tooltip icon button ────────────────────────────────────────────────────

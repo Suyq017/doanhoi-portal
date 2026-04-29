@@ -288,7 +288,7 @@ Status = `PENDING` nếu hoạt động bật `requires_approval`, ngược lạ
 4. ParticipationService.approveParticipationsBatch(activity_id, ids[], userId)
    → Mỗi id gọi approveParticipation(), lỗi được ghi vào failed[]
 5. Nếu send_email_notification:
-   → SQL: ctxh_participations JOIN users → email + tên sinh viên cho approved ids
+   → SQL: ctxh_participation JOIN users → email + tên sinh viên cho approved ids
    → Gửi NodemailerService.sendApprovalEmail() cho từng người (không throw)
 6. Trả về summary
 ```

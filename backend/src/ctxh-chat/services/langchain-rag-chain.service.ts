@@ -456,6 +456,24 @@ export class LangChainRagChainService implements OnModuleInit {
       const decision = await this.agentService.decide(question, chatHistory, currentDate);
       const intent = this.decisionToIntent(decision.action);
 
+      // ── Step 2.5: Pending registration override ───────────────────────────────
+      // If there is a pending registration confirmation in memory, route directly to
+      // handleRegistrationIntent so the user's "có"/"không" reply is handled correctly,
+      // regardless of how the LLM classified the message (it often returns out_of_scope
+      // for short replies like "không").
+      if (sessionId && this.memoryService.getPendingRegistration(sessionId)) {
+        this.logger.debug('[Agent] Pending registration detected — overriding to REGISTER_ACTIVITY');
+        const registrationResult = await this.handleRegistrationIntent(
+          question,
+          { activityContext: question },
+          sessionId, currentDate, k, startTime, userOrg,
+        );
+        if (sessionId) {
+          await this.memoryService.saveInteraction(sessionId, question, registrationResult.response);
+        }
+        return registrationResult;
+      }
+
       // ── Step 3: GREETING ──────────────────────────────────────────────────────
       if (decision.action === 'greeting') {
         this.logger.debug('[Agent] GREETING — returning intro response');
@@ -586,6 +604,21 @@ export class LangChainRagChainService implements OnModuleInit {
       // ── Step 2: Agent Decision — intent + search params in one call ──────────
       const decision = await this.agentService.decide(question, chatHistory, currentDate);
       const intent = this.decisionToIntent(decision.action);
+
+      // ── Step 2.5: Pending registration override ───────────────────────────────
+      if (sessionId && this.memoryService.getPendingRegistration(sessionId)) {
+        this.logger.debug('[Agent] Pending registration detected — overriding to REGISTER_ACTIVITY (stream)');
+        const registrationResult = await this.handleRegistrationIntent(
+          question,
+          { activityContext: question },
+          sessionId, currentDate, k, Date.now(), userOrg,
+        );
+        yield registrationResult.response;
+        if (sessionId) {
+          await this.memoryService.saveInteraction(sessionId, question, registrationResult.response);
+        }
+        return;
+      }
 
       // ── Step 3: GREETING ──────────────────────────────────────────────────────
       if (decision.action === 'greeting') {

@@ -227,9 +227,9 @@ ctxh_activities (
 - CTXH_CATEGORY 1–N CTXH_ACTIVITY (Classifies)
 - ORGANIZATION 1–N CTXH_ACTIVITY (Organizes)
 
-### **ctxh_participations** (WEAK ENTITY)
+### **ctxh_participation** (WEAK ENTITY)
 ```sql
-ctxh_participations (
+ctxh_participation (
     participation_id     INT          PK,
     student_id           INT          FK → persons(person_id) NOT NULL,
     activity_id          INT          FK → ctxh_activities(activity_id) NOT NULL,
@@ -445,7 +445,7 @@ payment_transactions (
 -- Cascade deletes (xóa cascade)
 - organizations.parent_org_id → ON DELETE SET NULL
 - ctxh_activities.organization_id → ON DELETE RESTRICT (không cho xóa org có activity)
-- ctxh_participations.activity_id → ON DELETE CASCADE
+- ctxh_participation.activity_id → ON DELETE CASCADE
 - template_fields.template_id → ON DELETE CASCADE
 - submission_answers → ON DELETE CASCADE
 
@@ -461,7 +461,7 @@ payment_transactions (
 ```sql
 -- Trigger để cập nhật ctxh_days_total khi participation được approve
 CREATE TRIGGER update_ctxh_days
-AFTER UPDATE ON ctxh_participations
+AFTER UPDATE ON ctxh_participation
 FOR EACH ROW
 WHEN (NEW.participation_status = 'Approved' AND OLD.participation_status != 'Approved')
 BEGIN
@@ -502,8 +502,8 @@ END;
 CREATE INDEX idx_classes_department ON classes(department_id);
 CREATE INDEX idx_activities_category ON ctxh_activities(category_id);
 CREATE INDEX idx_activities_org ON ctxh_activities(organization_id);
-CREATE INDEX idx_participations_student ON ctxh_participations(student_id);
-CREATE INDEX idx_participations_activity ON ctxh_participations(activity_id);
+CREATE INDEX idx_participations_student ON ctxh_participation(student_id);
+CREATE INDEX idx_participations_activity ON ctxh_participation(activity_id);
 CREATE INDEX idx_submissions_template ON template_submissions(template_id);
 CREATE INDEX idx_submissions_submitter ON template_submissions(submitter_id);
 CREATE INDEX idx_fee_assignments_person ON fee_assignments(person_id);
@@ -516,7 +516,7 @@ CREATE INDEX idx_persons_code ON persons(person_code);
 CREATE INDEX idx_persons_type ON persons(person_type);
 CREATE INDEX idx_activities_status ON ctxh_activities(activity_status);
 CREATE INDEX idx_activities_dates ON ctxh_activities(start_date, end_date);
-CREATE INDEX idx_participations_status ON ctxh_participations(participation_status);
+CREATE INDEX idx_participations_status ON ctxh_participation(participation_status);
 CREATE INDEX idx_campaigns_status ON payment_campaigns(campaign_status);
 CREATE INDEX idx_transactions_status ON payment_transactions(transaction_status);
 CREATE INDEX idx_organizations_parent ON organizations(parent_org_id);

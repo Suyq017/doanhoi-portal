@@ -75,8 +75,8 @@ export function registerAutoApproveNotifyTool(
 
         const studentRows = await dataSource.query<any[]>(
           `SELECT p.id AS participation_id, u.email
-           FROM ctxh_participations p
-           JOIN users u ON u.id = p.student_id
+           FROM ctxh_participation p
+           JOIN users u ON u.code = p.student_code
            WHERE p.id = ANY($1::uuid[])
              AND u.email IS NOT NULL`,
           [successfulIds],

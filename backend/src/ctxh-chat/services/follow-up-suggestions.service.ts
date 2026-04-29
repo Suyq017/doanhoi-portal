@@ -5,14 +5,15 @@ import { FOLLOW_UP_SUGGESTIONS_PROMPT } from '../prompts/follow-up-suggestions.p
 
 /**
  * Zod schema for the structured output returned by the LLM.
- * Forces the model to return exactly 3 strings in an array field.
+ *
+ * Uses 3 flat string fields instead of an array — Ollama/Qwen's tool-calling
+ * implementation handles flat z.object() fields reliably, whereas z.array()
+ * frequently causes structured-output parsing errors on local models.
  */
 export const FollowUpOutputSchema = z.object({
-  suggestions: z
-    .array(z.string())
-    .min(1)
-    .max(3)
-    .describe('Danh sách 3 câu hỏi tiếp theo bằng tiếng Việt'),
+  suggestion1: z.string().describe('Câu hỏi tiếp theo thứ nhất bằng tiếng Việt, ≤ 15 từ'),
+  suggestion2: z.string().describe('Câu hỏi tiếp theo thứ hai bằng tiếng Việt, ≤ 15 từ'),
+  suggestion3: z.string().describe('Câu hỏi tiếp theo thứ ba bằng tiếng Việt, ≤ 15 từ'),
 });
 
 type FollowUpOutput = z.infer<typeof FollowUpOutputSchema>;
@@ -21,7 +22,7 @@ type FollowUpOutput = z.infer<typeof FollowUpOutputSchema>;
 const MAX_ANSWER_CHARS = 500;
 
 /** LLM call timeout in milliseconds */
-const TIMEOUT_MS = 4000;
+const TIMEOUT_MS = 8000;
 
 /**
  * Static fallback suggestions used when the LLM call fails or times out.
@@ -29,20 +30,20 @@ const TIMEOUT_MS = 4000;
 function buildFallbackSuggestions(assistantAnswer: string): string[] {
   const suggestions: string[] = [];
 
-  // if (assistantAnswer.includes('hoạt động') || assistantAnswer.includes('CTXH')) {
-  //   suggestions.push('Cho tôi biết thêm chi tiết về hoạt động này');
-  //   suggestions.push('Làm sao để đăng ký tham gia?');
-  // }
+  if (assistantAnswer.includes('hoạt động') || assistantAnswer.includes('CTXH')) {
+    suggestions.push('Cho tôi biết thêm chi tiết về hoạt động này');
+    suggestions.push('Làm sao để đăng ký tham gia?');
+  }
 
-  // if (assistantAnswer.includes('ngày') || assistantAnswer.includes('thời gian')) {
-  //   suggestions.push('Có hoạt động nào khác trong tháng này không?');
-  // }
+  if (assistantAnswer.includes('ngày') || assistantAnswer.includes('thời gian')) {
+    suggestions.push('Có hoạt động nào khác trong tháng này không?');
+  }
 
-  // if (suggestions.length === 0) {
-  //   suggestions.push('Có hoạt động CTXH nào đang mở đăng ký?');
-  //   suggestions.push('Tìm hoạt động CTXH theo địa điểm');
-  //   suggestions.push('Hoạt động nào có nhiều ngày CTXH nhất?');
-  // }
+  if (suggestions.length === 0) {
+    suggestions.push('Có hoạt động CTXH nào đang mở đăng ký?');
+    suggestions.push('Tìm hoạt động CTXH theo địa điểm');
+    suggestions.push('Hoạt động nào có nhiều ngày CTXH nhất?');
+  }
 
   return suggestions.slice(0, 3);
 }
@@ -94,10 +95,12 @@ export class FollowUpSuggestionsService {
         timeoutPromise,
       ]);
 
-      const suggestions = result.suggestions.filter((s) => s.trim().length > 0).slice(0, 3);
+      const suggestions = [result.suggestion1, result.suggestion2, result.suggestion3]
+        .filter((s) => s && s.trim().length > 0)
+        .slice(0, 3);
 
       if (suggestions.length === 0) {
-        throw new Error('LLM returned empty suggestions array');
+        throw new Error('LLM returned empty suggestions');
       }
 
       this.logger.debug(`[FollowUp] Generated ${suggestions.length} suggestions via LLM`);
@@ -105,6 +108,7 @@ export class FollowUpSuggestionsService {
     } catch (error) {
       this.logger.warn(
         `[FollowUp] LLM call failed, using fallback: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       return buildFallbackSuggestions(assistantAnswer);
     }

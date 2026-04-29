@@ -30,26 +30,11 @@ interface CustomMeta {
 }
 
 // ── Markdown ───────────────────────────────────────────────────────────────
-const preprocessMarkdown = (text: string) =>
-  text.replace(/(?<!\n)\n(?!\n)(?!- )/g, '\n\n');
-
-const handleMarkdownClick = (e: React.MouseEvent<HTMLDivElement>) => {
-  const link = (e.target as HTMLElement).closest('a');
-  if (link?.href) {
-    e.preventDefault();
-    window.open(link.href, '_blank', 'noopener,noreferrer');
-  }
-};
-
 const MarkdownText: FC = memo(() => (
-
-  <div onClick={handleMarkdownClick}>
-    <MarkdownTextPrimitive
-      preprocess={preprocessMarkdown}
-      className="prose prose-sm max-w-none text-gray-800 prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-code:text-doan-500 prose-headings:text-gray-900 prose-a:text-hsv-500 prose-a:underline prose-a:font-medium prose-strong:text-gray-900"
-    />
-  </div>
-
+  <MarkdownTextPrimitive
+    remarkPlugins={[remarkGfm]}
+    className="prose prose-sm max-w-none text-gray-800 prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-code:text-doan-500 prose-headings:text-gray-900 prose-a:text-hsv-500 prose-strong:text-gray-900"
+  />
 ));
 MarkdownText.displayName = 'MarkdownText';
 
@@ -260,7 +245,9 @@ const BranchPicker: FC<{ className?: string }> = ({ className }) => (
 const SUGGESTIONS = [
   'Xin chào! Chatbot này có thể giúp gì cho tôi?',
   'Hoạt động CTXH nào đang diễn ra?',
-  'Số ngày CTXH hiện tại của tôi?',
+  'Hoạt động nào được hơn 1 ngày CTXH?',
+  'Có hoạt động nào diễn ra ở cơ sở 1, Phường Diêm Hồng không?',
+  'Có hoạt động nào diễn ra ở cơ sở 2, Phường Đông Hòa không?',
 ];
 
 // ── Main Popup ─────────────────────────────────────────────────────────────
@@ -273,10 +260,10 @@ export function ChatbotPopup({
 }) {
   return (
     <div
-      className="fixed bottom-6 right-6 z-[9998] flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl
-        w-[50vw] min-w-[360px] h-[calc(100vh-3rem)] max-h-[900px]
+      className="fixed bottom-[5.5rem] right-6 z-[9998] flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl
+        w-[50vw] min-w-[360px] h-[calc(100vh-7rem)] max-h-[900px]
         max-[1023px]:w-[60vw]
-        max-[767px]:inset-0 max-[767px]:w-full max-[767px]:h-full max-[767px]:rounded-none max-[767px]:min-w-0"
+        max-[767px]:inset-0 max-[767px]:w-full max-[767px]:h-full max-[767px]:rounded-none max-[767px]:min-w-0 max-[767px]:bottom-0"
       style={{
         animation: 'chatbot-slide-up 200ms ease-out',
       }}

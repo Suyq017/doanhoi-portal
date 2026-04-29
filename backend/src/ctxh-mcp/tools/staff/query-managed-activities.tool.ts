@@ -78,7 +78,7 @@ export function registerQueryManagedActivitiesTool(
            )::int AS current_participants
          FROM ctxh_activities a
          LEFT JOIN organizations o ON o.id = a.organization_id
-         LEFT JOIN ctxh_participations p ON p.activity_id = a.id
+         LEFT JOIN ctxh_participation p ON p.activity_id = a.id
          WHERE ${whereClause}
          GROUP BY a.id, o.name
          ORDER BY a.created_at DESC

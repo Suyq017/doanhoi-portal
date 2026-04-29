@@ -31,6 +31,8 @@ Yêu cầu:
     'human',
     `Câu hỏi của sinh viên: {user_question}
 
-Câu trả lời vừa rồi: {assistant_answer}`,
+Câu trả lời vừa rồi: {assistant_answer}
+
+Hãy điền đúng 3 câu hỏi vào các trường suggestion1, suggestion2, suggestion3.`,
   ],
 ]);

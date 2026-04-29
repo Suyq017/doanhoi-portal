@@ -367,7 +367,7 @@ SELECT * FROM org_tree;
 ### 5.5. Triggers
 **1. update_ctxh_days:**
 ```sql
-AFTER UPDATE ON ctxh_participations
+AFTER UPDATE ON ctxh_participation
 WHEN (NEW.participation_status = 'Approved')
 → Cộng actual_days vào persons.ctxh_days_total
 ```

@@ -22,6 +22,7 @@ export interface NotificationEmailData {
   bcc: string;
   subject: string;
   body: string;
+  activityName?: string;
 }
 
 @Injectable()
@@ -132,12 +133,13 @@ export class NodemailerService implements OnModuleInit {
   }
 
   async sendNotificationEmail(data: NotificationEmailData): Promise<boolean> {
-    const { bcc, subject, body } = data;
+    const { bcc, subject, body, activityName } = data;
 
     if (!bcc.length) return true;
 
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
+        ${activityName ? `<p style="margin-bottom:4px;color:#555;font-size:13px;">Hoạt động: <strong>${activityName}</strong></p>` : ''}
         <h2 style="color:#1a73e8;">${subject}</h2>
         <div style="margin:16px 0;white-space:pre-line;line-height:1.6;">${body}</div>
         <hr style="margin:24px 0;" />
@@ -153,7 +155,7 @@ export class NodemailerService implements OnModuleInit {
         from: `"${this.configService.get('MAIL_FROM_NAME', 'Hệ thống CTXH')}" <${senderAddress}>`,
         to: senderAddress,
         bcc: bcc,
-        subject: `[CTXH] ${subject}`,
+        subject: `[CTXH${activityName ? ` - ${activityName}` : ''}] ${subject}`,
         html,
       });
       this.logger.log(`Notification email sent (bcc count: ${bcc.split(',').length}) | subject: "${subject}"`);

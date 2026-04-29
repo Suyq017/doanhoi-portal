@@ -375,32 +375,38 @@ export class StaffAgentService implements OnModuleInit {
             });
           }
 
-          // 5. Collect email addresses before approving
-          let emailSet = new Set<string>();
-          if (send_email_notification) {
-            emailSet = new Set(
-              allPending
-                .filter((p: any) => targetIds.includes(p.id) && p.student?.email)
-                .map((p: any) => p.student.email as string),
-            );
-          }
-
-          // 6. Batch approve
+          // 5. Batch approve
           const batchResult = await participationService.approveParticipationsBatch(
             activity_id,
             targetIds,
             userId,
           );
 
-          // 7. Send single BCC email to all approved students
+          // 6. Send single BCC email to all approved students
+          // Fetch emails via student_id JOIN after approval (more reliable than student_code lookup)
           let emailsSent = 0;
           let emailsFailed = 0;
 
           if (send_email_notification && batchResult.successful.length > 0) {
-            const emails = Array.from(emailSet);
+            const successfulIds = batchResult.successful.map((s: any) => s.participation_id);
+            console.log('[approve_and_notify] successfulIds:', successfulIds);
+
+            const studentRows = await dataSource.query<any[]>(
+              `SELECT p.id AS participation_id, p.student_code, u.email
+               FROM ctxh_participation p
+               JOIN users u ON u.code = p.student_code
+               WHERE p.id = ANY($1::uuid[])
+                 AND u.email IS NOT NULL`,
+              [successfulIds],
+            );
+            console.log('[approve_and_notify] studentRows from DB:', studentRows);
+
+            const emails = studentRows.map((r: any) => r.email as string);
             const bccList = emails.join(', ');
+            console.log('[approve_and_notify] emails:', emails, '| bccList:', bccList);
 
             if (bccList) {
+              console.log('[approve_and_notify] sending email to:', bccList);
               const sent = await mailerService.sendApprovalEmail({
                 bcc: bccList,
                 activityName: activity.name,
@@ -409,8 +415,11 @@ export class StaffAgentService implements OnModuleInit {
                 totalDays: activity.total_days !== null ? Number(activity.total_days) : 0,
                 customMessage: email_custom_message,
               });
+              console.log('[approve_and_notify] sendApprovalEmail result:', sent);
               if (sent) emailsSent = emails.length;
               else emailsFailed = emails.length;
+            } else {
+              console.log('[approve_and_notify] bccList empty — email skipped');
             }
           }
 
@@ -596,6 +605,7 @@ export class StaffAgentService implements OnModuleInit {
       description:
         'Tạo hoạt động CTXH mới. Nhận tên danh mục và tên tổ chức (không cần UUID). ' +
         'Nếu chưa rõ tên chính xác, hãy dùng lookup_category hoặc lookup_organization trước. ' +
+        'Nếu không cung cấp tên danh mục cứ để danh mục là "Họat động khác". ' +
         'Yêu cầu quyền ctxh.activities.create cho đơn vị tổ chức.',
       schema: z.object({
         name: z.string().min(1).max(255).describe('Tên hoạt động CTXH'),
@@ -701,6 +711,7 @@ export class StaffAgentService implements OnModuleInit {
       description:
         'Tạo nhiều hoạt động CTXH cùng lúc (tối đa 3). ' +
         'Dùng khi người dùng muốn tạo 2-3 hoạt động trong một yêu cầu. ' +
+        'Nếu không cung cấp tên danh mục cứ để danh mục là "Hoạt động khác". ' +
         'Mỗi hoạt động có thể có tổ chức, danh mục và thông tin khác nhau. ' +
         'Nếu chưa rõ tên chính xác của danh mục/tổ chức, hãy dùng lookup_category hoặc lookup_organization trước. ' +
         'Yêu cầu quyền ctxh.activities.create cho từng đơn vị tổ chức.',
@@ -742,7 +753,11 @@ export class StaffAgentService implements OnModuleInit {
 
             // Resolve organization
             const organizations = await dataSource.query(
-              `SELECT id, name, type, code FROM organizations WHERE name ILIKE $1 AND "isActive" = true LIMIT 5`,
+              ` SELECT id, name, type, code 
+                FROM organizations 
+                WHERE name ILIKE $1 
+                AND "isActive" = true 
+                LIMIT 5`,
               [`%${item.organization_name}%`],
             );
             if (organizations.length === 0) {

@@ -243,7 +243,6 @@ const ORG_PREFIX_WORDS = [
   'khoa',
   'ban',
   'phòng',
-  'viện',
   'clb',
 ];
 
