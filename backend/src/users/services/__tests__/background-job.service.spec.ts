@@ -28,6 +28,7 @@ describe("UserBackgroundJobService", () => {
 
     expect(cancelled).toBe(true);
     expect(service.getJob(id)?.status).toBe("cancelled");
+    expect(service.getPendingJobs().find((job) => job.id === id)).toBeUndefined();
   });
 
   it("should return false when canceling unknown job", () => {

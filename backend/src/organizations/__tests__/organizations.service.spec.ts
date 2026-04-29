@@ -22,6 +22,7 @@ describe("OrganizationsService", () => {
     save: jest.fn(async (value) => value) as any,
     count: jest.fn() as any,
     delete: jest.fn() as any,
+    remove: jest.fn() as any,
     find: jest.fn() as any,
     createQueryBuilder: jest.fn() as any,
   });
@@ -110,6 +111,18 @@ describe("OrganizationsService", () => {
     expect(result).toEqual(expect.objectContaining({ organizationId: "org-1", userId: "user-1", role: UserOrgRole.ADMIN }));
   });
 
+  it("should remove an existing member and stop when there are no child organizations", async () => {
+    const membership = { id: "uo-1", organizationId: "org-1", userId: "user-1" };
+    userOrganizationsRepository.findOne.mockResolvedValueOnce(membership);
+    userOrganizationsRepository.remove.mockResolvedValue(membership);
+    organizationsRepository.find.mockResolvedValueOnce([]);
+
+    await expect(service.removeMember("org-1", "user-1")).resolves.toBeUndefined();
+
+    expect(userOrganizationsRepository.remove).toHaveBeenCalledWith(membership);
+    expect(organizationsRepository.find).toHaveBeenCalledWith({ where: { parent: { id: "org-1" } } });
+  });
+
   it("should reject removing an organization with children", async () => {
     organizationsRepository.findOne.mockResolvedValue({ id: "org-1", children: [{ id: "child-1" }] });
 
@@ -124,5 +137,27 @@ describe("OrganizationsService", () => {
 
     expect(organizationsRepository.update).toHaveBeenCalledWith("org-1", expect.objectContaining({ name: "Org Updated" }));
     expect(result.id).toBe("org-1");
+  });
+
+  it("should recursively remove member from child organizations", async () => {
+    const parentMembership = { id: "uo-1", organizationId: "org-1", userId: "user-1" };
+    const childMembership = { id: "uo-2", organizationId: "child-1", userId: "user-1" };
+
+    userOrganizationsRepository.findOne
+      .mockResolvedValueOnce(parentMembership) // Remove from parent
+      .mockResolvedValueOnce(childMembership); // Remove from child
+
+    userOrganizationsRepository.remove
+      .mockResolvedValueOnce(parentMembership)
+      .mockResolvedValueOnce(childMembership);
+
+    organizationsRepository.find
+      .mockResolvedValueOnce([{ id: "child-1" }]) // First call: parent has children
+      .mockResolvedValueOnce([]); // Second call: child has no children
+
+    await expect(service.removeMember("org-1", "user-1")).resolves.toBeUndefined();
+
+    expect(userOrganizationsRepository.remove).toHaveBeenCalledTimes(2);
+    expect(organizationsRepository.find).toHaveBeenCalledTimes(2);
   });
 });

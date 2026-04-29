@@ -411,4 +411,133 @@ describe("UsersService", () => {
   it("should return false when password is missing", async () => {
     await expect(service.validatePassword({ password: null } as any, "secret")).resolves.toBe(false);
   });
+
+  it("should set lastLogin when updating refresh token with non-null value", async () => {
+    await service.updateRefreshToken("user-1", "new-token");
+
+    expect(usersRepository.update).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({
+        refreshToken: "new-token",
+        lastLogin: expect.any(Date),
+      }),
+    );
+  });
+
+  it("should not set lastLogin when updating refresh token with null value", async () => {
+    await service.updateRefreshToken("user-1", null);
+
+    expect(usersRepository.update).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({
+        refreshToken: null,
+        lastLogin: undefined,
+      }),
+    );
+  });
+
+  it("should find user by email with all relations loaded", async () => {
+    const mockUser = { id: "u-1", email: "test@example.com" };
+    usersRepository.findOne.mockResolvedValue(mockUser);
+
+    const result = await service.findByEmail("test@example.com");
+
+    expect(result).toEqual(mockUser);
+    expect(usersRepository.findOne).toHaveBeenCalledWith({
+      where: { email: "test@example.com" },
+      relations: expect.arrayContaining([
+        "managementDepartment",
+        "userRoles",
+        "organizations",
+      ]),
+    });
+  });
+
+  it("should handle birthDate conversion during user creation", async () => {
+    usersRepository.findOne.mockResolvedValue(null);
+    usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-birthdate" }));
+    const bcrypt = require("bcryptjs");
+    jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed" as any);
+
+    await service.create({
+      email: "birth@example.com",
+      code: "SV010",
+      birthDate: "1990-05-15",
+    } as any);
+
+    expect(usersRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        birthDate: expect.any(Date),
+      }),
+    );
+  });
+
+  it("should not set birthDate when not provided during creation", async () => {
+    usersRepository.findOne.mockResolvedValue(null);
+    usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-no-birthdate" }));
+    const bcrypt = require("bcryptjs");
+    jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed" as any);
+
+    await service.create({
+      email: "nobirth@example.com",
+      code: "SV011",
+    } as any);
+
+    expect(usersRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        birthDate: undefined,
+      }),
+    );
+  });
+
+  it("should call remove when given a single user id", async () => {
+    usersRepository.find.mockResolvedValue([{ id: "u-1" }]);
+
+    await service.removeMultiple(["u-1"]);
+
+    expect(usersRepository.remove).toHaveBeenCalledWith([{ id: "u-1" }]);
+  });
+
+  it("should skip blank role ids during legacy role assignment in create", async () => {
+    usersRepository.findOne.mockResolvedValue(null);
+    usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-blank-roles" }));
+    const bcrypt = require("bcryptjs");
+    jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed" as any);
+
+    await service.create({
+      email: "blank-roles@example.com",
+      code: "SV012",
+      password: "secret",
+      roles: ["role-1", "", "  ", "role-2"],
+      organizationId: "org-1",
+    } as any);
+
+    expect(rolesService.assignUserRole).toHaveBeenCalledTimes(2);
+    expect(rolesService.assignUserRole).toHaveBeenCalledWith("user-blank-roles", "role-1", "org-1");
+    expect(rolesService.assignUserRole).toHaveBeenCalledWith("user-blank-roles", "role-2", "org-1");
+  });
+
+  it("should allow update with basic fields without role changes", async () => {
+    usersRepository.findOne.mockResolvedValue({ id: "user-update-basic" });
+    usersRepository.save.mockResolvedValue({ id: "user-update-basic" });
+
+    await service.update("user-update-basic", {
+      email: "updated@example.com",
+      birthDate: "1995-12-25",
+    } as any);
+
+    expect(usersRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "updated@example.com",
+        birthDate: "1995-12-25",
+      }),
+    );
+    expect(rolesService.removeAllUserRoles).not.toHaveBeenCalled();
+  });
+
+  it("should return null when findOne throws NotFoundException", async () => {
+    usersRepository.findOne.mockResolvedValue(null);
+
+    await expect(service.findOne("missing")).rejects.toThrow("User not found");
+  });
 });

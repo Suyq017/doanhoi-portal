@@ -7,6 +7,7 @@ describe("Departments ImportService", () => {
     findOne: jest.fn() as any,
     save: jest.fn() as any,
     create: jest.fn((v) => v) as any,
+    insert: jest.fn() as any,
   });
 
   const createExcelParserMock = () => ({
@@ -25,22 +26,40 @@ describe("Departments ImportService", () => {
     getValidatedData: jest.fn() as any,
     updateSessionImport: jest.fn() as any,
     getBatchProgress: jest.fn() as any,
+    getNextPendingBatch: jest.fn() as any,
+    initializeBatchProcessing: jest.fn() as any,
+    finalizeBatchProcessing: jest.fn() as any,
+    updateBatchProgress: jest.fn() as any,
     pauseImport: jest.fn() as any,
     resumeImport: jest.fn() as any,
     updateSessionStatus: jest.fn() as any,
   });
 
   const createBatchProcessingMock = () => ({
+    createBatches: jest.fn() as any,
+    updateBatchStatus: jest.fn() as any,
+    createFallbackBatches: jest.fn() as any,
     calculateStats: jest.fn() as any,
   });
 
   const createConfigMock = () => ({
     shouldUseBatchProcessing: jest.fn() as any,
+    getOptimizedBatchSize: jest.fn() as any,
+    getBatchProcessingConfig: jest.fn() as any,
+    getTransactionConfig: jest.fn() as any,
+    getPerformanceConfig: jest.fn() as any,
   });
 
   const createMonitoringMock = () => ({
     initializeSessionMonitoring: jest.fn() as any,
     finalizeSessionMonitoring: jest.fn() as any,
+    updateSessionProgress: jest.fn() as any,
+    recordDatabaseOperation: jest.fn() as any,
+    recordError: jest.fn() as any,
+  });
+
+  const createTransactionMock = () => ({
+    executeTransaction: jest.fn() as any,
   });
 
   let service: DepartmentsImportService;
@@ -49,23 +68,29 @@ describe("Departments ImportService", () => {
   let sessionService: ReturnType<typeof createSessionMock>;
   let batchProcessingService: ReturnType<typeof createBatchProcessingMock>;
   let configService: ReturnType<typeof createConfigMock>;
+  let transactionService: ReturnType<typeof createTransactionMock>;
+  let monitoringService: ReturnType<typeof createMonitoringMock>;
+  let repositoryMock: ReturnType<typeof createRepositoryMock>;
 
   beforeEach(() => {
+    repositoryMock = createRepositoryMock();
     excelParserService = createExcelParserMock();
     validationService = createValidationMock();
     sessionService = createSessionMock();
     batchProcessingService = createBatchProcessingMock();
     configService = createConfigMock();
+    transactionService = createTransactionMock();
+    monitoringService = createMonitoringMock();
 
     service = new DepartmentsImportService(
-      createRepositoryMock() as never,
+      repositoryMock as never,
       excelParserService as never,
       validationService as never,
       sessionService as never,
       batchProcessingService as never,
-      {} as never,
+      transactionService as never,
       configService as never,
-      createMonitoringMock() as never,
+      monitoringService as never,
     );
   });
 
@@ -287,6 +312,71 @@ describe("Departments ImportService", () => {
     expect(sessionService.updateSessionStatus).toHaveBeenCalledWith("session-1", "cancelled");
   });
 
+  it("should resume a paused session and mark it imported when no batches remain", async () => {
+    sessionService.getSession.mockReturnValue({ status: "paused" });
+    sessionService.getValidatedData.mockReturnValue([{ name: "Finance", _errors: [], _warnings: [] }]);
+    sessionService.getBatchProgress.mockReturnValue({ batches: [] });
+    sessionService.getNextPendingBatch.mockReturnValue(null);
+
+    await expect(service.resumeImport("session-1")).resolves.toEqual({
+      success: true,
+      message: "Import resumed successfully",
+    });
+
+    expect(sessionService.resumeImport).toHaveBeenCalledWith("session-1");
+    expect(sessionService.updateSessionStatus).toHaveBeenCalledWith("session-1", "imported");
+  });
+
+  it("should retry failed batches through fallback batches when enabled", async () => {
+    const validatedData = [
+      { name: "Finance", _errors: [], _warnings: [] },
+      { name: "HR", _errors: [], _warnings: [] },
+    ];
+
+    sessionService.getSession.mockReturnValue({ status: "validated", fileName: "departments.xlsx" });
+    sessionService.getValidatedData.mockReturnValue(validatedData);
+    configService.getBatchProcessingConfig.mockReturnValue({
+      maxRetries: 2,
+      retryDelay: 0,
+      fallbackBatchSize: 1,
+      enableFallback: true,
+      enableOptimizedBatchSize: false,
+    });
+    configService.getOptimizedBatchSize.mockReturnValue(1);
+    batchProcessingService.createBatches.mockReturnValue([{ batchId: "batch-1", data: [{ name: "Finance" }] }]);
+    batchProcessingService.createFallbackBatches.mockReturnValue([
+      { batchId: "batch-1-fallback", data: [{ name: "Finance" }] },
+    ]);
+    batchProcessingService.calculateStats.mockReturnValue({ estimatedTimeRemaining: 0 });
+    const processBatchSpy = jest.spyOn(service as any, "processBatch")
+      .mockRejectedValueOnce(new Error("batch failed"))
+      .mockResolvedValueOnce({
+        success: true,
+        importedCount: 1,
+        skippedCount: 0,
+        failedCount: 0,
+        errors: [],
+        importedIds: ["dept-1"],
+        processingTime: 5,
+      });
+
+    const result = await (service as any).performBatchImport(
+      "session-1",
+      validatedData,
+      { enableFallback: true },
+    );
+
+    expect(processBatchSpy).toHaveBeenCalledTimes(2);
+    expect(batchProcessingService.createFallbackBatches).toHaveBeenCalledWith(
+      { batchId: "batch-1", data: [{ name: "Finance" }] },
+      expect.objectContaining({ enableFallback: true }),
+    );
+    expect(result.importResult.success).toBe(false);
+    expect(result.importResult.importedCount).toBe(1);
+    expect(sessionService.initializeBatchProcessing).toHaveBeenCalledWith("session-1", 1, 2);
+    expect(sessionService.finalizeBatchProcessing).toHaveBeenCalledWith("session-1", false);
+  });
+
   it("should throw not found when no batch progress exists", async () => {
     sessionService.getSession.mockReturnValue({ status: "importing" });
     sessionService.getBatchProgress.mockReturnValue(null);
@@ -307,5 +397,230 @@ describe("Departments ImportService", () => {
     excelParserService.generateTemplate.mockReturnValue(buffer);
 
     await expect(service.generateTemplate()).resolves.toBe(buffer);
+  });
+
+  describe("private import flow branches", () => {
+    it("should import valid rows and normalize empty fields", async () => {
+      repositoryMock.findOne.mockResolvedValue(null);
+      repositoryMock.save.mockResolvedValue({ id: "dept-1" });
+
+      const result = await (service as any).performImport([
+        {
+          name: "Finance",
+          code: "",
+          description: "",
+          _errors: [],
+          _warnings: [],
+        },
+      ]);
+
+      expect(repositoryMock.create).toHaveBeenCalledWith({
+        name: "Finance",
+        code: null,
+        description: null,
+      });
+      expect(repositoryMock.save).toHaveBeenCalledWith({
+        name: "Finance",
+        code: null,
+        description: null,
+      });
+      expect(result).toEqual(
+        expect.objectContaining({
+          success: true,
+          importedCount: 1,
+          skippedCount: 0,
+          failedCount: 0,
+          importedIds: ["dept-1"],
+        }),
+      );
+    });
+
+    it("should skip conflicting rows when skipConflicts is enabled", async () => {
+      repositoryMock.findOne.mockResolvedValue({ id: "existing" });
+
+      const result = await (service as any).performImport(
+        [
+          {
+            name: "Finance",
+            code: "FIN",
+            description: "Budget",
+            _errors: [],
+            _warnings: [],
+          },
+        ],
+        { skipConflicts: true },
+      );
+
+      expect(result.importedCount).toBe(0);
+      expect(result.skippedCount).toBe(1);
+      expect(result.errors).toHaveLength(0);
+      expect(repositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it("should report duplicate conflict with code information", async () => {
+      repositoryMock.findOne.mockImplementation(({ where }: any) => {
+        if (where.name) {
+          return Promise.resolve(null);
+        }
+        if (where.code) {
+          return Promise.resolve({ id: "existing-code" });
+        }
+        return Promise.resolve(null);
+      });
+
+      const result = await (service as any).performImport([
+        {
+          name: "Finance",
+          code: "FIN",
+          description: "Budget",
+          _errors: [],
+          _warnings: [],
+        },
+      ]);
+
+      expect(result.success).toBe(true);
+      expect(result.importedCount).toBe(0);
+      expect(result.failedCount).toBe(1);
+      expect(result.errors[0]).toContain('or code "FIN" already exists');
+    });
+
+    it("should mark a row failed when repository save throws", async () => {
+      repositoryMock.findOne.mockResolvedValue(null);
+      repositoryMock.save.mockRejectedValue(new Error("db down"));
+
+      const result = await (service as any).performImport([
+        {
+          name: "Finance",
+          code: "FIN",
+          description: "Budget",
+          _errors: [],
+          _warnings: [],
+        },
+      ]);
+
+      expect(result.success).toBe(false);
+      expect(result.importedCount).toBe(0);
+      expect(result.failedCount).toBe(1);
+      expect(result.errors[0]).toBe("Failed to import row: db down");
+    });
+  });
+
+  describe("private batch flow branches", () => {
+    it("should process batch data through a query runner repository", async () => {
+      const queryRunnerRepository = {
+        findOne: jest.fn().mockResolvedValue(null),
+        insert: jest.fn().mockResolvedValue({ identifiers: [{ id: "d-1" }, { id: "d-2" }] }),
+      };
+      const queryRunner = {
+        manager: {
+          getRepository: jest.fn().mockReturnValue(queryRunnerRepository),
+        },
+      };
+
+      const result = await (service as any).processBatchData(
+        [
+          { name: "Finance", code: "FIN", description: "Budget", _errors: [], _warnings: [] },
+          { name: "HR", code: "HR", description: "People", _errors: [], _warnings: [] },
+        ],
+        { skipConflicts: false },
+        queryRunner,
+      );
+
+      expect(queryRunner.manager.getRepository).toHaveBeenCalled();
+      expect(queryRunnerRepository.insert).toHaveBeenCalledWith([
+        { name: "Finance", code: "FIN", description: "Budget" },
+        { name: "HR", code: "HR", description: "People" },
+      ]);
+      expect(result).toEqual(
+        expect.objectContaining({
+          importedCount: 2,
+          skippedCount: 0,
+          failedCount: 0,
+          importedIds: ["d-1", "d-2"],
+        }),
+      );
+    });
+
+    it("should accumulate failures when bulk insert throws", async () => {
+      repositoryMock.findOne.mockResolvedValue(null);
+      repositoryMock.insert.mockRejectedValue(new Error("insert failed"));
+
+      const result = await (service as any).processBatchData([
+        { name: "Finance", code: "FIN", description: "Budget", _errors: [], _warnings: [] },
+        { name: "HR", code: "HR", description: "People", _errors: [], _warnings: [] },
+      ]);
+
+      expect(result.importedCount).toBe(0);
+      expect(result.failedCount).toBe(2);
+      expect(result.errors[0]).toBe("Bulk insert failed: insert failed");
+    });
+
+    it("should execute batch processing without transaction when disabled", async () => {
+      const processBatchDataSpy = jest
+        .spyOn(service as any, "processBatchData")
+        .mockResolvedValue({
+          importedCount: 1,
+          skippedCount: 0,
+          failedCount: 0,
+          errors: [],
+          importedIds: ["d-1"],
+        });
+
+      configService.getBatchProcessingConfig.mockReturnValue({
+        maxRetries: 3,
+        retryDelay: 0,
+        fallbackBatchSize: 1,
+        enableFallback: false,
+        enableOptimizedBatchSize: false,
+      });
+      configService.getOptimizedBatchSize.mockReturnValue(50);
+      configService.getTransactionConfig.mockReturnValue({});
+      configService.getPerformanceConfig.mockReturnValue({ slowQueryThreshold: 1000 });
+
+      const result = await (service as any).processBatch(
+        { batchId: "batch-1", data: [{ name: "Finance" }] },
+        { enableTransaction: false },
+      );
+
+      expect(processBatchDataSpy).toHaveBeenCalledWith(
+        [{ name: "Finance" }],
+        { enableTransaction: false },
+      );
+      expect(result).toEqual(
+        expect.objectContaining({
+          success: true,
+          importedCount: 1,
+          failedCount: 0,
+          errors: [],
+        }),
+      );
+    });
+
+    it("should record transaction failure when transaction execution fails", async () => {
+      transactionService.executeTransaction.mockResolvedValue({
+        success: false,
+        executionTime: 25,
+        error: "deadlock",
+        errorType: "transaction",
+      });
+      configService.getTransactionConfig.mockReturnValue({});
+      configService.getPerformanceConfig.mockReturnValue({ slowQueryThreshold: 1000 });
+
+      const processBatchDataSpy = jest.spyOn(service as any, "processBatchData");
+
+      const result = await (service as any).processBatch(
+        { batchId: "batch-9", data: [{ name: "Finance" }] },
+        { enableTransaction: true },
+      );
+
+      expect(processBatchDataSpy).not.toHaveBeenCalled();
+      expect(result.success).toBe(false);
+      expect(result.failedCount).toBe(1);
+      expect(result.errors).toContain("deadlock");
+      expect(monitoringService.recordError).toHaveBeenCalledWith(
+        "Transaction failed for batch batch-9: deadlock",
+        "transaction",
+      );
+    });
   });
 });

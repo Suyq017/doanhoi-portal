@@ -105,6 +105,47 @@ describe("PaymentCampaignService", () => {
     await expect(service.getAccessibleOrganizations("user-1")).resolves.toEqual(["org-1"]);
   });
 
+  it("should treat global system admin permission as unrestricted access", async () => {
+    rolesService.getUserRoles.mockResolvedValue([
+      {
+        organizationId: null,
+        role: {
+          name: "admin",
+          permissions: [{ code: "system.access_admin", isActive: true }],
+        },
+      },
+    ]);
+    organizationRepository.find.mockResolvedValue([{ id: "org-1", name: "Org 1" }]);
+
+    await expect(service.getAccessibleOrganizations("user-1")).resolves.toEqual([]);
+    await expect(service.getAccessibleOrganizationsWithDetails("user-1")).resolves.toEqual([
+      { id: "org-1", name: "Org 1" },
+    ]);
+  });
+
+  it("should skip organization filter when accessible organization list is empty", async () => {
+    const queryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn(async () => [[], 0] as any),
+    } as any;
+    campaignRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    await service.findAll({
+      accessibleOrgIds: [],
+      page: 1,
+      limit: 10,
+    });
+
+    expect(queryBuilder.andWhere).not.toHaveBeenCalledWith(
+      "campaign.organizationId IN (:...accessibleOrgIds)",
+      expect.anything(),
+    );
+  });
+
   it("should return all organizations for super admin users", async () => {
     rolesService.getUserRoles.mockResolvedValue([
       {

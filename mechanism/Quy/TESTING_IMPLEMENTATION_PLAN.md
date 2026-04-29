@@ -227,16 +227,58 @@ Kế hoạch được xem là hoàn thành khi:
 
 ### 10.2 Kết quả định lượng hiện tại
 
-- Tổng số test suite backend đang pass: `77`.
-- Tổng số test case backend đang pass: `840` (↑ từ 729).
-- Coverage statements backend hiện tại: `62.43%` (↑ từ 61.68%, target 70%).
-- Coverage branches: `56.37%`.
-- Coverage functions: `60.31%`.
-- Coverage lines: `62.53%` (↑ từ 61.74%).
+- Tổng số test suite backend đang pass: `79`.
+- Tổng số test case backend đang pass: `897` (↑ từ 878).
+- Coverage statements backend hiện tại: `64.55%` (↑ từ 64.44%, target 70%).
+- Coverage branches: `58.39%` (↑ từ 58.32%).
+- Coverage functions: `62.52%` (↑ từ 62.46%).
+- Coverage lines: `64.69%` (↑ từ 64.57%).
 
 ### 10.3 Những phần đã hiện thực (cập nhật vòng mới)
 
-**Mới bơm thêm trong vòng này:**
+**Mới bơm thêm trong vòng này (29/04/2026 - tiếp tục):**
+
+- **organizations/services/__tests__/batch-import.service.spec.ts**: Thêm 1 test case cho nhánh rollback transaction khi sub-batch fail
+  - Test `processBatch` khi `processSubBatch` ném lỗi → rollback, release connection, record error vào session
+  
+- **organizations/__tests__/organization-import.service.spec.ts**: Thêm 2 test cases cho nhánh invalid records và skipErrors flow
+  - Test `executeImport` reject khi có invalid records và skipErrors = false
+  - Test `executeImport` skip invalid rows và dedupe existing members khi skipErrors = true
+  
+- **organizations/__tests__/organizations.service.spec.ts**: Thêm 1 test case cho nhánh recursive member removal với child organizations
+  - Test `removeMember` recursive: xóa từ parent → xóa từ child → dừng khi không còn children
+
+**Mới bơm thêm trong vòng này (trước):**
+
+- **common/middleware/clean-empty-strings.middleware.spec.ts**: `17` test cases, coverage `100%`
+	- Test recursive normalization của body request với string rỗng, whitespace-only, nested object, array, null, number, boolean
+
+- **classes/services/__tests__/import.service.spec.ts**: thêm 2 test cases cho nhánh lỗi simple import và trạng thái batch bị pause
+	- Test `executeSimpleImport` khi `performImport` ném lỗi, update session với result thất bại
+	- Test `performBatchImport` dừng sớm khi session đang paused
+
+- **export/__tests__/export.controller.spec.ts**: thêm 4 test cases cho nhánh happy path và error path của export controller
+	- Test `exportUsers` happy path với setHeader/send
+	- Test `exportUsers` wrap lỗi thành `BAD_REQUEST`
+	- Test `exportOrganizationMembers` trả `NOT_FOUND` khi thiếu tổ chức
+	- Test `exportPaymentAssignments` trả `BAD_REQUEST` khi lỗi không phải thiếu dữ liệu
+
+- **organizations/__tests__/organizations.service.spec.ts**: thêm test cho nhánh `removeMember` khi membership tồn tại và không có child organizations
+	- Test `removeMember` xóa membership hiện có và dừng khi không có children
+
+- **departments/services/import.service.spec.ts**: mở rộng thêm branch coverage cho luồng import nghiệp vụ
+	- Test `performImport` cho normalize dữ liệu, duplicate conflict, skipConflicts, save failure
+	- Test `processBatchData` cho queryRunner path, bulk insert success/failure
+	- Test `resumeImport`/`continueBatchImport` và fallback batch recovery
+
+- **organizations/services/batch-import.service.spec.ts**: thêm 7 test cases cho luồng batch import thành viên tổ chức
+	- Test guard `level` / `organizationId`, validation branches, skip duplicate active, reactivate inactive, bulk add dedupe, cleanup session
+
+- **users/services/import.service.spec.ts**: thêm 5 test cases cho luồng import người dùng
+	- Test upload file rỗng dữ liệu, executeImport với batchSize truyền vào, generateTemplate, getSystemHealth, và các nhánh trạng thái liên quan
+
+- **roles/__tests__/roles.service.spec.ts**: thêm 2 test cases cho nhánh xóa và seed mặc định
+	- Test remove không có assignment liên kết và seedDefaultPermissions/seedDefaultRoles khi repository rỗng
 
 - **metrics.service.spec.ts**: Mở rộng từ 2 → **3 test cases**, coverage từ 0% → **100%**
 	- Test HTTP request metrics cả đường thành công lẫn nhánh lỗi `try/catch`

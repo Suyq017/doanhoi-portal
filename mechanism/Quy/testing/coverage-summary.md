@@ -7,12 +7,12 @@ Cập nhật đến: 29/04/2026
 - Phạm vi hiện tại: toàn backend (không test ctxh-chat).
 - Lệnh xác nhận gần nhất: `npm run test:cov`
 - Kết quả toàn bộ suite trong lần chạy gần nhất:
--  - Test suites: `77/77` pass
--  - Test cases: `840/840` pass (↑ từ 729)
--  - Statements: `62.43%` (↑ từ 61.68%, target 70%)
--  - Branches: `56.37%` (↑ from 55.22%)
--  - Functions: `60.31%`
--  - Lines: `62.53%` (↑ từ 61.74%)
+-  - Test suites: `79/79` pass
+-  - Test cases: `897/897` pass (↑ từ 878)
+-  - Statements: `64.55%` (↑ từ 64.44%, target 70%)
+-  - Branches: `58.39%` (↑ từ 58.32%)
+-  - Functions: `62.52%` (↑ từ 62.46%)
+-  - Lines: `64.69%` (↑ từ 64.57%)
 
 ## 2. What we tested
 
@@ -30,7 +30,10 @@ Cập nhật đến: 29/04/2026
 | `payment-campaign-payos-config.service.ts` | Unit / service-level | `create`, `getConfig`, `getEffectiveConfig`, `updateConfig`, `toggleActive`, `createPayOSInstance`, `createOrUpdateConfig`, `deleteConfig` — Coverage: **93.38%** (31 tests) |
 | `payment-history.service.ts` | Unit / service-level | `createPaymentRecord`, `findByOrderCode`, `updatePaymentStatus`, `findByAssignmentId`, `findById`, `findAll`, `getPaymentHistoryByCampaign` — 18 tests with QueryBuilder mocks |
 | `payment-fee-level.service.ts` | Unit / service-level | `create`, `findByCampaign`, `findOne`, `update`, `remove` (with assignment guard) — 9 tests covering all paths |
+| `departments/services/import.service.ts` | Unit / service-level | upload/validate/execute import workflow, batch fallback, resume/cancel, conflict handling, bulk insert branches — Coverage: **83.19%** / **68.96% branch** |
+| `common/middleware/clean-empty-strings.middleware.ts` | Unit / middleware-level | recursive empty-string normalization for request bodies — Coverage: **100%** |
 | `metrics.service.ts` | Unit / service-level | HTTP request metrics, DB query timing, import session counters, org validation timing, DB connection gauges — 3 tests, Coverage: **100%** |
+| `users/services/import.service.ts` | Unit / service-level | upload/validate/execute import workflow, async queueing, progress/status, template generation, batch fallback, parent/class organization creation — Coverage: **77.27%** / **68.18% branch** |
 | `auth.controller.ts` | Integration / HTTP | `POST /auth/login` |
 | `users.controller.ts` | Integration / HTTP | `GET /users/:id` |
 | `organizations.controller.ts` | Integration / HTTP | `GET /organizations/tree` |
@@ -46,6 +49,14 @@ Cập nhật đến: 29/04/2026
 - `payment-history.service.spec.ts`: **18 test cases** pass (↑ from 2, significant expansion).
 - `payment-fee-level.service.spec.ts`: **9 test cases** pass (↑ from 4, all methods covered).
 - `metrics.service.spec.ts`: `3` test cases pass (HTTP error branch + database/import metrics).
+- `common/middleware/clean-empty-strings.middleware.spec.ts`: `17` test cases pass.
+- `classes/services/__tests__/import.service.spec.ts`: `35` test cases pass.
+- `export/__tests__/export.controller.spec.ts`: `4` test cases pass.
+- `organizations/__tests__/organizations.service.spec.ts`: `8` test cases pass.
+- `departments/services/__tests__/import.service.spec.ts`: `34` test cases pass.
+- `organizations/services/__tests__/batch-import.service.spec.ts`: `7` test cases pass.
+- `users/services/__tests__/import.service.spec.ts`: `43` test cases pass.
+- `roles/__tests__/roles.service.spec.ts`: `28` test cases pass.
 - `auth.controller.spec.ts`: `5` test cases pass.
 - `classes.controller.spec.ts`: `2` test cases pass.
 - `payment-campaign.controller.spec.ts`: `6` test cases pass.
@@ -116,6 +127,25 @@ Cập nhật đến: 29/04/2026
 - `findOne`: success, `NotFoundException`
 - `update`: partial data, undefined handling
 - `remove`: blocked when used in assignments
+
+### `departments/services/import.service.ts` (NEW - branch-heavy workflow coverage)
+
+- `uploadFile`: missing file, non-Excel file, empty Excel, parser failure, happy path
+- `validateData`: missing session, missing data, validation failure, preview generation
+- `executeImport`: unvalidated session guard, missing validated data, batch vs non-batch execution, import failure handling
+- `getImportProgress`: missing session, missing batch progress, percent calculation
+- `pauseImport` / `resumeImport` / `cancelImport`: status guards and state transitions
+- `performImport`: normalized empty fields, conflict skip, duplicate error, save failure
+- `processBatchData`: queryRunner repository path, bulk insert success, bulk insert failure
+- `performBatchImport`: fallback recovery path after batch failure
+
+### `organizations/services/batch-import.service.ts` (NEW - batch import branch coverage)
+
+- `processBatch`: invalid option guards, session init, empty final batch, session summary lookup
+- `validateMemberData`: empty code, short code, missing class/unit code for Level 2
+- `processMember`: skip duplicate active membership, reactivate inactive membership
+- `bulkAddMembers`: duplicate filtering and bulk insert path
+- `clearOldSessions`: cleanup of expired sessions
 
 ### Controller layer mới bơm thêm
 

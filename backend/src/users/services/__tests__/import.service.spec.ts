@@ -142,6 +142,19 @@ describe("Users ImportService", () => {
     ).rejects.toThrow("Failed to parse Excel file: boom");
   });
 
+  it("should reject upload when parsed Excel has no valid rows", async () => {
+    excelParserService.parseExcelFile.mockResolvedValue([]);
+
+    await expect(
+      service.uploadFile({
+        mimetype: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        size: 1024,
+        originalname: "users.xlsx",
+        buffer: Buffer.from("x"),
+      } as never),
+    ).rejects.toThrow("No valid data found in the Excel file");
+  });
+
   it("should reject validation when session is missing", async () => {
     sessionService.getSession.mockReturnValue(null);
 
@@ -215,6 +228,29 @@ describe("Users ImportService", () => {
     expect(result.importedCount).toBe(1);
     expect(monitoringService.startSession).toHaveBeenCalled();
     expect(monitoringService.endSession).toHaveBeenCalled();
+  });
+
+  it("should execute import using provided batch size and finalize success", async () => {
+    sessionService.getSession.mockReturnValue({ status: "validated" });
+    sessionService.getValidatedData.mockReturnValue([{ code: "SV001" }, { code: "SV002" }]);
+    batchProcessingService.mergeOptions.mockReturnValue({ batchSize: 2, enableFallback: true });
+    jest.spyOn(service as any, "performBatchImport").mockResolvedValue({
+      success: true,
+      importedCount: 2,
+      skippedCount: 0,
+      failedCount: 0,
+      errors: [],
+      importedIds: ["u-1", "u-2"],
+    });
+
+    const result = await service.executeImport("session-1", { batchSize: 2 });
+
+    expect(batchProcessingService.getOptimizedBatchSize).not.toHaveBeenCalled();
+    expect(batchProcessingService.mergeOptions).toHaveBeenCalledWith(
+      expect.objectContaining({ batchSize: 2, enableFallback: true }),
+    );
+    expect(sessionService.initializeBatchProcessing).toHaveBeenCalledWith("session-1", 2, 2);
+    expect(result.message).toContain("2 users imported");
   });
 
   it("should finalize failed import when batch processing throws", async () => {
@@ -391,6 +427,16 @@ describe("Users ImportService", () => {
 
     sessionService.getSession.mockReturnValueOnce(null);
     await expect(service.getSessionStatus("missing")).rejects.toThrow("Import session not found");
+  });
+
+  it("should generate template buffer and expose system health", async () => {
+    monitoringService.getSystemHealth.mockReturnValue({ status: "healthy", users: 10 });
+
+    const buffer = await service.generateTemplate();
+
+    expect(Buffer.isBuffer(buffer)).toBe(true);
+    expect(buffer.length).toBeGreaterThan(0);
+    expect(await service.getSystemHealth()).toEqual({ status: "healthy", users: 10 });
   });
 
   it("should support pause, resume and cancel import responses", async () => {

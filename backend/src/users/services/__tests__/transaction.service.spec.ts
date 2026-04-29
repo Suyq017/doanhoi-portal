@@ -76,6 +76,26 @@ describe("UserTransactionService", () => {
     expect(service.getStats().failedTransactions).toBe(1);
   });
 
+  it("should retry timeout errors and eventually fail when retries are exhausted", async () => {
+    const queryRunner1 = createQueryRunner();
+    const queryRunner2 = createQueryRunner();
+    dataSource.createQueryRunner
+      .mockImplementationOnce(() => queryRunner1)
+      .mockImplementationOnce(() => queryRunner2);
+
+    const result = await service.executeWithTransaction(
+      async () => {
+        throw new Error("Transaction timeout after 10ms");
+      },
+      { retryCount: 1, retryDelay: 0, timeout: 10 },
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error?.message).toContain("Transaction timeout after 10ms");
+    expect(service.getStats().timeoutCount).toBeGreaterThanOrEqual(1);
+    expect(service.getStats().retriedTransactions).toBeGreaterThanOrEqual(1);
+  });
+
   it("should execute with savepoint and rollback on failure", async () => {
     const queryRunner = createQueryRunner();
 

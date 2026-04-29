@@ -81,6 +81,24 @@ describe("RolesService", () => {
     expect(result.data).toEqual([{ id: "r1" }]);
   });
 
+  it("should use default pagination when page and limit are omitted", async () => {
+    const queryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn(async () => [[{ id: "r1" }], 12]),
+    } as any;
+    roleRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    const result = await service.findAll({} as never);
+
+    expect(queryBuilder.skip).toHaveBeenCalledWith(0);
+    expect(queryBuilder.take).toHaveBeenCalledWith(10);
+    expect(result.totalPages).toBe(2);
+  });
+
   it("should throw when role is not found", async () => {
     roleRepository.findOne.mockResolvedValue(null);
 
@@ -154,6 +172,17 @@ describe("RolesService", () => {
     expect(userRoleRepository.delete).toHaveBeenCalledWith({ roleId: "r1" });
     expect(roleRepository.remove).toHaveBeenCalled();
     expect(result.deletedUserRoleAssignments).toBe(2);
+  });
+
+  it("should remove role without cascade when no user-role assignments exist", async () => {
+    roleRepository.findOne.mockResolvedValue({ id: "r2", isSystemRole: false, name: "Role 2", permissions: [] });
+    userRoleRepository.count.mockResolvedValue(0);
+
+    const result = await service.remove("r2");
+
+    expect(userRoleRepository.delete).not.toHaveBeenCalled();
+    expect(roleRepository.remove).toHaveBeenCalledWith({ id: "r2", isSystemRole: false, name: "Role 2", permissions: [] });
+    expect(result.deletedUserRoleAssignments).toBe(0);
   });
 
   it("should reject deleting system role", async () => {
@@ -259,6 +288,131 @@ describe("RolesService", () => {
 
     await expect(service.seedDefaultRoles()).resolves.toBeUndefined();
     await expect(service.seedDefaultPermissions()).resolves.toBeUndefined();
+  });
+
+  it("should seed default permissions and roles when repositories are empty", async () => {
+    permissionRepository.find
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { code: "dashboard.access", category: "dashboard" },
+        { code: "dashboard.stats", category: "dashboard" },
+        { code: "users.access", category: "users" },
+        { code: "users.create", category: "users" },
+        { code: "users.export", category: "users" },
+        { code: "users.view_details", category: "users" },
+        { code: "users.update", category: "users" },
+        { code: "users.delete", category: "users" },
+        { code: "organizations.access", category: "organizations" },
+        { code: "organizations.view_member_count", category: "organizations" },
+        { code: "organizations.access_children", category: "organizations" },
+        { code: "organizations.update", category: "organizations" },
+        { code: "organizations.delete", category: "organizations" },
+        { code: "departments.access", category: "departments" },
+        { code: "classes.access", category: "classes" },
+      ])
+      .mockResolvedValueOnce([
+        { code: "dashboard.access", category: "dashboard" },
+        { code: "dashboard.stats", category: "dashboard" },
+        { code: "users.access", category: "users" },
+        { code: "users.create", category: "users" },
+        { code: "users.export", category: "users" },
+        { code: "users.view_details", category: "users" },
+        { code: "users.update", category: "users" },
+        { code: "users.delete", category: "users" },
+        { code: "organizations.access", category: "organizations" },
+        { code: "organizations.view_member_count", category: "organizations" },
+        { code: "organizations.access_children", category: "organizations" },
+        { code: "organizations.update", category: "organizations" },
+        { code: "organizations.delete", category: "organizations" },
+        { code: "departments.access", category: "departments" },
+        { code: "classes.access", category: "classes" },
+      ]);
+    roleRepository.find.mockResolvedValueOnce([]);
+
+    await service.seedDefaultPermissions();
+    await service.seedDefaultRoles();
+
+    expect(permissionRepository.save).toHaveBeenCalled();
+    expect(roleRepository.save).toHaveBeenCalledTimes(5);
+
+    const managerRole = roleRepository.save.mock.calls[2][0];
+    const editorRole = roleRepository.save.mock.calls[3][0];
+    const viewerRole = roleRepository.save.mock.calls[4][0];
+
+    expect(managerRole.permissions.some((permission) => permission.code === "users.delete")).toBe(false);
+    expect(managerRole.permissions.some((permission) => permission.code === "organizations.access")).toBe(true);
+    expect(editorRole.permissions.some((permission) => permission.code === "users.delete")).toBe(false);
+    expect(editorRole.permissions.some((permission) => permission.code === "users.export")).toBe(false);
+    expect(viewerRole.permissions.some((permission) => permission.code === "users.access")).toBe(true);
+    expect(viewerRole.permissions.some((permission) => permission.code === "users.delete")).toBe(false);
+  });
+
+  it("should reject granting roles when some role IDs are invalid or inactive", async () => {
+    userRoleRepository.find.mockResolvedValue([]);
+    roleRepository.find.mockResolvedValue([{ id: "r1", isActive: true }]);
+
+    await expect(
+      service.grantRolesToUser("user-1", [
+        { roleIds: ["r1", "r2"], isGlobal: true },
+      ]),
+    ).rejects.toThrow("Some roles are invalid or inactive");
+  });
+
+  it("should grant global roles after clearing existing assignments", async () => {
+    userRoleRepository.find.mockResolvedValue([]);
+    roleRepository.find.mockResolvedValue([
+      { id: "r1", isActive: true },
+      { id: "r2", isActive: true },
+    ]);
+    userRoleRepository.save.mockImplementation(async (value: any) => ({
+      ...value,
+      id: `${value.roleId}-saved`,
+    }));
+
+    const result = await service.grantRolesToUser("user-1", [
+      { roleIds: ["r1", "r2"], isGlobal: true, organizationIds: ["org-1"] },
+    ]);
+
+    expect(userRoleRepository.find).toHaveBeenCalledWith({ where: { userId: "user-1" } });
+    expect(userRoleRepository.delete).toHaveBeenCalledWith({ userId: "user-1" });
+    expect(userRoleRepository.create).toHaveBeenCalledWith({
+      userId: "user-1",
+      roleId: "r1",
+      organizationId: null,
+    });
+    expect(userRoleRepository.create).toHaveBeenCalledWith({
+      userId: "user-1",
+      roleId: "r2",
+      organizationId: null,
+    });
+    expect(result).toHaveLength(2);
+    expect(result.every((assignment) => assignment.organizationId === null)).toBe(true);
+  });
+
+  it("should grant organization-specific roles for each organization", async () => {
+    userRoleRepository.find.mockResolvedValue([]);
+    roleRepository.find.mockResolvedValue([{ id: "r3", isActive: true }]);
+    userRoleRepository.save.mockImplementation(async (value: any) => ({
+      ...value,
+      id: `${value.roleId}-${value.organizationId}`,
+    }));
+
+    const result = await service.grantRolesToUser("user-1", [
+      { roleIds: ["r3"], organizationIds: ["org-1", "org-2"] },
+    ]);
+
+    expect(userRoleRepository.create).toHaveBeenCalledWith({
+      userId: "user-1",
+      roleId: "r3",
+      organizationId: "org-1",
+    });
+    expect(userRoleRepository.create).toHaveBeenCalledWith({
+      userId: "user-1",
+      roleId: "r3",
+      organizationId: "org-2",
+    });
+    expect(result).toHaveLength(2);
+    expect(result.map((assignment) => assignment.organizationId)).toEqual(["org-1", "org-2"]);
   });
 
   it("should determine permission membership from user roles", async () => {

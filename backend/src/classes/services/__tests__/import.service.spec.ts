@@ -70,6 +70,17 @@ describe("ImportService", () => {
       expect(res).toHaveProperty("sessionId", "s1");
       expect(res).toHaveProperty("totalRows", 1);
     });
+  
+      it("should reject upload when excel file contains no data rows", async () => {
+        excelParserService.parseExcelFile.mockResolvedValue([]);
+
+        await expect(
+          svc.uploadFile({
+            originalname: "classes.xlsx",
+            buffer: Buffer.from("x"),
+          } as never),
+        ).rejects.toThrow("Excel file contains no data rows");
+      });
   });
 
   describe("validateData", () => {
@@ -139,6 +150,47 @@ describe("ImportService", () => {
       await svc.executeImport("s1");
       expect(sessionService.finalizeBatchProcessing).toHaveBeenCalled();
     });
+  
+      it("should execute import with explicit batch size and finish the session", async () => {
+        sessionService.getSession.mockReturnValue({ id: "s1", status: "validated" });
+        sessionService.getValidatedData.mockReturnValue([
+          { name: "KTPM01", year: 2025, _errors: [] },
+          { name: "KTPM02", year: 2025, _errors: [] },
+        ]);
+        batchProcessingService.getDefaultOptions.mockReturnValue({ batchSize: 10, enableFallback: false, fallbackBatchSize: 1 });
+        jest.spyOn(svc as any, "performBatchImport").mockResolvedValue({
+          success: true,
+          importedCount: 2,
+          skippedCount: 0,
+          failedCount: 0,
+          errors: [],
+        });
+
+        const result = await svc.executeImport("s1", { batchSize: 2 });
+
+        expect(batchProcessingService.getOptimizedBatchSize).not.toHaveBeenCalled();
+        expect(sessionService.initializeBatchProcessing).toHaveBeenCalledWith("s1", 2, 2);
+        expect(sessionService.finalizeBatchProcessing).toHaveBeenCalledWith("s1", true);
+        expect(result.message).toContain("2 classes imported");
+      });
+
+      it("should wrap simple import errors and update the session result", async () => {
+        sessionService.getSession.mockReturnValue({ id: "s1", status: "validated" });
+        sessionService.getValidatedData.mockReturnValue([
+          { name: "KTPM01", year: 2025, _errors: [] },
+        ]);
+        jest.spyOn(svc as any, "performImport").mockRejectedValue(new Error("insert failed"));
+
+        await expect(svc.executeSimpleImport("s1")).rejects.toThrow("Import failed: insert failed");
+        expect(sessionService.updateSessionImport).toHaveBeenCalledWith(
+          "s1",
+          expect.objectContaining({
+            success: false,
+            failedCount: 1,
+            errors: ["insert failed"],
+          }),
+        );
+      });
   });
 
   describe("executeSimpleImport", () => {
@@ -205,6 +257,36 @@ describe("ImportService", () => {
       const res = await svc.getImportProgress("s1");
       expect(res).toHaveProperty("sessionId", "s1");
       expect(res.progress).toHaveProperty("currentBatch", 1);
+    });
+  
+    it("returns a fallback message when progress is unavailable", async () => {
+        sessionService.getSession.mockReturnValue({ id: "s1", status: "importing" });
+        sessionService.getBatchProgress.mockReturnValue(null);
+
+      await expect(svc.getImportProgress("s1")).resolves.toEqual({
+        sessionId: "s1",
+        status: "importing",
+        message: "No batch processing information available",
+      });
+      });
+  });
+
+  describe("performBatchImport", () => {
+    it("should stop batch processing when the session is paused", async () => {
+      sessionService.getBatchProgress.mockReturnValue({ isPaused: true });
+      batchProcessingService.divideToBatches.mockReturnValue([
+        { batchNumber: 1, data: [{ name: "KTPM01", _errors: [] }] },
+      ]);
+
+      const result = await (svc as any).performBatchImport(
+        "s1",
+        [{ name: "KTPM01", _errors: [] }],
+        { batchSize: 10, enableFallback: false, fallbackBatchSize: 1 },
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.importedCount).toBe(0);
+      expect(sessionService.updateBatchProgress).not.toHaveBeenCalled();
     });
   });
 

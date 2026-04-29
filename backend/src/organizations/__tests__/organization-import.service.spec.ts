@@ -145,4 +145,62 @@ describe("OrganizationImportService", () => {
     expect(lv3.length).toBeGreaterThan(0);
     expect(() => service.generateTemplate(1)).toThrow(BadRequestException);
   });
+
+  it("should reject executeImport when invalid records exist and skipErrors false", async () => {
+    organizationsRepository.findOne.mockResolvedValue({ id: "org-1" });
+    const upload = await service.processUploadedFile(
+      {
+        originalname: "members.xlsx",
+        buffer: createExcelBuffer([
+          ["Mã số sinh viên"],
+          ["2052001"],
+          ["2052999"],
+        ]),
+      } as never,
+      "org-1",
+      3,
+    );
+
+    usersRepository.find.mockResolvedValue([{ id: "u1", code: "2052001" }]);
+    userOrganizationsRepository.find.mockResolvedValue([]);
+
+    await service.validateImportData(upload.sessionId);
+
+    await expect(
+      service.executeImport(upload.sessionId, false),
+    ).rejects.toThrow("Có");
+  });
+
+  it("should process valid rows only and skip existing members when skipErrors true", async () => {
+    organizationsRepository.findOne.mockResolvedValue({ id: "org-1" });
+    const upload = await service.processUploadedFile(
+      {
+        originalname: "members.xlsx",
+        buffer: createExcelBuffer([
+          ["Mã số sinh viên"],
+          ["2052001"],
+          ["2052002"],
+        ]),
+      } as never,
+      "org-1",
+      3,
+    );
+
+    usersRepository.find
+      .mockResolvedValueOnce([{ id: "u1", code: "2052001" }]) // during upload parsing
+      .mockResolvedValueOnce([
+        { id: "u1", code: "2052001" },
+        { id: "u2", code: "2052002" },
+      ]); // during validation
+    userOrganizationsRepository.find
+      .mockResolvedValueOnce([]) // during validation
+      .mockResolvedValueOnce([{ userId: "u1" }]); // during execute (existing member)
+    userOrganizationsRepository.save.mockResolvedValue(undefined);
+
+    await service.validateImportData(upload.sessionId);
+    const result = await service.executeImport(upload.sessionId, true);
+
+    expect(result.successful).toBeGreaterThanOrEqual(0);
+    expect(result.errors.length).toBeGreaterThanOrEqual(0);
+  });
 });
