@@ -1,7 +1,9 @@
 // Custom Hook for MyCampaignsPage
 // Handles filters, assignments, payment handling, and statistics
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { usePayOS } from '@payos/payos-checkout';
 import { useTranslation } from 'react-i18next';
 import { useUserPaymentAssignments } from '@/shared/hooks/queries';
 import type { PaymentAssignment } from '@/shared/hooks/queries';
@@ -17,6 +19,38 @@ import {
 export const useMyCampaignsPage = (): UseMyCampaignsPageReturn => {
     const { t } = useTranslation('myPayments');
     const { showError, toasts, hideToast } = useToast();
+    const navigate = useNavigate();
+
+    // State to hold pending checkout info
+    const [checkoutConfig, setCheckoutConfig] = useState<{ url: string; orderCode: number } | null>(null);
+
+    // Configure usePayOS with current checkout state
+    const { open } = usePayOS({
+        RETURN_URL: checkoutConfig
+            ? `${window.location.origin}/portal/payment-result/${checkoutConfig.orderCode}`
+            : `${window.location.origin}/portal/payment/my-campaigns`,
+        ELEMENT_ID: 'payos-checkout-embed',
+        CHECKOUT_URL: checkoutConfig?.url ?? '',
+        embedded: false,
+        onSuccess: () => {
+            const orderCode = checkoutConfig?.orderCode;
+            setCheckoutConfig(null);
+            navigate(`/portal/payment-result/${orderCode}`);
+        },
+        onCancel: () => {
+            setCheckoutConfig(null);
+        },
+        onExit: () => {
+            setCheckoutConfig(null);
+        },
+    });
+
+    // Open checkout popup when checkoutConfig is set
+    useEffect(() => {
+        if (checkoutConfig) {
+            open();
+        }
+    }, [checkoutConfig]);
 
     // Filters state
     const [filters, setFilters] = useState<MyCampaignsFilters>({
@@ -153,8 +187,11 @@ export const useMyCampaignsPage = (): UseMyCampaignsPageReturn => {
                 organizationId,
             });
 
-            if (paymentResponse.success && paymentResponse.data?.checkoutUrl) {
-                window.location.href = paymentResponse.data.checkoutUrl;
+            if (paymentResponse.success && paymentResponse.data?.checkoutUrl && paymentResponse.data?.orderCode) {
+                setCheckoutConfig({
+                    url: paymentResponse.data.checkoutUrl,
+                    orderCode: paymentResponse.data.orderCode,
+                });
             } else {
                 throw new Error(paymentResponse.message || 'Không nhận được URL thanh toán từ server');
             }

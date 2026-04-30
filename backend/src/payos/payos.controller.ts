@@ -129,4 +129,40 @@ export class PayOSController {
       );
     }
   }
+
+  /**
+   * Webhook endpoint được PayOS gọi sau khi thanh toán hoàn tất.
+   * Endpoint này không cần xác thực JWT — chữ ký trong payload đóng vai trò xác thực.
+   * PayOS yêu cầu response HTTP 200; nếu không nhận được, PayOS sẽ retry.
+   */
+  @Post("webhook")
+  async handleWebhook(@Body() body: any) {
+    try {
+      await this.payosService.processWebhookPayload(body);
+      console.log(
+        `✅ Webhook processed successfully for orderCode: ${body?.data?.orderCode}`,
+      );
+    } catch (error) {
+      const isSignatureError =
+        error.message?.includes("signature") ||
+        error.message?.includes("SIGNATURE") ||
+        error.message?.includes("integrity") ||
+        error.message?.includes("INTEGRITY");
+
+      if (isSignatureError) {
+        console.warn(`⚠️ Invalid webhook signature: ${error.message}`);
+        throw new HttpException(
+          "Invalid webhook signature",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Lỗi không phải signature (DB, logic) → log nhưng vẫn trả 200
+      // để PayOS không retry vô hạn với cùng payload hợp lệ
+      console.error(
+        `❌ Webhook processing error (non-signature): ${error.message}`,
+      );
+    }
+    return { success: true };
+  }
 }

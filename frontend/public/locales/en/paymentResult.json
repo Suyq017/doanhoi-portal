@@ -43,7 +43,8 @@
   },
   "autoRefresh": {
     "checking": "Checking...",
-    "interval": "Auto-refresh every 5 seconds"
+    "interval": "Auto-refresh every 5 seconds",
+    "manualCheck": "Check again"
   },
   "actions": {
     "checkAgain": "Check again",

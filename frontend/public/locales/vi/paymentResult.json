@@ -43,7 +43,8 @@
   },
   "autoRefresh": {
     "checking": "Đang kiểm tra...",
-    "interval": "Tự động cập nhật mỗi 5 giây"
+    "interval": "Tự động cập nhật mỗi 5 giây",
+    "manualCheck": "Kiểm tra lại"
   },
   "actions": {
     "checkAgain": "Kiểm tra lại",

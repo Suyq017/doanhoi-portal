@@ -144,6 +144,58 @@ export class SimplePayosService {
   }
 
   /**
+   * Xử lý webhook payload từ PayOS.
+   * Xác thực chữ ký bằng credentials được lưu trong payment_history (per-campaign isolation),
+   * sau đó cập nhật trạng thái thanh toán nếu thành công.
+   * @param body - Raw request body nhận từ PayOS webhook
+   */
+  async processWebhookPayload(body: any): Promise<void> {
+    const orderCode = Number(body?.data?.orderCode);
+    if (!orderCode || isNaN(orderCode)) {
+      throw new Error('Invalid webhook payload: missing or invalid orderCode');
+    }
+
+    // Lấy payment_history để dùng credentials đã lưu (tránh query config table)
+    const paymentHistory =
+      await this.paymentHistoryService.findByOrderCode(orderCode);
+    if (!paymentHistory) {
+      throw new Error(`No payment history found for orderCode: ${orderCode}`);
+    }
+
+    // Tạo PayOS instance với credentials của campaign cụ thể này
+    const payos = new PayOS(
+      paymentHistory.client_id,
+      paymentHistory.api_key,
+      paymentHistory.checksum_key,
+    );
+
+    // verifyPaymentWebhookData throw nếu signature không hợp lệ
+    const webhookData = payos.verifyPaymentWebhookData(body);
+
+    // Idempotency: bỏ qua nếu đã PAID
+    if (paymentHistory.status === PaymentHistoryStatus.PAID) {
+      return;
+    }
+
+    // Chỉ xử lý khi thanh toán thành công
+    if (body.success === true && body.code === '00') {
+      const paidAt = webhookData?.transactionDateTime
+        ? new Date(webhookData.transactionDateTime)
+        : new Date();
+
+      await this.updateAssignmentOnPaymentSuccess(
+        paymentHistory.assignment_id,
+        paidAt,
+      );
+      await this.paymentHistoryService.updatePaymentStatus(
+        orderCode,
+        PaymentHistoryStatus.PAID,
+        paidAt,
+      );
+    }
+  }
+
+  /**
    * Private method để cập nhật assignment status khi thanh toán thành công
    */
   private async updateAssignmentOnPaymentSuccess(
