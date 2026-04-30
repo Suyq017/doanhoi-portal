@@ -215,6 +215,28 @@ Kế hoạch được xem là hoàn thành khi:
 - Frontend có thể làm sau nếu thời gian hạn chế.
 - Phần chatbot nên ưu tiên mock thay vì phụ thuộc vào LLM thật để tránh test không ổn định.
 
+## Frontend — current status & plan (30/04/2026)
+
+- Current status: frontend unit and integration-lite tests were added for several CTXH pages and Student Reports. Full frontend test run: **7** files, **21** tests — all pass.
+- Recent additions:
+	- Page-level tests: `ActivityManagement`, `CategoryManagement`, `LimitConfigManagement`, `CtxhOldSystemImportPage`, `StudentReportsPage`.
+	- Hook-level tests: `useActivityDetail`, `useOldSystemImport`.
+- Strategy going forward (concrete, short-term):
+	1. Add 1–2 focused hook-level tests (e.g., `useStudentReportsPage`) to demonstrate behavioral logic without heavy network mocking.
+ 2. Add a component-level test for `ImportModal` to cover file selection and callback wiring.
+ 3. Introduce `msw` for one representative page to exercise API interactions with realistic fixtures.
+ 4. Keep tests page-level first; only add component-level tests where they add clear value.
+
+- Expected impact: small but meaningful increase in frontend test depth for the report (adds behavioral assertions, edge-case hooks, and API mock patterns) while keeping test maintenance low.
+
+Run locally:
+```bash
+cd frontend
+npm test -- --reporter verbose
+```
+
+If you want, I can implement steps 1–3 now (add `useStudentReportsPage` hook test, `ImportModal` component test, and MSW setup for one page).  
+
 ## 10. Tiến độ thực tế (cập nhật đến 29/04/2026)
 
 ### 10.1 Trạng thái tổng quan
