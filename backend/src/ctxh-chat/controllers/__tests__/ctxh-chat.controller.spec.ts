@@ -2,8 +2,56 @@ jest.mock('../../services/langchain-rag-chain.service', () => ({
   LangChainRagChainService: class {},
 }));
 
+jest.mock('../../services/langchain-vector-store.service', () => ({
+  LangChainVectorStoreService: class {},
+}));
+
+jest.mock('../../services/langchain-memory.service', () => ({
+  LangChainMemoryService: class {},
+}));
+
+jest.mock('../../services/langchain-ingestion.service', () => ({
+  LangChainIngestionService: class {},
+}));
+
+jest.mock('../../services/universal-embeddings.service', () => ({
+  UniversalEmbeddingsService: class {},
+}));
+
+jest.mock('../../services/universal-llm.service', () => ({
+  UniversalLLMService: class {},
+}));
+
+jest.mock('../../services/ctxh-vector-sync.service', () => ({
+  CtxhVectorSyncService: class {},
+}));
+
+jest.mock('../../services/user-context.service', () => ({
+  UserContextService: class {},
+}));
+
 jest.mock('../../services/staff-agent.service', () => ({
   StaffAgentService: class {},
+}));
+
+jest.mock('../../services/follow-up-suggestions.service', () => ({
+  FollowUpSuggestionsService: class {},
+}));
+
+jest.mock('../../services/mcp-sql-fallback.service', () => ({
+  McpSqlFallbackService: class {},
+}));
+
+jest.mock('../../services/mcp-metadata-enricher.service', () => ({
+  McpMetadataEnricherService: class {},
+}));
+
+jest.mock('../../services/postgres-mcp-client.service', () => ({
+  PostgresMcpClientService: class {},
+}));
+
+jest.mock('../../../ctxh/activity/services/participation.service', () => ({
+  ParticipationService: class {},
 }));
 
 import { CtxhChatController } from '../ctxh-chat.controller';
