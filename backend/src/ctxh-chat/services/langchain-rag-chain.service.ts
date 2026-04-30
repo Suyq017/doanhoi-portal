@@ -411,11 +411,13 @@ export class LangChainRagChainService implements OnModuleInit {
   private async routeQuestion(question: string, chatHistory: string, currentDate: string) {
     const decision = await this.agentService.decide(question, chatHistory, currentDate);
 
+    const params = (decision as any).params ?? { rewrittenQuestion: question, mode: 'filtered' };
+
     return {
       action: decision.action,
       intent: this.decisionToIntent(decision.action),
-      params: decision.params ?? { rewrittenQuestion: question, mode: 'filtered' },
-      rewrittenQuestion: decision.params?.rewrittenQuestion ?? question,
+      params,
+      rewrittenQuestion: params.rewrittenQuestion ?? question,
     };
   }
 

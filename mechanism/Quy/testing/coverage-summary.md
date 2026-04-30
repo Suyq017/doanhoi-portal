@@ -199,6 +199,25 @@ Các vùng dễ bị hội đồng hỏi:
 4. Tập trung bổ sung edge-case tests cho validation, boundary values, and error paths.
 5. Chạy lại `npm run test:cov` sau mỗi batch lớn và lưu delta coverage.
 
+## 9. Frontend test status (update 30/04/2026)
+
+- Scope: frontend page- and hook-level tests for CTXH pages and Student Reports.
+- Test command run: `cd frontend` then `npm test -- --reporter verbose`.
+- Result: Full frontend suite passes: **7** test files, **21** tests (all pass).
+- New tests added in this session:
+	- `src/features/ctxh/hooks/__tests__/useOldSystemImport.spec.ts` — hook-level (2 tests)
+	- `src/features/ctxh/pages/__tests__/LimitConfigManagement.spec.tsx` — page-level (3 tests)
+	- `src/features/ctxh/pages/__tests__/CtxhOldSystemImportPage.spec.tsx` — page-level (3 tests)
+	- `src/features/student-reports/pages/__tests__/StudentReportsPage.spec.tsx` — page-level (3 tests)
+- Testing posture: prefer stable page-level suites and a small set of hook-level tests (to avoid brittle QueryClient/api mocks).
+- Next FE steps (recommended):
+	- Add 1–2 more hook-level tests (e.g., `useStudentReportsPage`) to increase behavioral depth.
+	- Introduce `msw` for API mocking in page-level tests where network interactions are meaningful.
+	- Add one component-level test for `ImportModal` to cover file-handling callbacks.
+	- Optionally add a small E2E smoke test (Cypress/Playwright) for one import flow.
+
+These frontend additions are low-effort but increase the report's credibility without expanding the test suite excessively.
+
 ## 7. Committee-facing answer template
 
 Khi trình bày trước hội đồng, ưu tiên theo thứ tự:
