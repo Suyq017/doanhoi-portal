@@ -1,0 +1,145 @@
+\section{Triển khai}
+
+\subsection{Triển khai hệ thống}
+
+\subsubsection{Mục tiêu triển khai}
+Mục tiêu triển khai của đề tài là đưa hệ thống từ môi trường phát triển sang môi trường có thể vận hành ổn định, dễ giám sát và dễ mở rộng theo nhu cầu thực tế của đơn vị sử dụng. Các nguyên tắc triển khai được áp dụng gồm:
+\begin{itemize}
+	\item Tách biệt frontend, backend và các dịch vụ dữ liệu theo container độc lập.
+	\item Quản lý cấu hình theo biến môi trường để chuyển đổi giữa môi trường phát triển và production.
+	\item Bổ sung lớp reverse proxy và quan sát hệ thống ngay từ giai đoạn đầu vận hành.
+\end{itemize}
+
+\subsubsection{Kiến trúc triển khai thực tế}
+Hệ thống được đóng gói và triển khai theo mô hình container hóa với \texttt{docker-compose}. Ở môi trường production, các dịch vụ chính gồm:
+\begin{itemize}
+	\item \textbf{Frontend}: ứng dụng React build tĩnh, phục vụ qua Nginx container.
+	\item \textbf{Backend}: dịch vụ NestJS API chạy ở cổng nội bộ 9200 (map host 2681).
+	\item \textbf{PostgreSQL + pgvector}: lưu dữ liệu giao dịch và dữ liệu vector.
+	\item \textbf{Prometheus}: thu thập metrics từ backend và hệ thống giám sát.
+	\item \textbf{Grafana}: trực quan hóa metrics và dashboard vận hành.
+\end{itemize}
+
+Trong môi trường phát triển, hệ thống mở rộng thêm \texttt{pgAdmin}, \texttt{Redis}, \texttt{Ollama} để hỗ trợ kiểm thử dữ liệu, xử lý hàng đợi và thử nghiệm module chatbot cục bộ.
+
+\subsubsection{Cấu hình reverse proxy và tên miền}
+Lớp Nginx ngoài cùng chịu trách nhiệm định tuyến request theo đường dẫn chức năng:
+\begin{itemize}
+	\item \texttt{/} chuyển tiếp đến frontend.
+	\item \texttt{/api/} chuyển tiếp đến backend API.
+	\item \texttt{/grafana/} chuyển tiếp đến Grafana.
+	\item \texttt{/prometheus/} chuyển tiếp đến Prometheus.
+\end{itemize}
+
+Cấu hình này giúp gom toàn bộ dịch vụ về một domain thống nhất, đồng thời vẫn tách rõ lớp ứng dụng và lớp quan sát vận hành.
+
+\subsubsection{Quy trình triển khai môi trường production}
+Quy trình triển khai được chuẩn hóa theo các bước:
+
+\textbf{Bước 1 -- Chuẩn bị máy chủ và công cụ vận hành}
+\begin{itemize}
+	\item Cài đặt Docker Engine, Docker Compose Plugin, Git.
+	\item Mở các cổng cần thiết cho reverse proxy và dịch vụ nội bộ theo chính sách mạng của đơn vị triển khai.
+\end{itemize}
+
+\textbf{Bước 2 -- Lấy mã nguồn và chuẩn bị biến môi trường}
+\begin{itemize}
+	\item Clone repository lên máy chủ triển khai.
+	\item Tạo file \texttt{.env} chứa thông tin nhạy cảm: mật khẩu DB, JWT secrets, OAuth keys, cấu hình PayOS, cấu hình domain frontend/backend.
+\end{itemize}
+
+\textbf{Bước 3 -- Khởi tạo stack production}
+\begin{itemize}
+	\item Dùng file \texttt{docker-compose.prod.yml} để khởi chạy các dịch vụ production.
+	\item Kiểm tra healthcheck PostgreSQL và trạng thái backend sau khi phụ thuộc sẵn sàng.
+\end{itemize}
+
+\textbf{Bước 4 -- Cấu hình Nginx và HTTPS}
+\begin{itemize}
+	\item Cấu hình server block cho domain triển khai.
+	\item Cập nhật đường dẫn chứng chỉ SSL, bật chuyển hướng HTTP sang HTTPS.
+	\item Cấu hình timeout và header proxy phù hợp cho API và dashboard giám sát.
+\end{itemize}
+
+\textbf{Bước 5 -- Kiểm tra sau triển khai}
+\begin{itemize}
+	\item Kiểm tra truy cập frontend và đăng nhập hệ thống.
+	\item Kiểm tra \texttt{/api/health} hoặc endpoint tương đương của backend.
+	\item Kiểm tra trang \texttt{/grafana/} và \texttt{/prometheus/} hoạt động đúng subpath.
+\end{itemize}
+
+\subsubsection{Quy trình cập nhật phiên bản}
+Khi có phiên bản mới, quy trình cập nhật được thực hiện theo hướng giảm thời gian gián đoạn:
+\begin{enumerate}
+	\item Cập nhật mã nguồn hoặc image version theo tag phát hành.
+	\item Thực hiện backup dữ liệu PostgreSQL trước khi nâng cấp.
+	\item Triển khai lại stack bằng \texttt{docker compose up -d}.
+	\item Chạy kiểm thử smoke test cho các chức năng trọng yếu (đăng nhập, dashboard, CTXH, payment, chatbot).
+	\item Theo dõi metrics 15--30 phút đầu sau cập nhật để phát hiện hồi quy hiệu năng.
+\end{enumerate}
+
+\subsubsection{Các lưu ý vận hành và an toàn}
+Trong quá trình vận hành thực tế, nhóm áp dụng các lưu ý sau để giảm rủi ro:
+\begin{itemize}
+	\item Không hard-code secrets trong mã nguồn; toàn bộ secrets đặt ở \texttt{.env} hoặc secret manager.
+	\item Tách tài khoản quản trị cho DB, Grafana và ứng dụng; đổi mật khẩu mặc định trước khi đưa vào production.
+	\item Giới hạn quyền truy cập các route quan sát hệ thống theo IP/VPN nội bộ khi cần.
+	\item Thiết lập backup định kỳ cho dữ liệu giao dịch và file tài liệu sinh từ module biểu mẫu.
+\end{itemize}
+
+\subsection{Đánh giá hệ thống}
+
+\subsubsection{Đánh giá theo tiêu chí chức năng}
+Dựa trên kết quả kiểm thử ở Chương 6, các phân hệ chính (xác thực -- phân quyền, quản trị người dùng/tổ chức, CTXH, thu phí, biểu mẫu, chatbot) đều đạt yêu cầu chức năng trong phạm vi bài toán. Cụ thể:
+\begin{itemize}
+	\item Luồng nghiệp vụ chính vận hành đúng với đặc tả, không phát hiện lỗi chặn nghiệp vụ trong ca kiểm thử chuẩn.
+	\item Cơ chế phân quyền theo ngữ cảnh tổ chức thể hiện rõ tính phù hợp với mô hình Đoàn -- Hội đa cấp.
+	\item Tính năng import và xử lý dữ liệu lớn hoạt động ổn định nhờ chia lô và cơ chế validate trước khi ghi.
+\end{itemize}
+
+\subsubsection{Đánh giá theo tiêu chí hiệu năng}
+Kết quả kiểm thử tải cơ bản cho thấy:
+\begin{itemize}
+	\item Nhóm API giao dịch thông thường giữ thời gian phản hồi trung bình ở mức phù hợp cho tác vụ quản trị thường ngày.
+	\item Nhóm API chatbot có độ trễ cao hơn do đặc thù retrieval + generation, nhưng vẫn đảm bảo trải nghiệm hội thoại trong ngưỡng chấp nhận được.
+	\item Tỷ lệ lỗi tổng thể thấp trong các phiên chạy tải cố định 5 phút/collection.
+\end{itemize}
+
+Điều này cho thấy kiến trúc hiện tại phù hợp với quy mô triển khai mục tiêu của luận văn, đồng thời có dư địa tối ưu cho giai đoạn mở rộng người dùng.
+
+\subsubsection{Đánh giá theo tiêu chí vận hành}
+Hệ thống đạt mức sẵn sàng vận hành nhờ các yếu tố:
+\begin{itemize}
+	\item Có pipeline triển khai rõ ràng theo container hóa.
+	\item Có lớp giám sát Prometheus -- Grafana hỗ trợ theo dõi tài nguyên và chỉ số ứng dụng.
+	\item Có khả năng cập nhật cấu hình hạ tầng linh hoạt (S3 config, domain routing, biến môi trường).
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{|p{4.2cm}|p{6.0cm}|p{3.8cm}|}
+\hline
+\textbf{Tiêu chí} & \textbf{Kết quả đánh giá} & \textbf{Mức độ} \\
+\hline
+Độ đầy đủ chức năng & Bao phủ đầy đủ các phân hệ nghiệp vụ cốt lõi của cổng thông tin Đoàn -- Hội & Tốt \\
+\hline
+Tính đúng của phân quyền & RBAC theo tổ chức hoạt động đúng ở cả tầng API và tầng giao diện & Tốt \\
+\hline
+Hiệu năng API giao dịch & Thời gian phản hồi trung bình ổn định với tải kiểm thử cơ bản & Tốt \\
+\hline
+Ổn định chatbot RAG & Trả lời có nguồn tham chiếu, hỗ trợ session và streaming & Khá \\
+\hline
+Khả năng quan sát hệ thống & Có dashboard metrics và luồng giám sát phục vụ vận hành & Tốt \\
+\hline
+Khả năng mở rộng hạ tầng & Có thể mở rộng ngang theo container và tách dịch vụ khi cần & Khá \\
+\hline
+\end{tabular}
+\caption{Tổng hợp đánh giá hệ thống sau triển khai}
+\end{table}
+
+\subsubsection{Nhận xét tổng quát}
+Qua quá trình triển khai và đánh giá, hệ thống đạt được mục tiêu đề tài ở cả ba khía cạnh: đúng nghiệp vụ, khả thi kỹ thuật và sẵn sàng vận hành. Tuy nhiên, ở giai đoạn mở rộng quy mô lớn hơn, cần tiếp tục đầu tư cho tối ưu hiệu năng truy vấn vector, chiến lược cache cho các màn hình dữ liệu lớn và tự động hóa sâu hơn quy trình CI/CD.
+
+\clearpage
