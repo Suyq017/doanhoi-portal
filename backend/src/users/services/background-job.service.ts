@@ -143,10 +143,11 @@ export class UserBackgroundJobService extends EventEmitter {
       this.emit("jobCompleted", job);
     } catch (error) {
       job.status = "failed";
-      job.error = error.message;
+      const errorMessage = this.getErrorMessage(error);
+      job.error = errorMessage;
       job.completedAt = new Date();
 
-      this.logger.error(`Failed ${job.type} job ${job.id}: ${error.message}`);
+      this.logger.error(`Failed ${job.type} job ${job.id}: ${errorMessage}`);
       this.emit("jobFailed", job);
     } finally {
       this.runningJobs.delete(job.id);
@@ -288,6 +289,18 @@ export class UserBackgroundJobService extends EventEmitter {
 
     this.logger.log(`Cleaned up ${cleanedCount} old jobs`);
     return cleanedCount;
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    if (typeof error === "string") {
+      return error;
+    }
+
+    return "Unknown error";
   }
 
   onModuleDestroy(): void {

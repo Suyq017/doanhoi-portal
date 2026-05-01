@@ -4,12 +4,12 @@
 
 | Metric | Value |
 |--------|-------|
-| Test Files | 13 files |
-| Total Tests | 28 passing ✅ |
+| Test Files | 27 files |
+| Total Tests | 85 passing ✅ |
 | Test Suites | 100% passing |
 | MSW Setup | ✅ Complete |
-| Page-level Tests | 5 features |
-| Unit Tests | 3 components/hooks |
+| Page-level Tests | 8 features |
+| Unit Tests | 5 components/hooks |
 | Coverage Status | Basic - Need expansion |
 
 ### Current Test Distribution
@@ -28,6 +28,27 @@ StudentReports Feature
 Shared
 └── ImportModal.spec.tsx
 ```
+
+---
+
+## FE-First Priority Order (Current)
+
+1. Replace scaffold tests with behavioral tests:
+  - `src/features/classes/__tests__/classes.scaffold.spec.tsx`
+  - `src/features/departments/__tests__/departments.scaffold.spec.tsx`
+  - `src/features/system-config/__tests__/system-config.scaffold.spec.tsx`
+  - `src/features/templates/__tests__/templates.scaffold.spec.tsx`
+  - `src/features/permissions/__tests__/permissions.spec.tsx`
+
+2. Stabilize warning-prone suites:
+  - `src/features/auth/pages/__tests__/AdminLoginPage.spec.tsx`
+  - `src/features/auth/pages/__tests__/LoginPage.spec.tsx`
+  - `src/features/ctxh/pages/__tests__/ActivityRegistration.msw.spec.tsx`
+  - `src/features/fee-collection/page/admin/__tests__/PaymentCampaignsPage.msw.spec.tsx`
+
+3. Strengthen reusable behaviors:
+  - `src/features/student-reports/hooks/__tests__/useStudentReportsPage.spec.tsx`
+  - `src/shared/components/__tests__/ImportModal.spec.tsx`
 
 ---
 

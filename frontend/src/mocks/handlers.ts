@@ -1,5 +1,5 @@
 import { rest } from 'msw';
-import { sampleReport, sampleActivity, sampleParticipants, sampleSummary } from './fixtures';
+import { sampleReport, sampleActivity, sampleParticipants, sampleSummary, sampleClasses, sampleClass, sampleDepartments, sampleDepartment, sampleTemplates, sampleTemplate, sampleSystemConfig } from './fixtures';
 
 // Sample payment campaign data
 const samplePaymentCampaign = {
@@ -134,6 +134,95 @@ export const handlers = [
 
   rest.get('/api/organizations/:id', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(sampleOrganization));
+  }),
+
+  // ---------- Classes ----------
+  rest.get('/api/classes', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({
+      classes: sampleClasses,
+      total: sampleClasses.length,
+    }));
+  }),
+
+  rest.get('/api/classes/:id', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(sampleClass));
+  }),
+
+  rest.post('/api/classes', (_req, res, ctx) => {
+    return res(ctx.status(201), ctx.json(sampleClass));
+  }),
+
+  rest.patch('/api/classes/:id', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ ...sampleClass, updatedAt: new Date().toISOString() }));
+  }),
+
+  rest.delete('/api/classes/:id', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ message: 'Deleted' }));
+  }),
+
+  // ---------- Departments ----------
+  rest.get('/api/departments', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({
+      departments: sampleDepartments,
+      total: sampleDepartments.length,
+    }));
+  }),
+
+  rest.get('/api/departments/:id', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(sampleDepartment));
+  }),
+
+  rest.post('/api/departments', (_req, res, ctx) => {
+    return res(ctx.status(201), ctx.json(sampleDepartment));
+  }),
+
+  rest.patch('/api/departments/:id', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ ...sampleDepartment, updatedAt: new Date().toISOString() }));
+  }),
+
+  rest.delete('/api/departments/:id', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ message: 'Deleted' }));
+  }),
+
+  // ---------- Templates ----------
+  rest.get('/api/templates', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({
+      templates: sampleTemplates,
+      total: sampleTemplates.length,
+    }));
+  }),
+
+  rest.get('/api/templates/:id', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(sampleTemplate));
+  }),
+
+  rest.post('/api/templates', (_req, res, ctx) => {
+    return res(ctx.status(201), ctx.json(sampleTemplate));
+  }),
+
+  rest.patch('/api/templates/:id', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ ...sampleTemplate, updatedAt: new Date().toISOString() }));
+  }),
+
+  rest.delete('/api/templates/:id', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ message: 'Deleted' }));
+  }),
+
+  // ---------- System Config ----------
+  rest.get('/api/system-config/aws-s3', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(sampleSystemConfig));
+  }),
+
+  rest.post('/api/system-config/aws-s3', (_req, res, ctx) => {
+    return res(ctx.status(201), ctx.json(sampleSystemConfig));
+  }),
+
+  rest.patch('/api/system-config/aws-s3/:id', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ ...sampleSystemConfig, updatedAt: new Date().toISOString() }));
+  }),
+
+  rest.delete('/api/system-config/aws-s3/:id', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ message: 'Deleted' }));
   }),
 
   // ---------- Fallback / health ----------
