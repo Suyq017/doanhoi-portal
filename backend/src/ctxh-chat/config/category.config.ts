@@ -53,6 +53,6 @@ export const getCategoryListString = (): string => {
 // Helper to generate the mapping rules for the prompt
 export const getCategoryKeywordMapString = (): string => {
   return CATEGORY_MAPPINGS.map(
-    (m) => `• "${m.keywords.join(' / ')}" → "${m.category}"`
+    (m) => `"${m.keywords.join(' / ')}" → "${m.category}"`
   ).join('\n');
 };

@@ -2,6 +2,7 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "types": ["node", "jest", "express", "multer"],
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -9,6 +10,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "target": "ES2020",
+    "isolatedModules": false,
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
@@ -23,4 +25,9 @@
       "@/*": ["src/*"]
     }
   }
+  ,
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

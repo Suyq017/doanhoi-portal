@@ -63,6 +63,7 @@ export class OrganizationBatchImportService {
   private readonly sessionCache = new Map<string, SessionData>();
   private readonly SUB_BATCH_SIZE = 100; // Process in smaller chunks within transaction
   private readonly SESSION_TIMEOUT = 120 * 60 * 1000; // 120 minutes
+  private sessionCleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(
     @InjectRepository(User)
@@ -76,7 +77,20 @@ export class OrganizationBatchImportService {
     private readonly metricsService: MetricsService,
   ) {
     // Clean up expired sessions periodically
-    setInterval(() => this.cleanupExpiredSessions(), 10 * 60 * 1000); // Every 10 minutes
+    this.sessionCleanupInterval = setInterval(
+      () => this.cleanupExpiredSessions(),
+      10 * 60 * 1000,
+    ); // Every 10 minutes
+    if (typeof (this.sessionCleanupInterval as any).unref === "function") {
+      (this.sessionCleanupInterval as any).unref();
+    }
+  }
+
+  onModuleDestroy(): void {
+    if (this.sessionCleanupInterval) {
+      clearInterval(this.sessionCleanupInterval);
+      this.sessionCleanupInterval = null;
+    }
   }
 
   /**
@@ -178,7 +192,7 @@ export class OrganizationBatchImportService {
       const sessionData = this.sessionCache.get(batchInfo.sessionId);
       if (sessionData) {
         sessionData.errors.push(
-          `Batch ${batchInfo.batchNumber} error: ${error.message}`,
+          `Batch ${batchInfo.batchNumber} error: ${this.getErrorMessage(error)}`,
         );
         this.sessionCache.set(batchInfo.sessionId, sessionData);
       }
@@ -217,7 +231,7 @@ export class OrganizationBatchImportService {
       }
     } catch (rollbackError) {
       this.logger.warn(
-        `Transaction rollback warning (ignored): ${rollbackError.message}`,
+        `Transaction rollback warning (ignored): ${this.getErrorMessage(rollbackError)}`,
       );
     }
 
@@ -514,7 +528,7 @@ export class OrganizationBatchImportService {
       } catch (bulkError) {
         // Handle bulk errors with fallback to individual processing
         this.logger.warn(
-          `Bulk insert failed, falling back to individual processing: ${bulkError.message}`,
+          `Bulk insert failed, falling back to individual processing: ${this.getErrorMessage(bulkError)}`,
         );
 
         // Reset transaction
@@ -527,8 +541,9 @@ export class OrganizationBatchImportService {
             result.successful++;
           } catch (individualError) {
             result.failed++;
-            result.errors.push(`Row ${rowNumber}: ${individualError.message}`);
-            this.logger.warn(`Row ${rowNumber}: ${individualError.message}`);
+            const errorMessage = this.getErrorMessage(individualError);
+            result.errors.push(`Row ${rowNumber}: ${errorMessage}`);
+            this.logger.warn(`Row ${rowNumber}: ${errorMessage}`);
           }
         }
       }
@@ -755,6 +770,18 @@ export class OrganizationBatchImportService {
     if (cleared > 0) {
       this.logger.log(`Cleaned up ${cleared} expired sessions`);
     }
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    if (typeof error === "string") {
+      return error;
+    }
+
+    return "Unknown error";
   }
 
   /**

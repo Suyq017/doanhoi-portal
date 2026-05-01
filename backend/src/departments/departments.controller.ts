@@ -63,7 +63,7 @@ export class DepartmentsController {
     );
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="departments_template.xlsx"',
+      'attachment; filename="mau_danh_sach_don_vi.xlsx"',
     );
     res.send(templateBuffer);
   }

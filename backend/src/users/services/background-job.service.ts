@@ -28,6 +28,7 @@ export class UserBackgroundJobService extends EventEmitter {
   private isProcessing = false;
   private maxConcurrentJobs = 3;
   private runningJobs = new Set<string>();
+  private processorInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     super();
@@ -81,7 +82,7 @@ export class UserBackgroundJobService extends EventEmitter {
   }
 
   private startJobProcessor(): void {
-    setInterval(async () => {
+    this.processorInterval = setInterval(async () => {
       if (this.runningJobs.size < this.maxConcurrentJobs) {
         const nextJob = this.getNextJob();
         if (nextJob) {
@@ -89,6 +90,9 @@ export class UserBackgroundJobService extends EventEmitter {
         }
       }
     }, 1000); // Check every second
+    if (typeof (this.processorInterval as any).unref === "function") {
+      (this.processorInterval as any).unref();
+    }
   }
 
   private getNextJob(): BackgroundJob | null {
@@ -139,10 +143,11 @@ export class UserBackgroundJobService extends EventEmitter {
       this.emit("jobCompleted", job);
     } catch (error) {
       job.status = "failed";
-      job.error = error.message;
+      const errorMessage = this.getErrorMessage(error);
+      job.error = errorMessage;
       job.completedAt = new Date();
 
-      this.logger.error(`Failed ${job.type} job ${job.id}: ${error.message}`);
+      this.logger.error(`Failed ${job.type} job ${job.id}: ${errorMessage}`);
       this.emit("jobFailed", job);
     } finally {
       this.runningJobs.delete(job.id);
@@ -286,7 +291,24 @@ export class UserBackgroundJobService extends EventEmitter {
     return cleanedCount;
   }
 
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    if (typeof error === "string") {
+      return error;
+    }
+
+    return "Unknown error";
+  }
+
   onModuleDestroy(): void {
+    if (this.processorInterval) {
+      clearInterval(this.processorInterval);
+      this.processorInterval = null;
+    }
+
     // Cancel all running jobs
     for (const jobId of this.runningJobs) {
       this.cancelJob(jobId);

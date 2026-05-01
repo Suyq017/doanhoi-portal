@@ -32,7 +32,7 @@ export function normalizeLocation(raw: string | null): string | null {
     }
   }
 
-  // Không match alias nào → giữ nguyên để ILIKE search
+  // Không match alias nào -> giữ nguyên để ILIKE search
   // VD: "hội trường A4" không có trong alias list nhưng vẫn dùng được
   return raw.trim();
 }

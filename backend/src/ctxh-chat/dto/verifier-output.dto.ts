@@ -11,8 +11,8 @@ import { z } from 'zod';
 export const VerifierOutputSchema = z.object({
   /**
    * Verdict on the retrieval quality.
-   * - SUFFICIENT      : At least one result is directly relevant → proceed to generation.
-   * - NEEDS_SUPPLEMENT: Zero results returned → trigger a semantic fallback search.
+   * - SUFFICIENT      : At least one result is directly relevant -> proceed to generation.
+   * - NEEDS_SUPPLEMENT: Zero results returned -> trigger a semantic fallback search.
    */
   verdict: z
     .enum(['SUFFICIENT', 'NEEDS_SUPPLEMENT'])
@@ -31,12 +31,11 @@ export const VerifierOutputSchema = z.object({
    */
   supplementQuery: z
     .string()
-    .nullable()
     .describe(
       'Câu tìm kiếm đơn giản hơn để thực hiện semantic search bổ sung. ' +
       'Bỏ qua các ràng buộc về thời gian, địa điểm, tổ chức — chỉ giữ ý nghĩa cốt lõi. ' +
-      'Ví dụ: "hiến máu tuần này tại cơ sở 1" → "hoạt động hiến máu". ' +
-      'Trả về null nếu verdict là SUFFICIENT.',
+      'Ví dụ: "hiến máu tuần này tại cơ sở 1" -> "hoạt động hiến máu". ' +
+      'Trả về chuỗi rỗng "" nếu verdict là SUFFICIENT.',
     ),
 });
 

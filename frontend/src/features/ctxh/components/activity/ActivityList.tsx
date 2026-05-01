@@ -12,6 +12,7 @@ import { organizationService } from '../../../../shared/services';
 import { Organization } from '../../../../shared/types/organization';
 import { Pagination } from '../../../../shared/components';
 import { useOrganizationList, useActivityList } from '../../../../shared/hooks/queries';
+import { usePermissions } from '../../../../shared/hooks/usePermissions';
 
 interface ActivityListProps {
   onCreateClick: () => void;
@@ -34,6 +35,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
   permissions
 }) => {
   const { t } = useTranslation('ctxh');
+  const { user } = usePermissions();
+  const isStudentUser = user?.userType === 'student';
 
   // Prefetch organizations using React Query (for caching)
   useOrganizationList();
@@ -126,12 +129,17 @@ const ActivityList: React.FC<ActivityListProps> = ({
   };
 
   // Filter functions for comboboxes (status only - category & organization use server-side search)
-  const statusOptions = [
-    { value: ActivityStatus.DRAFT, label: t('activity.statusOptions.DRAFT') },
-    { value: ActivityStatus.ACTIVE, label: t('activity.statusOptions.ACTIVE') },
-    { value: ActivityStatus.COMPLETED, label: t('activity.statusOptions.COMPLETED') },
-    { value: ActivityStatus.CANCELLED, label: t('activity.statusOptions.CANCELLED') }
-  ];
+  const statusOptions = isStudentUser
+    ? [
+        { value: ActivityStatus.ACTIVE, label: t('activity.statusOptions.ACTIVE') },
+        { value: ActivityStatus.COMPLETED, label: t('activity.statusOptions.COMPLETED') }
+      ]
+    : [
+        { value: ActivityStatus.DRAFT, label: t('activity.statusOptions.DRAFT') },
+        { value: ActivityStatus.ACTIVE, label: t('activity.statusOptions.ACTIVE') },
+        { value: ActivityStatus.COMPLETED, label: t('activity.statusOptions.COMPLETED') },
+        { value: ActivityStatus.CANCELLED, label: t('activity.statusOptions.CANCELLED') }
+      ];
 
   const filteredStatuses = statusOptions.filter(status =>
     status.label.toLowerCase().includes(statusSearch.toLowerCase())

@@ -16,6 +16,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "test:core": "jest --testPathIgnorePatterns=ctxh-chat",
+    "test:core:cov": "jest --coverage --testPathIgnorePatterns=ctxh-chat",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:phase2": "jest --testPathPattern=ctxh-chat",
@@ -50,6 +52,7 @@
     "migrate:embeddings": "ts-node -r tsconfig-paths/register src/scripts/migrate-embeddings.ts",
     "generate:testset": "ts-node scripts/generate-testset.ts",
     "generate:sql": "ts-node scripts/excel-to-sql.ts",
+    "seed:ctxh-testset": "ts-node scripts/seed-ctxh-testset.ts",
     "models:health": "curl -X GET http://localhost:9200/api/ctxh-chat/health/models"
   },
   "dependencies": {
@@ -62,6 +65,7 @@
     "@langchain/ollama": "^1.2.1",
     "@langchain/openai": "^1.1.2",
     "@langchain/textsplitters": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@nestjs/bull": "^11.0.4",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.1.1",
@@ -92,6 +96,7 @@
     "langchain": "^1.0.6",
     "multer": "^2.0.1",
     "node-fetch": "^3.3.2",
+    "nodemailer": "^8.0.5",
     "openai": "^4.104.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
@@ -107,7 +112,7 @@
     "typeorm": "^0.3.17",
     "uuid": "^9.0.1",
     "xlsx": "^0.18.5",
-    "zod": "^3.23.8"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
@@ -118,8 +123,9 @@
     "@types/eslint": "^9.6.1",
     "@types/express": "^4.17.17",
     "@types/graceful-fs": "^4.1.9",
-    "@types/jest": "^29.5.2",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.3.1",
+    "@types/nodemailer": "^8.0.0",
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-jwt": "^3.0.13",
@@ -155,7 +161,19 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!**/database/**",
+      "!**/migrations/**",
+      "!**/scripts/**",
+      "!**/seeds/**",
+      "!**/entities/**",
+      "!**/dto/**",
+      "!**/*.module.ts",
+      "!**/ctxh-chat/subscribers/**",
+      "!**/ctxh-chat/processors/**",
+      "!**/ctxh-mcp/tools/**",
+      "!**/*.seed.(t|j)s",
+      "!**/*.spec.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",

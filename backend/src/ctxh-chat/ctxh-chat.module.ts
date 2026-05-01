@@ -1,11 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
 
 import { CtxhEmbedding } from '../entities/ctxh-embedding.entity';
 import { CtxhActivity } from '../entities/ctxh-activity.entity';
+import { User } from '../entities/user.entity';
 import { CtxhChatController } from './controllers/ctxh-chat.controller';
+import { ActivitiesModule } from '../ctxh/activity/activities.module';
 
 // Universal Services (Ollama/Gemini toggle)
 import { UniversalEmbeddingsService } from './services/universal-embeddings.service';
@@ -18,16 +20,27 @@ import { LangChainRagChainService } from './services/langchain-rag-chain.service
 import { LangChainAdvancedRetrieverService } from './services/langchain-advanced-retriever.service';
 import { LangChainIngestionService } from './services/langchain-ingestion.service';
 import { CtxhFilterExtractionService } from './services/ctxh-filter-extraction.service';
+import { UserContextService } from './services/user-context.service';
+import { StaffAgentService } from './services/staff-agent.service';
+import { PostgresMcpClientService } from './services/postgres-mcp-client.service';
+import { McpSqlFallbackService } from './services/mcp-sql-fallback.service';
+import { McpMetadataEnricherService } from './services/mcp-metadata-enricher.service';
+import { FollowUpSuggestionsService } from './services/follow-up-suggestions.service';
+import { CtxhAgentService } from './services/ctxh-agent.service';
 
 // Vector Auto-Ingestion Pipeline
 import { CtxhVectorSyncService } from './services/ctxh-vector-sync.service';
 import { VectorIngestionProcessor } from './processors/vector-ingestion.processor';
 import { VECTOR_QUEUE } from './constants/vector-queue.constants';
 
+// Notifications (re-declared here to avoid circular CtxhChatModule ↔ CtxhMcpModule)
+import { NodemailerService } from '../ctxh-mcp/notifications/nodemailer.service';
+
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    TypeOrmModule.forFeature([CtxhEmbedding, CtxhActivity]),
+    TypeOrmModule.forFeature([CtxhEmbedding, CtxhActivity, User]),
+    forwardRef(() => ActivitiesModule),
     BullModule.registerQueue({
       name: VECTOR_QUEUE,
       defaultJobOptions: {
@@ -50,6 +63,16 @@ import { VECTOR_QUEUE } from './constants/vector-queue.constants';
     LangChainAdvancedRetrieverService,
     LangChainIngestionService,
     CtxhFilterExtractionService,
+    CtxhAgentService,
+    UserContextService,
+    FollowUpSuggestionsService,
+    // Staff Agent (tool-calling chatbot for cán bộ)
+    NodemailerService,
+    StaffAgentService,
+    // Postgres MCP Client + dependent services
+    PostgresMcpClientService,
+    McpSqlFallbackService,
+    McpMetadataEnricherService,
     // Vector Auto-Ingestion Pipeline
     CtxhVectorSyncService,
     VectorIngestionProcessor, // Worker với concurrency: 1 per job type
@@ -65,6 +88,7 @@ import { VECTOR_QUEUE } from './constants/vector-queue.constants';
     LangChainAdvancedRetrieverService,
     LangChainIngestionService,
     CtxhFilterExtractionService,
+    UserContextService,
     // Vector Auto-Ingestion Pipeline
     CtxhVectorSyncService,
   ],

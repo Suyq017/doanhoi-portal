@@ -3,6 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { InMemoryChatMessageHistory } from '@langchain/core/chat_history';
 import { HumanMessage, AIMessage, BaseMessage } from '@langchain/core/messages';
 
+/** A single activity tracked in session context. */
+export interface MentionedActivity {
+  activityId: string | number;
+  activityName: string;
+  isRecruiting: boolean;
+}
+
 /**
  * Memory entry with metadata for TTL management
  */
@@ -11,6 +18,20 @@ interface MemoryEntry {
   history: InMemoryChatMessageHistory;
   lastAccessed: Date;
   turnCount: number;
+  /** Activities mentioned per turn — sliding window used by REGISTER_ACTIVITY intent */
+  recentMentionedActivities: Array<{
+    turnIndex: number;
+    activities: MentionedActivity[];
+  }>;
+  /**
+   * Activity pending explicit user confirmation before registering.
+   * Set when chatbot shows details + asks "Bạn có muốn đăng ký không?".
+   * Cleared once user confirms or cancels.
+   */
+  pendingRegistration?: {
+    activityId: string | number;
+    activityName: string;
+  };
 }
 
 /**
@@ -40,6 +61,9 @@ export class LangChainMemoryService {
       () => this.cleanupOldMemories(),
       5 * 60 * 1000, // Every 5 minutes
     );
+    if (typeof (this.cleanupInterval as any).unref === 'function') {
+      (this.cleanupInterval as any).unref();
+    }
 
     // Initialize BufferMemory class synchronously with require
     this.initBufferMemory();
@@ -97,6 +121,7 @@ export class LangChainMemoryService {
         history,
         lastAccessed: new Date(),
         turnCount: 0,
+        recentMentionedActivities: [],
       });
 
       this.logger.debug(`Created new memory for session: ${sessionId}`);
@@ -208,7 +233,9 @@ export class LangChainMemoryService {
 
     try {
       await memoryEntry.history.addMessages(messages);
+      memoryEntry.turnCount += 1;
       memoryEntry.lastAccessed = new Date();
+      await this.trimMemoryIfNeeded(sessionId);
     } catch (error) {
       this.logger.error(`Failed to add messages for ${sessionId}`, error);
     }
@@ -245,6 +272,104 @@ export class LangChainMemoryService {
    */
   getActiveSessions(): string[] {
     return Array.from(this.memories.keys());
+  }
+
+  /**
+   * Store ALL activities mentioned in one turn (sliding window of 3 turns).
+   * Called by LangChainRagChainService after each retrieval response.
+   */
+  setMentionedActivities(sessionId: string, activities: MentionedActivity[]): void {
+    if (!this.memories.has(sessionId)) {
+      this.getMemory(sessionId);
+    }
+    const entry = this.memories.get(sessionId);
+    if (!entry || activities.length === 0) return;
+
+    entry.recentMentionedActivities.push({
+      turnIndex: entry.turnCount,
+      activities,
+    });
+
+    // Keep only last 3 turns
+    if (entry.recentMentionedActivities.length > 3) {
+      entry.recentMentionedActivities = entry.recentMentionedActivities.slice(-3);
+    }
+
+    this.logger.debug(
+      `[Memory] Stored ${activities.length} activities for ${sessionId} (turn ${entry.turnCount})`,
+    );
+  }
+
+  /**
+   * Return a flat, deduplicated list of all activities from the last N turns.
+   * Most-recent turn comes first, so index 0 = "hoạt động vừa đề cập".
+   */
+  getMentionedActivities(sessionId: string, maxTurns = 3): MentionedActivity[] {
+    const entry = this.memories.get(sessionId);
+    if (!entry) return [];
+
+    const recentTurns = entry.recentMentionedActivities.slice(-maxTurns);
+    const seen = new Set<string | number>();
+    const result: MentionedActivity[] = [];
+
+    // Iterate from most-recent to oldest so newest turn wins dedup
+    for (const turn of [...recentTurns].reverse()) {
+      for (const activity of turn.activities) {
+        if (!seen.has(activity.activityId)) {
+          seen.add(activity.activityId);
+          result.push(activity);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Backward-compat: store a single activity (wraps setMentionedActivities).
+   */
+  setLastMentionedActivity(
+    sessionId: string,
+    activityId: string | number,
+    activityName: string,
+    isRecruiting: boolean,
+  ): void {
+    this.setMentionedActivities(sessionId, [{ activityId, activityName, isRecruiting }]);
+  }
+
+  /**
+   * Backward-compat: return the most-recently mentioned activity.
+   */
+  getLastMentionedActivity(sessionId: string): MentionedActivity | null {
+    return this.getMentionedActivities(sessionId, 1)[0] ?? null;
+  }
+
+  /** Store an activity waiting for explicit user confirmation before registering. */
+  setPendingRegistration(
+    sessionId: string,
+    activityId: string | number,
+    activityName: string,
+  ): void {
+    const entry = this.memories.get(sessionId);
+    if (entry) {
+      entry.pendingRegistration = { activityId, activityName };
+      entry.lastAccessed = new Date();
+    }
+  }
+
+  /** Retrieve the pending registration (null if none). */
+  getPendingRegistration(
+    sessionId: string,
+  ): { activityId: string | number; activityName: string } | null {
+    return this.memories.get(sessionId)?.pendingRegistration ?? null;
+  }
+
+  /** Clear pending registration (after user confirms or cancels). */
+  clearPendingRegistration(sessionId: string): void {
+    const entry = this.memories.get(sessionId);
+    if (entry) {
+      delete entry.pendingRegistration;
+    }
   }
 
   /**

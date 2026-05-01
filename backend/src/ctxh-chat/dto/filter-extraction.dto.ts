@@ -10,9 +10,9 @@ import { VALID_CATEGORIES } from '../config/category.config';
 export const MetadataFilterSchema = z.object({
   /**
    * Mapped activity statuses.
-   * "đang mở / đang diễn ra" → "ongoing"
-   * "sắp diễn ra / sắp tới" → "upcoming"
-   * "đã kết thúc / đã qua" → "ended"
+   * "đang mở / đang diễn ra" -> "ongoing"
+   * "sắp diễn ra / sắp tới" -> "upcoming"
+   * "đã kết thúc / đã qua" -> "ended"
    */
   status: z
     .array(z.enum(['ongoing', 'upcoming', 'ended']))
@@ -39,7 +39,7 @@ export const MetadataFilterSchema = z.object({
 
   /**
    * Free-text keyword(s) to match against organizationName via ILIKE.
-   * Example: user says "khoa Máy tính" → ["Máy tính"]
+   * Example: user says "khoa Máy tính" -> ["Máy tính"]
    */
   organizationKeywords: z
     .array(z.string())
@@ -53,8 +53,8 @@ export const MetadataFilterSchema = z.object({
 
   /**
    * Organization hierarchy level.
-   * "Hội sinh viên", "Đoàn trường" → "parent" (toàn trường)
-   * "Liên chi đoàn / Chi hội Khoa X" → "child" (cấp khoa)
+   * "Hội sinh viên", "Đoàn trường" -> "parent" (toàn trường)
+   * "Liên chi đoàn / Chi hội Khoa X" -> "child" (cấp khoa)
    */
   organizationLevel: z
     .enum(['parent', 'child'])

@@ -11,27 +11,44 @@ services:
       - "9000:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-mcp-role.sql:/docker-entrypoint-initdb.d/02-init-mcp-role.sql:ro
     networks:
       - doanhoi-network
     restart: unless-stopped
 
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: doanhoi-pgadmin
+  postgres-mcp:
+    image: crystaldba/postgres-mcp:latest
+    container_name: doanhoi-postgres-mcp
+    command:
+      - "--transport=sse"
+      - "--access-mode=unrestricted"
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@doanhoi.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      DATABASE_URI: "postgresql://mcp_agent:mcp_secret_pw@doanhoi-postgres:5432/doanhoi"
     ports:
-      - "9001:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - "8000:8000"
     networks:
       - doanhoi-network
     depends_on:
       - postgres
     restart: unless-stopped
+
+
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: doanhoi-pgadmin
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@doanhoi.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin123
+  #     PGADMIN_CONFIG_SERVER_MODE: 'False'
+  #   ports:
+  #     - "9001:80"
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
+  #   networks:
+  #     - doanhoi-network
+  #   depends_on:
+  #     - postgres
+  #   restart: unless-stopped
 
   redis:
     image: redis:8.2.3
@@ -88,48 +105,48 @@ services:
       - prometheus
     restart: unless-stopped
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: doanhoi-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    environment:
-      - OLLAMA_NUM_THREAD=8         # đổi theo số core CPU của máy
-      - OLLAMA_KEEP_ALIVE=10m       # giữ model trong RAM, tránh reload
-      - OLLAMA_MAX_LOADED_MODELS=1  # chỉ load 1 model, không chia RAM
-      - OLLAMA_NUM_PARALLEL=1       # 1 request tại 1 thời điểm
-    entrypoint:
-      - bash
-      - -c
-      - >
-        ollama serve &
-        echo 'Waiting for Ollama to start...' &&
-        sleep 5 &&
-        echo 'Pulling bge-m3 model...' &&
-        ollama pull bge-m3 &&
-        echo 'Pulling qwen3:4b model...' &&
-        ollama pull qwen3:4b &&
-        echo 'Done pulling models! Ollama is ready.' &&
-        wait
-    networks:
-      - doanhoi-network
-    restart: unless-stopped
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: doanhoi-ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   environment:
+  #     - OLLAMA_NUM_THREAD=8         # đổi theo số core CPU của máy
+  #     - OLLAMA_KEEP_ALIVE=10m       # giữ model trong RAM, tránh reload
+  #     - OLLAMA_MAX_LOADED_MODELS=1  # chỉ load 1 model, không chia RAM
+  #     - OLLAMA_NUM_PARALLEL=1       # 1 request tại 1 thời điểm
+  #   entrypoint:
+  #     - bash
+  #     - -c
+  #     - >
+  #       ollama serve &
+  #       echo 'Waiting for Ollama to start...' &&
+  #       sleep 5 &&
+  #       echo 'Pulling bge-m3 model...' &&
+  #       ollama pull bge-m3 &&
+  #       echo 'Pulling qwen3:4b model...' &&
+  #       ollama pull qwen3:4b &&
+  #       echo 'Done pulling models! Ollama is ready.' &&
+  #       wait
+  #   networks:
+  #     - doanhoi-network
+  #   restart: unless-stopped
 
 volumes:
   postgres_data:
     driver: local
-  pgadmin_data:
-    driver: local
+  # pgadmin_data:
+  #   driver: local
   redis_data:
     driver: local
   prometheus_data:
     driver: local
   grafana_data:
     driver: local
-  ollama_data:
-    driver: local
+  # ollama_data:
+  #   driver: local
 
 networks:
   doanhoi-network:
