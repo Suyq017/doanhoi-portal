@@ -3,14 +3,7 @@ import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { LimitConfigController } from '../limit-config.controller';
 
 describe('LimitConfigController', () => {
-  let limitConfigService: {
-    create: jest.Mock;
-    findAll: jest.Mock;
-    findOne: jest.Mock;
-    update: jest.Mock;
-    remove: jest.Mock;
-    restore: jest.Mock;
-  };
+  let limitConfigService: any;
   let controller: LimitConfigController;
 
   beforeEach(() => {

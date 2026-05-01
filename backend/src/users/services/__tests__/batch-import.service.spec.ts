@@ -13,25 +13,25 @@ describe("BatchImportService", () => {
     release: jest.fn(async () => undefined),
     isTransactionActive: false,
     manager: {
-      insert: jest.fn(async () => ({ identifiers: [] })),
-      findOne: jest.fn(async () => null),
-      save: jest.fn(async (_entity: any, data: any) => data),
-      create: jest.fn((_entity: any, data: any) => data),
+      insert: (jest.fn(async () => ({ identifiers: [] })) as any),
+      findOne: (jest.fn(async () => null) as any),
+      save: (jest.fn(async (_entity: any, data: any) => data) as any),
+      create: (jest.fn((_entity: any, data: any) => data) as any),
     },
   });
 
-  let validationService: { validateImportData: jest.Mock };
-  let dataSource: { createQueryRunner: jest.Mock };
+  let validationService: any;
+  let dataSource: any;
   let service: BatchImportService;
 
   beforeEach(() => {
     validationService = {
       validateImportData: jest.fn(),
-    };
+    } as any;
 
     dataSource = {
       createQueryRunner: jest.fn(() => createQueryRunnerMock()),
-    };
+    } as any;
 
     service = new BatchImportService(
       createRepoMock() as never,
@@ -357,8 +357,7 @@ describe("BatchImportService", () => {
     queryRunner.manager.insert = jest.fn(async () => {
       throw new Error("duplicate key value violates unique constraint");
     });
-    queryRunner.manager.findOne = jest
-      .fn()
+    queryRunner.manager.findOne = (jest.fn() as any)
       .mockResolvedValueOnce({ id: "existing" })
       .mockResolvedValueOnce(null);
 
@@ -418,8 +417,7 @@ describe("BatchImportService", () => {
 
   it("should create user entities and skip rows that throw", async () => {
     const queryRunner = createQueryRunnerMock();
-    queryRunner.manager.findOne = jest
-      .fn()
+    queryRunner.manager.findOne = (jest.fn() as any)
       .mockResolvedValueOnce({ id: "class-1" })
       .mockResolvedValueOnce({ id: "dept-1" })
       .mockResolvedValueOnce({ id: "dept-2" });
@@ -461,8 +459,7 @@ describe("BatchImportService", () => {
 
   it("should resolve references and import a single user through helper methods", async () => {
     const queryRunner = createQueryRunnerMock();
-    queryRunner.manager.findOne = jest
-      .fn()
+    queryRunner.manager.findOne = (jest.fn() as any)
       .mockResolvedValueOnce({ id: "dept-1" })
       .mockResolvedValueOnce({ id: "class-1" })
       .mockResolvedValueOnce({ id: "class-1" })

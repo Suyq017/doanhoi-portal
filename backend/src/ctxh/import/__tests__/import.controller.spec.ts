@@ -3,10 +3,7 @@ import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { CtxhImportController } from '../import.controller';
 
 describe('CtxhImportController', () => {
-  let importService: {
-    validateOldSystemCtxh: jest.Mock;
-    importOldSystemCtxh: jest.Mock;
-  };
+  let importService: any;
   let controller: CtxhImportController;
 
   beforeEach(() => {

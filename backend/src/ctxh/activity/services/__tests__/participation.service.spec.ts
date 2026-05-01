@@ -16,13 +16,13 @@ describe("ParticipationService", () => {
   });
 
   const createRepoMock = () => ({
-    findOne: jest.fn(),
-    find: jest.fn(),
-    create: jest.fn((v) => v),
-    save: jest.fn(async (v) => ({ ...v, id: "p1" })),
+    findOne: jest.fn() as any,
+    find: jest.fn() as any,
+    create: jest.fn((v: any) => v),
+    save: jest.fn(async (v: any) => ({ ...v, id: "p1" })),
     update: jest.fn(async () => undefined),
-    createQueryBuilder: jest.fn(() => createQB()),
-    query: jest.fn(),
+    createQueryBuilder: jest.fn(() => createQB()) as any,
+    query: jest.fn() as any,
   });
 
   let participationRepository: ReturnType<typeof createRepoMock>;

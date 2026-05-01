@@ -7,6 +7,7 @@ describe("OrganizationsController", () => {
     findTree: jest.fn(),
     findTreeWithDepth: jest.fn(),
     findTreeByTypeCode: jest.fn(),
+    findByTypeCodeWithChildren: jest.fn(),
     getStats: jest.fn(),
     findByType: jest.fn(),
     getAccessibleOrganizations: jest.fn(),

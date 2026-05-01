@@ -176,7 +176,7 @@ describe("PaymentCampaignService extra tests", () => {
       select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       leftJoinAndSelect: jest.fn().mockReturnThis(),
-      getRawOne: jest.fn().mockResolvedValue({
+      getRawOne: (jest.fn() as any).mockResolvedValue({
         totalAssignments: "4",
         paidCount: "3",
         pendingCount: "1",

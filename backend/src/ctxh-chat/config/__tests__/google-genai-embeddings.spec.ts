@@ -12,7 +12,7 @@ jest.mock('@google/genai', () => ({
 }));
 
 describe('GoogleGenAIEmbeddings', () => {
-  let consoleLogSpy: jest.SpyInstance;
+  let consoleLogSpy: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -36,7 +36,7 @@ describe('GoogleGenAIEmbeddings', () => {
       };
     };
 
-    googleClient.models.embedContent.mockResolvedValue({
+    (googleClient.models.embedContent as any).mockResolvedValue({
       embeddings: [{ values: [0.1, 0.2, 0.3] }],
     });
 
@@ -63,7 +63,7 @@ describe('GoogleGenAIEmbeddings', () => {
       };
     };
 
-    googleClient.models.embedContent.mockResolvedValue({ embeddings: [] });
+    (googleClient.models.embedContent as any).mockResolvedValue({ embeddings: [] });
 
     await expect(embeddings.embedQuery('fallback')).rejects.toThrow(
       'Failed to generate embedding: No embeddings returned from API',
@@ -83,7 +83,7 @@ describe('GoogleGenAIEmbeddings', () => {
       };
     };
 
-    googleClient.models.embedContent
+    (googleClient.models.embedContent as any)
       .mockResolvedValueOnce({ embeddings: [{ values: [1, 2] }] })
       .mockResolvedValueOnce({ embeddings: [{ values: [3, 4] }] });
 
@@ -107,7 +107,7 @@ describe('GoogleGenAIEmbeddings', () => {
       };
     };
 
-    googleClient.models.embedContent.mockRejectedValue(new Error('network down'));
+    (googleClient.models.embedContent as any).mockRejectedValue(new Error('network down'));
 
     await expect(embeddings.embedQuery('problem')).rejects.toThrow(
       'Failed to generate embedding: network down',

@@ -68,12 +68,12 @@ describe("PaymentAssignmentController", () => {
   });
 
   it("should call getStatistics with only campaignId", async () => {
-    assignmentService.getStatistics.mockResolvedValue({ total: 5 });
+    assignmentService.getStatistics.mockResolvedValue({ totalAssignments: 5, pendingCount: 0, paidCount: 5, overdueCount: 0, exemptedCount: 0, totalPaidAmount: 0, totalAmount: 1000, averageAmount: 200, paymentRate: 100 });
 
     const result = await controller.getStatistics("camp-1");
 
     expect(assignmentService.getStatistics).toHaveBeenCalledWith("camp-1", undefined);
-    expect(result.data.total).toBe(5);
+    expect(result.data.totalAssignments).toBe(5);
   });
 
   it("should default pagination to page 1 and limit 10", async () => {

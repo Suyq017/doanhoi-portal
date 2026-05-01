@@ -63,6 +63,7 @@ export class OrganizationBatchImportService {
   private readonly sessionCache = new Map<string, SessionData>();
   private readonly SUB_BATCH_SIZE = 100; // Process in smaller chunks within transaction
   private readonly SESSION_TIMEOUT = 120 * 60 * 1000; // 120 minutes
+  private sessionCleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(
     @InjectRepository(User)
@@ -76,7 +77,20 @@ export class OrganizationBatchImportService {
     private readonly metricsService: MetricsService,
   ) {
     // Clean up expired sessions periodically
-    setInterval(() => this.cleanupExpiredSessions(), 10 * 60 * 1000); // Every 10 minutes
+    this.sessionCleanupInterval = setInterval(
+      () => this.cleanupExpiredSessions(),
+      10 * 60 * 1000,
+    ); // Every 10 minutes
+    if (typeof (this.sessionCleanupInterval as any).unref === "function") {
+      (this.sessionCleanupInterval as any).unref();
+    }
+  }
+
+  onModuleDestroy(): void {
+    if (this.sessionCleanupInterval) {
+      clearInterval(this.sessionCleanupInterval);
+      this.sessionCleanupInterval = null;
+    }
   }
 
   /**

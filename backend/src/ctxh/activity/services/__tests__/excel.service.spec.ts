@@ -5,15 +5,15 @@ import { ExcelService } from "../excel.service";
 
 describe("CTXH ExcelService", () => {
   const createUserRepoMock = () => ({
-    findOne: jest.fn(),
+    findOne: jest.fn() as any,
   });
 
   const createParticipationServiceMock = () => ({
-    findByActivity: jest.fn(),
+    findByActivity: jest.fn() as any,
   });
 
-  let userRepository: ReturnType<typeof createUserRepoMock>;
-  let participationService: ReturnType<typeof createParticipationServiceMock>;
+  let userRepository: any;
+  let participationService: any;
   let service: ExcelService;
 
   beforeEach(() => {

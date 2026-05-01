@@ -11,7 +11,7 @@ const createNestMocks = (appMock: any) => {
 
   jest.doMock("@nestjs/core", () => ({
     NestFactory: {
-      create: jest.fn().mockResolvedValue(appMock),
+      create: (jest.fn() as any).mockResolvedValue(appMock),
     },
   }));
 
@@ -72,7 +72,7 @@ describe("bootstrap", () => {
       get: jest.fn().mockReturnValue({}),
       useGlobalInterceptors: jest.fn(),
       useGlobalPipes: jest.fn(),
-      listen: jest.fn().mockResolvedValue(undefined),
+      listen: (jest.fn() as any).mockResolvedValue(undefined),
     } as any;
 
     jest.isolateModules(() => {
@@ -106,7 +106,7 @@ describe("bootstrap", () => {
       get: jest.fn().mockReturnValue({}),
       useGlobalInterceptors: jest.fn(),
       useGlobalPipes: jest.fn(),
-      listen: jest.fn().mockResolvedValue(undefined),
+      listen: (jest.fn() as any).mockResolvedValue(undefined),
     } as any;
 
     jest.isolateModules(() => {

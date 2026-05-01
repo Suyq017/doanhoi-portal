@@ -3,21 +3,21 @@ import * as XLSX from "xlsx";
 import { ExportService } from "../export.service";
 
 const createRepositoryMock = () => ({
-  find: jest.fn(),
-  findOne: jest.fn(),
+  find: jest.fn() as any,
+  findOne: jest.fn() as any,
 });
 
 const createUserOrganizationRepositoryMock = () => ({
-  find: jest.fn(),
+  find: jest.fn() as any,
 });
 
 describe("ExportService", () => {
-  let userRepository: ReturnType<typeof createRepositoryMock>;
-  let organizationRepository: ReturnType<typeof createRepositoryMock>;
-  let userOrganizationRepository: ReturnType<typeof createUserOrganizationRepositoryMock>;
-  let paymentAssignmentRepository: ReturnType<typeof createRepositoryMock>;
-  let paymentCampaignRepository: ReturnType<typeof createRepositoryMock>;
-  let paymentHistoryRepository: ReturnType<typeof createRepositoryMock>;
+  let userRepository: any;
+  let organizationRepository: any;
+  let userOrganizationRepository: any;
+  let paymentAssignmentRepository: any;
+  let paymentCampaignRepository: any;
+  let paymentHistoryRepository: any;
 
   const createService = () => new ExportService(
     userRepository as never,
