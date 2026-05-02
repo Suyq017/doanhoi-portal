@@ -57,6 +57,7 @@
   },
   "actions": {
     "payNow": "Thanh toán ngay",
+    "processing": "Đang xử lý...",
     "payNowPhonetic": "Thanh toán",
     "paymentExpired": "Đã hết hạn thanh toán",
     "paymentExpiredPhonetic": "Hết hạn",

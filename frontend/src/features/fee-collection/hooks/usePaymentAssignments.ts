@@ -81,7 +81,7 @@ export const usePaymentAssignments = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/payment/assignments', {
+      const response = await fetch('/api/payment/assignments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +111,7 @@ export const usePaymentAssignments = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/payment/assignments/bulk', {
+      const response = await fetch('/api/payment/assignments/bulk', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,7 +148,7 @@ export const usePaymentAssignments = () => {
       if (filters?.page) params.append('page', filters.page.toString());
       if (filters?.limit) params.append('limit', filters.limit.toString());
 
-      const response = await fetch(`/payment/assignments?${params}`);
+      const response = await fetch(`/api/payment/assignments?${params}`);
       const result = await response.json();
 
       if (!response.ok) {
@@ -171,7 +171,7 @@ export const usePaymentAssignments = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/payment/assignments/${id}`);
+      const response = await fetch(`/api/payment/assignments/${id}`);
       const result = await response.json();
 
       if (!response.ok) {
@@ -194,7 +194,7 @@ export const usePaymentAssignments = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/payment/assignments/${id}`, {
+      const response = await fetch(`/api/payment/assignments/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -224,7 +224,7 @@ export const usePaymentAssignments = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/payment/assignments/${id}/mark-paid`, {
+      const response = await fetch(`/api/payment/assignments/${id}/mark-paid`, {
         method: 'PATCH',
       });
 
@@ -250,7 +250,7 @@ export const usePaymentAssignments = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/payment/assignments/${id}/mark-overdue`, {
+      const response = await fetch(`/api/payment/assignments/${id}/mark-overdue`, {
         method: 'PATCH',
       });
 
@@ -276,7 +276,7 @@ export const usePaymentAssignments = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/payment/assignments/${id}`, {
+      const response = await fetch(`/api/payment/assignments/${id}`, {
         method: 'DELETE',
       });
 
@@ -306,7 +306,7 @@ export const usePaymentAssignments = () => {
       if (campaignId) params.append('campaignId', campaignId);
       if (organizationId) params.append('organizationId', organizationId);
 
-      const response = await fetch(`/payment/assignments/statistics?${params}`);
+      const response = await fetch(`/api/payment/assignments/statistics?${params}`);
       const result = await response.json();
 
       if (!response.ok) {
@@ -329,7 +329,7 @@ export const usePaymentAssignments = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/payment/assignments/check-overdue', {
+      const response = await fetch('/api/payment/assignments/check-overdue', {
         method: 'POST',
       });
 

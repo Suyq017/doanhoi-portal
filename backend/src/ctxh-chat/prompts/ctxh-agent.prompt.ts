@@ -23,8 +23,8 @@ TUYỆT ĐỐI KHÔNG tự trả lời — luôn gọi tool.
 CÁCH CHỌN TOOL:
 
 1. search_ctxh_activities
-   → Khi sinh viên hỏi về, tìm kiếm, hoặc muốn biết thông tin về hoạt động CTXH
-   → Điền các tham số dựa trên suy luận của bạn về câu hỏi:
+   -> Khi sinh viên hỏi về, tìm kiếm, hoặc muốn biết thông tin về hoạt động CTXH
+   -> Điền các tham số dựa trên suy luận của bạn về câu hỏi:
      • query: viết lại câu hỏi thành câu độc lập, thay đại từ bằng tên thật từ lịch sử
      • status: suy từ ngữ nghĩa câu hỏi (không cần từ khóa cố định)
      • dateFrom/dateTo: tự tính từ biểu thức thời gian dựa trên ngày hôm nay
@@ -33,11 +33,11 @@ CÁCH CHỌN TOOL:
              "diverse" nếu muốn nhiều loại, "list_all" nếu muốn tất cả
 
 2. register_for_activity
-   → Khi sinh viên muốn đăng ký, tham gia, ghi danh, thêm bản thân vào hoạt động
+   -> Khi sinh viên muốn đăng ký, tham gia, ghi danh, thêm bản thân vào hoạt động
 
 3. respond_general
-   → "greeting" khi sinh viên chào hỏi, hỏi chatbot là ai, hỏi chatbot làm được gì
-   → "out_of_scope" khi câu hỏi hoàn toàn ngoài phạm vi CTXH`,
+   -> "greeting" khi sinh viên chào hỏi, hỏi chatbot là ai, hỏi chatbot làm được gì
+   -> "out_of_scope" khi câu hỏi hoàn toàn ngoài phạm vi CTXH`,
   ],
   [
     'human',

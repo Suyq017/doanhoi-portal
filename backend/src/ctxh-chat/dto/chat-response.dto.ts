@@ -96,4 +96,11 @@ export class ChatResponseDto {
     required: false,
   })
   contexts?: string[];
+
+  @ApiProperty({
+    description: '[Evaluation mode only] Detected intent for accuracy evaluation',
+    example: 'RAG_QUERY',
+    required: false,
+  })
+  eval_intent?: string;
 }

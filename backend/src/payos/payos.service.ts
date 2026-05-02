@@ -3,7 +3,7 @@ import { PaymentCampaignPayosConfigService } from "../payment/services/payment-c
 import { PaymentHistoryService } from "../payment/services/payment-history.service";
 import { PaymentAssignmentService } from "../payment/services/payment-assignment.service";
 import { PaymentHistoryStatus } from "../entities/payment-history.entity";
-import PayOS = require("@payos/node");
+import { PayOS } from "@payos/node";
 
 @Injectable()
 export class SimplePayosService {
@@ -35,14 +35,14 @@ export class SimplePayosService {
       );
 
       // Tạo PayOS instance với config động từ database
-      const payos = new PayOS(
-        config.clientId,
-        config.apiKey,
-        config.checksumKey,
-      );
+      const payos = new PayOS({
+        clientId: config.clientId,
+        apiKey: config.apiKey,
+        checksumKey: config.checksumKey,
+      });
       // Xóa campaignId khỏi orderData trước khi gửi đến PayOS
       const { campaignId: _campaignId, ...payosOrderData } = orderData;
-      return payos.createPaymentLink(payosOrderData);
+      return payos.paymentRequests.create(payosOrderData);
     } catch (error) {
       console.error(
         `❌ createPaymentLink failed for campaignId ${orderData.campaignId}:`,
@@ -65,14 +65,14 @@ export class SimplePayosService {
         await this.payosConfigService.getEffectiveConfig(campaignId);
 
       // Tạo PayOS instance với config động từ database
-      const payos = new PayOS(
-        config.clientId,
-        config.apiKey,
-        config.checksumKey,
-      );
+      const payos = new PayOS({
+        clientId: config.clientId,
+        apiKey: config.apiKey,
+        checksumKey: config.checksumKey,
+      });
 
       // Lấy thông tin thanh toán từ PayOS
-      const paymentLinkInfo = await payos.getPaymentLinkInformation(orderCode);
+      const paymentLinkInfo = await payos.paymentRequests.get(orderCode);
 
       // Lấy payment history từ database
       const paymentHistory =
@@ -150,6 +150,8 @@ export class SimplePayosService {
    * @param body - Raw request body nhận từ PayOS webhook
    */
   async processWebhookPayload(body: any): Promise<void> {
+    console.log('🔔 Webhook received body:', JSON.stringify(body, null, 2));
+
     const orderCode = Number(body?.data?.orderCode);
     if (!orderCode || isNaN(orderCode)) {
       throw new Error('Invalid webhook payload: missing or invalid orderCode');
@@ -162,15 +164,21 @@ export class SimplePayosService {
       throw new Error(`No payment history found for orderCode: ${orderCode}`);
     }
 
-    // Tạo PayOS instance với credentials của campaign cụ thể này
-    const payos = new PayOS(
-      paymentHistory.client_id,
-      paymentHistory.api_key,
-      paymentHistory.checksum_key,
-    );
+    console.log(`🔑 Webhook credentials for orderCode ${orderCode}:`, {
+      client_id: paymentHistory.client_id,
+      api_key: paymentHistory.api_key ? `${paymentHistory.api_key.slice(0, 8)}...` : 'NULL',
+      checksum_key: paymentHistory.checksum_key ? `${paymentHistory.checksum_key.slice(0, 8)}...` : 'NULL',
+    });
 
-    // verifyPaymentWebhookData throw nếu signature không hợp lệ
-    const webhookData = payos.verifyPaymentWebhookData(body);
+    // Tạo PayOS instance với credentials của campaign cụ thể này
+    const payos = new PayOS({
+      clientId: paymentHistory.client_id,
+      apiKey: paymentHistory.api_key,
+      checksumKey: paymentHistory.checksum_key,
+    });
+
+    // webhooks.verify throw nếu signature không hợp lệ
+    const webhookData = await payos.webhooks.verify(body);
 
     // Idempotency: bỏ qua nếu đã PAID
     if (paymentHistory.status === PaymentHistoryStatus.PAID) {

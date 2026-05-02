@@ -1,0 +1,25 @@
+# Python virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Environment variables (sensitive - API keys, JWT tokens)
+.env
+
+# Evaluation output files (large, not tracked)
+results/*.json
+results/*.csv
+
+# Jupyter notebooks (nếu có)
+*.ipynb_checkpoints/
+
+# pip install logs
+pip-log.txt
+pip-delete-this-directory.txt

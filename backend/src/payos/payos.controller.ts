@@ -150,7 +150,7 @@ export class PayOSController {
         error.message?.includes("INTEGRITY");
 
       if (isSignatureError) {
-        console.warn(`⚠️ Invalid webhook signature: ${error.message}`);
+        console.warn(`Invalid webhook signature: ${error.message}`);
         throw new HttpException(
           "Invalid webhook signature",
           HttpStatus.BAD_REQUEST,

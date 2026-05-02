@@ -57,6 +57,7 @@
   },
   "actions": {
     "payNow": "Pay Now",
+    "processing": "Processing...",
     "payNowPhonetic": "Pay Now",
     "paymentExpired": "Payment Expired",
     "paymentExpiredPhonetic": "Payment Expired",

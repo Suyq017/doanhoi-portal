@@ -161,6 +161,7 @@ export class CtxhChatController {
       // Include full context text for RAGAS evaluation
       ...(chatRequestDto.evaluation_mode && {
         contexts: response.sources.map(doc => doc.pageContent),
+        eval_intent: response.intent ?? 'RAG_QUERY',
       }),
     };
   }

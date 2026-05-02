@@ -1,0 +1,346 @@
+[
+  {
+    "id": "INT-G001",
+    "intent": "greeting",
+    "use_case": "UC-S08",
+    "question": "Xin chào!",
+    "expected_action": "respond_general",
+    "expected_response_contains": ["xin chào", "giúp", "hoạt động"],
+    "ground_truth": "Bot chào lại và giới thiệu khả năng hỗ trợ về CTXH tại ĐHBK.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-G002",
+    "intent": "greeting",
+    "use_case": "UC-S08",
+    "question": "Bạn là ai vậy?",
+    "expected_action": "respond_general",
+    "expected_response_contains": ["trợ lý", "CTXH", "Bách Khoa"],
+    "ground_truth": "Bot giới thiệu bản thân là trợ lý tư vấn CTXH tại ĐHBK.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-G003",
+    "intent": "greeting",
+    "use_case": "UC-S08",
+    "question": "Chào buổi sáng! Bot có thể giúp tôi điều gì?",
+    "expected_action": "respond_general",
+    "expected_response_contains": ["hoạt động", "tìm kiếm", "đăng ký"],
+    "ground_truth": "Bot chào và liệt kê các tính năng hỗ trợ (tìm kiếm, đăng ký CTXH).",
+    "metadata": {}
+  },
+  {
+    "id": "INT-G004",
+    "intent": "greeting",
+    "use_case": "UC-S08",
+    "question": "Hello",
+    "expected_action": "respond_general",
+    "expected_response_contains": ["xin chào", "chào"],
+    "ground_truth": "Bot chào lại bằng tiếng Việt và giới thiệu chức năng.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-G005",
+    "intent": "greeting",
+    "use_case": "UC-S08",
+    "question": "Tôi cần hỗ trợ về CTXH",
+    "expected_action": "respond_general",
+    "expected_response_contains": ["CTXH", "giúp", "tìm kiếm"],
+    "ground_truth": "Bot chào và hỏi cần hỗ trợ gì về CTXH.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-O001",
+    "intent": "out_of_scope",
+    "use_case": "UC-S09",
+    "question": "Cho tôi biết thời tiết ngày mai ở TP.HCM",
+    "expected_action": "respond_general",
+    "expected_response_contains": ["không hỗ trợ", "chỉ hỗ trợ", "CTXH"],
+    "ground_truth": "Bot từ chối và giải thích chỉ hỗ trợ câu hỏi về CTXH.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-O002",
+    "intent": "out_of_scope",
+    "use_case": "UC-S09",
+    "question": "Lịch thi học kỳ này của Khoa Khoa học Máy tính là khi nào?",
+    "expected_action": "respond_general",
+    "expected_response_contains": ["không hỗ trợ", "chỉ hỗ trợ", "CTXH"],
+    "ground_truth": "Bot từ chối và giải thích không có thông tin về lịch thi.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-O003",
+    "intent": "out_of_scope",
+    "use_case": "UC-S09",
+    "question": "Bạn có thể viết code Python cho tôi không?",
+    "expected_action": "respond_general",
+    "expected_response_contains": ["không hỗ trợ", "CTXH"],
+    "ground_truth": "Bot từ chối vì câu hỏi ngoài phạm vi CTXH.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-O004",
+    "intent": "out_of_scope",
+    "use_case": "UC-S09",
+    "question": "Học phí học kỳ tới là bao nhiêu?",
+    "expected_action": "respond_general",
+    "expected_response_contains": ["không hỗ trợ", "chỉ hỗ trợ", "CTXH"],
+    "ground_truth": "Bot từ chối câu hỏi về học phí vì ngoài phạm vi.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-O005",
+    "intent": "out_of_scope",
+    "use_case": "UC-S09",
+    "question": "Cho tôi xem danh sách giáo viên khoa Điện",
+    "expected_action": "respond_general",
+    "expected_response_contains": ["không hỗ trợ", "CTXH"],
+    "ground_truth": "Bot từ chối câu hỏi về thông tin giáo viên.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-O006",
+    "intent": "out_of_scope",
+    "use_case": "UC-S09",
+    "question": "Tôi muốn đặt phòng họp tại Trường",
+    "expected_action": "respond_general",
+    "expected_response_contains": ["không hỗ trợ", "CTXH"],
+    "ground_truth": "Bot từ chối câu hỏi về đặt phòng họp.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-R001",
+    "intent": "register",
+    "use_case": "UC-S06",
+    "question": "Tôi muốn đăng ký tham gia hoạt động dọn xưởng của Liên chi đoàn BDCN",
+    "expected_action": "register_for_activity",
+    "expected_response_contains": ["đăng ký", "BD25CTX"],
+    "ground_truth": "Bot tìm hoạt động phù hợp và thực hiện đăng ký, thông báo kết quả đăng ký.",
+    "metadata": {
+      "related_ma_ctxh": "BD25CTX0001",
+      "organization_code": "LIEN_CHI_DOAN_BD"
+    }
+  },
+  {
+    "id": "INT-R002",
+    "intent": "register",
+    "use_case": "UC-S06",
+    "question": "Đăng ký giúp tôi vào hoạt động hỗ trợ lễ tốt nghiệp tháng 5",
+    "expected_action": "register_for_activity",
+    "expected_response_contains": ["đăng ký", "tốt nghiệp"],
+    "ground_truth": "Bot tìm hoạt động hỗ trợ lễ tốt nghiệp và đăng ký cho sinh viên.",
+    "metadata": {
+      "related_ma_ctxh": "BD25CTX0002",
+      "organization_code": "LIEN_CHI_DOAN_BD"
+    }
+  },
+  {
+    "id": "INT-R003",
+    "intent": "register",
+    "use_case": "UC-S06",
+    "question": "Cho tôi đăng ký tham gia hoạt động hiến máu tình nguyện gần nhất",
+    "expected_action": "register_for_activity",
+    "expected_response_contains": ["đăng ký", "hiến máu"],
+    "ground_truth": "Bot tìm hoạt động hiến máu gần nhất và thực hiện đăng ký.",
+    "metadata": {
+      "loai_hoat_dong": "Hiến máu tình nguyện"
+    }
+  },
+  {
+    "id": "INT-R004",
+    "intent": "register",
+    "use_case": "UC-S06",
+    "question": "Tôi muốn tham gia hoạt động tình nguyện nào đó trong tháng 4",
+    "expected_action": "register_for_activity",
+    "expected_response_contains": ["đăng ký", "tình nguyện"],
+    "ground_truth": "Bot tìm hoạt động tình nguyện tháng 4 và xác nhận đăng ký.",
+    "metadata": {
+      "thoi_gian": "tháng 4 2025"
+    }
+  },
+  {
+    "id": "INT-R005",
+    "intent": "register",
+    "use_case": "UC-S06",
+    "question": "Đăng ký cho tôi vào hoạt động [BDCN] CTV TVTS 3/3/2025",
+    "expected_action": "register_for_activity",
+    "expected_response_contains": ["đăng ký", "CTV TVTS"],
+    "ground_truth": "Bot đăng ký sinh viên vào hoạt động BD25HTR0001 và thông báo kết quả.",
+    "metadata": {
+      "related_ma_ctxh": "BD25HTR0001"
+    }
+  },
+  {
+    "id": "INT-R006",
+    "intent": "register",
+    "use_case": "UC-S06",
+    "question": "Tôi có thể đăng ký hoạt động nào của Liên chi đoàn Khoa Cơ khí không?",
+    "expected_action": "register_for_activity",
+    "expected_response_contains": ["đăng ký", "Cơ khí"],
+    "ground_truth": "Bot liệt kê hoạt động đang tuyển của Liên chi đoàn Khoa Cơ khí và hỗ trợ đăng ký.",
+    "metadata": {
+      "organization_code": "LIEN_CHI_DOAN_CK"
+    }
+  },
+  {
+    "id": "INT-R007",
+    "intent": "register",
+    "use_case": "UC-S06",
+    "question": "Tôi muốn đăng ký tham gia một hoạt động hiến máu",
+    "expected_action": "register_for_activity",
+    "expected_response_contains": ["đăng ký", "hiến máu"],
+    "ground_truth": "Bot tìm hoạt động hiến máu đang tuyển và thực hiện đăng ký.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-R008",
+    "intent": "register",
+    "use_case": "UC-S06",
+    "question": "Giúp tôi đăng ký vào hoạt động tình nguyện gần trường nhất",
+    "expected_action": "register_for_activity",
+    "expected_response_contains": ["đăng ký", "ĐHBK"],
+    "ground_truth": "Bot tìm hoạt động tình nguyện gần trường và đăng ký.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-R009",
+    "intent": "register",
+    "use_case": "UC-S06",
+    "question": "Tôi không biết nên đăng ký hoạt động nào, bot có thể gợi ý và đăng ký giúp không?",
+    "expected_action": "register_for_activity",
+    "expected_response_contains": ["đăng ký", "gợi ý", "hoạt động"],
+    "ground_truth": "Bot gợi ý một hoạt động phù hợp và hỏi xác nhận trước khi đăng ký.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-R010",
+    "intent": "register",
+    "use_case": "UC-S06",
+    "question": "Đăng ký tôi vào CTV hỗ trợ văn phòng đoàn Khoa Cơ khí",
+    "expected_action": "register_for_activity",
+    "expected_response_contains": ["đăng ký", "văn phòng", "Cơ khí"],
+    "ground_truth": "Bot tìm hoạt động CK25CTX0002 và thực hiện đăng ký cho sinh viên.",
+    "metadata": {
+      "related_ma_ctxh": "CK25CTX0002"
+    }
+  },
+  {
+    "id": "INT-M001",
+    "intent": "multi_turn",
+    "use_case": "UC-S07",
+    "question": "Tôi muốn tìm hoạt động hiến máu",
+    "followup_question": "Cái đó ở đâu vậy?",
+    "expected_action": "search_ctxh_activities",
+    "followup_expected_action": "search_ctxh_activities",
+    "ground_truth": "Bot trả lời về hoạt động hiến máu, và ở lượt hỏi tiếp theo hiểu 'cái đó' là hoạt động vừa đề cập.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-M002",
+    "intent": "multi_turn",
+    "use_case": "UC-S07",
+    "question": "Liên chi đoàn Khoa Cơ khí có hoạt động gì trong tháng 1?",
+    "followup_question": "Hoạt động đó cần mấy ngày CTXH?",
+    "expected_action": "search_ctxh_activities",
+    "followup_expected_action": "search_ctxh_activities",
+    "ground_truth": "Bot trả lời về số ngày CTXH của hoạt động vừa đề cập trước đó.",
+    "metadata": {
+      "related_ma_ctxh": "CK25CTX0001"
+    }
+  },
+  {
+    "id": "INT-M003",
+    "intent": "multi_turn",
+    "use_case": "UC-S07",
+    "question": "Có hoạt động hội trại nào trong tháng 3 không?",
+    "followup_question": "Tôi có thể đăng ký tham gia không?",
+    "expected_action": "search_ctxh_activities",
+    "followup_expected_action": "register_for_activity",
+    "ground_truth": "Sau khi bot liệt kê hoạt động hội trại tháng 3, ở lượt tiếp theo bot xử lý yêu cầu đăng ký vào hoạt động đó.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-M004",
+    "intent": "multi_turn",
+    "use_case": "UC-S07",
+    "question": "Tìm hoạt động CTXH của Liên chi đoàn BDCN",
+    "followup_question": "Còn hoạt động nào khác không?",
+    "expected_action": "search_ctxh_activities",
+    "followup_expected_action": "search_ctxh_activities",
+    "ground_truth": "Bot hiểu 'còn hoạt động nào khác' là tìm thêm hoạt động của cùng tổ chức đó.",
+    "metadata": {
+      "organization_code": "LIEN_CHI_DOAN_BD"
+    }
+  },
+  {
+    "id": "INT-M005",
+    "intent": "multi_turn",
+    "use_case": "UC-S07",
+    "question": "Cho tôi biết về hoạt động [BDCN] DỌN XƯỞNG SAU TẾT",
+    "followup_question": "Đăng ký giúp tôi",
+    "expected_action": "search_ctxh_activities",
+    "followup_expected_action": "register_for_activity",
+    "ground_truth": "Bot tìm thông tin hoạt động, sau đó đăng ký sinh viên vào hoạt động BD25CTX0001.",
+    "metadata": {
+      "related_ma_ctxh": "BD25CTX0001"
+    }
+  },
+  {
+    "id": "INT-M006",
+    "intent": "multi_turn",
+    "use_case": "UC-S07",
+    "question": "Hoạt động nào của Khoa Cơ khí đang tuyển?",
+    "followup_question": "Hoạt động đó diễn ra từ ngày nào đến ngày nào?",
+    "expected_action": "search_ctxh_activities",
+    "followup_expected_action": "search_ctxh_activities",
+    "ground_truth": "Bot trả lời về thời gian chi tiết của hoạt động đã đề cập trước đó.",
+    "metadata": {
+      "organization_code": "LIEN_CHI_DOAN_CK"
+    }
+  },
+  {
+    "id": "INT-M007",
+    "intent": "multi_turn",
+    "use_case": "UC-S07",
+    "question": "Tìm hoạt động công tác xã hội tháng 5",
+    "followup_question": "Cái nào gần trường nhất?",
+    "expected_action": "search_ctxh_activities",
+    "followup_expected_action": "search_ctxh_activities",
+    "ground_truth": "Bot hiểu ngữ cảnh 'cái nào' liên quan đến kết quả trước và lọc theo địa điểm.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-M008",
+    "intent": "multi_turn",
+    "use_case": "UC-S07",
+    "question": "Danh sách hoạt động hiến máu 2025",
+    "followup_question": "Ngày đăng ký cuối là khi nào?",
+    "expected_action": "search_ctxh_activities",
+    "followup_expected_action": "search_ctxh_activities",
+    "ground_truth": "Bot trả lời ngày hết hạn đăng ký của hoạt động hiến máu đã liệt kê.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-M009",
+    "intent": "multi_turn",
+    "use_case": "UC-S07",
+    "question": "Cho tôi xem hoạt động tình nguyện sắp tới",
+    "followup_question": "Nó tính được mấy ngày CTXH?",
+    "expected_action": "search_ctxh_activities",
+    "followup_expected_action": "search_ctxh_activities",
+    "ground_truth": "Bot dùng ngữ cảnh hội thoại để trả lời số ngày CTXH của hoạt động đã đề cập.",
+    "metadata": {}
+  },
+  {
+    "id": "INT-M010",
+    "intent": "multi_turn",
+    "use_case": "UC-S07",
+    "question": "Hoạt động hội trại nào của Liên chi đoàn Khoa Điện có địa điểm ở ĐHBK?",
+    "followup_question": "Còn hoạt động nào khác cùng địa điểm không?",
+    "expected_action": "search_ctxh_activities",
+    "followup_expected_action": "search_ctxh_activities",
+    "ground_truth": "Bot hiểu 'cùng địa điểm' nghĩa là ĐHBK và tìm thêm hoạt động phù hợp.",
+    "metadata": {}
+  }
+]

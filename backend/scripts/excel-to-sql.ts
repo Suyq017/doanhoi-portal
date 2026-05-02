@@ -16,7 +16,7 @@ import * as path from 'path';
 
 // ─── Cấu hình ────────────────────────────────────────────────────────────────
 
-const INPUT_EXCEL  = path.join(__dirname, '../test/data/eva_datasheet.xlsx');
+const INPUT_EXCEL  = path.join(__dirname, '../chatbot_evaluation/data/eva_datasheet.xlsx');
 const OUTPUT_SQL   = path.join(__dirname, 'insert-ctxh-activities-from-excel.sql');
 
 /** UUID của user "tạo mặc định" – thay bằng user thực nếu cần */
@@ -38,6 +38,7 @@ const ORGANIZATION_MAP: Record<string, { id: string; name: string }> = {
   VL: { id: 'db51fdf8-b396-488d-9504-43207473f7ef', name: 'Liên chi đoàn Vật Liệu' },
   QL: { id: '69e5d561-dd4c-4230-863e-5f527ded5793', name: 'Liên chi đoàn Quản Lý CN' },
   BD: { id: '17568d1e-ba64-4941-bb0a-64b8f2f0e3f2', name: 'Liên chi đoàn Bảo dưỡng CN' },
+  SV: { id: '19d3c9d4-af62-4660-bac8-1f0fc87bbe5f', name: 'Hội sinh viên' }
 };
 
 const DEFAULT_ORG = { id: 'c6e1f42a-9b5f-426e-9b4b-0ae21551c873', name: 'Đoàn Trường' };
