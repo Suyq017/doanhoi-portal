@@ -74,15 +74,19 @@ export interface ImportResult {
 export class ImportSessionService {
   private sessions: Map<string, ImportSession> = new Map();
   private readonly SESSION_TIMEOUT = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     // Clean up expired sessions every hour
-    setInterval(
+    this.cleanupInterval = setInterval(
       () => {
         this.cleanupExpiredSessions();
       },
       60 * 60 * 1000,
     );
+    if (typeof (this.cleanupInterval as any).unref === "function") {
+      (this.cleanupInterval as any).unref();
+    }
   }
 
   createSession(fileName: string, data: DepartmentImportData[]): ImportSession {
@@ -364,6 +368,13 @@ export class ImportSessionService {
       console.log(
         `Cleaned up ${expiredSessions.length} expired import sessions`,
       );
+    }
+  }
+
+  onModuleDestroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
     }
   }
 }

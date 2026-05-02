@@ -452,4 +452,28 @@ export class CtxhChatController {
     if (sourceCount >= 3) return 0.9;
     return 0.5;
   }
+
+  /**
+   * Backward-compatible helper for tests and fallback UI behavior.
+   */
+  private generateFollowUpSuggestions(assistantAnswer: string): string[] {
+    const suggestions: string[] = [];
+
+    if (assistantAnswer.includes('hoạt động') || assistantAnswer.includes('CTXH')) {
+      suggestions.push('Cho tôi biết thêm chi tiết về hoạt động này');
+      suggestions.push('Làm sao để đăng ký tham gia?');
+    }
+
+    if (assistantAnswer.includes('ngày') || assistantAnswer.includes('thời gian')) {
+      suggestions.push('Có hoạt động nào khác trong tháng này không?');
+    }
+
+    if (suggestions.length === 0) {
+      suggestions.push('Có hoạt động CTXH nào đang mở đăng ký?');
+      suggestions.push('Tìm hoạt động CTXH theo địa điểm');
+      suggestions.push('Hoạt động nào có nhiều ngày CTXH nhất?');
+    }
+
+    return suggestions.slice(0, 3);
+  }
 }

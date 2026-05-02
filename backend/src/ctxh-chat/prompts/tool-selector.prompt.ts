@@ -1,0 +1,1 @@
+export { CTXH_AGENT_PROMPT as TOOL_SELECTOR_PROMPT } from './ctxh-agent.prompt';

@@ -97,6 +97,7 @@ export class DepartmentBatchImportMonitoringService {
     errorsByType: new Map<string, number>(),
     recentErrors: [] as string[],
   };
+  private monitoringInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly configService: DepartmentBatchImportConfigService,
@@ -111,11 +112,21 @@ export class DepartmentBatchImportMonitoringService {
     const config = this.configService.getPerformanceConfig();
 
     if (config.enablePerformanceMonitoring) {
-      setInterval(() => {
+      this.monitoringInterval = setInterval(() => {
         this.collectMetrics();
       }, config.performanceLoggingInterval);
+      if (typeof (this.monitoringInterval as any).unref === "function") {
+        (this.monitoringInterval as any).unref();
+      }
 
       this.logger.log("Performance monitoring started");
+    }
+  }
+
+  onModuleDestroy(): void {
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      this.monitoringInterval = null;
     }
   }
 

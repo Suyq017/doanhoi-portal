@@ -16,6 +16,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "test:core": "jest --testPathIgnorePatterns=ctxh-chat",
+    "test:core:cov": "jest --coverage --testPathIgnorePatterns=ctxh-chat",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:phase2": "jest --testPathPattern=ctxh-chat",
@@ -121,7 +123,7 @@
     "@types/eslint": "^9.6.1",
     "@types/express": "^4.17.17",
     "@types/graceful-fs": "^4.1.9",
-    "@types/jest": "^29.5.2",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.3.1",
     "@types/nodemailer": "^8.0.0",
     "@types/passport": "^1.0.17",
@@ -159,7 +161,19 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!**/database/**",
+      "!**/migrations/**",
+      "!**/scripts/**",
+      "!**/seeds/**",
+      "!**/entities/**",
+      "!**/dto/**",
+      "!**/*.module.ts",
+      "!**/ctxh-chat/subscribers/**",
+      "!**/ctxh-chat/processors/**",
+      "!**/ctxh-mcp/tools/**",
+      "!**/*.seed.(t|j)s",
+      "!**/*.spec.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",

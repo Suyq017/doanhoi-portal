@@ -61,6 +61,9 @@ export class LangChainMemoryService {
       () => this.cleanupOldMemories(),
       5 * 60 * 1000, // Every 5 minutes
     );
+    if (typeof (this.cleanupInterval as any).unref === 'function') {
+      (this.cleanupInterval as any).unref();
+    }
 
     // Initialize BufferMemory class synchronously with require
     this.initBufferMemory();

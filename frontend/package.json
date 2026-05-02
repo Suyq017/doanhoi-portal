@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "test": "vitest run",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -60,6 +61,12 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "vitest": "^1.0.0",
+    "msw": "^1.2.3",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/user-event": "^14.0.0",
+    "jsdom": "^22.0.0",
     "@tailwindcss/typography": "^0.5.19",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^24.3.1",

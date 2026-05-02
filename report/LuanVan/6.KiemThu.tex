@@ -242,8 +242,112 @@ Ctxh-chat (non-stream) & 5 phút & 4.732 & 15,77 & 682 & 0,25\% \\
 
 Kết quả cho thấy các endpoint CRUD và truy vấn dữ liệu giao dịch duy trì thời gian phản hồi ổn định ở mức dưới 450 ms trong điều kiện tải kiểm thử; nhóm chatbot có độ trễ cao hơn do bao gồm retrieval + generation, phù hợp với đặc thù xử lý AI.
 
+\subsection{Kiểm thử tự động (Unit tests và Integration tests)}
+
+\subsubsection{Chiến lược kiểm thử Backend}
+Nhóm thực hiện kiểm thử backend theo hướng tiếp cận đa tầng, bao gồm:
+\begin{itemize}
+	\item \textbf{Unit tests}: kiểm thử các service, helper function, và business logic cách ly, sử dụng mock cho repository và adapter ngoài.
+	\item \textbf{Integration tests}: kiểm thử các endpoint API với supertest, mô phỏng luồng request-response đầy đủ theo kịch bản thực tế.
+	\item \textbf{Coverage metrics}: đo lường statement coverage, function coverage, và branch coverage để đánh giá độ bao phủ logic.
+\end{itemize}
+
+Công cụ kiểm thử: Jest v29 (test runner), với cấu hình coverage reporter để phân tích chi tiết mức phủ code. Các test được tổ chức theo cấu trúc thư mục song song với source code (\texttt{*.spec.ts}), thuận lợi cho bảo trì.
+
+\subsubsection{Kết quả kiểm thử Backend}
+Hiện trạng kiểm thử backend (tính đến 01/05/2026):
+\begin{itemize}
+	\item \textbf{Test suites}: 123/123 passed
+	\item \textbf{Tổng số tests}: 1107/1107 passed
+	\item \textbf{Thời gian chạy}: ~60--80 giây (toàn bộ suite)
+\end{itemize}
+
+Bảng dưới đây tổng hợp chỉ số bao phủ code (coverage metrics):
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{|p{3.5cm}|p{2.0cm}|p{2.0cm}|p{2.0cm}|}
+\hline
+\textbf{Metric} & \textbf{Statements} & \textbf{Functions} & \textbf{Branches} \\
+\hline
+Coverage (\%) & 79,33 & 82,55 & 63,73 \\
+\hline
+Uncovered Lines & 543 & 92 & 420 \\
+\hline
+\end{tabular}
+\caption{Bảng chỉ số bao phủ code Backend}
+\end{table}
+
+Nhận xét:
+\begin{itemize}
+	\item Statement coverage và function coverage ở mức tốt (trên 79\%), phản ánh rằng phần lớn code production đã được chạy qua test.
+	\item Branch coverage (63,73\%) cho thấy còn một số nhánh điều kiện chưa được kiểm thử đầy đủ. Các nhánh chưa bao phủ chủ yếu nằm ở:
+	\begin{itemize}
+		\item Các service xử lý batch import với logic rollback và xử lý conflict.
+		\item Các thao tác liên quan tới cây tổ chức (traversal, filtering).
+		\item Các state transitions trong payment campaign và CTXH activities.
+		\item Các đường xử lý lỗi từ dịch vụ ngoài (S3, external APIs).
+	\end{itemize}
+	\item Mặc dù branch coverage chưa cao, các test hiện tại vẫn đủ để bao phủ happy paths chính và lỗi validation quan trọng, phù hợp với quy mô và thời hạn luận văn.
+\end{itemize}
+
+\subsubsection{Chiến lược kiểm thử Frontend}
+Kiểm thử frontend sử dụng phương pháp \textit{behavioral testing}: không chỉ kiểm thử component render mà còn kiểm thử hành vi người dùng thực tế (click, input, navigation). Công cụ và cấu hình:
+\begin{itemize}
+	\item \textbf{Test runner}: Vitest v1.6.1, được chọn do hỗ trợ ES modules và tính năng hot-reload trong dev.
+	\item \textbf{Thư viện assertion}: React Testing Library (RTL), khuyến khích query theo semantic selectors (getByRole, getByLabelText) thay vì implementation details.
+	\item \textbf{API mocking}: Mock Service Worker (MSW), cho phép mock API request ở browser level, không ảnh hưởng tới test setup phức tạp.
+	\item \textbf{Data fetching}: TanStack React Query, cấu hình \texttt{retry: false} trong tests để tránh flakiness.
+	\item \textbf{Routing}: React Router v6, khởi tạo trong setup file để tránh warnings khi component sử dụng hooks route.
+	\item \textbf{i18n}: react-i18next, khởi tạo namespace cơ bản trong \texttt{setupTests.ts} để không phát sinh warnings.
+\end{itemize}
+
+\subsubsection{Kết quả kiểm thử Frontend}
+Hiện trạng kiểm thử frontend (tính đến 01/05/2026):
+\begin{itemize}
+	\item \textbf{Tổng file test}: 27 files (\texttt{*.spec.tsx})
+	\item \textbf{Tổng số tests}: 106/106 passed
+	\item \textbf{Thời gian chạy}: ~10 giây
+	\item \textbf{Trạng thái output}: Clean (0 warnings, 0 errors)
+\end{itemize}
+
+Các feature chính được kiểm thử bao gồm:
+\begin{itemize}
+	\item \textbf{Authentication \& Authorization}: login form validation, OAuth callback, permission-based route access.
+	\item \textbf{User \& Organization Management}: list, create, edit, soft delete; import users từ Excel.
+	\item \textbf{CTXH Activities}: create activity, update status, view reports.
+	\item \textbf{Templates \& Submissions}: upload template, fill dynamic fields, generate document, download file.
+	\item \textbf{Payment \& Fees}: create campaign, view fee assignments, payment status sync.
+	\item \textbf{System Configuration}: S3 config test, email settings, notification preferences.
+	\item \textbf{Chatbot CTXH}: message sending, session history, streaming response.
+\end{itemize}
+
+Mỗi feature được kiểm thử theo ba kịch bản:
+\begin{itemize}
+	\item \textbf{Happy path}: người dùng thực hiện thao tác đúng, hệ thống trả kết quả mong đợi.
+	\item \textbf{Error path}: người dùng nhập dữ liệu không hợp lệ hoặc API trả lỗi, hệ thống hiển thị thông báo lỗi rõ ràng.
+	\item \textbf{Permission path}: người dùng không có quyền thực hiện thao tác, hệ thống ẩn nút hoặc trả HTTP 403.
+\end{itemize}
+
+Quá trình cải tiến kiểm thử frontend được chia thành ba phase:
+\begin{enumerate}
+	\item \textbf{Phase 1 -- Behavioral tests mở rộng}: viết các test hành vi chi tiết cho Classes, Departments, Templates (từ 2 test/feature -> 6 test/feature, tổng +12 tests).
+	\item \textbf{Phase 2 -- System-config}: mở rộng kiểm thử cho phần cấu hình hệ thống, đặc biệt S3 connection test (+5 tests).
+	\item \textbf{Phase 3 -- Warning cleanup}: loại bỏ tất cả warnings từ React, React Router, và i18next bằng cách khởi tạo dependencies trong setup file, sử dụng suppression selectively nơi cần; kết quả: test output hoàn toàn sạch.
+\end{enumerate}
+
+\subsubsection{Tổng hợp kết quả kiểm thử tự động}
+Từ các kiểm thử tự động (unit, integration, behavioral), có thể kết luận:
+\begin{itemize}
+	\item \textbf{Backend}: 1107 tests pass với coverage tốt cho statements (79,33\%) và functions (82,55\%), cho phép tự tin rằng các service chính hoạt động đúng logic.
+	\item \textbf{Frontend}: 106 tests pass với output sạch, bao phủ behavioral scenarios quan trọng ở mức thực hiện hành vi người dùng.
+	\item \textbf{Hợp tác BE-FE}: các integration tests backend xác nhận API contracts; các behavioral tests frontend xác nhận UI/UX contracts, tạo ranh giới kiểm thử rõ ràng.
+\end{itemize}
+
 \subsubsection{Tổng hợp kết quả kiểm thử}
-Từ các nhóm kiểm thử trên, có thể rút ra các nhận xét chính:
+Từ các nhóm kiểm thử trên (chức năng manual, kiểm thử tải, kiểm thử tự động), có thể rút ra các nhận xét chính:
 \begin{itemize}
 	\item Hệ thống đáp ứng đầy đủ các chức năng lõi đã đặc tả trong phạm vi luận văn.
 	\item Cơ chế phân quyền theo vai trò và tổ chức hoạt động nhất quán giữa UI và API.
