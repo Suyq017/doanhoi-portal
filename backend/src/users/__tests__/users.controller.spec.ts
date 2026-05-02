@@ -9,10 +9,10 @@ import { RolesService } from '../../roles/roles.service';
 
 describe('UsersController', () => {
   let controller: UsersController;
-  let usersService: jest.Mocked<UsersService>;
-  let importService: jest.Mocked<ImportService>;
-  let batchImportService: jest.Mocked<BatchImportService>;
-  let rolesService: jest.Mocked<RolesService>;
+  let usersService: any;
+  let importService: any;
+  let batchImportService: any;
+  let rolesService: any;
 
   const mockUser = {
     id: 'user-1',
@@ -77,16 +77,16 @@ describe('UsersController', () => {
     }).compile();
 
     controller = module.get<UsersController>(UsersController);
-    usersService = module.get(UsersService) as jest.Mocked<UsersService>;
-    importService = module.get(ImportService) as jest.Mocked<ImportService>;
-    batchImportService = module.get(BatchImportService) as jest.Mocked<BatchImportService>;
-    rolesService = module.get(RolesService) as jest.Mocked<RolesService>;
+    usersService = module.get(UsersService) as any;
+    importService = module.get(ImportService) as any;
+    batchImportService = module.get(BatchImportService) as any;
+    rolesService = module.get(RolesService) as any;
   });
 
   describe('CRUD Operations', () => {
     it('should create a new user', async () => {
       usersService.create.mockResolvedValue(mockUser);
-      const createUserDto = { email: 'test@example.com', fullName: 'Test User' };
+      const createUserDto = { email: 'test@example.com', fullName: 'Test User' } as any;
 
       const result = await controller.create(createUserDto);
 
@@ -97,7 +97,7 @@ describe('UsersController', () => {
     it('should find all users with query parameters', async () => {
       const mockResponse = { users: [mockUser], total: 1, page: 1, limit: 10 };
       usersService.findAll.mockResolvedValue(mockResponse);
-      const queryUserDto = { page: 1, limit: 10 };
+      const queryUserDto = { page: 1, limit: 10 } as any;
 
       const result = await controller.findAll(queryUserDto);
 
@@ -132,7 +132,7 @@ describe('UsersController', () => {
     it('should update a user', async () => {
       const updatedUser = { ...mockUser, fullName: 'Updated Name' };
       usersService.update.mockResolvedValue(updatedUser);
-      const updateUserDto = { fullName: 'Updated Name' };
+      const updateUserDto = { fullName: 'Updated Name' } as any;
 
       const result = await controller.update('user-1', updateUserDto);
 
@@ -151,7 +151,7 @@ describe('UsersController', () => {
 
     it('should bulk delete multiple users', async () => {
       usersService.removeMultiple.mockResolvedValue(null);
-      const bulkDeleteDto = { ids: ['user-1', 'user-2', 'user-3'] };
+      const bulkDeleteDto = { ids: ['user-1', 'user-2', 'user-3'] } as any;
 
       const result = await controller.bulkDelete(bulkDeleteDto);
 
@@ -212,7 +212,7 @@ describe('UsersController', () => {
         buffer: Buffer.from('file content'),
         size: 1024,
       } as any;
-      const importResponse = { sessionId: 'session-1', status: 'uploaded' };
+      const importResponse = { sessionId: 'session-1', status: 'uploaded' } as any;
       importService.uploadFile.mockResolvedValue(importResponse);
 
       const result = await controller.uploadImportFile(mockFile);
@@ -222,7 +222,7 @@ describe('UsersController', () => {
     });
 
     it('should validate import data', async () => {
-      const validationResult = { isValid: true, errors: [], warnings: [] };
+      const validationResult = { isValid: true, errors: [], warnings: [] } as any;
       importService.validateData.mockResolvedValue(validationResult);
 
       const result = await controller.validateImportData('session-1');
@@ -232,9 +232,9 @@ describe('UsersController', () => {
     });
 
     it('should execute import', async () => {
-      const executeResult = { importedCount: 100, errorCount: 0 };
+      const executeResult = { importedCount: 100, errorCount: 0 } as any;
       importService.executeImport.mockResolvedValue(executeResult);
-      const options = { skipConflicts: true, batchSize: 50 };
+      const options = { skipConflicts: true, batchSize: 50 } as any;
 
       const result = await controller.executeImport('session-1', options);
 
@@ -243,7 +243,7 @@ describe('UsersController', () => {
     });
 
     it('should get import session status', async () => {
-      const sessionStatus = { sessionId: 'session-1', status: 'completed' };
+      const sessionStatus = { sessionId: 'session-1', status: 'completed' } as any;
       importService.getSessionStatus.mockResolvedValue(sessionStatus);
 
       const result = await controller.getSessionStatus('session-1');
@@ -253,7 +253,7 @@ describe('UsersController', () => {
     });
 
     it('should get import progress', async () => {
-      const progress = { processed: 50, total: 100, percentage: 50 };
+      const progress = { processed: 50, total: 100, percentage: 50 } as any;
       importService.getImportProgress.mockResolvedValue(progress);
 
       const result = await controller.getImportProgress('session-1');
@@ -263,7 +263,7 @@ describe('UsersController', () => {
     });
 
     it('should pause import', async () => {
-      const pauseResult = { status: 'paused' };
+      const pauseResult = { status: 'paused' } as any;
       importService.pauseImport.mockResolvedValue(pauseResult);
 
       const result = await controller.pauseImport('session-1');
@@ -273,7 +273,7 @@ describe('UsersController', () => {
     });
 
     it('should resume import', async () => {
-      const resumeResult = { status: 'running' };
+      const resumeResult = { status: 'running' } as any;
       importService.resumeImport.mockResolvedValue(resumeResult);
 
       const result = await controller.resumeImport('session-1');
@@ -283,7 +283,7 @@ describe('UsersController', () => {
     });
 
     it('should cancel import', async () => {
-      const cancelResult = { status: 'cancelled' };
+      const cancelResult = { status: 'cancelled' } as any;
       importService.cancelImport.mockResolvedValue(cancelResult);
 
       const result = await controller.cancelImport('session-1');
@@ -299,12 +299,12 @@ describe('UsersController', () => {
         isValid: true,
         validRecords: [],
         invalidRecords: [],
-      };
+      } as any;
       batchImportService.validateParsedData.mockResolvedValue(validationResult);
       const batchData = {
         users: [{ email: 'user1@example.com' }],
         pagination: { errorPage: 1, errorLimit: 10 },
-      };
+      } as any;
 
       const result = await controller.validateBatchData(batchData);
 
@@ -335,13 +335,13 @@ describe('UsersController', () => {
         totalProcessed: 100,
         successful: 98,
         failed: 2,
-      };
+      } as any;
       batchImportService.processBatch.mockResolvedValue(batchResponse);
       const batchRequest = {
         users: [{ email: 'user@example.com' }],
-        batchInfo: { batchNumber: 1, totalBatches: 1 },
+        batchInfo: { sessionId: 'session-1', batchNumber: 1, totalBatches: 1 },
         options: { skipConflicts: false },
-      };
+      } as any;
 
       const result = await controller.batchImport(batchRequest);
 
@@ -355,7 +355,7 @@ describe('UsersController', () => {
         totalUsers: 1000,
         successful: 980,
         failed: 20,
-      };
+      } as any;
       batchImportService.getSessionSummary.mockResolvedValue(sessionSummary);
 
       const result = await controller.getBatchSessionSummary('session-1');
@@ -365,7 +365,7 @@ describe('UsersController', () => {
     });
 
     it('should clear batch session', async () => {
-      batchImportService.clearSession.mockReturnValue(undefined);
+      batchImportService.clearSession.mockReturnValue(undefined as any);
 
       const result = await controller.clearBatchSession('session-1');
 
@@ -403,9 +403,9 @@ describe('UsersController', () => {
       await expect(
         controller.batchImport({
           users: [],
-          batchInfo: { batchNumber: 1, totalBatches: 1 },
+          batchInfo: { sessionId: 'session-1', batchNumber: 1, totalBatches: 1 },
           options: {},
-        }),
+        } as any),
       ).rejects.toThrow('Batch processing failed');
     });
   });

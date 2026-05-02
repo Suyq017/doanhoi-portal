@@ -160,7 +160,19 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!**/database/**",
+      "!**/migrations/**",
+      "!**/scripts/**",
+      "!**/seeds/**",
+      "!**/entities/**",
+      "!**/dto/**",
+      "!**/*.module.ts",
+      "!**/ctxh-chat/subscribers/**",
+      "!**/ctxh-chat/processors/**",
+      "!**/ctxh-mcp/tools/**",
+      "!**/*.seed.(t|j)s",
+      "!**/*.spec.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",

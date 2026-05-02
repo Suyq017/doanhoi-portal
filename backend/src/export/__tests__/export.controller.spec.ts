@@ -8,12 +8,7 @@ const createResponseMock = () => ({
 });
 
 describe("ExportController", () => {
-  let exportService: {
-    exportUsers: jest.Mock;
-    exportOrganizationMembers: jest.Mock;
-    exportPaymentAssignments: jest.Mock;
-    generateFileName: jest.Mock;
-  };
+  let exportService: any;
   let controller: ExportController;
 
   beforeEach(() => {

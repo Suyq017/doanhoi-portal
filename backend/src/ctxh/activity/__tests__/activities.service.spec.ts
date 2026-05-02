@@ -9,11 +9,11 @@ import { LimitConfigStatus } from "../../../entities/ctxh-limit-config.entity";
 
 describe("ActivitiesService", () => {
   const createRepoMock = () => ({
-    findOne: jest.fn(),
-    create: jest.fn((v) => v),
-    save: jest.fn(async (v) => ({ ...v, id: "a1" })),
-    update: jest.fn(async () => undefined),
-    query: jest.fn(),
+    findOne: jest.fn() as any,
+    create: jest.fn((v: any) => v) as any,
+    save: jest.fn(async (v: any) => ({ ...v, id: "a1" })) as any,
+    update: jest.fn(async () => undefined) as any,
+    query: jest.fn() as any,
     createQueryBuilder: jest.fn(() => ({
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
@@ -24,7 +24,7 @@ describe("ActivitiesService", () => {
       getOne: jest.fn(async () => null),
       skip: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
-    })),
+    })) as any,
   });
 
   let activityRepository: ReturnType<typeof createRepoMock>;
@@ -43,9 +43,9 @@ describe("ActivitiesService", () => {
     participationRepository = createRepoMock();
     organizationRepository = createRepoMock();
     organizationsService = {
-      getCtxhActivityViewableOrganizations: jest.fn(),
-    };
-    eventEmitter = { emit: jest.fn() };
+      getCtxhActivityViewableOrganizations: jest.fn() as any,
+    } as any;
+    eventEmitter = { emit: jest.fn() as any } as any;
 
     service = new ActivitiesService(
       activityRepository as never,
@@ -487,7 +487,7 @@ describe("ActivitiesService", () => {
       };
       activityRepository.createQueryBuilder.mockReturnValue(qb);
 
-      const res = await service.findAll({});
+      const res = await service.findAll({} as any);
       expect(res.data).toHaveLength(1);
       expect(res.total).toBe(1);
       expect(res.page).toBe(1);
@@ -506,7 +506,7 @@ describe("ActivitiesService", () => {
       };
       activityRepository.createQueryBuilder.mockReturnValue(qb);
 
-      await service.findAll({ category_id: "cat-1" });
+      await service.findAll({ category_id: "cat-1" } as any);
       expect(qb.andWhere).toHaveBeenCalledWith(
         "activity.category_id = :category_id",
         expect.objectContaining({ category_id: "cat-1" }),
@@ -525,7 +525,7 @@ describe("ActivitiesService", () => {
       };
       activityRepository.createQueryBuilder.mockReturnValue(qb);
 
-      await service.findAll({ organization_id: "org-1" });
+      await service.findAll({ organization_id: "org-1" } as any);
       expect(qb.andWhere).toHaveBeenCalledWith(
         "activity.organization_id = :organization_id",
         expect.objectContaining({ organization_id: "org-1" }),
@@ -544,7 +544,7 @@ describe("ActivitiesService", () => {
       };
       activityRepository.createQueryBuilder.mockReturnValue(qb);
 
-      await service.findAll({ status: "ACTIVE" });
+      await service.findAll({ status: "ACTIVE" } as any);
       expect(qb.andWhere).toHaveBeenCalledWith(
         "activity.status = :status",
         expect.objectContaining({ status: "ACTIVE" }),
@@ -563,7 +563,7 @@ describe("ActivitiesService", () => {
       };
       activityRepository.createQueryBuilder.mockReturnValue(qb);
 
-      await service.findAll({ search: "test" });
+      await service.findAll({ search: "test" } as any);
       expect(qb.andWhere).toHaveBeenCalledWith(
         expect.stringContaining("LOWER(activity.name) LIKE"),
         expect.objectContaining({ search: "%test%" }),
@@ -584,7 +584,7 @@ describe("ActivitiesService", () => {
       const start = new Date("2024-01-01");
       const end = new Date("2024-12-31");
 
-      await service.findAll({ start_date: start, end_date: end });
+      await service.findAll({ start_date: start, end_date: end } as any);
       expect(qb.andWhere).toHaveBeenCalledWith(
         expect.stringContaining("activity.start_date"),
         expect.objectContaining({ start_date: start, end_date: end }),
@@ -604,7 +604,7 @@ describe("ActivitiesService", () => {
       activityRepository.createQueryBuilder.mockReturnValue(qb);
       const start = new Date("2024-01-01");
 
-      await service.findAll({ start_date: start });
+      await service.findAll({ start_date: start } as any);
       expect(qb.andWhere).toHaveBeenCalledWith(
         expect.stringContaining("activity.end_date"),
         expect.objectContaining({ start_date: start }),
@@ -624,7 +624,7 @@ describe("ActivitiesService", () => {
       activityRepository.createQueryBuilder.mockReturnValue(qb);
       const end = new Date("2024-12-31");
 
-      await service.findAll({ end_date: end });
+      await service.findAll({ end_date: end } as any);
       expect(qb.andWhere).toHaveBeenCalledWith(
         "activity.start_date <= :end_date",
         expect.objectContaining({ end_date: end }),
@@ -658,7 +658,7 @@ describe("ActivitiesService", () => {
         [{ id: "org-1" }],
       );
 
-      await service.findAll({ user_id: "user-1" });
+      await service.findAll({ user_id: "user-1" } as any);
       expect(organizationsService.getCtxhActivityViewableOrganizations).toHaveBeenCalledWith(
         "user-1",
       );
@@ -681,7 +681,7 @@ describe("ActivitiesService", () => {
       activityRepository.createQueryBuilder.mockReturnValue(qb);
       organizationRepository.query.mockResolvedValueOnce([{ id: "role-1" }]);
 
-      await service.findAll({ user_id: "user-1" });
+      await service.findAll({ user_id: "user-1" } as any);
 
       expect(organizationsService.getCtxhActivityViewableOrganizations).not.toHaveBeenCalled();
       expect(qb.andWhere).not.toHaveBeenCalledWith("1 = 0");
@@ -709,7 +709,7 @@ describe("ActivitiesService", () => {
       organizationRepository.findOne.mockResolvedValue({ id: "org-1", name: "Org" });
       categoryRepository.findOne.mockResolvedValue({ id: "cat-1", name: "Cat" });
 
-      const res = await service.findAll({});
+      const res = await service.findAll({} as any);
 
       expect(res.data[0].organization.name).toBe("Org");
       expect(res.data[0].category.name).toBe("Cat");
@@ -732,7 +732,7 @@ describe("ActivitiesService", () => {
         [],
       );
 
-      await service.findAll({ user_id: "user-1" });
+      await service.findAll({ user_id: "user-1" } as any);
       expect(qb.andWhere).toHaveBeenCalledWith("1 = 0");
     });
 

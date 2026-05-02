@@ -7,9 +7,9 @@ import { RateLimitInterceptor } from '../rate-limit.interceptor';
 
 describe('RateLimitInterceptor', () => {
   const createRedisMock = () => ({
-    get: jest.fn(),
-    ttl: jest.fn(),
-    multi: jest.fn(),
+    get: jest.fn() as any,
+    ttl: jest.fn() as any,
+    multi: jest.fn() as any,
   });
 
   const createConfigServiceMock = () =>
@@ -24,7 +24,7 @@ describe('RateLimitInterceptor', () => {
       }),
     }) as unknown as ConfigService;
 
-  let redis: ReturnType<typeof createRedisMock>;
+  let redis: any;
   let interceptor: RateLimitInterceptor;
 
   beforeEach(() => {
@@ -34,7 +34,7 @@ describe('RateLimitInterceptor', () => {
   });
 
   it('should allow requests under the limit and set headers', async () => {
-    const exec = jest.fn().mockResolvedValue([]);
+    const exec = (jest.fn() as any).mockResolvedValue([]);
     const multi = {
       incr: jest.fn().mockReturnThis(),
       expire: jest.fn().mockReturnThis(),

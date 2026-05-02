@@ -67,8 +67,8 @@ describe("MetricsService", () => {
 
     expect(httpRequestsCounter.labels).toHaveBeenCalledWith("GET", "/users", "200");
     expect(httpRequestDuration.labels).toHaveBeenCalledWith("GET", "/users");
-    expect((httpRequestsCounter.labels as jest.Mock).mock.results[0].value.inc).toHaveBeenCalled();
-    expect((httpRequestDuration.labels as jest.Mock).mock.results[0].value.observe).toHaveBeenCalledWith(0.123);
+    expect(((httpRequestsCounter.labels as jest.Mock).mock.results[0].value as any).inc).toHaveBeenCalled();
+    expect(((httpRequestDuration.labels as jest.Mock).mock.results[0].value as any).observe).toHaveBeenCalledWith(0.123);
   });
 
   it("should swallow HTTP metric recording errors and log them", () => {
@@ -108,16 +108,16 @@ describe("MetricsService", () => {
     service.updateDbConnections(12);
 
     expect(dbQueryDuration.labels).toHaveBeenCalledWith("SELECT");
-    expect((dbQueryDuration.labels as jest.Mock).mock.results[0].value.observe).toHaveBeenCalledWith(0.42);
+    expect(((dbQueryDuration.labels as jest.Mock).mock.results[0].value as any).observe).toHaveBeenCalledWith(0.42);
     expect(importRowsProcessed.labels).toHaveBeenCalledWith("organization");
     expect(importRowsFailed.labels).toHaveBeenCalledWith("organization");
     expect(importDuration.labels).toHaveBeenCalledWith("organization");
-    expect((importRowsProcessed.labels as jest.Mock).mock.results[0].value.inc).toHaveBeenCalledWith(10);
-    expect((importRowsFailed.labels as jest.Mock).mock.results[0].value.inc).toHaveBeenCalledWith(2);
-    expect((importDuration.labels as jest.Mock).mock.results[0].value.observe).toHaveBeenCalledWith(1.5);
+    expect(((importRowsProcessed.labels as jest.Mock).mock.results[0].value as any).inc).toHaveBeenCalledWith(10);
+    expect(((importRowsFailed.labels as jest.Mock).mock.results[0].value as any).inc).toHaveBeenCalledWith(2);
+    expect(((importDuration.labels as jest.Mock).mock.results[0].value as any).observe).toHaveBeenCalledWith(1.5);
     expect(importSessionsActive.labels).toHaveBeenCalledWith("organization");
-    expect((importSessionsActive.labels as jest.Mock).mock.results[0].value.inc).toHaveBeenCalled();
-    expect((importSessionsActive.labels as jest.Mock).mock.results[1].value.dec).toHaveBeenCalled();
+    expect(((importSessionsActive.labels as jest.Mock).mock.results[0].value as any).inc).toHaveBeenCalled();
+    expect(((importSessionsActive.labels as jest.Mock).mock.results[1].value as any).dec).toHaveBeenCalled();
     expect(orgImportValidationDuration.observe).toHaveBeenCalledWith(0.8);
     expect(orgImportBatchSize.set).toHaveBeenCalledWith(500);
     expect(dbConnectionsActive.set).toHaveBeenCalledWith(12);

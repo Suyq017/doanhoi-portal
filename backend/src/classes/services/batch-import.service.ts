@@ -48,6 +48,7 @@ export class ClassBatchImportService {
   private readonly logger = new Logger(ClassBatchImportService.name);
   private readonly sessionCache = new Map<string, SessionData>();
   private readonly SESSION_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+  private sessionCleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(
     @InjectRepository(Class)
@@ -264,12 +265,15 @@ export class ClassBatchImportService {
    */
   private startSessionCleanup(): void {
     // Run cleanup every hour
-    setInterval(
+    this.sessionCleanupInterval = setInterval(
       () => {
         this.cleanupExpiredSessions();
       },
       60 * 60 * 1000,
     );
+    if (typeof (this.sessionCleanupInterval as any).unref === "function") {
+      (this.sessionCleanupInterval as any).unref();
+    }
   }
 
   /**
@@ -306,5 +310,12 @@ export class ClassBatchImportService {
   clearAllSessions(): void {
     this.sessionCache.clear();
     this.logger.log("Cleared all import sessions");
+  }
+
+  onModuleDestroy(): void {
+    if (this.sessionCleanupInterval) {
+      clearInterval(this.sessionCleanupInterval);
+      this.sessionCleanupInterval = null;
+    }
   }
 }

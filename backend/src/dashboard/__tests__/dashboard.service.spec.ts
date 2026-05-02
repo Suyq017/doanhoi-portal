@@ -1,7 +1,7 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { DashboardService } from "../dashboard.service";
 
-const mockSend = jest.fn();
+const mockSend = jest.fn() as any;
 
 function createMockS3Client() {
   return {
@@ -24,7 +24,7 @@ describe("DashboardService", () => {
   });
 
   const createAwsConfigServiceMock = () => ({
-    getActiveConfig: jest.fn(),
+    getActiveConfig: jest.fn() as any,
   });
 
   let usersService: ReturnType<typeof createUsersServiceMock>;

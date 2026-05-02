@@ -4,15 +4,7 @@ import { BadRequestException } from '@nestjs/common';
 import { TemplatesController } from '../templates.controller';
 
 describe('TemplatesController', () => {
-  let templatesService: {
-    uploadTemplate: jest.Mock;
-    parseTemplate: jest.Mock;
-    configureFields: jest.Mock;
-    findAll: jest.Mock;
-    findOne: jest.Mock;
-    update: jest.Mock;
-    delete: jest.Mock;
-  };
+  let templatesService: any;
   let controller: TemplatesController;
 
   beforeEach(() => {

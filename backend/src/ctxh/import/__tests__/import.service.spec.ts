@@ -3,16 +3,16 @@ import { CtxhImportService } from "../import.service";
 
 describe("CtxhImportService", () => {
   const createUserRepoMock = () => ({
-    find: jest.fn(),
+    find: jest.fn() as any,
     createQueryBuilder: jest.fn(() => ({
       update: jest.fn().mockReturnThis(),
       set: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       execute: jest.fn(async () => undefined),
-    })),
+    })) as any,
   });
 
-  let userRepository: ReturnType<typeof createUserRepoMock>;
+  let userRepository: any;
   let service: CtxhImportService;
 
   beforeEach(() => {

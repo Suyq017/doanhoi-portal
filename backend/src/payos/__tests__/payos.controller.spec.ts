@@ -4,15 +4,8 @@ import { HttpException } from '@nestjs/common';
 import { PayOSController } from '../payos.controller';
 
 describe('PayOSController', () => {
-  let payosService: {
-    getPayOSConfig: jest.Mock;
-    createPaymentLink: jest.Mock;
-    getPaymentLinkInformation: jest.Mock;
-  };
-  let paymentHistoryService: {
-    createPaymentRecord: jest.Mock;
-    findByOrderCode: jest.Mock;
-  };
+  let payosService: any;
+  let paymentHistoryService: any;
   let controller: PayOSController;
 
   beforeEach(() => {

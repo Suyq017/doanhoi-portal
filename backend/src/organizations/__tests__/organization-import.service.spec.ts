@@ -5,15 +5,15 @@ import { OrganizationImportService } from "../organization-import.service";
 
 describe("OrganizationImportService", () => {
   const createRepoMock = () => ({
-    findOne: jest.fn(),
-    find: jest.fn(),
-    create: jest.fn((v) => v),
-    save: jest.fn(),
+    findOne: jest.fn() as any,
+    find: jest.fn() as any,
+    create: jest.fn((v: any) => v) as any,
+    save: jest.fn() as any,
   });
 
-  let organizationsRepository: ReturnType<typeof createRepoMock>;
-  let usersRepository: ReturnType<typeof createRepoMock>;
-  let userOrganizationsRepository: ReturnType<typeof createRepoMock>;
+  let organizationsRepository: any;
+  let usersRepository: any;
+  let userOrganizationsRepository: any;
   let metricsService: any;
   let service: OrganizationImportService;
 

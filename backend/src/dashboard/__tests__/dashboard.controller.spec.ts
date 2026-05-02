@@ -3,21 +3,21 @@ import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { DashboardController } from '../dashboard.controller';
 
 describe('DashboardController', () => {
-  let usersService: { findAll: jest.Mock };
-  let organizationsService: { findAll: jest.Mock };
-  let dashboardService: { getS3Statistics: jest.Mock };
+  let usersService: any;
+  let organizationsService: any;
+  let dashboardService: any;
   let controller: DashboardController;
 
   beforeEach(() => {
     usersService = {
-      findAll: jest.fn(),
-    };
+      findAll: jest.fn() as any,
+    } as any;
     organizationsService = {
-      findAll: jest.fn(),
-    };
+      findAll: jest.fn() as any,
+    } as any;
     dashboardService = {
-      getS3Statistics: jest.fn(),
-    };
+      getS3Statistics: jest.fn() as any,
+    } as any;
 
     controller = new DashboardController(
       usersService as any,

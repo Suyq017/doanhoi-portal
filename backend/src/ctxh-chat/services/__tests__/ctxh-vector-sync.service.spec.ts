@@ -15,7 +15,7 @@ describe('CtxhVectorSyncService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    svc = new CtxhVectorSyncService(vectorQueue, ingestionService);
+    svc = new CtxhVectorSyncService(vectorQueue, ingestionService, {} as any);
   });
 
   it('queues upsert on activity created', async () => {

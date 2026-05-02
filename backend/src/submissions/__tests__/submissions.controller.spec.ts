@@ -4,17 +4,7 @@ import { StreamableFile } from '@nestjs/common';
 import { SubmissionsController } from '../submissions.controller';
 
 describe('SubmissionsController', () => {
-  let submissionsService: {
-    create: jest.Mock;
-    update: jest.Mock;
-    submit: jest.Mock;
-    getUserSubmissions: jest.Mock;
-    getAllSubmissions: jest.Mock;
-    downloadSubmissionFile: jest.Mock;
-    getPublicUrl: jest.Mock;
-    findOne: jest.Mock;
-    delete: jest.Mock;
-  };
+  let submissionsService: any;
   let controller: SubmissionsController;
 
   beforeEach(() => {

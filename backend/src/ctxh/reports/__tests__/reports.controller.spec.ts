@@ -3,10 +3,7 @@ import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { ReportsController } from '../reports.controller';
 
 describe('ReportsController', () => {
-  let reportsService: {
-    getStudentReportByCode: jest.Mock;
-    getSystemReport: jest.Mock;
-  };
+  let reportsService: any;
   let controller: ReportsController;
 
   beforeEach(() => {

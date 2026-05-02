@@ -55,10 +55,18 @@ describe('CategoryController', () => {
   });
 
   it('should find all categories', async () => {
-    categoryService.findAll.mockResolvedValue([
-      { id: 'cat-1', name: 'Category 1' },
-      { id: 'cat-2', name: 'Category 2' },
-    ]);
+    categoryService.findAll.mockResolvedValue({
+      data: [
+        { id: 'cat-1', name: 'Category 1' },
+        { id: 'cat-2', name: 'Category 2' },
+      ],
+      total: 2,
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPrevPage: false,
+    });
 
     const result = await controller.findAll(
       { user: { id: 'user-1', userType: 'student' } } as any,
@@ -67,8 +75,8 @@ describe('CategoryController', () => {
       10,
     );
 
-    expect(Array.isArray(result)).toBe(true);
-    expect(result.length).toBe(2);
+    expect(Array.isArray(result.data)).toBe(true);
+    expect(result.data.length).toBe(2);
     expect(categoryService.findAll).toHaveBeenCalledWith({
       search: 'volunteer',
       page: 2,

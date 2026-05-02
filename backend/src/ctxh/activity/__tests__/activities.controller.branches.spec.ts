@@ -4,16 +4,9 @@ import { BadRequestException } from '@nestjs/common';
 import { ActivitiesController } from '../activities.controller';
 
 describe('ActivitiesController Branches', () => {
-  let activitiesService: { findOne: jest.Mock };
-  let participationService: {
-    gradeParticipation: jest.Mock;
-    bulkGradeFromExcel: jest.Mock;
-    addStudent: jest.Mock;
-    findByActivity: jest.Mock;
-  };
-  let excelService: {
-    processGradingExcel: jest.Mock;
-  };
+  let activitiesService: any;
+  let participationService: any;
+  let excelService: any;
   let controller: ActivitiesController;
 
   beforeEach(() => {

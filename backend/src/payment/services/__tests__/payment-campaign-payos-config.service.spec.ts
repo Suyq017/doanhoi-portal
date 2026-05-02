@@ -523,9 +523,9 @@ describe("PaymentCampaignPayosConfigService", () => {
       const instance = await service.createPayOSInstance("campaign-1");
 
       expect(instance).toBeDefined();
-      expect(instance.clientId).toBe("test-client");
-      expect(instance.apiKey).toBe("test-api");
-      expect(instance.checksumKey).toBe("test-checksum");
+      expect((instance as any).clientId).toBe("test-client");
+      expect((instance as any).apiKey).toBe("test-api");
+      expect((instance as any).checksumKey).toBe("test-checksum");
     });
   });
 

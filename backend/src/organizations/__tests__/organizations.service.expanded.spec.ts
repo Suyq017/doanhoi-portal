@@ -45,32 +45,27 @@ describe("OrganizationsService expanded coverage", () => {
     groupBy: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
     take: jest.fn().mockReturnThis(),
-    getMany: jest.fn(),
-    getRawMany: jest.fn(),
-    getRawOne: jest.fn(),
-    getCount: jest.fn(),
+    getMany: jest.fn() as any,
+    getRawMany: jest.fn() as any,
+    getRawOne: jest.fn() as any,
+    getCount: jest.fn() as any,
   });
 
-  let organizationsRepository: ReturnType<typeof createOrgRepositoryMock>;
-  let userOrganizationsRepository: ReturnType<typeof createUserOrgRepositoryMock>;
+  let organizationsRepository: any;
+  let userOrganizationsRepository: any;
   let service: OrganizationsService;
-  let userRepository: {
-    findOne: jest.Mock;
-  };
-  let treeRepository: {
-    findOne: jest.Mock;
-    findDescendants: jest.Mock;
-  };
+  let userRepository: any;
+  let treeRepository: any;
 
   beforeEach(() => {
     organizationsRepository = createOrgRepositoryMock();
     userOrganizationsRepository = createUserOrgRepositoryMock();
     userRepository = {
-      findOne: jest.fn(),
+      findOne: jest.fn() as any,
     };
     treeRepository = {
-      findOne: jest.fn(),
-      findDescendants: jest.fn(),
+      findOne: jest.fn() as any,
+      findDescendants: jest.fn() as any,
     };
 
     organizationsRepository.manager.getRepository.mockReturnValue(userRepository);
@@ -126,7 +121,7 @@ describe("OrganizationsService expanded coverage", () => {
     ]);
     userOrganizationsRepository.createQueryBuilder.mockReturnValue(treeCountsQuery as any);
 
-    const tree = await service.findTree();
+    const tree: any = await service.findTree();
     expect(tree[0].memberCount).toBe(2);
     expect(tree[0].children[0].memberCount).toBe(1);
     expect(tree[0].hasChildren).toBe(true);
@@ -145,7 +140,7 @@ describe("OrganizationsService expanded coverage", () => {
     organizationsRepository.count.mockResolvedValue(1);
     treeCountsQuery.getRawMany.mockResolvedValueOnce([{ orgId: "root", count: "5" }]);
 
-    const limitedTree = await service.findTreeWithDepth(1);
+    const limitedTree: any = await service.findTreeWithDepth(1);
     expect(limitedTree[0].hasChildren).toBe(false);
     expect(limitedTree[0].children).toEqual([]);
 
@@ -156,7 +151,7 @@ describe("OrganizationsService expanded coverage", () => {
       { orgId: "root", count: "5" },
       { orgId: "child", count: "1" },
     ]);
-    const recursiveTree = await service.findTreeWithDepth(2);
+    const recursiveTree: any = await service.findTreeWithDepth(2);
     expect(recursiveTree[0].children[0].memberCount).toBe(1);
     expect(organizationsRepository.find).toHaveBeenCalledWith({
       where: { parent: { id: "root" } },
@@ -178,7 +173,7 @@ describe("OrganizationsService expanded coverage", () => {
       addSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       groupBy: jest.fn().mockReturnThis(),
-      getRawMany: jest.fn().mockResolvedValue([{ orgId: "org-1", count: "3" }]),
+      getRawMany: (jest.fn() as any).mockResolvedValue([{ orgId: "org-1", count: "3" }]),
     } as any);
 
     await expect(
@@ -300,7 +295,7 @@ describe("OrganizationsService expanded coverage", () => {
       addSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       groupBy: jest.fn().mockReturnThis(),
-      getRawMany: jest.fn().mockResolvedValue([{ orgId: "child-1", count: "4" }]),
+      getRawMany: (jest.fn() as any).mockResolvedValue([{ orgId: "child-1", count: "4" }]),
     } as any);
     organizationsRepository.count.mockResolvedValueOnce(1);
     await expect(service.findChildren("org-1")).resolves.toEqual([
@@ -354,7 +349,7 @@ describe("OrganizationsService expanded coverage", () => {
       addSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       groupBy: jest.fn().mockReturnThis(),
-      getRawMany: jest.fn().mockResolvedValue([{ orgId: "org-1", count: "2" }]),
+      getRawMany: (jest.fn() as any).mockResolvedValue([{ orgId: "org-1", count: "2" }]),
     } as any);
     await expect(service.getOrganizationByTypeAndCode(OrganizationType.DOAN_TRUONG, "ORG1")).resolves.toMatchObject({
       id: "org-1",
@@ -369,7 +364,7 @@ describe("OrganizationsService expanded coverage", () => {
       name: "Org 1",
       parent: { id: "parent-1", name: "Parent 1" },
     });
-    userRepository.findOne.mockResolvedValueOnce({ id: "user-1", code: "U1" });
+    userRepository.findOne.mockResolvedValueOnce({ id: "user-1", code: "U1" } as any);
     userOrganizationsRepository.findOne
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(null)
@@ -380,11 +375,11 @@ describe("OrganizationsService expanded coverage", () => {
     });
 
     organizationsRepository.findOne.mockResolvedValueOnce({ id: "org-2", code: "ORG2", name: "Org 2", parent: null });
-    userRepository.findOne.mockResolvedValueOnce(null);
+    userRepository.findOne.mockResolvedValueOnce(null as any);
     await expect(service.addMemberBySimpleCode("ORG2", "MISSING")).rejects.toThrow("User with code MISSING not found");
 
     organizationsRepository.findOne.mockResolvedValueOnce({ id: "org-3", parent: null });
-    userRepository.findOne.mockResolvedValueOnce({ id: "user-2" });
+    userRepository.findOne.mockResolvedValueOnce({ id: "user-2" } as any);
     userOrganizationsRepository.findOne.mockResolvedValueOnce({ id: "existing" });
     await expect(service.bulkAddMembersByCode("org-3", ["U1", "U2"])).resolves.toMatchObject({
       success: 0,
@@ -405,10 +400,10 @@ describe("OrganizationsService expanded coverage", () => {
     await expect(service.getOrganizationLevel("child")).resolves.toBe(2);
     await expect(service.getOrganizationLevel("missing")).resolves.toBe(0);
 
-    treeRepository.findOne.mockResolvedValueOnce(null);
+    treeRepository.findOne.mockResolvedValueOnce(null as any);
     await expect(service.getAllDescendants("org-1")).resolves.toEqual([]);
-    treeRepository.findOne.mockResolvedValueOnce({ id: "org-1" });
-    treeRepository.findDescendants.mockResolvedValueOnce([{ id: "org-1" }, { id: "child-1" }]);
+    treeRepository.findOne.mockResolvedValueOnce({ id: "org-1" } as any);
+    treeRepository.findDescendants.mockResolvedValueOnce([{ id: "org-1" }, { id: "child-1" }] as any);
     await expect(service.getAllDescendants("org-1")).resolves.toEqual([{ id: "child-1" }]);
 
     organizationsRepository.query.mockResolvedValueOnce([{ id: "primary" }]);

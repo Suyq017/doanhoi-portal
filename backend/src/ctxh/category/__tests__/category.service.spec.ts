@@ -6,7 +6,7 @@ describe("CategoryService", () => {
   const createCategoryRepositoryMock = () => ({
     findOne: jest.fn() as any,
     create: jest.fn((value) => value) as any,
-    save: jest.fn(async (value) => ({ ...value, id: value.id || "cat-1" })) as any,
+    save: jest.fn(async (value: any) => ({ ...value, id: value.id || "cat-1" })) as any,
     update: jest.fn() as any,
     recover: jest.fn() as any,
     createQueryBuilder: jest.fn() as any,

@@ -28,66 +28,40 @@ import { BadRequestException } from '@nestjs/common';
 import { ActivitiesController } from '../activities.controller';
 
 describe('ActivitiesController', () => {
-  let activitiesService: {
-    create: jest.Mock;
-    findAll: jest.Mock;
-    findOne: jest.Mock;
-    update: jest.Mock;
-    remove: jest.Mock;
-    restore: jest.Mock;
-  };
-  let participationService: {
-    findByActivity: jest.Mock;
-    findPendingByActivity: jest.Mock;
-    registerSelf: jest.Mock;
-    cancelSelfRegistration: jest.Mock;
-    approveParticipation: jest.Mock;
-    approveParticipationsBatch: jest.Mock;
-    addStudent: jest.Mock;
-    addMultipleStudents: jest.Mock;
-    gradeParticipation: jest.Mock;
-    bulkGradeFromExcel: jest.Mock;
-    removeParticipant: jest.Mock;
-  };
-  let excelService: {
-    generateParticipantsTemplate: jest.Mock;
-    processParticipantsExcel: jest.Mock;
-    validateStudentCodes: jest.Mock;
-    generateGradingTemplate: jest.Mock;
-    processGradingExcel: jest.Mock;
-    exportParticipants: jest.Mock;
-  };
+  let activitiesService: any;
+  let participationService: any;
+  let excelService: any;
   let controller: ActivitiesController;
 
   beforeEach(() => {
     activitiesService = {
-      create: jest.fn(),
-      findAll: jest.fn(),
-      findOne: jest.fn(),
-      update: jest.fn(),
-      remove: jest.fn(),
-      restore: jest.fn(),
+      create: jest.fn() as any,
+      findAll: jest.fn() as any,
+      findOne: jest.fn() as any,
+      update: jest.fn() as any,
+      remove: jest.fn() as any,
+      restore: jest.fn() as any,
     };
     participationService = {
-      findByActivity: jest.fn(),
-      findPendingByActivity: jest.fn(),
-      registerSelf: jest.fn(),
-      cancelSelfRegistration: jest.fn(),
-      approveParticipation: jest.fn(),
-      approveParticipationsBatch: jest.fn(),
-      addStudent: jest.fn(),
-      addMultipleStudents: jest.fn(),
-      gradeParticipation: jest.fn(),
-      bulkGradeFromExcel: jest.fn(),
-      removeParticipant: jest.fn(),
+      findByActivity: jest.fn() as any,
+      findPendingByActivity: jest.fn() as any,
+      registerSelf: jest.fn() as any,
+      cancelSelfRegistration: jest.fn() as any,
+      approveParticipation: jest.fn() as any,
+      approveParticipationsBatch: jest.fn() as any,
+      addStudent: jest.fn() as any,
+      addMultipleStudents: jest.fn() as any,
+      gradeParticipation: jest.fn() as any,
+      bulkGradeFromExcel: jest.fn() as any,
+      removeParticipant: jest.fn() as any,
     };
     excelService = {
-      generateParticipantsTemplate: jest.fn(),
-      processParticipantsExcel: jest.fn(),
-      validateStudentCodes: jest.fn(),
-      generateGradingTemplate: jest.fn(),
-      processGradingExcel: jest.fn(),
-      exportParticipants: jest.fn(),
+      generateParticipantsTemplate: jest.fn() as any,
+      processParticipantsExcel: jest.fn() as any,
+      validateStudentCodes: jest.fn() as any,
+      generateGradingTemplate: jest.fn() as any,
+      processGradingExcel: jest.fn() as any,
+      exportParticipants: jest.fn() as any,
     };
     controller = new ActivitiesController(
       activitiesService as any,
@@ -203,7 +177,7 @@ describe('ActivitiesController', () => {
       message: 'File uploaded and processed successfully',
     });
 
-    const [studentSessionId] = Array.from((global as any).uploadSessions.keys());
+    const [studentSessionId] = Array.from((global as any).uploadSessions.keys()) as string[];
     await expect(controller.validateImportSession(studentSessionId)).resolves.toMatchObject({
       sessionId: studentSessionId,
       isValid: true,
@@ -224,13 +198,13 @@ describe('ActivitiesController', () => {
       message: 'Grading file uploaded and processed successfully',
     });
 
-    const gradingSessionId = Array.from((global as any).uploadSessions.keys()).pop();
+    const gradingSessionId = Array.from((global as any).uploadSessions.keys()).pop() as string;
     await expect(controller.validateImportSession(gradingSessionId)).resolves.toMatchObject({
       sessionId: gradingSessionId,
       isValid: true,
     });
     // bulkGradeFromExcel returns different shapes depending on call context; ensure next call returns successful/failed
-    participationService.bulkGradeFromExcel.mockResolvedValueOnce({ successful: [{ studentCode: '2150001' }], failed: [] });
+    participationService.bulkGradeFromExcel.mockResolvedValueOnce({ successful: [{ studentCode: '2150001' }], failed: [] } as any);
     await expect(controller.executeImport(gradingSessionId, {}, { user: { id: 'user-1' } } as any)).resolves.toMatchObject({
       sessionId: gradingSessionId,
       success: true,

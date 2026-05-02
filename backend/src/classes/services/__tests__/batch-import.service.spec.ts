@@ -3,17 +3,17 @@ import { ClassBatchImportService } from "../batch-import.service";
 
 describe("ClassBatchImportService", () => {
   const createClassRepo = () => ({
-    findOne: jest.fn(),
-    create: jest.fn((v) => v),
-    save: jest.fn(async (v) => ({ ...v, id: "class-1" })),
+    findOne: jest.fn() as any,
+    create: jest.fn((v: any) => v),
+    save: jest.fn(async (v: any) => ({ ...v, id: "class-1" })),
   });
 
   const createDepartmentRepo = () => ({
-    findOne: jest.fn(),
+    findOne: jest.fn() as any,
   });
 
-  let classesRepository: ReturnType<typeof createClassRepo>;
-  let departmentsRepository: ReturnType<typeof createDepartmentRepo>;
+  let classesRepository: any;
+  let departmentsRepository: any;
   let service: ClassBatchImportService;
 
   beforeEach(() => {

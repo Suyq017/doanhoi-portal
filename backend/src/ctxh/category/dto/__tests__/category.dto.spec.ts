@@ -1,10 +1,10 @@
 import { describe, it, expect } from '@jest/globals';
-import { CreateCategoryDto } from '../../category/dto/create-category.dto';
-import { UpdateCategoryDto } from '../../category/dto/update-category.dto';
+import { CreateCategoryDto } from '../create-category.dto';
+import { UpdateCategoryDto } from '../update-category.dto';
 
 describe('CTXH Category DTOs', () => {
   it('should allow creating CreateCategoryDto with required fields', () => {
-    const dto: CreateCategoryDto = {
+    const dto: any = {
       name: 'Test Category',
       description: 'Test description',
       organization_id: 'org-1',
@@ -25,7 +25,7 @@ describe('CTXH Category DTOs', () => {
   });
 
   it('should handle CreateCategoryDto with optional fields', () => {
-    const dto: CreateCategoryDto = {
+    const dto: any = {
       name: 'Category',
       organization_id: 'org-1',
     };

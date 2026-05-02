@@ -626,7 +626,7 @@ describe("Users ImportService", () => {
   it("should throw when level-1 organizations are missing", async () => {
     const queryRunner = {
       manager: {
-        findOne: jest.fn().mockResolvedValue(null),
+        findOne: (jest.fn() as any).mockResolvedValue(null),
         create: jest.fn((_: any, value: any) => value),
         save: jest.fn(async (_: any, value: any) => value),
       },
@@ -644,8 +644,7 @@ describe("Users ImportService", () => {
 
     const queryRunner = {
       manager: {
-        findOne: jest
-          .fn()
+        findOne: (jest.fn() as any)
           .mockResolvedValueOnce(doanTruong)
           .mockResolvedValueOnce(hoiSinhVien)
           .mockResolvedValueOnce(null)
@@ -679,8 +678,7 @@ describe("Users ImportService", () => {
 
     const queryRunner = {
       manager: {
-        findOne: jest
-          .fn()
+        findOne: (jest.fn() as any)
           .mockResolvedValueOnce(null)
           .mockResolvedValueOnce({ id: "existing-chi-hoi", code: "CHI_HOI_MT22KH02" }),
         create: jest.fn((_entity: any, value: any) => value),
@@ -702,8 +700,7 @@ describe("Users ImportService", () => {
   it("should create memberships for chi doan/chi hoi when absent", async () => {
     const queryRunner = {
       manager: {
-        findOne: jest
-          .fn()
+        findOne: (jest.fn() as any)
           .mockResolvedValueOnce(null)
           .mockResolvedValueOnce(null),
         create: jest.fn((_entity: any, value: any) => value),
@@ -729,7 +726,7 @@ describe("Users ImportService", () => {
   it("should skip membership creation when already exists", async () => {
     const queryRunner = {
       manager: {
-        findOne: jest.fn().mockResolvedValue({ id: "membership-existing" }),
+        findOne: (jest.fn() as any).mockResolvedValue({ id: "membership-existing" }),
         create: jest.fn((_entity: any, value: any) => value),
         save: jest.fn(async (_entity: any, value: any) => value),
       },

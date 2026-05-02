@@ -508,8 +508,8 @@ describe("Departments ImportService", () => {
   describe("private batch flow branches", () => {
     it("should process batch data through a query runner repository", async () => {
       const queryRunnerRepository = {
-        findOne: jest.fn().mockResolvedValue(null),
-        insert: jest.fn().mockResolvedValue({ identifiers: [{ id: "d-1" }, { id: "d-2" }] }),
+        findOne: (jest.fn() as any).mockResolvedValue(null),
+        insert: (jest.fn() as any).mockResolvedValue({ identifiers: [{ id: "d-1" }, { id: "d-2" }] }),
       };
       const queryRunner = {
         manager: {
