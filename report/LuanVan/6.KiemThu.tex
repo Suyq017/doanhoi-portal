@@ -1,0 +1,358 @@
+\section{Kiểm thử}
+
+\subsection{Kiểm thử Web}
+
+\subsubsection{Mục tiêu kiểm thử}
+Mục tiêu của chương kiểm thử là xác nhận hệ thống Đoàn -- Hội Portal đã đáp ứng đúng các yêu cầu nghiệp vụ cốt lõi trước khi triển khai chính thức. Nhóm tập trung vào ba lớp kiểm thử:
+\begin{itemize}
+	\item \textbf{Kiểm thử chức năng giao diện web}: xác nhận các luồng thao tác chính hoạt động đúng với quyền người dùng.
+	\item \textbf{Kiểm thử API/backend}: xác nhận hợp đồng API, phân quyền và dữ liệu trả về.
+	\item \textbf{Kiểm thử tải cơ bản}: đánh giá phản hồi hệ thống dưới mức tải đồng thời ở quy mô triển khai luận văn.
+\end{itemize}
+
+\subsubsection{Môi trường kiểm thử}
+Môi trường kiểm thử giao diện và API được chuẩn hóa để bảo đảm kết quả có thể tái lập:
+\begin{itemize}
+	\item Hệ điều hành máy kiểm thử: Windows 11 23H2.
+	\item Trình duyệt kiểm thử chính: Google Chrome 124.x.
+	\item Frontend: React + Vite, chạy qua Nginx container.
+	\item Backend: NestJS, chạy tại cổng dịch vụ nội bộ 9200.
+	\item Cơ sở dữ liệu: PostgreSQL 15 có extension pgvector.
+	\item Dịch vụ hỗ trợ: Redis (queue/cache), Prometheus, Grafana.
+\end{itemize}
+
+Các ca kiểm thử được thực hiện theo hướng \textit{black-box}: thao tác từ UI/API và đối chiếu kết quả thực tế với kết quả mong đợi theo yêu cầu chức năng đã phân tích ở Chương 3.
+
+\subsubsection{Kiểm thử chức năng trang xác thực và phân quyền}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{|p{2.0cm}|p{4.8cm}|p{4.5cm}|p{3.2cm}|}
+\hline
+\textbf{Mã} & \textbf{Tiền điều kiện/Thao tác} & \textbf{Kết quả dự kiến} & \textbf{Kết quả} \\
+\hline
+A1 & Truy cập màn hình đăng nhập, nhập đúng tài khoản/mật khẩu nội bộ & Đăng nhập thành công, điều hướng về dashboard theo quyền & Đạt \\
+\hline
+A2 & Nhập sai mật khẩu tài khoản hợp lệ & Hiển thị thông báo đăng nhập thất bại, không tạo phiên & Đạt \\
+\hline
+A3 & Để trống tài khoản hoặc mật khẩu & Nút đăng nhập bị vô hiệu hóa hoặc backend trả lỗi validation & Đạt \\
+\hline
+A4 & Đăng nhập bằng Google OAuth với tài khoản đã được cấp trong hệ thống & Đăng nhập thành công qua callback, nhận access token/refresh token & Đạt \\
+\hline
+A5 & Đăng nhập bằng Google OAuth với tài khoản chưa tồn tại trong hệ thống & Chuyển về trang callback với trạng thái lỗi user\_not\_found & Đạt \\
+\hline
+A6 & Người dùng đã đăng nhập truy cập màn hình có quyền hạn chế & Chỉ hiển thị menu/chức năng thuộc tập quyền được cấp & Đạt \\
+\hline
+\end{tabular}
+\caption{Bảng kiểm thử chức năng xác thực và phân quyền}
+\end{table}
+
+\subsubsection{Kiểm thử chức năng quản trị người dùng -- tổ chức}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{|p{2.0cm}|p{4.8cm}|p{4.5cm}|p{3.2cm}|}
+\hline
+\textbf{Mã} & \textbf{Tiền điều kiện/Thao tác} & \textbf{Kết quả dự kiến} & \textbf{Kết quả} \\
+\hline
+B1 & Truy cập danh sách người dùng với tài khoản có quyền xem & Hiển thị danh sách có phân trang, lọc và tìm kiếm theo tiêu chí & Đạt \\
+\hline
+B2 & Tạo người dùng mới và gán vai trò theo tổ chức & Người dùng được tạo thành công, vai trò được lưu đúng phạm vi tổ chức & Đạt \\
+\hline
+B3 & Cập nhật thông tin người dùng hiện có & Dữ liệu hiển thị sau cập nhật phản ánh đúng giá trị mới & Đạt \\
+\hline
+B4 & Xóa mềm người dùng không còn sử dụng & Bản ghi bị loại khỏi danh sách mặc định, không phát sinh lỗi quan hệ & Đạt \\
+\hline
+B5 & Upload file Excel import users rồi validate session import & Trả về báo cáo lỗi/cảnh báo theo dòng, không ghi dữ liệu khi chưa execute & Đạt \\
+\hline
+B6 & Execute import session hợp lệ & Dữ liệu người dùng được ghi theo batch, trả tổng hợp thành công/thất bại & Đạt \\
+\hline
+B7 & Truy cập cây tổ chức (organization tree) theo maxDepth & Hiển thị đúng cấu trúc phân cấp và số lượng nút theo độ sâu & Đạt \\
+\hline
+B8 & Truy vấn danh sách tổ chức accessible theo quyền người dùng & Chỉ trả tổ chức mà người dùng có quyền thao tác tương ứng & Đạt \\
+\hline
+\end{tabular}
+\caption{Bảng kiểm thử chức năng quản trị người dùng -- tổ chức}
+\end{table}
+
+\subsubsection{Kiểm thử chức năng CTXH}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{|p{2.0cm}|p{4.8cm}|p{4.5cm}|p{3.2cm}|}
+\hline
+\textbf{Mã} & \textbf{Tiền điều kiện/Thao tác} & \textbf{Kết quả dự kiến} & \textbf{Kết quả} \\
+\hline
+C1 & Truy cập danh sách danh mục CTXH với quyền \texttt{ctxh.categories.view} & Hiển thị danh mục có phân trang/tìm kiếm đúng dữ liệu & Đạt \\
+\hline
+C2 & Tạo mới danh mục CTXH & Danh mục mới xuất hiện trong danh sách, không trùng tên trong cùng phạm vi & Đạt \\
+\hline
+C3 & Tạo hoạt động CTXH với thông tin thời gian, tổ chức, tổng ngày & Hoạt động được tạo và ở trạng thái khởi tạo hợp lệ & Đạt \\
+\hline
+C4 & Cập nhật trạng thái hoạt động theo vòng đời nghiệp vụ & Hệ thống cho phép chuyển trạng thái hợp lệ, chặn chuyển trái quy tắc & Đạt \\
+\hline
+C5 & Import dữ liệu CTXH từ hệ thống cũ: validate trước import & Trả về danh sách MSSV hợp lệ/không hợp lệ, chưa ghi DB ở bước validate & Đạt \\
+\hline
+C6 & Thực thi import CTXH old-system sau khi validate đạt & Dữ liệu ngày CTXH cũ được cập nhật đúng trường mục tiêu & Đạt \\
+\hline
+C7 & Truy vấn báo cáo CTXH theo MSSV & Trả về tổng hợp hoạt động và ngày CTXH đúng theo dữ liệu tham gia & Đạt \\
+\hline
+C8 & Cấu hình giới hạn ngày CTXH theo tổ chức và truy vấn active config & Trả đúng cấu hình active theo tổ chức, hỗ trợ filter status & Đạt \\
+\hline
+\end{tabular}
+\caption{Bảng kiểm thử chức năng phân hệ CTXH}
+\end{table}
+
+\subsubsection{Kiểm thử chức năng thu phí và biểu mẫu}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{|p{2.0cm}|p{4.8cm}|p{4.5cm}|p{3.2cm}|}
+\hline
+\textbf{Mã} & \textbf{Tiền điều kiện/Thao tác} & \textbf{Kết quả dự kiến} & \textbf{Kết quả} \\
+\hline
+D1 & Tạo chiến dịch thu phí mới cho tổ chức hợp lệ & Chiến dịch được tạo với trạng thái khởi tạo và thông tin thời gian đúng & Đạt \\
+\hline
+D2 & Tạo mức phí trong chiến dịch và gán danh sách đối tượng đóng phí & Sinh bản ghi assignment đúng số lượng, trạng thái ban đầu PENDING & Đạt \\
+\hline
+D3 & Đồng bộ trạng thái thanh toán từ cổng thanh toán về hệ thống & Assignment và payment history được cập nhật nhất quán & Đạt \\
+\hline
+D4 & Upload template Word \texttt{.docx} và parse placeholder & Trả danh sách placeholder, cho phép cấu hình field động & Đạt \\
+\hline
+D5 & Người dùng tạo submission dạng nháp rồi submit & Sinh tài liệu đầu ra, cập nhật trạng thái submission thành công & Đạt \\
+\hline
+D6 & Tải file đã sinh hoặc lấy public URL xem trực tuyến & Trả file đúng định dạng và metadata URL hợp lệ & Đạt \\
+\hline
+D7 & Kiểm tra cấu hình S3 đang active và test kết nối cấu hình mới & Trả kết quả \texttt{success=true} với cấu hình hợp lệ & Đạt \\
+\hline
+\end{tabular}
+\caption{Bảng kiểm thử chức năng thu phí, biểu mẫu và lưu trữ}
+\end{table}
+
+\subsubsection{Kiểm thử chatbot RAG CTXH}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{|p{2.0cm}|p{4.8cm}|p{4.5cm}|p{3.2cm}|}
+\hline
+\textbf{Mã} & \textbf{Tiền điều kiện/Thao tác} & \textbf{Kết quả dự kiến} & \textbf{Kết quả} \\
+\hline
+E1 & Gửi câu hỏi CTXH qua endpoint \texttt{/api/ctxh-chat/message} & Nhận câu trả lời có nội dung liên quan và có danh sách nguồn tham chiếu & Đạt \\
+\hline
+E2 & Gửi nhiều lượt hội thoại trong cùng \texttt{sessionId} & Chatbot giữ ngữ cảnh, phản hồi nhất quán giữa các lượt hỏi đáp & Đạt \\
+\hline
+E3 & Truy vấn lịch sử qua \texttt{/api/ctxh-chat/history/:sessionId} & Trả đúng thứ tự message user/assistant và metadata phiên & Đạt \\
+\hline
+E4 & Xóa phiên hội thoại qua \texttt{/api/ctxh-chat/session/:sessionId} & Phiên được dọn sạch, truy vấn lại lịch sử trả rỗng hoặc không còn dữ liệu & Đạt \\
+\hline
+E5 & Kiểm thử streaming qua SSE & Luồng phản hồi trả từng phần liên tục và kết thúc bằng sự kiện hoàn tất & Đạt \\
+\hline
+\end{tabular}
+\caption{Bảng kiểm thử chức năng chatbot RAG}
+\end{table}
+
+\subsection{Kiểm thử API và Backend}
+
+\subsubsection{Kịch bản kiểm thử API}
+Nhóm kiểm thử API bằng Postman Collection của dự án, kết hợp kiểm tra thủ công các ca quan trọng theo ba nhóm:
+\begin{itemize}
+	\item \textbf{Nhóm xác thực và bảo mật}: login, refresh token, logout, truy cập tài nguyên có bảo vệ JWT.
+	\item \textbf{Nhóm nghiệp vụ}: users, organizations, CTXH, payment, templates/submissions, export.
+	\item \textbf{Nhóm vận hành}: metrics endpoint, kiểm tra kết nối S3, trạng thái import session, chatbot health/ingestion.
+\end{itemize}
+
+Các tiêu chí kiểm thử API gồm: mã trạng thái HTTP đúng chuẩn, schema response đúng hợp đồng, xử lý lỗi rõ ràng, và ràng buộc phân quyền đúng theo permission code.
+
+\subsubsection{Bảng kiểm thử API đại diện}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{|p{2.0cm}|p{3.8cm}|p{2.5cm}|p{5.0cm}|p{1.4cm}|}
+\hline
+\textbf{Mã} & \textbf{API} & \textbf{Phương thức} & \textbf{Kết quả kỳ vọng} & \textbf{KQ} \\
+\hline
+F1 & \texttt{/auth/login} & POST & Trả access token, refresh token và thông tin user khi credential hợp lệ & Đạt \\
+\hline
+F2 & \texttt{/auth/me/permissions} & GET & Trả danh sách quyền theo organization context nếu có truyền tham số & Đạt \\
+\hline
+F3 & \texttt{/users/import/upload} & POST & Nhận file thành công, tạo session import và metadata tương ứng & Đạt \\
+\hline
+F4 & \texttt{/organizations/tree} & GET & Trả cây tổ chức đúng cấu trúc, hỗ trợ maxDepth/type/code & Đạt \\
+\hline
+F5 & \texttt{/ctxh/import/old-system/validate} & POST & Trả báo cáo validation theo từng bản ghi đầu vào & Đạt \\
+\hline
+F6 & \texttt{/ctxh/reports/student/:studentCode} & GET & Trả báo cáo tổng hợp CTXH của sinh viên theo MSSV & Đạt \\
+\hline
+F7 & \texttt{/templates/upload} & POST & Upload template \texttt{.docx} thành công, lưu metadata mẫu & Đạt \\
+\hline
+F8 & \texttt{/submissions/:id/submit} & POST & Sinh file đầu ra, cập nhật trạng thái submission và đường dẫn file & Đạt \\
+\hline
+F9 & \texttt{/api/ctxh-chat/message} & POST & Trả câu trả lời chatbot, có sources và responseTime & Đạt \\
+\hline
+F10 & \texttt{/aws-s3-config/:id/test} & POST & Trả \texttt{success=true} với cấu hình hợp lệ, báo lỗi khi sai credentials & Đạt \\
+\hline
+\end{tabular}
+\caption{Bảng kiểm thử API backend đại diện}
+\end{table}
+
+\subsubsection{Kiểm thử tải cơ bản cho backend}
+Để đánh giá sơ bộ khả năng chịu tải, nhóm sử dụng Postman Performance Runner trên tập endpoint đại diện, với cấu hình thử nghiệm:
+\begin{itemize}
+	\item Virtual Users: 80.
+	\item Test Duration: 5 phút/collection.
+	\item Load Profile: Fixed.
+	\item Hạ tầng test: backend container + PostgreSQL + Redis trong cùng mạng Docker.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{|p{3.2cm}|p{1.9cm}|p{1.9cm}|p{2.0cm}|p{2.8cm}|p{2.0cm}|}
+\hline
+\textbf{Collection} & \textbf{Thời gian} & \textbf{Tổng request} & \textbf{Request/s} & \textbf{RT trung bình (ms)} & \textbf{Tỷ lệ lỗi} \\
+\hline
+Auth \& RBAC & 5 phút & 8.964 & 29,88 & 286 & 0,00\% \\
+\hline
+Users \& Organizations & 5 phút & 11.427 & 38,09 & 344 & 0,09\% \\
+\hline
+CTXH & 5 phút & 10.286 & 34,29 & 337 & 0,12\% \\
+\hline
+Payment & 5 phút & 7.918 & 26,39 & 391 & 0,18\% \\
+\hline
+Templates \& Submissions & 5 phút & 6.305 & 21,02 & 418 & 0,16\% \\
+\hline
+Ctxh-chat (non-stream) & 5 phút & 4.732 & 15,77 & 682 & 0,25\% \\
+\hline
+\end{tabular}
+\caption{Bảng số liệu kiểm thử tải cơ bản các collection API}
+\end{table}
+
+Kết quả cho thấy các endpoint CRUD và truy vấn dữ liệu giao dịch duy trì thời gian phản hồi ổn định ở mức dưới 450 ms trong điều kiện tải kiểm thử; nhóm chatbot có độ trễ cao hơn do bao gồm retrieval + generation, phù hợp với đặc thù xử lý AI.
+
+\subsection{Kiểm thử tự động (Unit tests và Integration tests)}
+
+\subsubsection{Chiến lược kiểm thử Backend}
+Nhóm thực hiện kiểm thử backend theo hướng tiếp cận đa tầng, bao gồm:
+\begin{itemize}
+	\item \textbf{Unit tests}: kiểm thử các service, helper function, và business logic cách ly, sử dụng mock cho repository và adapter ngoài.
+	\item \textbf{Integration tests}: kiểm thử các endpoint API với supertest, mô phỏng luồng request-response đầy đủ theo kịch bản thực tế.
+	\item \textbf{Coverage metrics}: đo lường statement coverage, function coverage, và branch coverage để đánh giá độ bao phủ logic.
+\end{itemize}
+
+Công cụ kiểm thử: Jest v29 (test runner), với cấu hình coverage reporter để phân tích chi tiết mức phủ code. Các test được tổ chức theo cấu trúc thư mục song song với source code (\texttt{*.spec.ts}), thuận lợi cho bảo trì.
+
+\subsubsection{Kết quả kiểm thử Backend}
+Hiện trạng kiểm thử backend (tính đến 01/05/2026):
+\begin{itemize}
+	\item \textbf{Test suites}: 123/123 passed
+	\item \textbf{Tổng số tests}: 1107/1107 passed
+	\item \textbf{Thời gian chạy}: ~60--80 giây (toàn bộ suite)
+\end{itemize}
+
+Bảng dưới đây tổng hợp chỉ số bao phủ code (coverage metrics):
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{|p{3.5cm}|p{2.0cm}|p{2.0cm}|p{2.0cm}|}
+\hline
+\textbf{Metric} & \textbf{Statements} & \textbf{Functions} & \textbf{Branches} \\
+\hline
+Coverage (\%) & 79,33 & 82,55 & 63,73 \\
+\hline
+Uncovered Lines & 543 & 92 & 420 \\
+\hline
+\end{tabular}
+\caption{Bảng chỉ số bao phủ code Backend}
+\end{table}
+
+Nhận xét:
+\begin{itemize}
+	\item Statement coverage và function coverage ở mức tốt (trên 79\%), phản ánh rằng phần lớn code production đã được chạy qua test.
+	\item Branch coverage (63,73\%) cho thấy còn một số nhánh điều kiện chưa được kiểm thử đầy đủ. Các nhánh chưa bao phủ chủ yếu nằm ở:
+	\begin{itemize}
+		\item Các service xử lý batch import với logic rollback và xử lý conflict.
+		\item Các thao tác liên quan tới cây tổ chức (traversal, filtering).
+		\item Các state transitions trong payment campaign và CTXH activities.
+		\item Các đường xử lý lỗi từ dịch vụ ngoài (S3, external APIs).
+	\end{itemize}
+	\item Mặc dù branch coverage chưa cao, các test hiện tại vẫn đủ để bao phủ happy paths chính và lỗi validation quan trọng, phù hợp với quy mô và thời hạn luận văn.
+\end{itemize}
+
+\subsubsection{Chiến lược kiểm thử Frontend}
+Kiểm thử frontend sử dụng phương pháp \textit{behavioral testing}: không chỉ kiểm thử component render mà còn kiểm thử hành vi người dùng thực tế (click, input, navigation). Công cụ và cấu hình:
+\begin{itemize}
+	\item \textbf{Test runner}: Vitest v1.6.1, được chọn do hỗ trợ ES modules và tính năng hot-reload trong dev.
+	\item \textbf{Thư viện assertion}: React Testing Library (RTL), khuyến khích query theo semantic selectors (getByRole, getByLabelText) thay vì implementation details.
+	\item \textbf{API mocking}: Mock Service Worker (MSW), cho phép mock API request ở browser level, không ảnh hưởng tới test setup phức tạp.
+	\item \textbf{Data fetching}: TanStack React Query, cấu hình \texttt{retry: false} trong tests để tránh flakiness.
+	\item \textbf{Routing}: React Router v6, khởi tạo trong setup file để tránh warnings khi component sử dụng hooks route.
+	\item \textbf{i18n}: react-i18next, khởi tạo namespace cơ bản trong \texttt{setupTests.ts} để không phát sinh warnings.
+\end{itemize}
+
+\subsubsection{Kết quả kiểm thử Frontend}
+Hiện trạng kiểm thử frontend (tính đến 01/05/2026):
+\begin{itemize}
+	\item \textbf{Tổng file test}: 27 files (\texttt{*.spec.tsx})
+	\item \textbf{Tổng số tests}: 106/106 passed
+	\item \textbf{Thời gian chạy}: ~10 giây
+	\item \textbf{Trạng thái output}: Clean (0 warnings, 0 errors)
+\end{itemize}
+
+Các feature chính được kiểm thử bao gồm:
+\begin{itemize}
+	\item \textbf{Authentication \& Authorization}: login form validation, OAuth callback, permission-based route access.
+	\item \textbf{User \& Organization Management}: list, create, edit, soft delete; import users từ Excel.
+	\item \textbf{CTXH Activities}: create activity, update status, view reports.
+	\item \textbf{Templates \& Submissions}: upload template, fill dynamic fields, generate document, download file.
+	\item \textbf{Payment \& Fees}: create campaign, view fee assignments, payment status sync.
+	\item \textbf{System Configuration}: S3 config test, email settings, notification preferences.
+	\item \textbf{Chatbot CTXH}: message sending, session history, streaming response.
+\end{itemize}
+
+Mỗi feature được kiểm thử theo ba kịch bản:
+\begin{itemize}
+	\item \textbf{Happy path}: người dùng thực hiện thao tác đúng, hệ thống trả kết quả mong đợi.
+	\item \textbf{Error path}: người dùng nhập dữ liệu không hợp lệ hoặc API trả lỗi, hệ thống hiển thị thông báo lỗi rõ ràng.
+	\item \textbf{Permission path}: người dùng không có quyền thực hiện thao tác, hệ thống ẩn nút hoặc trả HTTP 403.
+\end{itemize}
+
+Quá trình cải tiến kiểm thử frontend được chia thành ba phase:
+\begin{enumerate}
+	\item \textbf{Phase 1 -- Behavioral tests mở rộng}: viết các test hành vi chi tiết cho Classes, Departments, Templates (từ 2 test/feature -> 6 test/feature, tổng +12 tests).
+	\item \textbf{Phase 2 -- System-config}: mở rộng kiểm thử cho phần cấu hình hệ thống, đặc biệt S3 connection test (+5 tests).
+	\item \textbf{Phase 3 -- Warning cleanup}: loại bỏ tất cả warnings từ React, React Router, và i18next bằng cách khởi tạo dependencies trong setup file, sử dụng suppression selectively nơi cần; kết quả: test output hoàn toàn sạch.
+\end{enumerate}
+
+\subsubsection{Tổng hợp kết quả kiểm thử tự động}
+Từ các kiểm thử tự động (unit, integration, behavioral), có thể kết luận:
+\begin{itemize}
+	\item \textbf{Backend}: 1107 tests pass với coverage tốt cho statements (79,33\%) và functions (82,55\%), cho phép tự tin rằng các service chính hoạt động đúng logic.
+	\item \textbf{Frontend}: 106 tests pass với output sạch, bao phủ behavioral scenarios quan trọng ở mức thực hiện hành vi người dùng.
+	\item \textbf{Hợp tác BE-FE}: các integration tests backend xác nhận API contracts; các behavioral tests frontend xác nhận UI/UX contracts, tạo ranh giới kiểm thử rõ ràng.
+\end{itemize}
+
+\subsubsection{Tổng hợp kết quả kiểm thử}
+Từ các nhóm kiểm thử trên (chức năng manual, kiểm thử tải, kiểm thử tự động), có thể rút ra các nhận xét chính:
+\begin{itemize}
+	\item Hệ thống đáp ứng đầy đủ các chức năng lõi đã đặc tả trong phạm vi luận văn.
+	\item Cơ chế phân quyền theo vai trò và tổ chức hoạt động nhất quán giữa UI và API.
+	\item Các luồng dữ liệu lớn (import, sinh tài liệu, đồng bộ chatbot) vận hành ổn định với cơ chế kiểm soát lỗi theo phiên/lô.
+	\item Hệ thống đạt mức sẵn sàng để triển khai vận hành thực tế ở quy mô người dùng mục tiêu của đề tài.
+\end{itemize}
+
+\clearpage
