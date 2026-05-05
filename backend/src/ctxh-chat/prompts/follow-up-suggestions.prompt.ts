@@ -16,7 +16,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 export const FOLLOW_UP_SUGGESTIONS_PROMPT = ChatPromptTemplate.fromMessages([
   [
     'system',
-    `/no_think Bạn là trợ lý gợi ý câu hỏi tiếp theo cho chatbot CTXH tại Đại học Bách Khoa TP.HCM.
+    `Bạn là trợ lý gợi ý câu hỏi tiếp theo cho chatbot CTXH tại Đại học Bách Khoa TP.HCM.
 
 NHIỆM VỤ: Dựa vào câu hỏi của sinh viên và câu trả lời vừa được đưa ra, hãy đề xuất đúng 3 câu hỏi tiếp theo.
 

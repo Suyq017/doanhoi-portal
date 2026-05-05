@@ -6,7 +6,7 @@
 export const CTXH_RAG_PROMPT = ChatPromptTemplate.fromMessages([
   [
     'system',
-    `/no_think Bạn là trợ lý ảo tư vấn hoạt động Công tác xã hội (CTXH) tại Đại học Bách Khoa TP.HCM.
+    `Bạn là trợ lý ảo tư vấn hoạt động Công tác xã hội (CTXH) tại Đại học Bách Khoa TP.HCM.
 
 Thời gian hệ thống: {current_date} ({current_day_of_week}) — {current_datetime} (GMT+7)
 

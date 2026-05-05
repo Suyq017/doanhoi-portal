@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThan, In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Document } from '@langchain/core/documents';
 import { CtxhActivity } from '../../entities/ctxh-activity.entity';
@@ -71,15 +71,15 @@ export class LangChainIngestionService {
         return result;
       }
 
-      // Clear existing embeddings
-      await this.embeddingRepository.clear();
-      this.logger.log('Cleared existing embeddings');
-
-      // Process in batches
+      // Process in batches: delete old embeddings per batch before adding new ones
+      // This avoids emptying the table entirely, keeping search functional during re-ingestion
       for (let i = 0; i < activities.length; i += this.batchSize) {
         const batch = activities.slice(i, i + this.batchSize);
         
         try {
+          const batchIds = batch.map(a => a.id);
+          await this.embeddingRepository.delete({ activityId: In(batchIds) });
+
           const documents = this.prepareDocuments(batch);
           await this.vectorStoreService.addDocuments(documents);
           
@@ -283,13 +283,7 @@ export class LangChainIngestionService {
   private formatActivityContent(activity: CtxhActivity): string {
     const parts: string[] = [
       `Hoạt động CTXH: ${activity.name}`,
-      `do ${activity.organization?.name || 'N/A'} tổ chức`,
-      `thuộc danh mục: ${activity.category?.name || 'N/A'}`,
-      `địa điểm: ${activity.location || 'N/A'}`,
-      `thời gian: ${this.formatDate(activity.start_date)} - ${this.formatDate(activity.end_date)}`,
       `mô tả: ${activity.description || 'Không có mô tả'}`,
-      `hoạt động được: ${activity.total_days || 0} ngày CTXH`,
-      `trạng thái: ${activity.status || 'N/A'}`,
     ];
 
     return parts.join('\n');

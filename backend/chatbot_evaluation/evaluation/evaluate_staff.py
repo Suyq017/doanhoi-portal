@@ -49,6 +49,10 @@ GEMINI_API_KEY   = os.getenv('GEMINI_API_KEY')
 EVAL_STAFF_TOKEN = os.getenv('EVAL_STAFF_TOKEN')
 EVAL_DELAY_MS    = int(os.getenv('EVAL_DELAY_MS', '700'))
 
+USE_LOCAL_MODEL_LLM      = os.getenv('USE_LOCAL_MODEL_LLM', 'false').lower() == 'true'
+OLLAMA_BASE_URL          = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+OLLAMA_LLM_MODEL         = os.getenv('OLLAMA_LLM_MODEL', 'qwen3:4b')
+
 DATA_DIR             = Path(__file__).parent.parent / 'data'
 GOLDEN_STAFF_DATASET = DATA_DIR / 'golden_dataset_staff.json'
 RESULTS_DIR          = Path(__file__).parent / 'results'
@@ -62,10 +66,12 @@ _TOOL_RESPONSE_HINTS = {
         'đăng ký', 'tổ chức', 'diễn ra', 'slot', 'thành viên'
     ],
     'create_activity': [
-        'tạo', 'đã tạo', 'mã hoạt động', 'thêm', 'hoạt động mới', 'thành công'
+        'tạo', 'đã tạo', 'mã hoạt động', 'thêm', 'hoạt động mới', 'thành công',
+        'xác nhận',
     ],
     'auto_approve_and_notify': [
-        'duyệt', 'đã duyệt', 'thông báo', 'phê duyệt', 'đăng ký được duyệt'
+        'duyệt', 'đã duyệt', 'thông báo', 'phê duyệt', 'đăng ký được duyệt',
+        'chờ duyệt', 'sinh viên',
     ],
     'respond_general': [
         'xin chào', 'chào', 'hỏi gì', 'giúp', 'hỗ trợ', 'không thuộc', 'ngoài phạm vi'
@@ -120,22 +126,12 @@ def heuristic_tool_match(response_text: str, expected_tool: str) -> bool:
     return hit_count >= 2  # Cần ít nhất 2 keywords match
 
 
-# ─── Gemini LLM Judge ─────────────────────────────────────────────────────────
+# ─── LLM Judge ────────────────────────────────────────────────────────────────
 def evaluate_with_gemini(question: str, response_text: str, ground_truth: str) -> float:
     """
-    Dùng Gemini để chấm điểm chất lượng response so với ground_truth (0.0–1.0).
-    Prompt đơn giản: relevance + completeness.
+    Dùng LLM để chấm điểm chất lượng response so với ground_truth (0.0–1.0).
+    Dùng Ollama nếu USE_LOCAL_MODEL_LLM=true, ngược lại dùng Gemini.
     """
-    try:
-        from google import genai as google_genai
-    except ImportError:
-        return -1.0  # -1 = chưa cài thư viện
-
-    if not GEMINI_API_KEY:
-        return -1.0
-
-    client = google_genai.Client(api_key=GEMINI_API_KEY)
-
     prompt = f"""Bạn là người đánh giá chất lượng chatbot. 
 Cho câu hỏi và câu trả lời của chatbot, hãy chấm điểm từ 0.0 đến 1.0.
 
@@ -151,12 +147,35 @@ Câu trả lời của chatbot: {response_text[:500]}
 
 Chỉ trả lời một số thập phân từ 0.0 đến 1.0, không giải thích."""
 
-    try:
-        result = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
-        score_text = result.text.strip().replace(',', '.')
-        return min(1.0, max(0.0, float(score_text)))
-    except Exception:
-        return -1.0
+    if USE_LOCAL_MODEL_LLM:
+        try:
+            from langchain_ollama import ChatOllama
+        except ImportError:
+            return -1.0
+
+        try:
+            llm = ChatOllama(model=OLLAMA_LLM_MODEL, base_url=OLLAMA_BASE_URL, temperature=0)
+            result = llm.invoke(prompt)
+            score_text = result.content.strip().replace(',', '.')
+            return min(1.0, max(0.0, float(score_text)))
+        except Exception:
+            return -1.0
+    else:
+        try:
+            from google import genai as google_genai
+        except ImportError:
+            return -1.0
+
+        if not GEMINI_API_KEY:
+            return -1.0
+
+        try:
+            client = google_genai.Client(api_key=GEMINI_API_KEY)
+            result = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+            score_text = result.text.strip().replace(',', '.')
+            return min(1.0, max(0.0, float(score_text)))
+        except Exception:
+            return -1.0
 
 
 # ─── Thu thập và đánh giá ─────────────────────────────────────────────────────

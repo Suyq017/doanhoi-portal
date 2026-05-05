@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>CTXH Chatbot Evaluation — 20260505_173216</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 32px; color: #1f2937; }
+    h1 { color: #1d4ed8; } h2 { color: #374151; margin-top: 32px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+    th, td { border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; }
+    th { background: #f3f4f6; font-weight: 600; }
+    tr:hover { background: #f9fafb; }
+    .badge { padding: 2px 8px; border-radius: 9999px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>📊 CTXH Chatbot Evaluation Report</h1>
+  <p><strong>Timestamp:</strong> 20260505_173216 |
+     <strong>Samples:</strong> 40/40 |
+     <strong>Avg response:</strong> 9258ms |
+     <strong>Contexts OK:</strong> 90%
+  </p>
+
+  <h2>📈 RAGAS Metrics</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Score</th><th>Value</th><th>Threshold</th><th>Status</th></tr></thead>
+    <tbody>
+        <tr>
+          <td>Faithfulness</td>
+          <td><div style="background:#e5e7eb;border-radius:4px;height:18px;width:200px">
+            <div style="background:#ef4444;height:18px;width:46px;border-radius:4px"></div>
+          </div></td>
+          <td style="color:#ef4444;font-weight:bold">0.234</td>
+          <td>0.8</td>
+          <td>⚠️  BELOW THRESHOLD</td>
+        </tr>
+        <tr>
+          <td>Answer Relevancy</td>
+          <td><div style="background:#e5e7eb;border-radius:4px;height:18px;width:200px">
+            <div style="background:#22c55e;height:18px;width:124px;border-radius:4px"></div>
+          </div></td>
+          <td style="color:#22c55e;font-weight:bold">0.626</td>
+          <td>0.6</td>
+          <td>✅ PASS</td>
+        </tr>
+        <tr>
+          <td>Context Precision</td>
+          <td><div style="background:#e5e7eb;border-radius:4px;height:18px;width:200px">
+            <div style="background:#ef4444;height:18px;width:42px;border-radius:4px"></div>
+          </div></td>
+          <td style="color:#ef4444;font-weight:bold">0.211</td>
+          <td>0.7</td>
+          <td>⚠️  BELOW THRESHOLD</td>
+        </tr>
+        <tr>
+          <td>Context Recall</td>
+          <td><div style="background:#e5e7eb;border-radius:4px;height:18px;width:200px">
+            <div style="background:#ef4444;height:18px;width:8px;border-radius:4px"></div>
+          </div></td>
+          <td style="color:#ef4444;font-weight:bold">0.041</td>
+          <td>0.65</td>
+          <td>⚠️  BELOW THRESHOLD</td>
+        </tr></tbody>
+  </table>
+
+  
+        <h2>⏱️ SLA Metrics</h2>
+        <p>p50=8867ms | p95=21489ms | p99=26255ms | avg=9257.5ms
+           (40 samples)</p>
+  
+
+  <h2>📂 By Category</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Count</th><th>Faithfulness</th><th>Answer Rel.</th><th>Context Prec.</th><th>Context Rec.</th></tr></thead>
+    <tbody><tr>
+          <td>Hoạt động khác</td><td>4</td>
+          <td>0.30</td><td>0.81</td>
+          <td>0.25</td><td>0.00</td>
+        </tr><tr>
+          <td>Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)</td><td>26</td>
+          <td>0.23</td><td>0.54</td>
+          <td>0.19</td><td>0.06</td>
+        </tr><tr>
+          <td>Chương trình Hội trại, ngày hội</td><td>4</td>
+          <td>0.26</td><td>0.76</td>
+          <td>0.50</td><td>0.00</td>
+        </tr><tr>
+          <td>Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)</td><td>2</td>
+          <td>0.11</td><td>0.77</td>
+          <td>0.21</td><td>0.00</td>
+        </tr><tr>
+          <td>Các danh hiệu tuyên dương khen thưởng sinh viên</td><td>2</td>
+          <td>0.00</td><td>0.83</td>
+          <td>0.00</td><td>0.00</td>
+        </tr><tr>
+          <td>Hiến máu tình nguyện</td><td>2</td>
+          <td>0.41</td><td>0.82</td>
+          <td>0.00</td><td>0.00</td>
+        </tr></tbody>
+  </table>
+</body>
+</html>

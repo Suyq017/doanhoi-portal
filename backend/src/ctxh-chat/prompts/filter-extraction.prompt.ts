@@ -11,7 +11,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 export const FILTER_EXTRACTION_PROMPT = ChatPromptTemplate.fromMessages([
   [
     'system',
-    `/no_think Bạn là bộ trích xuất filter cho hệ thống tìm kiếm hoạt động Công tác xã hội (CTXH) tại Đại học Bách Khoa TP.HCM.
+    `Bạn là bộ trích xuất filter cho hệ thống tìm kiếm hoạt động Công tác xã hội (CTXH) tại Đại học Bách Khoa TP.HCM.
 
 NHIỆM VỤ: Phân tích câu hỏi của sinh viên và trích xuất các bộ lọc metadata.
 CHỈ trích xuất những gì câu hỏi đề cập RÕ RÀNG. KHÔNG suy đoán.

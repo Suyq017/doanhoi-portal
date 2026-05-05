@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>CTXH Chatbot Evaluation — 20260503_212307</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 32px; color: #1f2937; }
+    h1 { color: #1d4ed8; } h2 { color: #374151; margin-top: 32px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+    th, td { border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; }
+    th { background: #f3f4f6; font-weight: 600; }
+    tr:hover { background: #f9fafb; }
+    .badge { padding: 2px 8px; border-radius: 9999px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>📊 CTXH Chatbot Evaluation Report</h1>
+  <p><strong>Timestamp:</strong> 20260503_212307 |
+     <strong>Samples:</strong> 2/2 |
+     <strong>Avg response:</strong> 10511ms |
+     <strong>Contexts OK:</strong> 100%
+  </p>
+
+  <h2>📈 RAGAS Metrics</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Score</th><th>Value</th><th>Threshold</th><th>Status</th></tr></thead>
+    <tbody>
+        <tr>
+          <td>Faithfulness</td>
+          <td><div style="background:#e5e7eb;border-radius:4px;height:18px;width:200px">
+            <div style="background:#ef4444;height:18px;width:66px;border-radius:4px"></div>
+          </div></td>
+          <td style="color:#ef4444;font-weight:bold">0.333</td>
+          <td>0.8</td>
+          <td>⚠️  BELOW THRESHOLD</td>
+        </tr>
+        <tr>
+          <td>Answer Relevancy</td>
+          <td><div style="background:#e5e7eb;border-radius:4px;height:18px;width:200px">
+            <div style="background:#ef4444;height:18px;width:66px;border-radius:4px"></div>
+          </div></td>
+          <td style="color:#ef4444;font-weight:bold">0.339</td>
+          <td>0.6</td>
+          <td>⚠️  BELOW THRESHOLD</td>
+        </tr>
+        <tr>
+          <td>Context Precision</td>
+          <td><div style="background:#e5e7eb;border-radius:4px;height:18px;width:200px">
+            <div style="background:#ef4444;height:18px;width:0px;border-radius:4px"></div>
+          </div></td>
+          <td style="color:#ef4444;font-weight:bold">0.000</td>
+          <td>0.7</td>
+          <td>⚠️  BELOW THRESHOLD</td>
+        </tr>
+        <tr>
+          <td>Context Recall</td>
+          <td><div style="background:#e5e7eb;border-radius:4px;height:18px;width:200px">
+            <div style="background:#ef4444;height:18px;width:0px;border-radius:4px"></div>
+          </div></td>
+          <td style="color:#ef4444;font-weight:bold">0.000</td>
+          <td>0.65</td>
+          <td>⚠️  BELOW THRESHOLD</td>
+        </tr></tbody>
+  </table>
+
+  
+        <h2>⏱️ SLA Metrics</h2>
+        <p>p50=10380ms | p95=10642ms | p99=10642ms | avg=10511.0ms
+           (2 samples)</p>
+  
+
+  <h2>📂 By Category</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Count</th><th>Faithfulness</th><th>Answer Rel.</th><th>Context Prec.</th><th>Context Rec.</th></tr></thead>
+    <tbody><tr>
+          <td>Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)</td><td>2</td>
+          <td>0.33</td><td>0.34</td>
+          <td>0.00</td><td>0.00</td>
+        </tr></tbody>
+  </table>
+</body>
+</html>

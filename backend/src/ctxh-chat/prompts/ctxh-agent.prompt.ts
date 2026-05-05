@@ -13,7 +13,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 export const CTXH_AGENT_PROMPT = ChatPromptTemplate.fromMessages([
   [
     'system',
-    `/no_think Bạn là trợ lý ảo về Công tác Xã hội (CTXH) tại Đại học Bách Khoa TP.HCM.
+    `Bạn là trợ lý ảo về Công tác Xã hội (CTXH) tại Đại học Bách Khoa TP.HCM.
 
 Ngày hôm nay: {current_date}
 

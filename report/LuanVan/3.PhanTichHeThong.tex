@@ -638,28 +638,185 @@ Phân hệ thu phí mô tả đầy đủ các use-case từ tạo đợt thu, p
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.82\linewidth]{Images/use-case-diagram/UC09_chatbot_usecase.drawio.png}
-	\caption{UC09 - Tra cứu CTXH bằng chatbot}
+	\caption{UC09 - Sử dụng Chatbot CTXH}
 \end{figure}
 
+% ---- UC09.1 ----
 \begin{table}[H]
 	\centering
 	\renewcommand{\arraystretch}{1.25}
 	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
 		\hline
-		\textbf{Use Case Name} & \textbf{UC09 - Tra cứu CTXH bằng Chatbot} \\ \hline
-		\textbf{Actor(s)} & Người dùng, Retriever, Generator \\ \hline
-		\textbf{Description} & Hỗ trợ hỏi đáp CTXH bằng ngôn ngữ tự nhiên dựa trên dữ liệu hoạt động đã được hệ thống thu thập và chuẩn bị trước. \\ \hline
-		\textbf{Trigger} & Người dùng truy cập màn hình chatbot và gửi câu hỏi. \\ \hline
-		\textbf{Pre-condition(s)} & Người dùng đã đăng nhập; hệ thống chatbot và dữ liệu kiến thức đang sẵn sàng. \\ \hline
-		\textbf{Post-condition(s)} & Người dùng nhận được câu trả lời phù hợp; lịch sử hội thoại được lưu lại. \\ \hline
-		\textbf{Main Flow} & 1. Người dùng nhập câu hỏi về CTXH.\newline
-		2. Hệ thống xử lý câu hỏi và truy vấn dữ liệu liên quan.\newline
-		3. Hệ thống tổng hợp thông tin và tạo câu trả lời.\newline
-		4. Hệ thống hiển thị kết quả cho người dùng. \\ \hline
-		\textbf{Alternative Flow} & Nếu không tìm thấy thông tin phù hợp, hệ thống thông báo và gợi ý người dùng đặt câu hỏi khác. \\ \hline
-		\textbf{Exception} & Nếu dịch vụ truy xuất hoặc sinh nội dung gặp sự cố thì hệ thống hiển thị thông báo lỗi và yêu cầu thử lại sau. \\ \hline
+		\textbf{Use Case Name} & \textbf{UC09.1 - Trò chuyện \& Hỏi tính năng} \\ \hline
+		\textbf{Actor(s)} & Sinh viên, Chatbot \\ \hline
+		\textbf{Description} & Sinh viên gửi lời chào hoặc hỏi về chức năng, phạm vi hỗ trợ của chatbot. Chatbot nhận diện ý định và trả lời trực tiếp mà không cần tra cứu dữ liệu hoạt động. \\ \hline
+		\textbf{Trigger} & Sinh viên gửi lời chào hoặc câu hỏi mang tính giới thiệu (``Bạn là ai?'', ``Tôi có thể hỏi gì?''). \\ \hline
+		\textbf{Pre-condition(s)} & Sinh viên đã đăng nhập vào hệ thống. \\ \hline
+		\textbf{Post-condition(s)} & Chatbot trả lời câu hỏi về tính năng hoặc phạm vi hỗ trợ; lịch sử hội thoại được lưu lại. \\ \hline
+		\textbf{Main Flow} &
+		1. Sinh viên gửi lời chào hoặc câu hỏi về tính năng chatbot.\newline
+		2. Hệ thống nhận diện đây là ý định chào hỏi hoặc hỏi về chatbot.\newline
+		3. Chatbot trả lời trực tiếp bằng nội dung giới thiệu bản thân và phạm vi hỗ trợ.\newline
+		4. Lịch sử hội thoại được lưu lại cho phiên làm việc. \\ \hline
+		\textbf{Alternative Flow} & Nếu câu hỏi hoàn toàn nằm ngoài phạm vi CTXH, chatbot lịch sự từ chối và gợi ý các chủ đề có thể hỗ trợ. \\ \hline
+		\textbf{Exception} & Hệ thống chatbot không khả dụng: hiển thị thông báo lỗi và yêu cầu thử lại sau. \\ \hline
 	\end{tabular}
-	\caption{Bảng mô tả Use Case UC09 - Tra cứu CTXH bằng Chatbot}
+	\caption{Bảng mô tả Use Case UC09.1 - Trò chuyện \& Hỏi tính năng}
+\end{table}
+
+% ---- UC09.2 ----
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC09.2 - Tra cứu CTXH bằng Chatbot} \\ \hline
+		\textbf{Actor(s)} & Sinh viên, Chatbot \\ \hline
+		\textbf{Description} & Sinh viên tra cứu thông tin các hoạt động CTXH bằng ngôn ngữ tự nhiên. Chatbot phân tích câu hỏi, xác định các tiêu chí lọc (thời gian, địa điểm, tổ chức, danh mục), truy xuất dữ liệu và trả lời kèm nguồn dẫn. \\ \hline
+		\textbf{Trigger} & Sinh viên gửi câu hỏi liên quan đến hoạt động CTXH (VD: ``Tuần này có hoạt động tình nguyện nào không?''). \\ \hline
+		\textbf{Pre-condition(s)} & Sinh viên đã đăng nhập; dữ liệu hoạt động đã được chuẩn bị trong hệ thống. \\ \hline
+		\textbf{Post-condition(s)} & Chatbot trả về danh sách hoạt động phù hợp kèm gợi ý câu hỏi tiếp theo; lịch sử hội thoại được lưu. \\ \hline
+		\textbf{Main Flow} &
+		1. Sinh viên nhập câu hỏi tra cứu.\newline
+		2. Hệ thống phân tích câu hỏi, xác định các bộ lọc nếu có (thời gian, tổ chức, địa điểm, danh mục).\newline
+		3. Hệ thống tìm kiếm và truy xuất các hoạt động phù hợp từ kho dữ liệu.\newline
+		4. Chatbot tổng hợp kết quả và trả lời bằng ngôn ngữ tự nhiên kèm nguồn dẫn.\newline
+		5. Hệ thống đề xuất 3 câu hỏi gợi ý tiếp theo và lưu hội thoại. \\ \hline
+		\textbf{Alternative Flow} &
+		\textit{Sinh viên có khoa đào tạo:} Hệ thống ưu tiên hiển thị các hoạt động thuộc khoa đó lên đầu kết quả.\newline
+		\textit{Không tìm thấy kết quả phù hợp:} Hệ thống thử lại với cách diễn đạt khác; nếu vẫn không có, chatbot thông báo và gợi ý đặt câu hỏi lại. \\ \hline
+		\textbf{Exception} & Dịch vụ truy xuất dữ liệu gặp sự cố: hiển thị thông báo lỗi và yêu cầu thử lại sau. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC09.2 - Tra cứu CTXH bằng Chatbot}
+\end{table}
+
+% ---- UC09.3 ----
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC09.3 - Đăng ký hoạt động CTXH qua Chatbot} \\ \hline
+		\textbf{Actor(s)} & Sinh viên, Chatbot \\ \hline
+		\textbf{Description} & Sinh viên đăng ký tham gia hoạt động CTXH đang tuyển thành viên trực tiếp qua hội thoại với chatbot, không cần rời khỏi giao diện chat. \\ \hline
+		\textbf{Trigger} & Sinh viên bày tỏ ý định đăng ký một hoạt động (VD: ``Đăng ký giúp tôi'', ``Tôi muốn tham gia''). \\ \hline
+		\textbf{Pre-condition(s)} & Sinh viên đã đăng nhập; hoạt động mục tiêu đang ở trạng thái đang tuyển thành viên và còn chỗ trống. \\ \hline
+		\textbf{Post-condition(s)} & Đơn đăng ký của sinh viên được ghi nhận với trạng thái chờ duyệt; sinh viên nhận xác nhận qua chatbot. \\ \hline
+		\textbf{Main Flow} &
+		1. Sinh viên hỏi về hoặc yêu cầu đăng ký một hoạt động đang tuyển.\newline
+		2. Chatbot hiển thị thông tin chi tiết của hoạt động và yêu cầu sinh viên xác nhận.\newline
+		3. Sinh viên xác nhận đăng ký.\newline
+		4. Hệ thống ghi nhận đơn đăng ký với trạng thái ``chờ duyệt''.\newline
+		5. Chatbot thông báo đăng ký thành công. \\ \hline
+		\textbf{Alternative Flow} &
+		\textit{Hoạt động đã hết chỗ hoặc đã kết thúc tuyển:} Chatbot thông báo không thể đăng ký.\newline
+		\textit{Sinh viên đã đăng ký trước đó:} Chatbot báo lỗi vì bạn đã đăng ký hoạt động này trước đó. \\ \hline
+		\textbf{Exception} & Lỗi hệ thống khi ghi nhận đơn đăng ký: chatbot thông báo lỗi và hướng dẫn thử lại hoặc đăng ký qua trang web. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC09.3 - Đăng ký hoạt động CTXH qua Chatbot}
+\end{table}
+
+% ---- UC09.4 ----
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC09.4 - Xem danh sách sinh viên đăng ký} \\ \hline
+		\textbf{Actor(s)} & Cán bộ, Chatbot \\ \hline
+		\textbf{Description} & Cán bộ hỏi chatbot để nắm tổng quan tình hình đăng ký của các hoạt động mình quản lý, bao gồm số lượng đăng ký chờ duyệt và danh sách sinh viên cụ thể. \\ \hline
+		\textbf{Trigger} & Cán bộ hỏi về tình trạng đăng ký (VD: ``Có sinh viên nào chờ duyệt không?'', ``Hoạt động A có bao nhiêu đăng ký?''). \\ \hline
+		\textbf{Pre-condition(s)} & Cán bộ đã đăng nhập và có quyền quản lý ít nhất một hoạt động CTXH. \\ \hline
+		\textbf{Post-condition(s)} & Chatbot hiển thị tổng quan các hoạt động có đăng ký và danh sách sinh viên theo yêu cầu. \\ \hline
+		\textbf{Main Flow} &
+		1. Cán bộ hỏi về tình trạng đăng ký của các hoạt động.\newline
+		2. Chatbot tra cứu và tổng hợp tất cả hoạt động có đơn đăng ký chờ xử lý.\newline
+		3. Chatbot trả về danh sách tổng quan (tên hoạt động, số đơn chờ duyệt).\newline
+		4. Cán bộ có thể yêu cầu xem danh sách sinh viên chi tiết của một hoạt động cụ thể.\newline
+		5. Chatbot hiển thị danh sách sinh viên kèm thông tin cần thiết (tên, mã số, trạng thái). \\ \hline
+		\textbf{Alternative Flow} & Không có đơn chờ duyệt: chatbot thông báo tất cả đơn đăng ký đã được xử lý. \\ \hline
+		\textbf{Exception} & Lỗi truy vấn dữ liệu: hiển thị thông báo lỗi và yêu cầu thử lại sau. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC09.4 - Xem danh sách sinh viên đăng ký}
+\end{table}
+
+% ---- UC09.5 ----
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC09.5 - Duyệt hoặc từ chối đăng ký} \\ \hline
+		\textbf{Actor(s)} & Cán bộ, Chatbot \\ \hline
+		\textbf{Description} & Cán bộ phê duyệt hoặc từ chối đơn đăng ký tham gia hoạt động CTXH thông qua chatbot. Hệ thống tự động cập nhật trạng thái và gửi email thông báo kết quả đến sinh viên. \\ \hline
+		\textbf{Trigger} & Cán bộ yêu cầu duyệt hoặc từ chối đơn đăng ký của sinh viên. \\ \hline
+		\textbf{Pre-condition(s)} & Cán bộ có quyền quản lý hoạt động liên quan; sinh viên đang ở trạng thái chờ duyệt. \\ \hline
+		\textbf{Post-condition(s)} & Trạng thái đăng ký được cập nhật thành ``đã duyệt'' hoặc ``từ chối''; sinh viên nhận email thông báo kết quả. \\ \hline
+		\textbf{Main Flow} &
+		1. Cán bộ yêu cầu duyệt đăng ký cho một hoặc nhiều sinh viên.\newline
+		2. Chatbot xác nhận lại thao tác với cán bộ trước khi thực hiện.\newline
+		3. Cán bộ xác nhận.\newline
+		4. Hệ thống cập nhật trạng thái đăng ký thành ``đã duyệt''.\newline
+		5. Hệ thống tự động gửi email xác nhận đến sinh viên.\newline
+		6. Chatbot thông báo hoàn tất và hiển thị tóm tắt kết quả. \\ \hline
+		\textbf{Alternative Flow} &
+		\textit{Từ chối đăng ký:} Cán bộ cung cấp lý do từ chối; hệ thống cập nhật trạng thái ``từ chối'' và gửi email thông báo đến sinh viên.\newline
+		\textit{Duyệt nhiều sinh viên cùng lúc:} Hệ thống xử lý theo lô và báo cáo số lượng thành công/thất bại. \\ \hline
+		\textbf{Exception} & Lỗi gửi email: hệ thống vẫn cập nhật trạng thái, ghi nhận lỗi và thông báo cho cán bộ biết email chưa được gửi. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC09.5 - Duyệt hoặc từ chối đăng ký}
+\end{table}
+
+% ---- UC09.6 ----
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC09.6 - Tạo hoạt động mới qua Chatbot} \\ \hline
+		\textbf{Actor(s)} & Cán bộ, Chatbot \\ \hline
+		\textbf{Description} & Cán bộ tạo mới một hoặc nhiều hoạt động CTXH thông qua hội thoại với chatbot. Chatbot hỗ trợ xác nhận danh mục, tổ chức hợp lệ và yêu cầu cán bộ xác nhận trước khi lưu. \\ \hline
+		\textbf{Trigger} & Cán bộ yêu cầu tạo hoạt động mới và cung cấp thông tin liên quan. \\ \hline
+		\textbf{Pre-condition(s)} & Cán bộ đã đăng nhập và có quyền tạo hoạt động CTXH. \\ \hline
+		\textbf{Post-condition(s)} & Hoạt động mới được lưu vào hệ thống; dữ liệu tìm kiếm được cập nhật tự động để phản ánh hoạt động mới. \\ \hline
+		\textbf{Main Flow} &
+		1. Cán bộ yêu cầu tạo hoạt động và cung cấp thông tin (tên, thời gian, địa điểm, số lượng, danh mục, tổ chức chủ trì).\newline
+		2. Chatbot tra cứu và xác nhận danh mục, tổ chức hợp lệ trong hệ thống.\newline
+		3. Chatbot tổng hợp toàn bộ thông tin và yêu cầu cán bộ xác nhận trước khi tạo.\newline
+		4. Cán bộ xác nhận.\newline
+		5. Hệ thống tạo hoạt động và tự động cập nhật kho dữ liệu tìm kiếm. \\ \hline
+		\textbf{Alternative Flow} &
+		\textit{Tạo nhiều hoạt động cùng lúc:} Chatbot xử lý theo lô và báo cáo kết quả từng mục.\newline
+		\textit{Danh mục hoặc tổ chức không tồn tại:} Chatbot hỏi lại để làm rõ tên chính xác trước khi tiến hành. \\ \hline
+		\textbf{Exception} & Thiếu thông tin bắt buộc: chatbot yêu cầu bổ sung thông tin còn thiếu trước khi tiếp tục. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC09.6 - Tạo hoạt động mới qua Chatbot}
+\end{table}
+
+% ---- UC09.7 ----
+\begin{table}[H]
+	\centering
+	\renewcommand{\arraystretch}{1.25}
+	\begin{tabular}{|p{3.8cm}|p{11.2cm}|}
+		\hline
+		\textbf{Use Case Name} & \textbf{UC09.7 - Quản lý hoạt động \& Gửi thông báo} \\ \hline
+		\textbf{Actor(s)} & Cán bộ, Chatbot \\ \hline
+		\textbf{Description} & Cán bộ cập nhật thông tin hoạt động (trạng thái, thời gian, số lượng, mô tả) hoặc gửi email thông báo hàng loạt đến toàn bộ sinh viên đã đăng ký tham gia một hoạt động. \\ \hline
+		\textbf{Trigger} & Cán bộ yêu cầu cập nhật thông tin hoạt động hoặc gửi thông báo đến người tham gia. \\ \hline
+		\textbf{Pre-condition(s)} & Cán bộ đã đăng nhập và có quyền quản lý hoạt động liên quan; hoạt động đã tồn tại trong hệ thống. \\ \hline
+		\textbf{Post-condition(s)} & Thông tin hoạt động được cập nhật; email thông báo được gửi đến các sinh viên liên quan. \\ \hline
+		\textbf{Main Flow} &
+		1. Cán bộ yêu cầu gửi thông báo đến sinh viên của một hoạt động cụ thể.\newline
+		2. Chatbot xác nhận hoạt động và số lượng người sẽ nhận thông báo.\newline
+		3. Cán bộ xác nhận nội dung và danh sách người nhận.\newline
+		4. Hệ thống gửi email hàng loạt đến tất cả sinh viên đã đăng ký.\newline
+		5. Chatbot báo cáo kết quả (số email gửi thành công). \\ \hline
+		\textbf{Alternative Flow} &
+		\textit{Cập nhật thông tin hoạt động:} Cán bộ chỉ định trường cần thay đổi (thời gian, địa điểm, trạng thái); chatbot xác nhận và thực hiện cập nhật.\newline
+		\textit{Kết hợp cập nhật và gửi thông báo:} Cán bộ có thể yêu cầu cập nhật thông tin trước rồi gửi thông báo về thay đổi đó ngay trong cùng một hội thoại. \\ \hline
+		\textbf{Exception} & Lỗi máy chủ email: hệ thống ghi nhận lỗi và thông báo cho cán bộ danh sách địa chỉ gửi thất bại. \\ \hline
+	\end{tabular}
+	\caption{Bảng mô tả Use Case UC09.7 - Quản lý hoạt động \& Gửi thông báo}
 \end{table}
 
 \subsection{Mô hình hóa Activity Diagram}
@@ -912,17 +1069,46 @@ Sequence diagram này thể hiện luồng xử lý phức tạp khi chấm đi�
 
 Sequence diagram trên mô tả tương tác end-to-end của module biểu mẫu. Ở pha đầu, người dùng upload file Word (\texttt{.docx}), hệ thống parse template để trích xuất placeholder và lưu cấu hình fields cùng metadata. Ở pha tiếp theo, người dùng chọn biểu mẫu, điền dữ liệu và nộp; controller thực hiện validate, sinh file từ template, upload lên S3, sau đó lưu bản ghi submission vào cơ sở dữ liệu. Luồng này phản ánh đầy đủ cả bước cấu hình template lẫn bước sử dụng template để tạo biểu mẫu đã nộp.
 
-\subsubsection{Sequence Diagram - Chatbot hỏi-đáp hoạt động CTXH}
+\subsubsection{Sequence Diagram - Chatbot CTXH}
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/data_ingestion_pipeline_sequence.drawio.png}
-	\caption{Sequence Diagram - Pipeline tự động chuyển đổi dữ liệu CTXH sang dạng vector embedding}
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/rag_sequence.drawio.png}
+	\caption{Sequence Diagram - Luồng hoạt động của Chatbot hỏi đáp CTXH phía sinh viên}
+	\label{fig:seq-student-rag}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/rag_sequence.drawio.png}
-	\caption{Sequence Diagram - Luồng hoạt động của Chatbot RAG}
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/rag_sequence-student_chatbot_register.drawio.png}
+	\caption{Sequence Diagram - Luồng hoạt động của Chatbot đăng ký CTXH phía sinh viên}
+	\label{fig:seq-student-register}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/rag_sequence-staff_chatbot_approve.drawio.png}
+	\caption{Sequence Diagram - Luồng hoạt động của Chatbot phê duyệt CTXH phía cán bộ}
+	\label{fig:seq-staff-approve}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/rag_sequence-staff_chatbot_create_ctxh.drawio.png}
+	\caption{Sequence Diagram - Luồng hoạt động của Chatbot tạo hoạt động CTXH phía cán bộ}
+	\label{fig:seq-staff-create}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/rag_sequence-chatbot_session.drawio.png}
+	\caption{Sequence Diagram - Cơ chế quản lý session và ngữ cảnh hội thoại của Chatbot}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\linewidth]{Images/sequence-diagram/data_ingestion_pipeline_sequence.drawio.png}
+	\caption{Sequence Diagram - Pipeline đồng bộ dữ liệu CTXH sang dạng vector embedding khi có thay đổi}
+	\label{fig:seq-ingestion}
 \end{figure}
 
 Mô tả trong phần này sẽ được làm rõ ở phần hiện thực hệ thống khi trình bày pipeline đồng bộ dữ liệu và cơ chế truy vấn theo ngữ cảnh.
@@ -985,10 +1171,10 @@ Cách sinh tự động có ưu điểm rõ hơn: dữ liệu đồng nhất, gi
 
 Với hệ thống này, quản trị viên có thể upload template \texttt{.docx}, hệ thống tự đọc placeholder và sinh cấu hình field tương ứng. Người dùng chỉ cần điền form động trên giao diện, backend sẽ render tài liệu bằng Docxtemplater. File kết quả được lưu trên S3, metadata được lưu trong database để tra cứu và tải lại khi cần.
 
-\subsubsection{Bài toán chatbot hỏi đáp CTXH bằng RAG}
+\subsubsection{Bài toán chatbot hỏi đáp CTXH bằng Agentic RAG}
 \textbf{a. Khái niệm}
 
-Sinh viên thường cần tra cứu nhanh thông tin CTXH nhưng không muốn đọc nhiều trang hướng dẫn. Bài toán đặt ra là xây dựng chatbot trả lời nhanh, đồng thời vẫn bám dữ liệu thực của hệ thống để tránh trả lời sai lệch.
+Sinh viên thường cần tra cứu và đăng ký nhanh hoạt động CTXH nhưng không muốn mất thời gian để tìm hoạt động theo sở thích, địa điểm, số ngày mong muốn. Bài toán đặt ra là xây dựng chatbot trả lời nhanh, đồng thời vẫn bám dữ liệu thực của hệ thống để tránh trả lời sai lệch đồng thời hỗ trợ sinh viên đăng ký ngay khi tìm được hoạt động mong muốn chỉ với 1 click.
 
 \textbf{b. Các phương pháp hiện có}
 

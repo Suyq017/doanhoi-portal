@@ -159,43 +159,74 @@ Infra Support & \texttt{/aws-s3-config/*}, \texttt{/export/*} & Quản lý cấu
 \caption{Tổng hợp API chính theo module}
 \end{table}
 
-\subsection{Hiện thực Chatbot RAG}
+\subsection{Hiện thực Chatbot CTXH}
 
 \subsubsection{Mục tiêu hiện thực}
-Chatbot RAG được hiện thực để giải quyết bài toán tra cứu CTXH bằng ngôn ngữ tự nhiên trong bối cảnh dữ liệu hoạt động nhiều, thay đổi liên tục, và người dùng cần câu trả lời nhanh nhưng vẫn truy vết được nguồn.
+Chatbot được hiện thực để giải quyết bài toán tra cứu CTXH bằng ngôn ngữ tự nhiên trong bối cảnh dữ liệu hoạt động nhiều, thay đổi liên tục, và người dùng cần câu trả lời nhanh nhưng vẫn truy vết được nguồn. Đồng thời, hỗ trợ cán bộ trong công việc quản lý dữ liệu CTXH một cách nhanh chóng.
 
 Các mục tiêu kỹ thuật chính:
 \begin{itemize}
 	\item Truy vấn ngữ nghĩa dựa trên dữ liệu nội bộ CTXH.
-	\item Trả lời có nguồn trích dẫn (source attribution).
+	\item Trả lời có nguồn trích dẫn.
 	\item Hỗ trợ hội thoại nhiều lượt với session.
 	\item Tối ưu cân bằng giữa độ đúng, độ phủ và chi phí vận hành.
 \end{itemize}
 
 \subsubsection{Kiến trúc kỹ thuật của module chatbot}
-Module chatbot đặt tại backend và tổ chức thành các service chuyên biệt:
+Module chatbot đặt trong namespace \texttt{ctxh-chat} ở backend và được tổ chức thành 17 service chuyên biệt, chia thành bốn lớp chức năng:
+
+\textbf{Lớp điều phối (Orchestration):}
 \begin{itemize}
-	\item \textbf{RAG Chain Service:} điều phối luồng router, retrieval và generation.
-	\item \textbf{Vector Store Service:} quản lý kết nối pgvector, similarity search, MMR, metadata filters.
-	\item \textbf{Ingestion Service:} đồng bộ dữ liệu hoạt động sang vector store (full/incremental).
-	\item \textbf{Memory Service:} quản lý lịch sử hội thoại theo session.
-	\item \textbf{Advanced Retriever/Tooling:} mở rộng chiến lược truy vấn theo bối cảnh câu hỏi.
+	\item \textbf{LangChainRagChainService:} điều phối toàn bộ luồng 8 bước cho sinh viên: router agent, rewrite, truy xuất, enrichment, generation, follow-up.
+	\item \textbf{StaffAgentService:} hiện thực vòng lặp ReAct tool-calling cho cán bộ, tối đa 10 vòng lặp, với 12 công cụ tuỳ chỉnh và các công cụ MCP.
 \end{itemize}
 
-Thiết kế chia nhỏ service giúp dễ kiểm thử từng thành phần, đồng thời thuận lợi khi thay đổi mô hình LLM hoặc embedding provider.
+\textbf{Lớp truy xuất và lưu trữ (Retrieval \& Storage):}
+\begin{itemize}
+	\item \textbf{LangChainVectorStoreService:} quản lý kết nối pgvector, cosine similarity search, MMR, metadata filters theo bộ điều kiện lọc.
+	\item \textbf{CtxhFilterExtractionService:} dùng LLM để trích xuất bộ lọc có cấu trúc (thời gian, tổ chức, địa điểm, trạng thái) từ câu hỏi tự nhiên.
+	\item \textbf{UserContextService:} tra cứu khoa đào tạo của sinh viên để thêm thông tin tổ chức của người dùng vào ngữ cảnh truy vấn.
+	\item \textbf{McpMetadataEnricherService:} làm phong phú tài liệu truy xuất được bằng dữ liệu thời gian thực (số suất còn lại, yêu cầu duyệt).
+	\item \textbf{McpSqlFallbackService:} truy vấn SQL dự phòng khi pgvector trả về 0 kết quả.
+\end{itemize}
+
+\textbf{Lớp MCP và giao tiếp ngoài (External Protocol):}
+\begin{itemize}
+	\item \textbf{PostgresMcpClientService:} wrapper quanh MCP SDK, giao tiếp với MCP server qua SSE để thực thi SQL trực tiếp.
+	\item \textbf{FollowUpSuggestionsService:} sinh 3 câu gợi ý hội thoại tiếp theo sau mỗi lượt trả lời (timeout 4 giây).
+\end{itemize}
+
+\textbf{Lớp hạ tầng (Infrastructure):}
+\begin{itemize}
+	\item \textbf{LangChainMemoryService:} quản lý lịch sử hội thoại theo session (TTL 30 phút, tối đa 1000 session, 20 tin nhắn/session).
+	\item \textbf{LangChainIngestionService:} thực thi pipeline embedding full/incremental vào bảng \texttt{ctxh\_embeddings}.
+	\item \textbf{CtxhVectorSyncService:} nhận sự kiện từ TypeORM subscriber và đẩy job vào hàng đợi BullMQ.
+	\item \textbf{VectorIngestionProcessor:} worker xử lý job embedding bất đồng bộ với chiến lược retry.
+\end{itemize}
+
+Thiết kế chia nhỏ service theo trách nhiệm đơn giúp dễ kiểm thử từng thành phần, đồng thời linh hoạt khi thay đổi mô hình LLM, embedding provider hoặc phương thức truy xuất.
 
 \subsubsection{Dữ liệu đầu vào cho RAG và chuẩn hóa embedding}
-Nguồn dữ liệu phục vụ chatbot lấy từ thực thể hoạt động CTXH đã được chuẩn hóa về nội dung. Các trường chính gồm:
+Nguồn dữ liệu phục vụ chatbot lấy từ thực thể \texttt{CtxhActivity} với các quan hệ \texttt{organization} và \texttt{category} được load sẵn. Hàm \texttt{prepareDocuments()} chuyển đổi mỗi hoạt động thành một \texttt{Document} gồm hai phần tách biệt:
+
+\textbf{Phần văn bản (\texttt{pageContent}) — dữ liệu được nhúng thành vector:}
 \begin{itemize}
-	\item Định danh hoạt động: \texttt{id}, \texttt{name}
-	\item Nội dung mô tả: \texttt{description}
-	\item Danh mục: \texttt{category.id}, \texttt{category.name}
-	\item Tổ chức: \texttt{organization.id}, \texttt{organization.name}
-	\item Thời gian và giá trị CTXH: \texttt{start\_date}, \texttt{end\_date}, \texttt{total\_days}
-	\item Ngữ cảnh vận hành: \texttt{location}, \texttt{status}
+	\item \texttt{name}: tên hoạt động (tiền tố ``Hoạt động CTXH: ...'').
+	\item \texttt{description}: mô tả hoạt động, mặc định là ``Không có mô tả'' nếu rỗng.
 \end{itemize}
 
-Trước khi tạo embedding, dữ liệu được đưa về template văn bản thống nhất để giảm nhiễu định dạng và tăng chất lượng truy vấn ngữ nghĩa.
+\textbf{Phần siêu dữ liệu (\texttt{metadata}) — dùng để lọc và truy xuất:}
+\begin{itemize}
+	\item \texttt{activityId}, \texttt{activityName}: định danh để liên kết kết quả tìm kiếm với bản ghi gốc.
+	\item \texttt{organizationName}, \texttt{categoryName}: tên tổ chức chủ trì và danh mục CTXH.
+	\item \texttt{startDate}, \texttt{endDate}: thời điểm bắt đầu/kết thúc (ISO~8601).
+	\item \texttt{totalDays}: số ngày CTXH được ghi nhận.
+	\item \texttt{location}: địa điểm tổ chức.
+	\item \texttt{status}: trạng thái hoạt động (\texttt{ACTIVE}, \texttt{COMPLETED}, v.v.).
+	\item \texttt{chunkType}: luôn là \texttt{full\_activity} — chiến lược chia chunk hiện tại là một chunk cho mỗi hoạt động.
+\end{itemize}
+
+Việc tách \texttt{pageContent} và \texttt{metadata} cho phép pgvector thực hiện tìm kiếm ngữ nghĩa trên nội dung văn bản trong khi vẫn lọc chính xác theo điều kiện cấu trúc (thời gian, tổ chức, trạng thái) mà không làm nhiễu không gian vector.
 
 \subsubsection{Pipeline ingestion và đồng bộ vector}
 Hệ thống hỗ trợ hai chế độ ingestion:
@@ -213,7 +244,48 @@ Quy trình ingestion gồm các bước:
 	\item Cập nhật chỉ mục và thống kê trạng thái ingestion.
 \end{enumerate}
 
-Thiết kế này cho phép khởi tạo nhanh dữ liệu AI khi triển khai mới và bảo trì linh hoạt trong vận hành định kỳ.
+Thiết kế này cho phép khởi tạo nhanh dữ liệu AI khi triển khai mới và bảo trì linh hoạt trong vận hành định kỳ. Sequence diagram mô tả toàn bộ pipeline này được trình bày tại Hình~\ref{fig:seq-ingestion} (Mục~3.4.7).
+
+\textbf{Tự động đồng bộ vector khi dữ liệu thay đổi:} Ngoài hai chế độ ingestion thủ công, hệ thống còn hiện thực cơ chế \textbf{auto-sync} theo kiến trúc hướng sự kiện. \texttt{CtxhActivitySubscriber} là TypeORM Entity Subscriber lắng nghe mọi thay đổi trên bảng \texttt{ctxh\_activity}:
+\begin{itemize}
+	\item \texttt{afterInsert}: hoạt động mới được tạo $\rightarrow$ đẩy job \texttt{UPSERT} vào hàng đợi.
+	\item \texttt{afterUpdate}: hoạt động được cập nhật (nội dung, trạng thái, ngày, v.v.) $\rightarrow$ đẩy job \texttt{UPSERT} để embedding lại.
+	\item \texttt{afterRemove}: hoạt động bị xóa $\rightarrow$ đẩy job \texttt{DELETE} để xóa vector tương ứng.
+\end{itemize}
+
+Các job được xử lý bất đồng bộ bởi \texttt{VectorIngestionProcessor} — một BullMQ worker với cấu hình: \texttt{concurrency=1} (đảm bảo thứ tự), 3 lần thử lại khi lỗi với thời gian chờ tăng dần theo cấp số nhân (2s $\rightarrow$ 4s $\rightarrow$ 8s). Cơ chế này đảm bảo dữ liệu trong vector store luôn phản ánh trạng thái mới nhất của database mà không cần can thiệp thủ công. Ngoài ra, một cron job chạy mỗi giờ thực hiện incremental sync như lớp dự phòng cuối để xử lý các trường hợp ngoại lệ (service restart, job thất bại vĩnh viễn).
+
+\subsubsection{Kiến trúc Agentic và phân luồng theo vai trò người dùng}
+Chatbot CTXH được thiết kế theo mô hình \textbf{agentic AI}, trong đó LLM không chỉ sinh văn bản mà còn tự quyết định gọi công cụ nào, theo thứ tự nào, dựa trên nội dung hội thoại và kết quả trả về từ từng công cụ. Kiến trúc này khác biệt căn bản so với mô hình RAG thụ động truyền thống, nơi hệ thống luôn thực hiện một quy trình cố định: truy xuất sau đó tổng hợp và sinh câu trả lời.
+
+\textbf{Phân luồng theo vai trò:} Controller nhận request và xác định luồng xử lý dựa trên vai trò của người dùng xác thực qua JWT:
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|p{3.5cm}|p{5.5cm}|p{5.5cm}|}
+\hline
+\textbf{Tiêu chí} & \textbf{Sinh viên} & \textbf{Cán bộ} \\
+\hline
+Service xử lý & \texttt{LangChainRagChainService} & \texttt{StaffAgentService} \\
+\hline
+Mô hình xử lý & Router Agent + RAG pipeline & ReAct tool-calling \\
+\hline
+Số công cụ & 4 công cụ truy xuất & 12 công cụ CRUD + MCP tools \\
+\hline
+Khả năng ghi dữ liệu & Chỉ đọc + đăng ký hoạt động & Tạo/sửa/xóa hoạt động, duyệt đăng ký \\
+\hline
+Nguồn dữ liệu & pgvector (semantic search) & pgvector + SQL trực tiếp qua MCP \\
+\hline
+Context Injection & khoa đào tạo & danh sách hoạt động đang diễn ra \\
+\hline
+Gửi email & Không & Gửi email xác nhận duyệt/từ chối \\
+\hline
+\end{tabular}
+\caption{So sánh luồng sinh viên và luồng cán bộ trong chatbot CTXH}
+\end{table}
+
+\textbf{Giới hạn tốc độ:} Cả hai luồng đều áp dụng rate limiting qua \texttt{RateLimitInterceptor} với Redis làm backend lưu trữ bộ đếm — mặc định 30 yêu cầu/60 giây/người dùng. Cơ chế này bảo vệ hệ thống khỏi quá tải do vòng lặp gọi API đồng thời.
 
 \subsubsection{Pipeline trả lời câu hỏi}
 Luồng xử lý truy vấn người dùng được hiện thực theo các pha sau:
@@ -225,7 +297,70 @@ Luồng xử lý truy vấn người dùng được hiện thực theo các pha 
 	\item \textbf{Hậu xử lý:} chuẩn hóa output, gắn nguồn tham chiếu, ghi lịch sử hội thoại.
 \end{enumerate}
 
-Module hỗ trợ cả chế độ trả lời thường và stream SSE, phù hợp cho giao diện chat thời gian thực.
+Module hỗ trợ cả chế độ trả lời thường và stream SSE, phù hợp cho giao diện chat thời gian thực. Sequence diagram tổng thể của luồng này được mô tả tại Hình~\ref{fig:seq-student-rag} (Mục~3.4.7).
+
+\subsubsection{Luồng sinh viên: Router Agent và phân loại ý định}
+Bước đầu tiên trong luồng sinh viên là \textbf{Router Agent} — một lần gọi LLM có nhiệm vụ phân loại ý định câu hỏi và viết lại câu hỏi nếu cần. Router sử dụng prompt có cấu trúc kết hợp với lịch sử hội thoại để phân loại vào một trong bốn ý định:
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{|p{3.8cm}|p{10.5cm}|}
+\hline
+\textbf{Ý định} & \textbf{Hành vi xử lý} \\
+\hline
+\texttt{RAG\_QUERY} & Thực hiện pipeline truy xuất và generation đầy đủ. \\
+\hline
+\texttt{REGISTER\_ACTIVITY} & Tìm hoạt động phù hợp, xác nhận với người dùng và thực hiện đăng ký tự động. \\
+\hline
+\texttt{GREETING} & Trả lời chào hỏi trực tiếp không cần truy xuất dữ liệu. \\
+\hline
+\texttt{CHITCHAT} & Xử lý trò chuyện thông thường không liên quan đến CTXH. \\
+\hline
+\end{tabular}
+\caption{Phân loại ý định trong Router Agent của chatbot sinh viên}
+\end{table}
+
+Ngoài phân loại, Router Agent còn thực hiện \textbf{question rewriting}: khi người dùng đặt câu hỏi ngắn hoặc mang tính chỉ định ngữ cảnh (``Còn không?'', ``Cái đó kết thúc chưa?''), Router viết lại câu hỏi thành câu hỏi độc lập, đầy đủ ý nghĩa dựa vào lịch sử hội thoại. Điều này đảm bảo câu truy vấn gửi vào vector store luôn có ngữ nghĩa rõ ràng.
+
+\textbf{Lựa chọn công cụ truy xuất:} Với ý định \texttt{RAG\_QUERY}, hệ thống cấu hình LLM với 4 công cụ tìm kiếm; LLM tự quyết định gọi công cụ phù hợp theo câu hỏi:
+\begin{itemize}
+	\item \texttt{search\_with\_filters}: tìm kiếm kết hợp vector similarity và bộ lọc metadata (thời gian, tổ chức, danh mục, địa điểm, trạng thái).
+	\item \texttt{search\_semantic}: tìm kiếm thuần vector cosine similarity, phù hợp cho câu hỏi mở.
+	\item \texttt{search\_diverse}: tìm kiếm MMR để đảm bảo đa dạng kết quả khi người dùng hỏi tổng quát.
+	\item \texttt{list\_activities\_sql}: truy vấn SQL trực tiếp với điều kiện lọc chính xác, phù hợp cho câu hỏi có ràng buộc nghiệp vụ cụ thể (``đang tuyển'', ``thuộc khoa tôi'').
+\end{itemize}
+
+\subsubsection{Luồng sinh viên: Trích lọc metadata và Context Injection tổ chức}
+Khi LLM quyết định gọi \texttt{search\_with\_filters}, hệ thống kích hoạt \textbf{CtxhFilterExtractionService} để trích xuất bộ lọc có cấu trúc từ câu hỏi ngôn ngữ tự nhiên. Service này dùng LLM kết hợp với schema Zod để sinh ra đối tượng lọc gồm các trường:
+\begin{itemize}
+	\item \texttt{status}: trạng thái hoạt động (\texttt{ACTIVE}, \texttt{COMPLETED}, v.v.)
+	\item \texttt{organizationId} / \texttt{organizationName}: lọc theo tổ chức mà hoạt động thuộc về
+	\item \texttt{location}: lọc theo địa điểm hoạt động
+	\item \texttt{dateRange}: khoảng thời gian diễn ra (``tuần này'', ``tháng sau'',...)
+	\item \texttt{categoryId}: lọc theo danh mục CTXH
+\end{itemize}
+
+Đặc biệt, \textbf{Org Injection} là cơ chế tự động làm giàu ngữ cảnh cho sinh viên: sau khi retrieval cơ bản hoàn thành, nếu sinh viên có khoa đào tạo (\texttt{trainingDepartment}) và câu hỏi không chỉ định tổ chức cụ thể, hệ thống thực hiện song song một truy vấn bổ sung tìm kiếm hoạt động thuộc khoa đó, sau đó hợp nhất kết quả và ưu tiên các hoạt động của khoa sinh viên đang theo học lên đầu danh sách. Cơ chế này giúp cá nhân hóa câu trả lời mà không yêu cầu sinh viên phải chỉ rõ khoa trong mỗi câu hỏi.
+
+\subsubsection{Luồng sinh viên: Đăng ký hoạt động qua hội thoại}
+Hệ thống hỗ trợ luồng đăng ký hoạt động CTXH trực tiếp qua chatbot, không cần rời khỏi giao diện hội thoại. Khi Router Agent phân loại ý định thành \texttt{REGISTER\_ACTIVITY}:
+
+\begin{enumerate}
+	\item Hệ thống truy xuất các hoạt động đang tuyển (\texttt{status = ACTIVE}) phù hợp với ngữ cảnh hội thoại.
+	\item LLM sinh câu hỏi xác nhận, liệt kê thông tin hoạt động và yêu cầu sinh viên xác nhận trước khi đăng ký.
+	\item Sau khi sinh viên xác nhận, Controller gọi \texttt{ParticipationService.registerSelf()} với \texttt{activityId} và \texttt{userId} được xác thực từ JWT.
+	\item Hệ thống ghi nhận \texttt{ctxh\_participation} với trạng thái \texttt{PENDING} và trả về thông báo xác nhận kèm hướng dẫn tra cứu tiến độ.
+\end{enumerate}
+
+Luồng hỗ trợ hội thoại nhiều lượt: sinh viên có thể hỏi về hoạt động trước, nhận thông tin đầy đủ, rồi xác nhận đăng ký trong cùng một phiên chat. Sequence diagram chi tiết của luồng này được trình bày tại Hình~\ref{fig:seq-student-register} (Mục~3.4.7).
+
+\subsubsection{Luồng sinh viên: Chiến lược fallback và xác minh kết quả truy xuất}
+Khi retrieval trả về 0 kết quả (không tìm thấy tài liệu phù hợp trong vector store), hệ thống không trả lời ``không biết'' ngay mà kích hoạt chiến lược dự phòng hai tầng:
+
+\textbf{Tầng 1 — Retrieval Verifier:} LLM phân tích lý do thất bại và sinh lại câu truy vấn với từ ngữ khác nhau, sau đó thực hiện lại similarity search. Verifier có thể thực hiện tối đa 2 lần thử lại.
+
+\textbf{Tầng 2 — McpSqlFallbackService:} Nếu Verifier vẫn thất bại, hệ thống chuyển sang truy vấn SQL trực tiếp thông qua \texttt{McpSqlFallbackService}. Service này gọi \texttt{PostgresMcpClientService} để thực thi câu lệnh SQL với điều kiện lọc được trích xuất từ câu hỏi gốc. Kết quả SQL (mang tính xác định, không xác suất) được ưu tiên cao hơn kết quả từ vector search trong bước merge cuối.
 
 \subsubsection{API chatbot đã hiện thực}
 Các endpoint chính của module gồm:
@@ -239,11 +374,91 @@ Các endpoint chính của module gồm:
 
 Trong response, hệ thống trả về cả metadata như \texttt{responseTime}, \texttt{sources}, \texttt{confidence} và có hỗ trợ chế độ evaluation để lấy full context cho kiểm thử chất lượng retrieval.
 
+\subsubsection{Luồng cán bộ: Staff Agent với vòng lặp tool-calling CRUD}
+Khác với luồng sinh viên dựa trên pipeline cố định, luồng cán bộ được hiện thực theo \textbf{mô hình ReAct} (Reason + Act): LLM liên tục suy luận, chọn công cụ cần gọi, nhận kết quả, cập nhật bối cảnh và quyết định bước tiếp theo cho đến khi có câu trả lời cuối cùng. Số vòng lặp tối đa là 10 để tránh lặp vô hạn.
+
+\textbf{Thiết lập agent:} Tại đầu mỗi phiên hội thoại, \texttt{StaffAgentService} thực hiện:
+\begin{enumerate}
+	\item Lấy lịch sử hội thoại từ \texttt{LangChainMemoryService}.
+	\item Xây dựng System Prompt bao gồm ngày giờ hiện tại và danh sách hoạt động đang theo dõi trong session (sessionActivityCache).
+	\item Gắn 12 công cụ tùy chỉnh và các công cụ MCP vào LLM bằng \texttt{bindTools()}.
+	\item Bắt đầu vòng lặp ReAct.
+\end{enumerate}
+
+\textbf{Bộ 12 công cụ tùy chỉnh} được phân nhóm theo chức năng:
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{|p{2.5cm}|p{4.5cm}|p{7.5cm}|}
+\hline
+\textbf{Nhóm} & \textbf{Công cụ} & \textbf{Mô tả} \\
+\hline
+\multirow{2}{*}{Tìm kiếm} & \texttt{search\_activities} & Tìm hoạt động theo từ khóa, trạng thái, đang diễn ra. \\
+\cline{2-3}
+ & \texttt{get\_pending\_overview} & Lấy danh sách tất cả hoạt động có đăng ký chờ duyệt, cache vào session. \\
+\hline
+\multirow{2}{*}{Đọc dữ liệu} & \texttt{get\_pending\_participants} & Lấy danh sách sinh viên chờ duyệt của một hoạt động. \\
+\cline{2-3}
+ & \texttt{get\_approved\_participants} & Lấy danh sách sinh viên đã được duyệt. \\
+\hline
+\multirow{3}{*}{CRUD hoạt động} & \texttt{create\_activity} & Tạo mới một hoạt động CTXH với đầy đủ thông tin. \\
+\cline{2-3}
+ & \texttt{batch\_create\_activities} & Tạo nhiều hoạt động trong một lần gọi (bulk insert). \\
+\cline{2-3}
+ & \texttt{manage\_activity} & Cập nhật hoặc xóa hoạt động theo id. \\
+\hline
+\multirow{2}{*}{Phê duyệt} & \texttt{approve\_and\_notify} & Duyệt đăng ký và gửi email xác nhận đến sinh viên. \\
+\cline{2-3}
+ & \texttt{reject\_registration} & Từ chối đăng ký kèm lý do và gửi email thông báo. \\
+\hline
+Thông báo & \texttt{send\_notification\_email} & Gửi email hàng loạt đến toàn bộ người tham gia hoạt động. \\
+\hline
+\multirow{2}{*}{Tra cứu} & \texttt{lookup\_category} & Tìm danh mục CTXH theo tên để lấy ID chính xác. \\
+\cline{2-3}
+ & \texttt{lookup\_organization} & Tìm tổ chức chủ trì theo tên để lấy ID chính xác. \\
+\hline
+\end{tabular}
+\caption{Bộ 12 công cụ của Staff Agent trong chatbot cán bộ}
+\end{table}
+
+\textbf{Luồng CRUD qua hội thoại:} Khi cán bộ yêu cầu tạo hoạt động, agent thực hiện theo trình tự:
+\begin{enumerate}
+	\item Gọi \texttt{lookup\_category} và \texttt{lookup\_organization} để xác nhận tên danh mục và tổ chức chủ trì, đảm bảo dữ liệu nhất quán.
+	\item Gọi \texttt{create\_activity} với payload đầy đủ; backend thực hiện \texttt{INSERT} vào bảng \texttt{ctxh\_activity}.
+	\item Sự kiện tạo hoạt động kích hoạt \texttt{CtxhVectorSyncService}, đưa job embedding vào hàng đợi BullMQ để cập nhật vector store tự động.
+\end{enumerate}
+
+\textbf{Luồng duyệt đăng ký qua hội thoại:} Khi cán bộ hỏi ``có sinh viên nào chờ duyệt không?'', agent gọi \texttt{get\_pending\_overview} $\rightarrow$ nhận danh sách hoạt động có đăng ký chờ $\rightarrow$ trả về tổng quan. Nếu cán bộ xác nhận duyệt, agent gọi \texttt{approve\_and\_notify}: cập nhật trạng thái \texttt{APPROVED} trong \texttt{ctxh\_participation} và gửi email xác nhận đến sinh viên qua \texttt{NodemailerService}.
+
+\textbf{Kiểm tra quyền:} Mỗi công cụ ghi dữ liệu thực hiện \texttt{checkCtxhPermission()} trước khi tiến hành thay đổi. Nếu cán bộ không có quyền tương ứng với tổ chức của hoạt động, công cụ trả về lỗi và LLM thông báo cho người dùng thay vì âm thầm bỏ qua. Sequence diagram luồng duyệt đăng ký và luồng tạo hoạt động qua hội thoại lần lượt được mô tả tại Hình~\ref{fig:seq-staff-approve} và Hình~\ref{fig:seq-staff-create} (Mục~3.4.7).
+
+\subsubsection{Tích hợp Model Context Protocol (MCP) cho truy vấn cơ sở dữ liệu}
+\textbf{Model Context Protocol (MCP)} là giao thức chuẩn hóa việc cung cấp công cụ và ngữ cảnh cho LLM, tương tự như cách OpenAPI mô tả REST API. Chatbot CTXH tích hợp MCP để cho phép LLM truy vấn trực tiếp vào cơ sở dữ liệu PostgreSQL thông qua một lớp trừu tượng an toàn.
+
+\textbf{PostgresMcpClientService} được hiện thực bằng MCP TypeScript SDK, kết nối đến MCP server qua giao thức \textbf{SSE (Server-Sent Events)}. Khi khởi tạo, service tự động khám phá danh sách công cụ có sẵn từ MCP server và chỉ phơi ra những công cụ nằm trong danh sách cho phép (allowlist):
+
+\begin{itemize}
+	\item \texttt{mcp\_execute\_sql}: thực thi câu lệnh SQL tùy ý (chỉ SELECT, an toàn với dữ liệu).
+	\item \texttt{mcp\_list\_schemas}: liệt kê các schema trong database.
+	\item \texttt{mcp\_list\_objects}: liệt kê bảng/view trong schema.
+	\item \texttt{mcp\_get\_object\_details}: lấy cấu trúc chi tiết của bảng.
+\end{itemize}
+
+Các công cụ ngoài allowlist tự động bị lọc ra, ngăn LLM thực thi các thao tác nguy hiểm như \texttt{DROP TABLE} hay \texttt{UPDATE} trực tiếp vào dữ liệu giao dịch. Cơ chế bảo vệ này tách biệt rõ quyền đọc (MCP) và quyền ghi (các tool CRUD riêng của Staff Agent).
+
+\textbf{Ứng dụng trong hệ thống:}
+\begin{itemize}
+	\item \texttt{McpSqlFallbackService}: gọi \texttt{executeSqlRows()} khi vector search trả về 0 kết quả trong luồng sinh viên.
+	\item \texttt{McpMetadataEnricherService}: truy vấn số suất còn lại (\texttt{currentParticipants}, \texttt{maxParticipants}) và trạng thái duyệt (\texttt{requiresApproval}) để làm giàu tài liệu trả về.
+	\item \textbf{Staff Agent MCP tools}: LLM có thể gọi trực tiếp công cụ MCP như \texttt{mcp\_execute\_sql} khi cần trả lời câu hỏi thống kê phức tạp không có sẵn API nghiệp vụ.
+\end{itemize}
+
 \subsubsection{Giới hạn hiện tại và định hướng mở rộng}
 Mặc dù đã đáp ứng tốt nhu cầu tra cứu CTXH, chatbot vẫn có một số giới hạn thực tế:
 \begin{itemize}
 	\item Phụ thuộc chất lượng dữ liệu đầu vào ở module CTXH.
-	\item Một số câu hỏi nghiệp vụ nội bộ sâu có thể cần thêm nguồn tri thức ngoài activity data.
+	\item Một số câu hỏi nghiệp vụ nội bộ sâu có thể cần thêm nguồn tri thức ngoài dữ liệu CTXH.
 	\item Cần tối ưu thêm chiến lược rerank khi dữ liệu tăng rất lớn theo thời gian.
 \end{itemize}
 
@@ -507,6 +722,18 @@ Các hình dưới đây minh họa giao diện đã hiện thực theo từng n
 	\centering
 	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Chat bot RAG.png}
 	\caption{Giao diện hội thoại chatbot CTXH}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Chatbot_answer.png}
+	\caption{Giao diện hiển thị câu trả lời từ chatbot CTXH}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.96\linewidth]{Images/5.2 Hình giao diện/Chatbot_register.png}
+	\caption{Giao diện đăng ký hoạt động CTXH qua chatbot}
 \end{figure}
 
 \subsubsection{Hiện thực trải nghiệm cho tác vụ dữ liệu lớn}

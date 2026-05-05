@@ -92,7 +92,12 @@ Mô hình này cho phép một người dùng giữ nhiều vai trò khác nhau 
 
 \textbf{6. Cụm dữ liệu RAG}
 \begin{itemize}
-	\item \texttt{ctxh\_embeddings} lưu các vector embedding theo từng hoạt động và từng chunk nội dung.
+	\item \texttt{ctxh\_embeddings} lưu các vector embedding theo từng hoạt động và từng chunk nội dung, với ba thuộc tính cốt lõi:
+	\begin{itemize}
+		\item \texttt{ContextText}: đoạn văn bản đã chuẩn hóa, dùng làm đầu vào để sinh vector embedding.
+		\item \texttt{Embedding}: vector đặc trưng ngữ nghĩa (kiểu \texttt{vector(1024)}), phục vụ tìm kiếm tương đồng.
+		\item \texttt{Metadata}: đối tượng JSON lưu thông tin bổ sung (danh mục, tổ chức, thời gian, trạng thái) để lọc kết quả truy vấn theo ràng buộc nghiệp vụ.
+	\end{itemize}
 	\item Bảng này liên kết về \texttt{ctxh\_activity}, là cầu nối giữa dữ liệu nghiệp vụ CTXH và lớp truy xuất ngữ nghĩa.
 \end{itemize}
 
@@ -123,8 +128,8 @@ Mô hình này cho phép một người dùng giữ nhiều vai trò khác nhau 
 \textbf{3. Chỉ mục và tối ưu truy vấn}
 \begin{itemize}
 	\item Các bảng nghiệp vụ có chỉ mục theo cột truy vấn thường xuyên như \texttt{activity\_id}, \texttt{created\_at}, tổ hợp \texttt{(templateId, status)}, \texttt{(userId, createdAt)}.
-	\item Dữ liệu vector trong \texttt{ctxh\_embeddings} sử dụng kiểu \texttt{vector(1024)}; chỉ mục HNSW với \texttt{vector\_cosine\_ops} được dùng để tăng tốc truy vấn tương tự cho chatbot.
-	\item Metadata của embeddings lưu dạng \texttt{jsonb} và được bổ sung GIN index để hỗ trợ lọc theo thuộc tính ngữ cảnh.
+	\item Trường \texttt{Embedding} trong \texttt{ctxh\_embeddings} sử dụng kiểu \texttt{vector(1024)}; chỉ mục HNSW với \texttt{vector\_cosine\_ops} được dùng để tăng tốc truy vấn tương tự cho chatbot.
+	\item Trường \texttt{Metadata} lưu dạng \texttt{jsonb} và được bổ sung GIN index để hỗ trợ lọc theo thuộc tính ngữ cảnh; trường \texttt{ContextText} lưu kiểu \texttt{text} không đánh chỉ mục thông thường.
 \end{itemize}
 
 \textbf{4. Cấu trúc dữ liệu theo trạng thái nghiệp vụ}
@@ -174,6 +179,8 @@ Biểu mẫu & TEMPLATE, TEMPLATE\_FIELD, TEMPLATE\_SUBMISSION, GENERATED\_DOCUM
 \hline
 Đóng phí & PAYMENT\_CAMPAIGN, FEE\_LEVEL, PAYMENT\_ASSIGNMENT, PAYMENT\_HISTORY & \texttt{payment\_campaigns}, \texttt{payment\_fee\_levels}, \texttt{payment\_assignments}, \texttt{payment\_history}, \texttt{payment\_campaign\_payos\_configs} \\
 \hline
+Dữ liệu RAG & (chưa có ở kỳ trước) & \texttt{ctxh\_embeddings} với ba trường chính: \texttt{ContextText}, \texttt{Embedding} (vector 1024 chiều), \texttt{Metadata} (jsonb); liên kết khóa ngoại về \texttt{ctxh\_activity} \\
+\hline
 \end{tabularx}
 \caption{Đối chiếu mô hình dữ liệu tham khảo và mô hình hiện tại}
 \end{table}
@@ -194,14 +201,13 @@ Nguồn dữ liệu gốc lấy từ thực thể hoạt động CTXH và các t
 \end{itemize}
 
 \textbf{2. Bảng lưu vector và metadata}
-Hệ thống sử dụng bảng \texttt{ctxh\_embeddings} để lưu:
+Hệ thống sử dụng bảng \texttt{ctxh\_embeddings} để lưu, với cấu trúc phản ánh đúng sơ đồ ER và RD đã thiết kế:
 \begin{itemize}
-	\item Nội dung text đã chuẩn hóa để nhúng vector (\texttt{content\_text})
-	\item Vector embedding (kiểu \texttt{vector})
-	\item Chỉ số phân mảnh nội dung (\texttt{chunk\_index})
-	\item Metadata phục vụ lọc theo ngữ cảnh thời gian, tổ chức, danh mục, trạng thái
+	\item \texttt{ContextText}: nội dung văn bản đã chuẩn hóa dùng để nhúng vector; tương ứng với chuỗi ghép thuộc tính nghiệp vụ của hoạt động.
+	\item \texttt{Embedding}: vector đặc trưng ngữ nghĩa (kiểu \texttt{vector(1024)}) sinh ra từ \texttt{ContextText}; được đánh chỉ mục HNSW với \texttt{vector\_cosine\_ops} để tăng tốc truy vấn tương tự.
+	\item \texttt{Metadata}: đối tượng \texttt{jsonb} lưu các thuộc tính bổ sung (\texttt{activityId}, \texttt{categoryId}, \texttt{organizationId}, khoảng thời gian, trạng thái, \texttt{chunkIndex}); được đánh GIN index để hỗ trợ lọc logic theo ràng buộc nghiệp vụ.
 \end{itemize}
-Thiết kế này cho phép vừa tìm kiếm ngữ nghĩa theo độ tương đồng vector, vừa lọc logic theo ràng buộc nghiệp vụ mà người dùng đặt ra trong câu hỏi.
+Thiết kế ba trường này cho phép vừa tìm kiếm ngữ nghĩa theo độ tương đồng vector, vừa lọc logic theo ràng buộc nghiệp vụ mà người dùng đặt ra trong câu hỏi.
 
 \textbf{3. Mẫu chuẩn hóa văn bản trước khi embedding}
 Để tăng tính nhất quán ngữ nghĩa giữa các bản ghi hoạt động, hệ thống sử dụng mẫu hợp nhất các thuộc tính chính thành một đoạn văn chuẩn trước khi sinh embedding, ví dụ:

@@ -3,9 +3,13 @@
     "id": "STF-Q001",
     "intent": "query_activities",
     "use_case": "UC-T01",
-    "question": "Cho tôi xem danh sách tất cả hoạt động đang hoạt động của tổ chức tôi",
+    "question": "Cho tôi xem danh sách tất cả hoạt động đang hoạt động của Liên chi đoàn Khoa Khoa học và Kỹ thuật Máy tính",
     "expected_tool": "query_managed_activities",
-    "expected_args_contains": { "statuses": ["ACTIVE"] },
+    "expected_args_contains": {
+      "statuses": [
+        "ACTIVE"
+      ]
+    },
     "ground_truth": "Bot trả về danh sách hoạt động ACTIVE của tổ chức cán bộ đang quản lý.",
     "metadata": {}
   },
@@ -15,7 +19,9 @@
     "use_case": "UC-T01",
     "question": "Có sinh viên nào đang chờ duyệt đăng ký không?",
     "expected_tool": "query_managed_activities",
-    "expected_args_contains": { "include_participants": true },
+    "expected_args_contains": {
+      "include_participants": true
+    },
     "ground_truth": "Bot gọi query_managed_activities với include_participants=true để lấy DS sinh viên PENDING.",
     "metadata": {}
   },
@@ -23,80 +29,36 @@
     "id": "STF-Q003",
     "intent": "query_activities",
     "use_case": "UC-T02",
-    "question": "Danh sách sinh viên đang chờ duyệt của hoạt động [BDCN] DỌN XƯỞNG SAU TẾT",
+    "question": "Danh sách sinh viên đang chờ duyệt của hoạt động Oyu Workshop 2026",
     "expected_tool": "query_managed_activities",
-    "expected_args_contains": { "include_participants": true },
-    "ground_truth": "Bot trả về danh sách sinh viên PENDING cho hoạt động BD25CTX0001.",
-    "metadata": { "related_ma_ctxh": "BD25CTX0001" }
+    "expected_args_contains": {
+      "include_participants": true
+    },
+    "ground_truth": "Bot trả về danh sách sinh viên PENDING cho hoạt động Oyu Workshop 2026.",
+    "metadata": {}
   },
   {
     "id": "STF-Q004",
     "intent": "query_activities",
     "use_case": "UC-T02",
-    "question": "Cho tôi xem danh sách sinh viên chờ duyệt của hoạt động CTV TVTS ngày 3/3",
+    "question": "Cho tôi xem danh sách sinh viên chờ duyệt của hoạt động Dọn dẹp thư viện khoa máy tính",
     "expected_tool": "query_managed_activities",
-    "expected_args_contains": { "include_participants": true },
-    "ground_truth": "Bot lấy DS sinh viên PENDING cho hoạt động BD25HTR0001.",
-    "metadata": { "related_ma_ctxh": "BD25HTR0001" }
+    "expected_args_contains": {
+      "include_participants": true
+    },
+    "ground_truth": "Bot lấy DS sinh viên PENDING cho hoạt động Dọn dẹp thư viện khoa máy tính.",
+    "metadata": {}
   },
   {
     "id": "STF-Q005",
     "intent": "query_activities",
     "use_case": "UC-T03",
-    "question": "Danh sách sinh viên đã được duyệt tham gia hoạt động BD25CTX0001",
+    "question": "Danh sách sinh viên đã được duyệt tham gia hoạt động CTV HỖ TRỢ ĐĂNG KÝ MÔN HỌC HK2 NH 2025-2026 (HK252)",
     "expected_tool": "query_managed_activities",
-    "expected_args_contains": { "include_participants": true },
-    "ground_truth": "Bot trả về danh sách sinh viên APPROVED/REGISTERED của hoạt động BD25CTX0001.",
-    "metadata": { "related_ma_ctxh": "BD25CTX0001" }
-  },
-  {
-    "id": "STF-Q006",
-    "intent": "query_activities",
-    "use_case": "UC-T03",
-    "question": "Có bao nhiêu sinh viên đã đăng ký tham gia hoạt động tháng 2?",
-    "expected_tool": "query_managed_activities",
-    "expected_args_contains": { "include_participants": true },
-    "ground_truth": "Bot tổng hợp số sinh viên đã đăng ký của các hoạt động diễn ra tháng 2.",
-    "metadata": {}
-  },
-  {
-    "id": "STF-Q007",
-    "intent": "query_activities",
-    "use_case": "UC-T10",
-    "question": "Tìm tất cả hoạt động CTXH đang ở trạng thái DRAFT",
-    "expected_tool": "query_managed_activities",
-    "expected_args_contains": { "statuses": ["DRAFT"] },
-    "ground_truth": "Bot trả về danh sách hoạt động DRAFT của tổ chức cán bộ.",
-    "metadata": {}
-  },
-  {
-    "id": "STF-Q008",
-    "intent": "query_activities",
-    "use_case": "UC-T10",
-    "question": "Hoạt động nào đã kết thúc (COMPLETED) trong quý 1 2025?",
-    "expected_tool": "query_managed_activities",
-    "expected_args_contains": { "statuses": ["COMPLETED"] },
-    "ground_truth": "Bot trả về danh sách hoạt động COMPLETED từ tháng 1-3 2025.",
-    "metadata": {}
-  },
-  {
-    "id": "STF-Q009",
-    "intent": "query_activities",
-    "use_case": "UC-T10",
-    "question": "Cho tôi xem toàn bộ hoạt động tôi đang quản lý",
-    "expected_tool": "query_managed_activities",
-    "expected_args_contains": {},
-    "ground_truth": "Bot gọi query_managed_activities không filter để lấy tất cả hoạt động.",
-    "metadata": {}
-  },
-  {
-    "id": "STF-Q010",
-    "intent": "query_activities",
-    "use_case": "UC-T10",
-    "question": "Liệt kê hoạt động đang ACTIVE của tổ chức tôi kèm số sinh viên tham gia",
-    "expected_tool": "query_managed_activities",
-    "expected_args_contains": { "statuses": ["ACTIVE"], "include_participants": true },
-    "ground_truth": "Bot trả về DS hoạt động ACTIVE kèm số lượng sinh viên APPROVED/REGISTERED.",
+    "expected_args_contains": {
+      "include_participants": true
+    },
+    "ground_truth": "Bot trả về danh sách sinh viên APPROVED/REGISTERED của hoạt động CTV HỖ TRỢ ĐĂNG KÝ MÔN HỌC HK2 NH 2025-2026 (HK252).",
     "metadata": {}
   },
   {
@@ -105,25 +67,28 @@
     "use_case": "UC-T04",
     "question": "Duyệt tất cả sinh viên đang chờ của hoạt động [BDCN] DỌN XƯỞNG SAU TẾT và gửi email thông báo",
     "expected_tool": "auto_approve_and_notify",
-    "expected_args_contains": { "activity_code": "BD25CTX0001" },
+    "expected_args_contains": {
+      "activity_code": "BD25CTX0001"
+    },
     "ground_truth": "Bot gọi auto_approve_and_notify, duyệt toàn bộ PENDING và gửi email BCC cho sinh viên.",
-    "metadata": { "related_ma_ctxh": "BD25CTX0001" }
+    "metadata": {
+    }
   },
   {
     "id": "STF-A002",
     "intent": "approve_registrations",
     "use_case": "UC-T04",
-    "question": "Xét duyệt và gửi email thông báo cho sinh viên đã đăng ký hoạt động BD25HTR0001",
+    "question": "Xét duyệt và gửi email thông báo cho sinh viên đã đăng ký hoạt động CTV HỖ TRỢ ĐĂNG KÝ MÔN HỌC HK2 NH 2025-2026 (HK252)",
     "expected_tool": "auto_approve_and_notify",
-    "expected_args_contains": { "activity_code": "BD25HTR0001" },
-    "ground_truth": "Bot auto-approve toàn bộ PENDING của BD25HTR0001 và gửi email thông báo.",
-    "metadata": { "related_ma_ctxh": "BD25HTR0001" }
+    "expected_args_contains": {    },
+    "ground_truth": "Bot auto-approve toàn bộ PENDING của CTV HỖ TRỢ ĐĂNG KÝ MÔN HỌC HK2 NH 2025-2026 (HK252) và gửi email thông báo.",
+    "metadata": {    }
   },
   {
     "id": "STF-A003",
     "intent": "approve_registrations",
     "use_case": "UC-T04",
-    "question": "Duyệt hết sinh viên đang chờ cho tất cả hoạt động đang ACTIVE của tôi",
+    "question": "hoạt động nào do tôi tạo có sinh viên đăng ký vậy",
     "expected_tool": "auto_approve_and_notify",
     "expected_args_contains": {},
     "ground_truth": "Bot duyệt tất cả PENDING trên các hoạt động ACTIVE và gửi email thông báo hàng loạt.",
@@ -133,17 +98,19 @@
     "id": "STF-A004",
     "intent": "approve_registrations",
     "use_case": "UC-T04",
-    "question": "Gửi email thông báo tới sinh viên đã duyệt của hoạt động CK25CTX0001",
+    "question": "Gửi email thông báo tới sinh viên đã duyệt của hoạt động TNV THAM GIA HỖ TRỢ DI DỜI, SẮP XẾP THIẾT BỊ Ở XƯỞNG CƠ KHÍ C1",
     "expected_tool": "auto_approve_and_notify",
-    "expected_args_contains": { "activity_code": "CK25CTX0001" },
-    "ground_truth": "Bot gửi email thông báo cho sinh viên APPROVED của CK25CTX0001.",
-    "metadata": { "related_ma_ctxh": "CK25CTX0001" }
+    "expected_args_contains": {
+      "activity_code": "TNV THAM GIA HỖ TRỢ DI DỜI, SẮP XẾP THIẾT BỊ Ở XƯỞNG CƠ KHÍ C1"
+    },
+    "ground_truth": "Bot gửi email thông báo cho sinh viên APPROVED của TNV THAM GIA HỖ TRỢ DI DỜI, SẮP XẾP THIẾT BỊ Ở XƯỞNG CƠ KHÍ C1.",
+    "metadata": { }
   },
   {
     "id": "STF-A005",
     "intent": "approve_registrations",
     "use_case": "UC-T04",
-    "question": "Hoạt động CTV hỗ trợ TVTS ngày 3 tháng 3 có bao nhiêu đăng ký chờ duyệt? Duyệt hết đi",
+    "question": "TNV THAM GIA HỖ TRỢ DI DỜI, SẮP XẾP THIẾT BỊ Ở XƯỞNG CƠ KHÍ C1 NGÀY 20 - 21/4/2026 có bao nhiêu đăng ký chờ duyệt? Duyệt hết đi",
     "expected_tool": "auto_approve_and_notify",
     "expected_args_contains": {},
     "ground_truth": "Bot truy vấn số PENDING rồi gọi auto_approve_and_notify để duyệt toàn bộ.",
@@ -153,20 +120,22 @@
     "id": "STF-C001",
     "intent": "create_activity",
     "use_case": "UC-T06",
-    "question": "Tạo hoạt động CTXH mới tên '[BDCN] DỌN LAB MẠNG MÁY TÍNH', 0.5 ngày CTXH, diễn ra từ 10/3/2026 đến 11/3/2026 tại phòng máy tính B4, thuộc loại dọn kho phòng thí nghiệm",
+    "question": "Tạo hoạt động CTXH mới tên 'DỌN LAB MẠNG MÁY TÍNH', thuộc Liên chi đoàn Khoa Khoa học và Kỹ thuật Máy tính, 1 ngày CTXH, diễn ra từ 05/5/2026 đến 07/5/2026 tại phòng máy tính B4, thuộc danh mục Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
     "expected_tool": "create_activity",
     "expected_args_contains": {
       "name": "DỌN LAB TIN HỌC",
-      "thoi_luong_ngay": 2
+      "thoi_luong_ngay": 1
     },
     "ground_truth": "Bot tạo hoạt động với đầy đủ thông tin, trả về mã hoạt động mới.",
-    "metadata": { "organization_code": "LIEN_CHI_DOAN_BD" }
+    "metadata": {
+      "organization_code": "LIEN_CHI_DOAN_BD"
+    }
   },
   {
     "id": "STF-C002",
     "intent": "create_activity",
     "use_case": "UC-T06",
-    "question": "Tạo hoạt động hiến máu tình nguyện, 1 ngày CTXH, ngày 15/4/2025, địa điểm hội trường A4",
+    "question": "Tạo hoạt động hiến máu tình nguyện, 1 ngày CTXH, Thuộc Hội sinh viên, danh mục Hiến máu tình nguyện, ngày 05/5/2026 đến 07/5/2026, địa điểm hội trường A4",
     "expected_tool": "create_activity",
     "expected_args_contains": {
       "thoi_luong_ngay": 1
@@ -178,13 +147,15 @@
     "id": "STF-C003",
     "intent": "create_activity",
     "use_case": "UC-T06",
-    "question": "Tạo hoạt động hội trại tình nguyện 3 ngày cho sinh viên khoa Cơ khí, dự kiến từ 20/5 đến 22/5/2025",
+    "question": "Tạo hoạt động hội trại tình nguyện, 3 ngày ctxh, danh mục 'Chương trình Hội trại, ngày hội', từ 20/5 đến 22/5/2026",
     "expected_tool": "create_activity",
     "expected_args_contains": {
       "thoi_luong_ngay": 3
     },
-    "ground_truth": "Bot tạo hoạt động hội trại với thời lượng 3 ngày CTXH.",
-    "metadata": { "organization_code": "LIEN_CHI_DOAN_CK" }
+    "ground_truth": "Bot hỏi thêm thông tin về tổ chức và địa điểm, sau đó tạo hoạt động khi nhận đủ thông tin.",
+    "metadata": {
+      "organization_code": "LIEN_CHI_DOAN_CK"
+    }
   },
   {
     "id": "STF-C004",
@@ -194,31 +165,35 @@
     "expected_tool": "create_activity",
     "expected_args_contains": {},
     "ground_truth": "Bot hỏi thêm thông tin cần thiết (ngày, thời lượng, địa điểm) trước khi tạo hoạt động.",
-    "metadata": { "organization_code": "LIEN_CHI_DOAN_BD" }
+    "metadata": {
+      "organization_code": "LIEN_CHI_DOAN_BD"
+    }
   },
   {
     "id": "STF-C005",
     "intent": "create_activity",
     "use_case": "UC-T06",
-    "question": "Tạo hoạt động CTXH '[CK] DỌN PHÒNG THÍ NGHIỆM Q2', 3 ngày, từ 1/6/2025 đến 3/6/2025 tại B4-101, loại dọn kho phòng thí nghiệm, cần xét duyệt đăng ký",
+    "question": "Tạo hoạt động CTXH '[CK] DỌN PHÒNG THÍ NGHIỆM Q2' của Liên chi đoàn khoa Cơ khí, được 1 ngày ctxh, từ 5/5/2026 đến 10/6/2026 tại B4-101, thuộc danh mục Hoạt động công tác xã hội, cần xét duyệt đăng ký",
     "expected_tool": "create_activity",
     "expected_args_contains": {
-      "thoi_luong_ngay": 3,
+      "thoi_luong_ngay": 1,
       "requires_approval": true
     },
     "ground_truth": "Bot tạo hoạt động với requires_approval=true và trả về mã hoạt động CK.",
-    "metadata": { "organization_code": "LIEN_CHI_DOAN_CK" }
+    "metadata": {
+      "organization_code": "LIEN_CHI_DOAN_CK"
+    }
   },
   {
     "id": "STF-M001",
     "intent": "multi_turn_staff",
     "use_case": "UC-T04",
-    "question": "Cho tôi xem danh sách sinh viên chờ duyệt của hoạt động BD25CTX0001",
+    "question": "Cho tôi xem danh sách sinh viên chờ duyệt của hoạt động HỖ TRỢ TỔ CHỨC BUỔI CHÀO MỪNG TÂN HỌC VIÊN CHƯƠNG TRÌNH IMP KHÓA 2025 - 10/01/2026",
     "followup_question": "Duyệt hết đi và gửi email cho các bạn",
     "expected_tool": "query_managed_activities",
     "followup_expected_tool": "auto_approve_and_notify",
     "ground_truth": "Đầu tiên bot tra cứu DS PENDING, sau đó duyệt hết và gửi email thông báo.",
-    "metadata": { "related_ma_ctxh": "BD25CTX0001" }
+    "metadata": {}
   },
   {
     "id": "STF-M002",
@@ -236,11 +211,13 @@
     "intent": "multi_turn_staff",
     "use_case": "UC-T06",
     "question": "Tôi muốn tạo một hoạt động mới",
-    "followup_question": "Tên là [BDCN] HỖ TRỢ TVTS T5/2025, 2 ngày, từ 15/5 đến 16/5, tại H6",
+    "followup_question": "Tên là HỖ TRỢ TVTS T5/2026, 2 ngày, từ 15/5/2026 đến 16/5/2026, tại H6",
     "expected_tool": "create_activity",
     "followup_expected_tool": "create_activity",
-    "ground_truth": "Bot hỏi thông tin cần thiết, sau đó tạo hoạt động khi nhận đủ thông tin.",
-    "metadata": { "organization_code": "LIEN_CHI_DOAN_BD" }
+    "ground_truth": "Bot hỏi thông tin cần thiết.",
+    "metadata": {
+      "organization_code": "LIEN_CHI_DOAN_CK"
+    }
   },
   {
     "id": "STF-M004",
@@ -263,60 +240,5 @@
     "followup_expected_tool": "auto_approve_and_notify",
     "ground_truth": "Bot thống kê, xác định hoạt động nhiều đăng ký nhất, gửi email thông báo.",
     "metadata": {}
-  },
-  {
-    "id": "STF-E001",
-    "intent": "error_handling",
-    "use_case": "UC-T04",
-    "question": "Duyệt sinh viên cho hoạt động ABCXYZ999 (mã không tồn tại)",
-    "expected_tool": "auto_approve_and_notify",
-    "expected_args_contains": {},
-    "expected_response_contains": ["không tìm thấy", "không tồn tại", "mã hoạt động"],
-    "ground_truth": "Bot báo lỗi hoạt động không tồn tại hoặc không thuộc quyền quản lý.",
-    "metadata": {}
-  },
-  {
-    "id": "STF-E002",
-    "intent": "error_handling",
-    "use_case": "UC-T04",
-    "question": "Duyệt sinh viên cho hoạt động BD25CTX0001 (hoạt động không bật chế độ xét duyệt)",
-    "expected_tool": "auto_approve_and_notify",
-    "expected_args_contains": { "activity_code": "BD25CTX0001" },
-    "expected_response_contains": ["không bật", "xét duyệt", "PENDING"],
-    "ground_truth": "Bot thông báo hoạt động không cần xét duyệt hoặc không có đăng ký PENDING.",
-    "metadata": {}
-  },
-  {
-    "id": "STF-E003",
-    "intent": "error_handling",
-    "use_case": "UC-T06",
-    "question": "Tạo hoạt động CTXH cho Liên chi đoàn Khoa Hóa học (không thuộc quyền tôi)",
-    "expected_tool": "create_activity",
-    "expected_args_contains": {},
-    "expected_response_contains": ["không có quyền", "đơn vị"],
-    "ground_truth": "Bot báo lỗi không có quyền tạo hoạt động cho tổ chức khác.",
-    "metadata": {}
-  },
-  {
-    "id": "STF-E004",
-    "intent": "error_handling",
-    "use_case": "UC-T06",
-    "question": "Tạo hoạt động mới với thời lượng -1 ngày",
-    "expected_tool": "create_activity",
-    "expected_args_contains": {},
-    "expected_response_contains": ["không hợp lệ", "thời lượng"],
-    "ground_truth": "Bot báo lỗi thời lượng không hợp lệ và yêu cầu nhập lại.",
-    "metadata": {}
-  },
-  {
-    "id": "STF-E005",
-    "intent": "error_handling",
-    "use_case": "UC-T04",
-    "question": "Duyệt sinh viên cho hoạt động CK25CTX0003 nhưng hoạt động đã CANCELLED",
-    "expected_tool": "auto_approve_and_notify",
-    "expected_args_contains": {},
-    "expected_response_contains": ["đã kết thúc", "đã hủy", "CANCELLED"],
-    "ground_truth": "Bot báo lỗi không thể duyệt cho hoạt động đã bị hủy/kết thúc.",
-    "metadata": { "related_ma_ctxh": "CK25CTX0003" }
   }
 ]

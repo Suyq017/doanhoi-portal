@@ -160,10 +160,6 @@ export class LangChainVectorStoreService implements OnModuleInit {
 
   /**
    * Perform similarity search with scores using PGVectorStore.
-   *
-   * Note: PGVectorStore with distanceStrategy='cosine' returns **cosine distance**
-   * (0 = identical vectors, 1 = opposite vectors), NOT cosine similarity.
-   * We convert: similarityScore = 1 - cosineDistance so that higher = more relevant.
    */
   async similaritySearchWithScore(
     query: string,
@@ -172,19 +168,17 @@ export class LangChainVectorStoreService implements OnModuleInit {
     await this.ensureInitialized();
 
     try {
-      const rawResults = await this.vectorStore.similaritySearchWithScore(query, k * 3);
-
+      const rawResults = await this.vectorStore.similaritySearchWithScore(query, k);
+      this.logger.debug(`Raw similarity search returned ${JSON.stringify(rawResults, null, 2)} documents for query: "${query}"`);
       const filteredResults = rawResults
         .filter(([doc]) => this.shouldIncludeInRetrieval(doc))
         .map(([doc, cosineDistance]) => {
-          // Convert cosine distance -> cosine similarity
-          const similarityScore = 1 - cosineDistance;
           return [
             {
               ...doc,
-              metadata: { ...doc.metadata, score: similarityScore },
+              metadata: { ...doc.metadata, score: cosineDistance },
             },
-            similarityScore,
+            cosineDistance,
           ] as [Document, number];
         })
         .slice(0, k);

@@ -6,19 +6,8 @@ import type {
 import { apiClient } from '../../../shared/services/apiClient';
 import type { CtxhChatResponse } from '../types/chat.types';
 
-// ── Streaming delay config ─────────────────────────────────────────────────
-// Simulates a ~60 tokens/sec typing speed.
-// When the backend gains a real SSE endpoint, replace this adapter section
-// with a fetch-based EventSource reader (see: api/ctxh-chat/stream).
-const TOKEN_DELAY_MS = 16; // ~60 chars/sec
-
-/**
- * Splits text into tokens (words + whitespace) to stream progressively.
- */
-function tokenize(text: string): string[] {
-  // Keep whitespace tokens so accumulated text matches original exactly
-  return text.split(/(\s+)/);
-}
+/** Delay (ms) between each word chunk during fake streaming */
+const FAKE_STREAM_DELAY_MS = 18;
 
 export const ctxhChatAdapter: ChatModelAdapter = {
   async *run({
@@ -40,42 +29,40 @@ export const ctxhChatAdapter: ChatModelAdapter = {
         ?.custom as Record<string, unknown> | undefined
     )?.sessionId as string | undefined;
 
-    // ── Fetch full response from non-streaming endpoint ────────────────
-    // apiClient handles 401 → token refresh → retry automatically
-    const data = await apiClient.post<CtxhChatResponse>(
-      '/ctxh-chat/message',
-      { message: userText, sessionId },
-      { signal: abortSignal },
-    );
+    // ── Fetch full response from regular POST endpoint ─────────────────
+    const data = await apiClient.post<CtxhChatResponse>('/ctxh-chat/message', {
+      message: userText,
+      sessionId,
+    });
 
-    // ── Simulate streaming: yield tokens progressively ─────────────────
-    const tokens = tokenize(data.response);
+    const fullText = data.response ?? '';
+
+    // ── Fake streaming: yield word-by-word ────────────────────────────
+    // Split on whitespace, keeping the delimiter so spaces are preserved.
+    const tokens = fullText.split(/(\s+)/);
     let accumulated = '';
 
     for (const token of tokens) {
-      if (abortSignal?.aborted) break;
-
+      if (abortSignal?.aborted) return;
       accumulated += token;
-
       yield {
         content: [{ type: 'text' as const, text: accumulated }],
       };
-
-      // Only delay on actual word tokens, not on whitespace tokens
       if (token.trim().length > 0) {
-        await new Promise<void>((resolve) => setTimeout(resolve, TOKEN_DELAY_MS));
+        // Only delay on actual words, not on whitespace tokens
+        await new Promise<void>((resolve) => setTimeout(resolve, FAKE_STREAM_DELAY_MS));
       }
     }
 
     // ── Final yield with metadata ──────────────────────────────────────
     if (!abortSignal?.aborted) {
       yield {
-        content: [{ type: 'text' as const, text: data.response }],
+        content: [{ type: 'text' as const, text: fullText }],
         metadata: {
           custom: {
-            followUpSuggestions: data.followUpSuggestions,
-            sessionId: data.sessionId,
-            sources: data.sources,
+            followUpSuggestions: data.followUpSuggestions ?? [],
+            sessionId: data.sessionId ?? sessionId,
+            sources: data.sources ?? [],
           },
         },
       };

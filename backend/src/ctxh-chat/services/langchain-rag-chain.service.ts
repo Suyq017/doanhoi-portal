@@ -44,6 +44,8 @@ export interface RAGChainOptions {
   currentDatetime?: string;   // e.g. "01/03/2026, 14:30"
   userOrg?: string;           // Optional organization string, e.g. "Khoa Máy tính"
   userId?: string;            // Used by controller for registration context
+  /** Called once with retrieved sources before LLM streaming begins */
+  onSources?: (sources: Document[]) => void;
 }
 
 /** Polite rejection for truly off-topic requests (CHITCHAT) */
@@ -668,6 +670,7 @@ export class LangChainRagChainService implements OnModuleInit {
 
       // ── Step 5: Retrieve documents (search) ────────────────────────────────
       const sources = await this.retrieveDocumentsWithVerification(decision.params, currentDate, k, userOrg, userId);
+      options.onSources?.(sources);
 
       // ── Step 6: Format context ─────────────────────────────────────────────
       const enrichedSources = await this.mcpEnricher.enrichDocuments(sources);

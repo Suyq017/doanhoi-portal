@@ -51,6 +51,11 @@ EVAL_JWT_TOKEN  = os.getenv('EVAL_JWT_TOKEN')
 EVAL_STUDENT_TOKEN = os.getenv('EVAL_STUDENT_TOKEN') or os.getenv('EVAL_JWT_TOKEN')
 EVAL_DELAY_MS   = int(os.getenv('EVAL_DELAY_MS', '700'))
 
+USE_LOCAL_MODEL_LLM = os.getenv('USE_LOCAL_MODEL_LLM', 'false').lower() == 'true'
+OLLAMA_BASE_URL          = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+OLLAMA_LLM_MODEL         = os.getenv('OLLAMA_LLM_MODEL', 'qwen3:4b')
+OLLAMA_EMBEDDING_MODEL   = os.getenv('OLLAMA_EMBEDDING_MODEL', 'bge-m3')
+
 DATA_DIR               = Path(__file__).parent.parent / 'data'
 GOLDEN_DATASET         = DATA_DIR / 'golden_dataset.json'
 GOLDEN_INTENT_DATASET  = DATA_DIR / 'golden_dataset_intent.json'
@@ -216,7 +221,8 @@ def collect_api_responses(golden_dataset: list, token: str) -> tuple[list, list]
 # ─── RAGAS Evaluation ─────────────────────────────────────────────────────────
 def run_ragas(valid_data: list):
     """
-    Chạy RAGAS evaluation với Gemini làm LLM judge.
+    Chạy RAGAS evaluation với LLM judge.
+    Dùng Ollama nếu USE_LOCAL_MODEL_LLM=true, ngược lại dùng Gemini.
     Input: list[dict] với keys: question, answer, contexts, ground_truth
     """
     try:
@@ -230,44 +236,69 @@ def run_ragas(valid_data: list):
         )
         from ragas.llms import LangchainLLMWrapper
         from ragas.embeddings import LangchainEmbeddingsWrapper
-        from langchain_google_genai import (
-            ChatGoogleGenerativeAI,
-            GoogleGenerativeAIEmbeddings,
-        )
     except ImportError as e:
         print(f"\n❌ Thiếu thư viện: {e}")
         print("   Chạy: pip install -r requirements.txt")
         sys.exit(1)
 
-    if not GEMINI_API_KEY:
-        print("❌ GEMINI_API_KEY chưa được set!")
-        sys.exit(1)
+    if USE_LOCAL_MODEL_LLM:
+        try:
+            from langchain_ollama import ChatOllama, OllamaEmbeddings
+        except ImportError:
+            print("❌ Thiếu langchain-ollama. Chạy: pip install langchain-ollama")
+            sys.exit(1)
 
-    print("\n🔧 Khởi tạo Gemini LLM judge cho RAGAS...")
+        print(f"\n🔧 Khởi tạo Ollama LLM judge cho RAGAS ({OLLAMA_LLM_MODEL} @ {OLLAMA_BASE_URL})...")
 
-    # Gemini làm LLM judge (temperature=0 để kết quả ổn định)
-    gemini_llm = LangchainLLMWrapper(
-        ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
-            google_api_key=GEMINI_API_KEY,
-            temperature=0,
+        judge_llm = LangchainLLMWrapper(
+            ChatOllama(
+                model=OLLAMA_LLM_MODEL,
+                base_url=OLLAMA_BASE_URL,
+                temperature=0,
+            )
         )
-    )
-
-    # Gemini 
-    gemini_embeddings = LangchainEmbeddingsWrapper(
-        GoogleGenerativeAIEmbeddings(
-            model="gemini-embedding-001",
-            google_api_key=GEMINI_API_KEY,
+        judge_embeddings = LangchainEmbeddingsWrapper(
+            OllamaEmbeddings(
+                model=OLLAMA_EMBEDDING_MODEL,
+                base_url=OLLAMA_BASE_URL,
+            )
         )
-    )
+    else:
+        if not GEMINI_API_KEY:
+            print("❌ GEMINI_API_KEY chưa được set!")
+            sys.exit(1)
+
+        try:
+            from langchain_google_genai import (
+                ChatGoogleGenerativeAI,
+                GoogleGenerativeAIEmbeddings,
+            )
+        except ImportError:
+            print("❌ Thiếu langchain-google-genai. Chạy: pip install langchain-google-genai")
+            sys.exit(1)
+
+        print("\n🔧 Khởi tạo Gemini LLM judge cho RAGAS...")
+
+        judge_llm = LangchainLLMWrapper(
+            ChatGoogleGenerativeAI(
+                model="gemini-2.5-flash",
+                google_api_key=GEMINI_API_KEY,
+                temperature=0,
+            )
+        )
+        judge_embeddings = LangchainEmbeddingsWrapper(
+            GoogleGenerativeAIEmbeddings(
+                model="gemini-embedding-001",
+                google_api_key=GEMINI_API_KEY,
+            )
+        )
 
     # Gán LLM và embeddings cho từng metric
     metrics = [faithfulness, answer_relevancy, context_precision, context_recall]
     for metric in metrics:
-        metric.llm = gemini_llm
+        metric.llm = judge_llm
         if hasattr(metric, 'embeddings'):
-            metric.embeddings = gemini_embeddings
+            metric.embeddings = judge_embeddings
 
     # Chuyển đổi sang HuggingFace Dataset (format mà RAGAS yêu cầu)
     # contexts phải là list[str] cho mỗi sample

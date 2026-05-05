@@ -23,7 +23,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 export const RETRIEVAL_VERIFIER_PROMPT = ChatPromptTemplate.fromMessages([
   [
     'system',
-    `/no_think Bạn là Retrieval Verifier cho hệ thống tìm kiếm hoạt động CTXH tại BK TP.HCM.
+    `Bạn là Retrieval Verifier cho hệ thống tìm kiếm hoạt động CTXH tại BK TP.HCM.
 
 NHIỆM VỤ: Tìm kiếm ban đầu trả về 0 kết quả. Bạn cần đề xuất câu tìm kiếm ngữ nghĩa đơn giản hơn để thử lại.
 

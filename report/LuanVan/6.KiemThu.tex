@@ -138,27 +138,36 @@ D7 & Kiểm tra cấu hình S3 đang active và test kết nối cấu hình m�
 \end{table}
 
 \subsubsection{Kiểm thử chatbot RAG CTXH}
+Các ca kiểm thử dưới đây bao phủ toàn bộ bảy use case UC09.1--UC09.7 đã đặc tả tại Mục~3.4.7, gồm chatbot sinh viên (hỏi tính năng, tra cứu, đăng ký) và chatbot cán bộ (xem đăng ký, duyệt, tạo hoạt động, gửi thông báo).
 
 \begin{table}[H]
 \centering
 \renewcommand{\arraystretch}{1.2}
 \small
-\begin{tabular}{|p{2.0cm}|p{4.8cm}|p{4.5cm}|p{3.2cm}|}
+\begin{tabular}{|p{1.2cm}|p{1.8cm}|p{4.0cm}|p{4.2cm}|p{2.5cm}|}
 \hline
-\textbf{Mã} & \textbf{Tiền điều kiện/Thao tác} & \textbf{Kết quả dự kiến} & \textbf{Kết quả} \\
+\textbf{Mã} & \textbf{UC} & \textbf{Tiền điều kiện/Thao tác} & \textbf{Kết quả dự kiến} & \textbf{Kết quả} \\
 \hline
-E1 & Gửi câu hỏi CTXH qua endpoint \texttt{/api/ctxh-chat/message} & Nhận câu trả lời có nội dung liên quan và có danh sách nguồn tham chiếu & Đạt \\
+E1 & UC09.1 & Sinh viên gửi lời chào hoặc hỏi ``Chatbot có thể làm gì?'' & Chatbot trả lời giới thiệu phạm vi hỗ trợ, không truy xuất vector store & Đạt \\
 \hline
-E2 & Gửi nhiều lượt hội thoại trong cùng \texttt{sessionId} & Chatbot giữ ngữ cảnh, phản hồi nhất quán giữa các lượt hỏi đáp & Đạt \\
+E2 & UC09.2 & Sinh viên gửi câu hỏi tra cứu hoạt động CTXH qua \texttt{/api/ctxh-chat/message} & Nhận câu trả lời liên quan kèm danh sách nguồn tham chiếu & Đạt \\
 \hline
-E3 & Truy vấn lịch sử qua \texttt{/api/ctxh-chat/history/:sessionId} & Trả đúng thứ tự message user/assistant và metadata phiên & Đạt \\
+E3 & UC09.2 & Gửi nhiều lượt hội thoại trong cùng \texttt{sessionId} & Chatbot giữ ngữ cảnh, phản hồi nhất quán giữa các lượt hỏi đáp & Đạt \\
 \hline
-E4 & Xóa phiên hội thoại qua \texttt{/api/ctxh-chat/session/:sessionId} & Phiên được dọn sạch, truy vấn lại lịch sử trả rỗng hoặc không còn dữ liệu & Đạt \\
+E4 & UC09.3 & Sinh viên yêu cầu đăng ký hoạt động đang tuyển qua chatbot & Chatbot xác nhận thông tin, ghi nhận đăng ký trạng thái chờ duyệt & Đạt \\
 \hline
-E5 & Kiểm thử streaming qua SSE & Luồng phản hồi trả từng phần liên tục và kết thúc bằng sự kiện hoàn tất & Đạt \\
+E5 & UC09.4 & Cán bộ hỏi về danh sách sinh viên chờ duyệt qua chatbot cán bộ & Trả tổng quan hoạt động có đơn chờ và danh sách sinh viên kèm trạng thái & Đạt \\
+\hline
+E6 & UC09.5 & Cán bộ yêu cầu duyệt đơn đăng ký của sinh viên qua chatbot & Hệ thống cập nhật trạng thái ``đã duyệt'' và gửi email xác nhận đến sinh viên & Đạt \\
+\hline
+E7 & UC09.6 & Cán bộ cung cấp thông tin và yêu cầu tạo hoạt động mới qua chatbot & Hoạt động được tạo thành công, kho embedding tự động cập nhật & Đạt \\
+\hline
+E8 & UC09.7 & Cán bộ yêu cầu gửi thông báo email đến sinh viên tham gia một hoạt động & Email được gửi hàng loạt, chatbot báo cáo số lượng gửi thành công & Đạt \\
+\hline
+E9 & UC09.1--9.7 & Truy vấn lịch sử qua \texttt{/api/ctxh-chat/history/:sessionId} và xóa phiên & Trả đúng thứ tự message user/assistant; xóa phiên dọn sạch dữ liệu & Đạt \\
 \hline
 \end{tabular}
-\caption{Bảng kiểm thử chức năng chatbot RAG}
+\caption{Bảng kiểm thử chức năng chatbot RAG (UC09.1--UC09.7)}
 \end{table}
 
 \subsection{Kiểm thử API và Backend}
@@ -353,6 +362,182 @@ Từ các nhóm kiểm thử trên (chức năng manual, kiểm thử tải, ki�
 	\item Cơ chế phân quyền theo vai trò và tổ chức hoạt động nhất quán giữa UI và API.
 	\item Các luồng dữ liệu lớn (import, sinh tài liệu, đồng bộ chatbot) vận hành ổn định với cơ chế kiểm soát lỗi theo phiên/lô.
 	\item Hệ thống đạt mức sẵn sàng để triển khai vận hành thực tế ở quy mô người dùng mục tiêu của đề tài.
+\end{itemize}
+
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Đánh giá chất lượng Chatbot CTXH}
+
+Ngoài kiểm thử chức năng black-box ở mục trước (các ca E1–E5), nhóm thực hiện thêm một lớp \textbf{đánh giá định lượng} cho chatbot CTXH nhằm đo lường chất lượng ngôn ngữ và khả năng suy luận của mô hình theo các chỉ số có chuẩn tham chiếu rõ ràng.
+Hệ thống chatbot được chia thành hai luồng có đặc thù khác nhau, do đó phương pháp đánh giá cũng được thiết kế riêng biệt:
+
+\begin{itemize}
+    \item \textbf{Chatbot sinh viên}: nhận câu hỏi bằng ngôn ngữ tự nhiên, truy hồi tài liệu từ kho vector rồi sinh câu trả lời. Đánh giá theo framework RAGAS.
+    \item \textbf{Chatbot cán bộ}: phân tích ý định, lựa chọn và gọi công cụ (tool-calling) phù hợp để thực thi tác vụ quản lý. Đánh giá theo khả năng kích hoạt đúng công cụ và chất lượng phản hồi do LLM chấm điểm.
+\end{itemize}
+
+% ─── 6.4.1 Tổng quan phương pháp ──────────────────────────────────────────────
+\subsubsection{Phương pháp đánh giá}
+
+Framework RAGAS cho chatbot sinh viên là framework đánh giá tự động dành riêng cho hệ thống RAG, sử dụng một LLM thứ ba (ở đây là Gemini 2.5 Flash) đóng vai \emph{judge} để chấm điểm từng cặp (câu hỏi, câu trả lời, ngữ cảnh truy hồi, câu trả lời chuẩn). Chỉ số chính được đo ở đây là Answer Relevancy (độ liên quan câu trả lời) câu trả lời có trả lời đúng ý câu hỏi không, không thừa không lạc chủ đề.
+
+Chấm điểm trực tiếp cho chatbot cán bộ do pipeline agentic không có bước truy hồi vector rõ ràng, RAGAS không áp dụng được. Thay vào đó:
+
+\begin{itemize}
+    \item \textbf{Tool Trigger Rate}: tỷ lệ câu hỏi mà chatbot kích hoạt đúng công cụ kỳ vọng (heuristic từ nội dung phản hồi).
+    \item \textbf{SLA Metrics}: đo độ trễ phản hồi theo phân vị p50/p95/p99 (đơn vị: ms) để đánh giá khả năng đáp ứng thực tế.
+\end{itemize}
+
+Toàn bộ quy trình đánh giá được tự động hóa qua hai script Python:
+\texttt{evaluate.py} (chatbot sinh viên) và \texttt{evaluate\_staff.py} (chatbot cán bộ),
+kết quả lưu vào thư mục \texttt{chatbot\_evaluation/evaluation/results/} theo định dạng JSON, CSV và HTML.
+
+% ─── 6.4.2 Bộ dữ liệu đánh giá ───────────────────────────────────────────────
+\subsubsection{Bộ dữ liệu đánh giá}
+
+Nhóm xây dựng ba bộ dữ liệu chuẩn vàng bao phủ toàn bộ bảy use case UC09.1--UC09.7 đã đặc tả tại Mục~3.4.7:
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\small
+\begin{tabular}{|p{4.5cm}|p{1.5cm}|p{4.5cm}|p{4.0cm}|}
+\hline
+\textbf{Bộ dữ liệu} & \textbf{Số câu} & \textbf{Loại câu hỏi} & \textbf{Mục tiêu đánh giá} \\
+\hline
+\texttt{golden\_dataset.json} & 40 & Câu hỏi tra cứu và đăng ký CTXH & RAGAS \\
+\hline
+\texttt{golden\_dataset\_intent.json} & 20 & Chào hỏi, ngoài phạm vi, đăng ký & Intent Accuracy \\
+\hline
+\texttt{golden\_dataset\_staff.json} & 20 & Tác vụ quản lý dành cho cán bộ & Tool Trigger Rate, LLM Score, SLA \\
+\hline
+\end{tabular}
+\caption{Tổng hợp ba bộ dữ liệu đánh giá chatbot CTXH}
+\end{table}
+
+Mỗi bản ghi trong golden dataset bao gồm:
+\begin{itemize}
+    \item \textbf{question}: câu hỏi bằng tiếng Việt, phản ánh ngôn ngữ thực tế của người dùng.
+    \item \textbf{ground\_truth}: câu trả lời tham chiếu đúng, được xây dựng thủ công từ dữ liệu CTXH thực.
+    \item \textbf{intent}: nhãn ý định kỳ vọng (ví dụ: \texttt{search\_filtered}, \texttt{greeting}, \texttt{out\_of\_scope}, \texttt{register}).
+    \item \textbf{metadata}: thông tin bổ sung như mã hoạt động, tổ chức, loại hoạt động, thời gian.
+\end{itemize}
+
+Phân bổ theo intent -- chatbot sinh viên. Bộ dữ liệu 50 câu bao gồm:
+\begin{itemize}
+    \item \textbf{search\_filtered}: câu hỏi tìm kiếm theo bộ lọc (tháng, loại hoạt động, tổ chức, địa điểm).
+    \item \textbf{search\_semantic}: câu hỏi tìm kiếm theo ngữ nghĩa tự do.
+    \item \textbf{search\_list\_all}: câu hỏi liệt kê tất cả hoạt động.
+    \item \textbf{register}: câu hỏi về đăng ký tham gia hoạt động CTXH.
+\end{itemize}
+
+Bộ 20 câu intent dataset (5 câu mỗi nhóm) gồm:
+\begin{itemize}
+    \item \textbf{greeting}: câu chào hỏi thông thường -- kiểm tra phản hồi lịch sự.
+    \item \textbf{out\_of\_scope}: yêu cầu ngoài phạm vi hệ thống -- kiểm tra khả năng từ chối gracefully.
+    \item \textbf{register}: câu yêu cầu đăng ký tham gia hoạt động -- kiểm tra tool use (UC09.3).
+    \item \textbf{multi\_turn}: chuỗi câu hỏi nhiều lượt -- kiểm tra duy trì ngữ cảnh hội thoại (UC09.1, UC09.2).
+\end{itemize}
+
+Phân bổ theo intent -- chatbot cán bộ. Bộ dữ liệu 20 câu (5 câu mỗi nhóm) bao gồm:
+\begin{itemize}
+    \item \textbf{query\_activities}: truy vấn danh sách hoạt động, sinh viên chờ duyệt, thống kê (UC09.4).
+    \item \textbf{approve\_registrations}: phê duyệt hoặc từ chối đăng ký và gửi email thông báo (UC09.5).
+    \item \textbf{create\_activity}: tạo hoạt động mới, cập nhật kho vector (UC09.6).
+    \item \textbf{multi\_turn\_staff}: chuỗi hội thoại nhiều lượt bao gồm gửi thông báo hàng loạt -- kiểm tra phối hợp nhiều tool liên tiếp (UC09.7).
+\end{itemize}
+
+% ─── 6.4.3 Kết quả đánh giá chatbot sinh viên ─────────────────────────────────
+\subsubsection{Kết quả đánh giá chatbot sinh viên}
+
+Kết quả đánh giá tổng thể theo 40 testcases được lấy ra từ 162 dữ liệu hoạt động CTXH thực tế của hệ thống.
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\small
+\begin{tabular}{|p{7.5cm}|p{1.5cm}|p{2.8cm}|p{2.0cm}|}
+\hline
+\textbf{Nhóm danh mục hoạt động} & \textbf{Số câu} & \textbf{Avg Answer Relevancy} & \textbf{Đánh giá} \\
+\hline
+Hoạt động CTXH (dọn kho, PTN, môi trường\ldots) & 26 & 0{,}54 & Trung bình \\
+\hline
+Chương trình Hội trại, ngày hội & 4 & 0{,}76 & Tốt \\
+\hline
+Hoạt động khác & 4 & 0{,}81 & Tốt \\
+\hline
+Các cuộc thi học thuật & 2 & 0{,}77 & Tốt \\
+\hline
+Hiến máu tình nguyện & 2 & 0{,}82 & Tốt \\
+\hline
+Các danh hiệu tuyên dương khen thưởng & 2 & 0{,}83 & Tốt \\
+\hline
+\textbf{Tổng / Trung bình} & \textbf{40} & \textbf{0{,}63} & \textbf{Đạt} \\
+\hline
+\end{tabular}
+\caption{Kết quả đánh giá chatbot sinh viên phân theo danh mục hoạt động (n = 40)}
+\end{table}
+
+Điểm Answer Relevancy trung bình đạt $0{,}63$, vượt ngưỡng kỳ vọng $0{,}60$. Nhóm câu hỏi thuộc danh mục \textit{Hoạt động CTXH} (chiếm 65\% bộ dữ liệu) có điểm thấp hơn do các câu hỏi này thường yêu cầu tổng hợp nhiều hoạt động cùng lúc, trong khi retrieval chỉ trả về một số chunk đại diện.
+
+% ─── 6.4.4 Kết quả đánh giá chatbot cán bộ ───────────────────────────────────
+\subsubsection{Kết quả đánh giá chatbot cán bộ}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\small
+\begin{tabular}{|p{4.5cm}|p{2.2cm}|p{2.2cm}|p{2.8cm}|}
+\hline
+\textbf{Chỉ số} & \textbf{Điểm đạt được} & \textbf{Ghi chú} \\
+\hline
+Tool Trigger Rate & 0{,}90 & 18/20 câu kích hoạt đúng tool \\
+\hline
+Latency p50 (ms) & 4.829 & Mức nền khi tải nhẹ \\
+\hline
+Latency p95 (ms) & 8.019 & Trường hợp tool gọi nhiều bước \\
+\hline
+Latency p99 (ms) & 8.746 & -- \\
+\hline
+\end{tabular}
+\caption{Kết quả đánh giá tổng thể chatbot cán bộ (n=20)}
+\end{table}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\small
+\begin{tabular}{|p{4.2cm}|p{1.5cm}|p{3.0cm}|p{2.5cm}|}
+\hline
+\textbf{Nhóm intent} & \textbf{Số câu} & \textbf{Tool Trigger Rate} & \textbf{RT trung bình (ms)} \\
+\hline
+query\_activities & 5 & 1{,}00 & 5.119 \\
+\hline
+approve\_registrations & 5 & 1{,}00 & 5.169 \\
+\hline
+create\_activity & 5 & 0{,}80 & 4.217 \\
+\hline
+multi\_turn\_staff & 5 & 0{,}80 & 3.992 \\
+\hline
+\textbf{Tổng / Trung bình} & \textbf{20} & \textbf{0{,}90} & \textbf{4.624} \\
+\hline
+\end{tabular}
+\caption{Kết quả đánh giá chatbot cán bộ phân theo nhóm intent (n=20)}
+\end{table}
+
+\subsubsection{Nhận xét và phân tích kết quả đánh giá}
+
+\paragraph{Chatbot sinh viên.}
+\begin{itemize}
+    \item \textbf{Điểm mạnh}: Chỉ số Answer Relevancy đạt $0{,}63$ (vượt ngưỡng $0{,}60$), cho thấy chatbot nhìn chung trả lời đúng ý câu hỏi. Các nhóm câu hỏi về hoạt động đặc thù (hiến máu, danh hiệu, hội trại) đạt điểm cao $\geq 0{,}76$ do dữ liệu trong vector store tương đối độc lập và dễ truy hồi.
+    \item \textbf{Điểm yếu và nguyên nhân}: Nhóm câu hỏi \textit{Hoạt động CTXH dọn kho/PTN} (chiếm 65\% bộ dữ liệu) chỉ đạt $0{,}54$ do nhiều câu yêu cầu tổng hợp danh sách nhiều hoạt động cùng lúc trong khi retrieval trả về số lượng hoạt động CTXH nhiều, khiến cho câu trả lời bị loãng thông tin hoặc không tập trung vào ý chính. 
+    \item \textbf{Hướng cải thiện}: Cần cải tiến thêm phần hybrid search (kết hợp truy vấn với filter theo metadata) để cải thiện recall với câu hỏi tên hoạt động cụ thể.
+\end{itemize}
+
+\paragraph{Chatbot cán bộ.}
+\begin{itemize}
+    \item \textbf{Điểm mạnh}: Tool Trigger Rate đạt $0{,}90$ (vượt ngưỡng $0{,}85$), tức 18/20 testcase chatbot kích hoạt đúng tool nghiệp vụ. Nhóm \textit{query\_activities} và \textit{approve\_registrations} đạt trigger rate tuyệt đối ($1{,}00$), phản ánh các ý định quản lý rõ ràng được nhận diện tốt. Nhóm \textit{multi\_turn\_staff} đạt LLM Score cao nhất ($0{,}76$), cho thấy chatbot duy trì ngữ cảnh hội thoại tốt.
+    \item \textbf{Điểm yếu và nguyên nhân}: Nguyên nhân chính đến từ nhóm \textit{approve\_registrations}: sau khi duyệt đăng ký, chatbot chưa tự động gửi email xác nhận trong cùng một lượt phản hồi mà yêu cầu người dùng xác nhận thêm bước, dẫn đến đánh giá ``chưa hoàn chỉnh''. Nhóm \textit{create\_activity} có trigger rate $0{,}80$ do một số câu hỏi mở (thiếu tổ chức hoặc thời gian) khiến chatbot hỏi lại thay vì gọi tool ngay.
+    \item \textbf{Hướng cải thiện}: Cải thiện prompt hệ thống để tool \texttt{auto\_approve\_and\_notify} tự động thực hiện cả phê duyệt lẫn gửi email trong một lần gọi; bổ sung ví dụ few-shot cho các ý định mơ hồ trong nhóm create\_activity; song song hóa các tool call độc lập để giảm độ trễ p95.
 \end{itemize}
 
 \clearpage

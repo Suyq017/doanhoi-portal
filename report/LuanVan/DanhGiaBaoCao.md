@@ -30,7 +30,7 @@ Bản thảo hiện tại đã ở mức tốt và đủ nền để bảo vệ.
 
 ## 3.5) Công việc vừa hoàn tất (24/04/2026)
 - ✅ Sửa lại toàn bộ diagram/caption bị lệch nghĩa trong Chương 3:
-  - Activity UC07_02: đổi caption từ "Chấm điểm sinh viên từ file Excel" → "Thêm danh sách sinh viên từ file Excel"
+  - Activity UC07_02: đổi caption từ "Chấm điểm sinh viên từ file Excel" -> "Thêm danh sách sinh viên từ file Excel"
   - Sequence UC08: đổi thành "Tạo, cấu hình, điền và nộp biểu mẫu" (end-to-end thay vì chỉ cấu hình)
   - Cập nhật mô tả đi kèm từng diagram để khớp đúng nội dung hình vẽ
 - ✅ Đồng bộ actor trong Use Case (UC06, UC07.4, UC07.6, UC08) với diagram tương ứng
@@ -158,7 +158,7 @@ Bản hiện tại đã tốt và có thể bảo vệ ổn.
 
 ### 2. Bổ sung hình/metric cho Chương 7 - Triển khai & Vận hành
 **Cần thêm 3 ảnh hoặc diagram:**
-- (7.1) Sơ đồ topology triển khai dự kiến (request flow từ client → nginx → docker → backend → DB)
+- (7.1) Sơ đồ topology triển khai dự kiến (request flow từ client -> nginx -> docker -> backend -> DB)
 - (7.2) Ảnh dashboard giám sát ở môi trường local/staging (Prometheus/Grafana) hoặc ảnh cấu hình monitoring đã chạy được
 - (7.3) Bảng tài nguyên dự kiến khi vận hành (CPU, RAM, storage, ngưỡng người dùng đồng thời)
 
