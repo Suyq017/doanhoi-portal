@@ -45,6 +45,15 @@ export class NodemailerService implements OnModuleInit {
     this.logger.log('Nodemailer transporter initialized');
   }
 
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+
   async sendApprovalEmail(data: ApprovalEmailData): Promise<boolean> {
     const { bcc, activityName, activityStartDate, activityLocation, totalDays, customMessage } = data;
 
@@ -58,18 +67,22 @@ export class NodemailerService implements OnModuleInit {
         }).format(new Date(activityStartDate))
       : 'Chưa cập nhật';
 
+    const safeName = this.escapeHtml(activityName);
+    const safeLocation = activityLocation ? this.escapeHtml(activityLocation) : null;
+    const safeCustomMessage = customMessage ? this.escapeHtml(customMessage) : null;
+
     const infoRows = [
-      `<tr><td style="padding:6px 0;color:#555;">Tên hoạt động</td><td style="padding:6px 0;font-weight:bold;">${activityName}</td></tr>`,
-      activityLocation ? `<tr><td style="padding:6px 0;color:#555;">Địa điểm</td><td style="padding:6px 0;">${activityLocation}</td></tr>` : '',
+      `<tr><td style="padding:6px 0;color:#555;">Tên hoạt động</td><td style="padding:6px 0;font-weight:bold;">${safeName}</td></tr>`,
+      safeLocation ? `<tr><td style="padding:6px 0;color:#555;">Địa điểm</td><td style="padding:6px 0;">${safeLocation}</td></tr>` : '',
       `<tr><td style="padding:6px 0;color:#555;">Số ngày CTXH</td><td style="padding:6px 0;">${totalDays} ngày</td></tr>`,
     ].filter(Boolean).join('');
 
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
         <h2 style="color:#1a73e8;">Xác nhận Đăng ký Hoạt động CTXH</h2>
-        <p>Đăng ký của bạn vào hoạt động <strong>"${activityName}"</strong> đã được <strong style="color:#2e7d32;">CHẤP THUẬN</strong>.</p>
+        <p>Đăng ký của bạn vào hoạt động <strong>"${safeName}"</strong> đã được <strong style="color:#2e7d32;">CHẤP THUẬN</strong>.</p>
         <table style="width:100%;border-collapse:collapse;margin:16px 0;">${infoRows}</table>
-        ${customMessage ? `<div style="margin-top:16px;padding:12px 16px;background:#f1f8e9;border-left:4px solid #66bb6a;border-radius:4px;white-space:pre-line;">${customMessage}</div>` : ''}
+        ${safeCustomMessage ? `<div style="margin-top:16px;padding:12px 16px;background:#f1f8e9;border-left:4px solid #66bb6a;border-radius:4px;white-space:pre-line;">${safeCustomMessage}</div>` : ''}
         <hr style="margin:24px 0;" />
         <p style="font-size:12px;color:#666;">
           Email này được gửi tự động từ Hệ thống Quản lý CTXH. Vui lòng không reply trực tiếp.
@@ -99,13 +112,16 @@ export class NodemailerService implements OnModuleInit {
 
     if (!bcc.length) return true;
 
+    const safeName = this.escapeHtml(activityName);
+    const safeReason = this.escapeHtml(reason);
+
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
-        <h2 style="color:#c62828;">Thông báo Từ chối Đăng ký Hoạt động CTXH</h2>
-        <p>Đăng ký của bạn vào hoạt động <strong>"${activityName}"</strong> đã <strong style="color:#c62828;">KHÔNG ĐƯỢC CHẤP THUẬN</strong>.</p>
+        <h2 style="color:#c62828;">Đảng ký Hoạt động CTXH</h2>
+        <p>Đăng ký của bạn vào hoạt động <strong>"${safeName}"</strong> đã <strong style="color:#c62828;">KHÔNG ĐƯỢC CHẤP THUẬN</strong>.</p>
         <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-          <tr><td style="padding:6px 0;color:#555;">Tên hoạt động</td><td style="padding:6px 0;font-weight:bold;">${activityName}</td></tr>
-          <tr><td style="padding:6px 0;color:#555;">Lý do</td><td style="padding:6px 0;">${reason}</td></tr>
+          <tr><td style="padding:6px 0;color:#555;">Tên hoạt động</td><td style="padding:6px 0;font-weight:bold;">${safeName}</td></tr>
+          <tr><td style="padding:6px 0;color:#555;">Lý do</td><td style="padding:6px 0;">${safeReason}</td></tr>
         </table>
         <p>Nếu có thắc mắc, vui lòng liên hệ nhân viên phụ trách.</p>
         <hr style="margin:24px 0;" />
@@ -137,16 +153,22 @@ export class NodemailerService implements OnModuleInit {
 
     if (!bcc.length) return true;
 
+    const safeSubject = this.escapeHtml(subject);
+    const safeBody = this.escapeHtml(body);
+    const safeName = activityName ? this.escapeHtml(activityName) : null;
+
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">
-        ${activityName ? `<p style="margin-bottom:4px;color:#555;font-size:13px;">Hoạt động: <strong>${activityName}</strong></p>` : ''}
-        <h2 style="color:#1a73e8;">${subject}</h2>
-        <div style="margin:16px 0;white-space:pre-line;line-height:1.6;">${body}</div>
+        ${safeName ? `<p style="margin-bottom:4px;color:#555;font-size:13px;">Hoạt động: <strong>${safeName}</strong></p>` : ''}
+        <h2 style="color:#1a73e8;">${safeSubject}</h2>
+        <div style="margin:16px 0;white-space:pre-line;line-height:1.6;">${safeBody}</div>
         <hr style="margin:24px 0;" />
         <p style="font-size:12px;color:#666;">
           Email này được gửi tự động từ Hệ thống Quản lý CTXH. Vui lòng không reply trực tiếp.
         </p>
       </div>`;
+
+    const activityPart = safeName ? ' - ' + activityName : '';
 
     const senderAddress = this.configService.get<string>('MAIL_USER');
 
@@ -155,7 +177,7 @@ export class NodemailerService implements OnModuleInit {
         from: `"${this.configService.get('MAIL_FROM_NAME', 'Hệ thống CTXH')}" <${senderAddress}>`,
         to: senderAddress,
         bcc: bcc,
-        subject: `[CTXH${activityName ? ` - ${activityName}` : ''}] ${subject}`,
+        subject: `[CTXH${activityPart}] ${subject}`,
         html,
       });
       this.logger.log(`Notification email sent (bcc count: ${bcc.split(',').length}) | subject: "${subject}"`);

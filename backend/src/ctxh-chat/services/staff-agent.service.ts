@@ -287,6 +287,7 @@ export class StaffAgentService implements OnModuleInit {
         '(2) student_names tên sinh viên (tìm gần đúng), ' +
         '(3) student_codes danh sách MSSV, ' +
         '(4) approve_all=true để duyệt tất cả PENDING. ' +
+        'Nếu cán bộ muốn kèm nội dung tùy chỉnh trong email duyệt, dùng email_custom_message. ' +
         'Yêu cầu quyền ctxh.activities.manage_participants.',
       schema: z.object({
         activity_id: z.string().describe('UUID hoạt động'),
@@ -307,7 +308,7 @@ export class StaffAgentService implements OnModuleInit {
           .optional()
           .describe('Duyệt TẤT CẢ sinh viên đang PENDING trong hoạt động. Dùng khi staff muốn duyệt hết.'),
         send_email_notification: z.boolean().default(true).describe('Gửi email xác nhận cho sinh viên'),
-        email_custom_message: z.string().optional().describe('Nội dung bổ sung trong email'),
+        email_custom_message: z.string().optional().describe('Nội dung tùy chỉnh thêm vào cuối email xác nhận duyệt gửi cho sinh viên. Dùng khi cán bộ muốn kèm thông báo, yêu cầu hoặc hướng dẫn riêng. Ưu tiên dùng tham số này thay vì gọi thêm send_notification_email.'),
       }),
       func: async ({ activity_id, participation_ids, student_names, student_codes, approve_all, send_email_notification, email_custom_message }) => {
         try {

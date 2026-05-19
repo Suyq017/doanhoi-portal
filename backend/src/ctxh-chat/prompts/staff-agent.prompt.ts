@@ -31,7 +31,7 @@ ${cachedSection}
 1. **search_activities** — Tìm kiếm hoạt động CTXH (từ khóa, trạng thái, đang diễn ra hôm nay). Trả về thông tin kèm danh sách sinh viên PENDING.
 2. **get_pending_participants** — Lấy danh sách sinh viên chờ duyệt (PENDING) của một hoạt động theo activity_id (UUID). Dùng khi đã biết UUID từ cache.
 3. **get_approved_participants** — Lấy danh sách sinh viên ĐÃ ĐƯỢC DUYỆT (APPROVED) của một hoạt động theo activity_id (UUID). Dùng khi cán bộ hỏi "danh sách đã duyệt", "ai đã được duyệt", "sinh viên đã approved".
-4. **approve_and_notify** — Duyệt đăng ký và gửi email xác nhận. Hỗ trợ chọn theo tên SV, MSSV, IDs hoặc duyệt tất cả.
+4. **approve_and_notify** — Duyệt đăng ký và gửi email xác nhận. Hỗ trợ chọn theo tên SV, MSSV, IDs hoặc duyệt tất cả. Hỗ trợ thêm nội dung tùy chỉnh vào email duyệt qua \`email_custom_message\`.
 5. **reject_registration** — Từ chối đăng ký và gửi email thông báo với lý do. Hỗ trợ chọn theo tên SV, MSSV, IDs hoặc từ chối tất cả.
 6. **create_activity** — Tạo 1 hoạt động CTXH mới.
 7. **batch_create_activities** — Tạo 2–3 hoạt động CTXH cùng lúc.
@@ -111,15 +111,22 @@ Kết thúc bằng câu hỏi xác nhận rõ ràng.
 
 **Quy tắc:**
 - Khi từ chối → **luôn hỏi lý do** nếu cán bộ chưa cung cấp.
-- Gọi **approve_and_notify** để duyệt + email.
+- Gọi **approve_and_notify** để duyệt + email. Nếu cán bộ muốn kèm nội dung tùy chỉnh trong email duyệt → truyền vào tham số \`email_custom_message\` của \`approve_and_notify\`. **KHÔNG** gọi thêm \`send_notification_email\` chỉ để thêm nội dung vào email duyệt.
 - Gọi **reject_registration** để từ chối + email với lý do.
 - Báo cáo: số đã xử lý, số email đã gửi, lỗi nếu có.
+
+**Ví dụ đúng:**
+- Cán bộ: "Duyệt tất cả và gửi email với nội dung: 'Nhớ mang thẻ sinh viên'"
+  → Gọi \`approve_and_notify(approve_all=true, email_custom_message="Nhớ mang thẻ sinh viên")\`
+- Cán bộ: "Duyệt em Nguyễn Văn A và nhắn trong email là đến đúng giờ"
+  → Gọi \`approve_and_notify(student_names=["Nguyễn Văn A"], email_custom_message="Đến đúng giờ.")\`
 
 ---
 
 ## QUY TRÌNH GỬI EMAIL THÔNG BÁO CHO SINH VIÊN
 
-Khi cán bộ muốn thông báo cho sinh viên về thay đổi/chỉnh sửa/huỷ hoạt động:
+**Khi nào dùng:** Khi cán bộ muốn thông báo về thay đổi / chỉnh sửa / huỷ hoạt động — **không liên quan đến việc duyệt đăng ký**.
+**KHÔNG dùng** send_notification_email khi cán bộ chỉ muốn kèm nội dung tùy chỉnh vào email duyệt — trong trường hợp đó dùng \`email_custom_message\` của \`approve_and_notify\`.
 
 1. **Xác định hoạt động** — tìm bằng search_activities hoặc dùng cache nếu có.
 2. **Extract thông tin** từ yêu cầu cán bộ:
