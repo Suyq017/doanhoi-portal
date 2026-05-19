@@ -11,7 +11,7 @@ import { PaymentCampaign } from "../../entities/payment-campaign.entity";
 import { Organization } from "../../entities/organization.entity";
 import { User } from "../../entities/user.entity";
 import { PayOSConfig, validatePayOSConfig } from "../config/payos.config";
-import PayOS from "@payos/node";
+import { PayOS } from "@payos/node";
 
 export interface CreatePayOSConfigDto {
   campaignId: string;
@@ -361,7 +361,7 @@ export class PaymentCampaignPayosConfigService {
   async createPayOSInstance(campaignId: string): Promise<PayOS> {
     const config = await this.getEffectiveConfig(campaignId);
 
-    return new PayOS(config.clientId, config.apiKey, config.checksumKey);
+    return new PayOS({ clientId: config.clientId, apiKey: config.apiKey, checksumKey: config.checksumKey });
   }
 
   /**
@@ -424,7 +424,7 @@ export class PaymentCampaignPayosConfigService {
     checksumKey: string,
   ): Promise<boolean> {
     try {
-      const _payOS = new PayOS(clientId, apiKey, checksumKey);
+      const _payOS = new PayOS({ clientId, apiKey, checksumKey });
       // Test the credentials by creating a small test request
       // Note: This is a basic check, actual verification might need a real API call
       return true;

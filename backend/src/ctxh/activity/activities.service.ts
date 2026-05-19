@@ -41,7 +41,10 @@ interface FindAllOptions {
   start_date?: string;
   end_date?: string;
   user_id?: string;
+  user_type?: 'student' | 'staff';
 }
+
+const STUDENT_VISIBLE_ACTIVITY_STATUSES = ["ACTIVE", "COMPLETED"];
 
 @Injectable()
 export class ActivitiesService {
@@ -158,6 +161,7 @@ export class ActivitiesService {
       start_date,
       end_date,
       user_id,
+      user_type,
     } = options;
 
     const skip = (page - 1) * limit;
@@ -275,6 +279,13 @@ export class ActivitiesService {
     // Filter by status if provided
     if (status) {
       queryBuilder.andWhere("activity.status = :status", { status });
+    }
+
+    // Students should only see active and completed activities, even when filtering by status
+    if (user_type === 'student') {
+      queryBuilder.andWhere("activity.status IN (:...visibleStatuses)", {
+        visibleStatuses: STUDENT_VISIBLE_ACTIVITY_STATUSES,
+      });
     }
 
     // Filter by search term if provided (search in name, description, location, and organization name)
@@ -471,7 +482,7 @@ export class ActivitiesService {
     };
   }
 
-  async findOne(id: string): Promise<ActivityResponseDto> {
+  async findOne(id: string, userType?: 'student' | 'staff'): Promise<ActivityResponseDto> {
     const activity = await this.activityRepository
       .createQueryBuilder("activity")
       .leftJoinAndSelect("activity.category", "category")
@@ -481,6 +492,10 @@ export class ActivitiesService {
       .getOne();
 
     if (!activity) {
+      throw new NotFoundException(`Hoạt động với ID ${id} không tồn tại`);
+    }
+
+    if (userType === 'student' && !STUDENT_VISIBLE_ACTIVITY_STATUSES.includes(activity.status)) {
       throw new NotFoundException(`Hoạt động với ID ${id} không tồn tại`);
     }
 

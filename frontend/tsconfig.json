@@ -5,7 +5,8 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
-    "types": ["node"],
+    "types": ["node", "vitest/globals"],
+    "ignoreDeprecations": "5.0",
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -28,5 +29,13 @@
     }
   },
   "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
+    "src/test",
+    "src/mocks",
+    "src/setupTests.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -10,7 +10,7 @@ import {
 import { PaymentHistoryService } from "./services/payment-history.service";
 import { PaymentAssignmentService } from "./services/payment-assignment.service";
 
-@Controller("api/payment-admin")
+@Controller("payment-admin")
 export class PaymentAdminController {
   constructor(
     private readonly paymentHistoryService: PaymentHistoryService,

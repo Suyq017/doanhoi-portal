@@ -64,7 +64,7 @@ export class ClassesController {
     );
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="classes_template.xlsx"',
+      'attachment; filename="mau_danh_sach_lop.xlsx"',
     );
     res.send(templateBuffer);
   }

@@ -35,9 +35,9 @@
     "feeLevel": "Mức phí:",
     "amount": "Số tiền:",
     "payNow": "Thanh toán ngay",
+    "processing": "Đang xử lý...",
     "paid": "Đã thanh toán",
     "overdue": "Đã hết hạn thanh toán",
-    "processing": "Đang xử lý",
     "pending": "Chờ thanh toán"
   },
   "status": {

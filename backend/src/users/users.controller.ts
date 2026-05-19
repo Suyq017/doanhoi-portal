@@ -79,7 +79,7 @@ export class UsersController {
     );
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="users_import_template.xlsx"',
+      'attachment; filename="mau_danh_sach_thanh_vien.xlsx"',
     );
     res.send(buffer);
   }

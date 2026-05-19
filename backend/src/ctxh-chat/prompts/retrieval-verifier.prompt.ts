@@ -16,14 +16,14 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
  *   on task without hallucinating extra fields.
  * • The `supplementQuery` stripping rule is defined with a concrete example to
  *   anchor the model on the expected transformation.
- * • Verdict logic is rule-based (0 results → NEEDS_SUPPLEMENT), so the model's
+ * • Verdict logic is rule-based (0 results -> NEEDS_SUPPLEMENT), so the model's
  *   main job is just producing a good supplementQuery string.
  * • Output shape is enforced by `llm.withStructuredOutput(VerifierOutputSchema)`.
  */
 export const RETRIEVAL_VERIFIER_PROMPT = ChatPromptTemplate.fromMessages([
   [
     'system',
-    `/no_think Bạn là Retrieval Verifier cho hệ thống tìm kiếm hoạt động CTXH tại BK TP.HCM.
+    `Bạn là Retrieval Verifier cho hệ thống tìm kiếm hoạt động CTXH tại BK TP.HCM.
 
 NHIỆM VỤ: Tìm kiếm ban đầu trả về 0 kết quả. Bạn cần đề xuất câu tìm kiếm ngữ nghĩa đơn giản hơn để thử lại.
 
@@ -36,13 +36,13 @@ QUY TẮC:
 
 Ví dụ minh họa:
 • Câu hỏi: "Có hoạt động hiến máu nào ở cơ sở 1 tuần này không?"
-  → supplementQuery: "hoạt động hiến máu tình nguyện"
+  -> supplementQuery: "hoạt động hiến máu tình nguyện"
 
 • Câu hỏi: "Hoạt động tình nguyện của khoa Máy tính tháng 3"
-  → supplementQuery: "hoạt động tình nguyện CTXH"
+  -> supplementQuery: "hoạt động tình nguyện CTXH"
 
 • Câu hỏi: "Hội trại nào đang diễn ra hôm nay tại Thủ Đức?"
-  → supplementQuery: "chương trình hội trại ngày hội"`,
+  -> supplementQuery: "chương trình hội trại ngày hội"`,
   ],
   [
     'human',

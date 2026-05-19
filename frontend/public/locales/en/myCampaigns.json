@@ -27,6 +27,7 @@
     "feeLevel": "Fee level:",
     "amount": "Amount:",
     "payNow": "Pay now",
+    "processing": "Processing...",
     "paid": "Paid",
     "overdue": "Overdue",
     "processing": "Processing",

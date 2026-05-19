@@ -4,7 +4,6 @@ import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { LangChainConfig } from '../config/langchain.config';
 import { MetadataFilterSchema, MetadataFilters } from '../dto/filter-extraction.dto';
 import { FILTER_EXTRACTION_PROMPT } from '../prompts/filter-extraction.prompt';
-import { getCategoryListString, getCategoryKeywordMapString, VALID_CATEGORIES } from '../config/category.config';
 
 
 /**
@@ -39,7 +38,7 @@ export class CtxhFilterExtractionService implements OnModuleInit {
       this.llm = LangChainConfig.getLLM(this.configService);
       this.initialized = true;
 
-      const modelType = LangChainConfig.isUsingLocalModel(this.configService)
+      const modelType = LangChainConfig.isUsingLocalLLM(this.configService)
         ? 'Ollama'
         : 'Gemini';
       this.logger.log(`✅ Filter extraction service initialized (${modelType})`);
@@ -69,7 +68,7 @@ export class CtxhFilterExtractionService implements OnModuleInit {
 
     try {
       // Create a structured-output chain:
-      // prompt → LLM.withStructuredOutput(zodSchema)
+      // prompt -> LLM.withStructuredOutput(zodSchema)
       const structuredLlm = this.llm.withStructuredOutput(
         MetadataFilterSchema,
         { name: 'extract_metadata_filters' },
@@ -157,7 +156,6 @@ export class CtxhFilterExtractionService implements OnModuleInit {
   isEmpty(filters: MetadataFilters): boolean {
     return (
       (!filters.status || filters.status.length === 0) &&
-      // (!filters.category || filters.category.length === 0) &&
       (!filters.organizationKeywords || filters.organizationKeywords.length === 0) &&
       !filters.organizationLevel &&
       (!filters.locationRaw || filters.locationRaw.length === 0) &&

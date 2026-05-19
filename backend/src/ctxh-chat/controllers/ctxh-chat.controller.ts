@@ -21,10 +21,14 @@ import { UniversalEmbeddingsService } from '../services/universal-embeddings.ser
 import { UniversalLLMService } from '../services/universal-llm.service';
 import { CtxhVectorSyncService } from '../services/ctxh-vector-sync.service';
 import { ChatRequestDto, ChatResponseDto } from '../dto';
+import { ParticipationService } from '../../ctxh/activity/services/participation.service';
+import { UserContextService } from '../services/user-context.service';
+import { StaffAgentService } from '../services/staff-agent.service';
+import { FollowUpSuggestionsService } from '../services/follow-up-suggestions.service';
 import type { Request } from 'express';
 
 @ApiTags('ctxh-chat')
-@Controller('api/ctxh-chat')
+@Controller('ctxh-chat')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class CtxhChatController {
@@ -36,6 +40,10 @@ export class CtxhChatController {
     private readonly universalEmbeddingsService: UniversalEmbeddingsService,
     private readonly universalLLMService: UniversalLLMService,
     private readonly vectorSyncService: CtxhVectorSyncService,
+    private readonly participationService: ParticipationService,
+    private readonly userContextService: UserContextService,
+    private readonly staffAgentService: StaffAgentService,
+    private readonly followUpSuggestionsService: FollowUpSuggestionsService,
   ) {}
 
   // ========== RAG CHAT ENDPOINTS ==========
@@ -52,17 +60,42 @@ export class CtxhChatController {
     @Req() request: Request,
   ): Promise<ChatResponseDto> {
     const userId = (request as any).user?.id;
+    const userType = (request as any).user?.userType;
     const sessionId = chatRequestDto.sessionId || `session_${userId}_${Date.now()}`;
 
     // Lấy thời gian thực (GMT+7)
     const now = new Date();
     const currentDate = now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }); // YYYY-MM-DD
+
+    // ── Route staff users to StaffAgentService ──────────────────────────────
+    if (userType === 'staff') {
+      const startTime = Date.now();
+      const staffResponse = await this.staffAgentService.invoke(
+        chatRequestDto.message,
+        sessionId,
+        userId,
+        { currentDate },
+      );
+      return {
+        sessionId,
+        response: staffResponse,
+        sources: [],
+        responseTime: Date.now() - startTime,
+        timestamp: new Date(),
+        followUpSuggestions: [],
+        confidence: 0.9,
+      };
+    }
+
+    // ── Student / default flow ─────────────────────────────────────────────
     const currentDayOfWeek = now.toLocaleDateString('vi-VN', { weekday: 'long', timeZone: 'Asia/Ho_Chi_Minh' });
     const currentDatetime = now.toLocaleString('vi-VN', {
       timeZone: 'Asia/Ho_Chi_Minh',
       year: 'numeric', month: '2-digit', day: '2-digit',
       hour: '2-digit', minute: '2-digit',
     });
+
+    const userOrgName = await this.userContextService.getTrainingDepartmentName(userId);
 
     const response = await this.ragChainService.invoke(
       chatRequestDto.message,
@@ -74,22 +107,53 @@ export class CtxhChatController {
         currentDate,
         currentDayOfWeek,
         currentDatetime,
+        userOrg: userOrgName ?? undefined,
       }
     );
 
-    // Generate follow-up suggestions based on response
-    const followUpSuggestions = this.generateFollowUpSuggestions(response.response);
+    // ── Handle REGISTER_ACTIVITY + generate follow-up suggestions in parallel ──
+    const [followUpSuggestions] = await Promise.all([
+      this.followUpSuggestionsService.generate(chatRequestDto.message, response.response),
+      (async () => {
+        if (response.intent === 'REGISTER_ACTIVITY' && response.registrationTarget) {
+          try {
+            await this.participationService.registerSelf(
+              String(response.registrationTarget.activityId),
+              userId,
+            );
+            response.response = `Đã đăng ký thành công bạn vào hoạt động **${response.registrationTarget.activityName}**! Bạn có thể xem tại trang báo cáo cá nhân để xem các hoạt động đã đăng ký.`;
+          } catch (err: any) {
+            const errorMsg = err?.message || 'Vui lòng thử lại sau.';
+            response.response = `Không thể đăng ký: ${errorMsg}`;
+          }
+        }
+      })(),
+    ]);
 
     return {
       sessionId: response.sessionId || sessionId,
       response: response.response,
-      sources: response.sources.map(doc => ({
-        activityId: doc.metadata?.activityId,
-        activityName: doc.metadata?.activityName,
-        organizationName: doc.metadata?.organizationName,
-        content: doc.pageContent.substring(0, 200) + '...',
-        similarityScore: doc.metadata?.score ?? 0,
-      })),
+      sources: response.sources.map(doc => {
+        const meta = doc.metadata || {};
+        const status = (meta.status ?? '').toUpperCase();
+        const today = new Date(currentDate);
+        today.setHours(0, 0, 0, 0);
+        const startDate = meta.startDate ? new Date(meta.startDate) : null;
+        const endDate = meta.endDate ? new Date(meta.endDate) : null;
+        if (startDate) startDate.setHours(0, 0, 0, 0);
+        if (endDate) endDate.setHours(0, 0, 0, 0);
+        const isActive = status === 'ACTIVE';
+        const isOngoing = !!(startDate && endDate && today >= startDate && today <= endDate);
+        const isUpcoming = !!(startDate && today < startDate);
+        return {
+          activityId: meta.activityId,
+          activityName: meta.activityName,
+          organizationName: meta.organizationName,
+          content: doc.pageContent.substring(0, 200) + '...',
+          similarityScore: meta.score ?? 0,
+          isRecruiting: isActive && (isOngoing || isUpcoming),
+        };
+      }),
       responseTime: response.responseTime,
       timestamp: new Date(),
       followUpSuggestions,
@@ -97,6 +161,7 @@ export class CtxhChatController {
       // Include full context text for RAGAS evaluation
       ...(chatRequestDto.evaluation_mode && {
         contexts: response.sources.map(doc => doc.pageContent),
+        eval_intent: response.intent ?? 'RAG_QUERY',
       }),
     };
   }
@@ -127,12 +192,13 @@ export class CtxhChatController {
     return new Observable(observer => {
       (async () => {
         try {
+          const userOrgName = await this.userContextService.getTrainingDepartmentName(userId);
           const chunks: string[] = [];
 
           for await (const chunk of this.ragChainService.stream(
             chatRequestDto.message,
             sessionId,
-            { currentDate, currentDayOfWeek, currentDatetime },
+            { currentDate, currentDayOfWeek, currentDatetime, userOrg: userOrgName ?? undefined },
           )) {
             chunks.push(chunk);
             observer.next({
@@ -198,25 +264,6 @@ export class CtxhChatController {
   ): Promise<{ message: string }> {
     await this.memoryService.clearMemory(sessionId);
     return { message: 'Session cleared successfully' };
-  }
-
-  @Post('feedback')
-  @ApiOperation({ summary: 'Submit feedback for chat response' })
-  @ApiResponse({
-    status: 200,
-    description: 'Feedback submitted successfully'
-  })
-  async submitFeedback(
-    @Body() feedback: { 
-      sessionId: string; 
-      messageId?: string; 
-      rating: 'positive' | 'negative'; 
-      comment?: string 
-    }
-  ): Promise<{ message: string }> {
-    // TODO: Implement feedback storage
-    console.log('Feedback received:', feedback);
-    return { message: 'Feedback submitted successfully' };
   }
 
   // ========== DATA INGESTION ENDPOINTS ==========
@@ -397,30 +444,6 @@ export class CtxhChatController {
   // ========== HELPER METHODS ==========
 
   /**
-   * Generate follow-up suggestions based on response
-   */
-  private generateFollowUpSuggestions(response: string): string[] {
-    const suggestions: string[] = [];
-    
-    if (response.includes('hoạt động') || response.includes('CTXH')) {
-      suggestions.push('Cho tôi biết thêm chi tiết về hoạt động này');
-      suggestions.push('Làm sao để đăng ký tham gia?');
-    }
-    
-    if (response.includes('ngày') || response.includes('thời gian')) {
-      suggestions.push('Có hoạt động nào khác trong tháng này không?');
-    }
-    
-    if (suggestions.length === 0) {
-      suggestions.push('Có hoạt động CTXH nào đang mở đăng ký?');
-      suggestions.push('Tìm hoạt động CTXH theo địa điểm');
-      suggestions.push('Hoạt động nào có nhiều ngày CTXH nhất?');
-    }
-    
-    return suggestions.slice(0, 3);
-  }
-
-  /**
    * Calculate confidence based on number of sources
    */
   private calculateConfidence(sourceCount: number): number {
@@ -429,5 +452,29 @@ export class CtxhChatController {
     if (sourceCount === 2) return 0.75;
     if (sourceCount >= 3) return 0.9;
     return 0.5;
+  }
+
+  /**
+   * Backward-compatible helper for tests and fallback UI behavior.
+   */
+  private generateFollowUpSuggestions(assistantAnswer: string): string[] {
+    const suggestions: string[] = [];
+
+    if (assistantAnswer.includes('hoạt động') || assistantAnswer.includes('CTXH')) {
+      suggestions.push('Cho tôi biết thêm chi tiết về hoạt động này');
+      suggestions.push('Làm sao để đăng ký tham gia?');
+    }
+
+    if (assistantAnswer.includes('ngày') || assistantAnswer.includes('thời gian')) {
+      suggestions.push('Có hoạt động nào khác trong tháng này không?');
+    }
+
+    if (suggestions.length === 0) {
+      suggestions.push('Có hoạt động CTXH nào đang mở đăng ký?');
+      suggestions.push('Tìm hoạt động CTXH theo địa điểm');
+      suggestions.push('Hoạt động nào có nhiều ngày CTXH nhất?');
+    }
+
+    return suggestions.slice(0, 3);
   }
 }

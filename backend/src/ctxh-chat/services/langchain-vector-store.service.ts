@@ -160,10 +160,6 @@ export class LangChainVectorStoreService implements OnModuleInit {
 
   /**
    * Perform similarity search with scores using PGVectorStore.
-   *
-   * Note: PGVectorStore with distanceStrategy='cosine' returns **cosine distance**
-   * (0 = identical vectors, 1 = opposite vectors), NOT cosine similarity.
-   * We convert: similarityScore = 1 - cosineDistance so that higher = more relevant.
    */
   async similaritySearchWithScore(
     query: string,
@@ -172,28 +168,17 @@ export class LangChainVectorStoreService implements OnModuleInit {
     await this.ensureInitialized();
 
     try {
-      const rawResults = await this.vectorStore.similaritySearchWithScore(query, k * 3);
-
-      // Debug: log the first few raw scores to verify what PGVectorStore actually returns
-      if (rawResults.length > 0) {
-        const sample = rawResults.slice(0, 3).map(([doc, s]) => ({
-          activity: doc.metadata?.activityName,
-          rawScore: s,
-        }));
-        this.logger.debug(`RAW scores from PGVectorStore (cosine distance): ${JSON.stringify(sample)}`);
-      }
-
+      const rawResults = await this.vectorStore.similaritySearchWithScore(query, k);
+      this.logger.debug(`Raw similarity search returned ${JSON.stringify(rawResults, null, 2)} documents for query: "${query}"`);
       const filteredResults = rawResults
         .filter(([doc]) => this.shouldIncludeInRetrieval(doc))
         .map(([doc, cosineDistance]) => {
-          // Convert cosine distance → cosine similarity
-          const similarityScore = 1 - cosineDistance;
           return [
             {
               ...doc,
-              metadata: { ...doc.metadata, score: similarityScore },
+              metadata: { ...doc.metadata, score: cosineDistance },
             },
-            similarityScore,
+            cosineDistance,
           ] as [Document, number];
         })
         .slice(0, k);
@@ -548,6 +533,118 @@ export class LangChainVectorStoreService implements OnModuleInit {
       clause: parts.join(' AND '),
       nextIndex: paramIndex,
     };
+  }
+
+  /**
+   * Semantic search constrained to a pre-filtered set of activity IDs.
+   *
+   * Used as the second stage of the MCP-filter → semantic-search pipeline:
+   *   Stage 1 (MCP SQL) resolves which activity IDs match structured filters.
+   *   Stage 2 (this method) ranks those activities by semantic relevance.
+   *
+   * @param query       Natural-language search query
+   * @param activityIds Allowlist of activity UUIDs from the MCP filter stage
+   * @param k           Maximum documents to return
+   * @param currentDate ISO YYYY-MM-DD used for priority boost scoring
+   */
+  async similaritySearchConstrainedByIds(
+    query: string,
+    activityIds: string[],
+    k: number = 5,
+    currentDate?: string,
+  ): Promise<Document[]> {
+    if (activityIds.length === 0) {
+      return [];
+    }
+
+    await this.ensureInitialized();
+
+    try {
+      const queryEmbedding = await this.embeddings.embedQuery(query);
+      const embeddingStr = `[${queryEmbedding.join(',')}]`;
+
+      // Build the IN-list using safe UUID string escaping
+      const idList = activityIds
+        .map((id) => `'${id.replace(/'/g, "''")}'`)
+        .join(', ');
+
+      // Priority boost: reduce distance (increase rank) for activities starting/ending today
+      let orderByStr = `embedding <=> $1::vector`;
+      let scoreStr = `1 - (embedding <=> $1::vector)`;
+
+      if (currentDate) {
+        orderByStr = `
+          (embedding <=> $1::vector) - (
+            CASE
+              WHEN (metadata->>'startDate')::date = '${currentDate}'::date THEN 0.15
+              WHEN (metadata->>'endDate')::date   = '${currentDate}'::date THEN 0.10
+              ELSE 0
+            END
+          )
+        `;
+        scoreStr = `
+          1 - (embedding <=> $1::vector) + (
+            CASE
+              WHEN (metadata->>'startDate')::date = '${currentDate}'::date THEN 0.15
+              WHEN (metadata->>'endDate')::date   = '${currentDate}'::date THEN 0.10
+              ELSE 0
+            END
+          )
+        `;
+      }
+
+      const sql = `
+        SELECT
+          id,
+          content_text,
+          metadata,
+          ${scoreStr} AS similarity_score
+        FROM ctxh_embeddings
+        WHERE activity_id IN (${idList})
+          AND metadata->>'status' != 'DRAFT'
+        ORDER BY ${orderByStr}
+        LIMIT $2
+      `;
+
+      const client = new Client({
+        host: this.dbConfig.host,
+        port: this.dbConfig.port,
+        database: this.dbConfig.database,
+        user: this.dbConfig.user,
+        password: this.dbConfig.password,
+      });
+
+      try {
+        await client.connect();
+        const result = await client.query(sql, [embeddingStr, k]);
+
+        const documents: Document[] = result.rows.map((row: any) => {
+          const metadata =
+            typeof row.metadata === 'string'
+              ? JSON.parse(row.metadata)
+              : row.metadata;
+
+          return new Document({
+            pageContent: row.content_text,
+            metadata: {
+              ...metadata,
+              score: parseFloat(row.similarity_score),
+            },
+          });
+        });
+
+        this.logger.debug(
+          `[ConstrainedSearch] ${activityIds.length} candidate IDs → ${documents.length} docs returned`,
+        );
+
+        return documents;
+      } finally {
+        await client.end();
+      }
+    } catch (error) {
+      this.logger.error('Constrained similarity search failed, falling back to date filter search', error);
+      return this.similaritySearchWithDateFilter(query, k, currentDate, 'all');
+    }
   }
 
   /**

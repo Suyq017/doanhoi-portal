@@ -2,7 +2,7 @@
 // Refactored with custom hooks and shared components
 
 import React from 'react';
-import { CreditCard, Clock, CheckCircle, AlertCircle, Search } from 'lucide-react';
+import { CreditCard, Clock, CheckCircle, AlertCircle, Search, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { PaymentAssignment } from '@/shared/hooks/queries';
 import { UserTablePagination } from '@/shared/components/UserTable/UserTablePagination';
@@ -159,19 +159,34 @@ const AssignmentRow: React.FC<AssignmentRowProps> = ({
 
 interface PaymentButtonProps {
   assignment: PaymentAssignment;
-  onPayNow: (id: string) => void;
+  onPayNow: (id: string) => void | Promise<void>;
   t: (key: string) => string;
 }
 
 const PaymentButton: React.FC<PaymentButtonProps> = ({ assignment, onPayNow, t }) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleClick = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      await onPayNow(assignment.id);
+    } catch {
+      setIsLoading(false);
+    }
+  };
+
   if (assignment.status === 'PENDING' && assignment.campaign.status === 'ACTIVE') {
     return (
       <button
-        onClick={() => onPayNow(assignment.id)}
-        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-all duration-300 bg-blue-600 rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
+        onClick={handleClick}
+        disabled={isLoading}
+        className="inline-flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-all duration-300 bg-blue-600 rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        <CreditCard className="w-4 h-4" />
-        <span>{t('actions.payNow')}</span>
+        {isLoading
+          ? <Loader2 className="w-4 h-4 animate-spin" />
+          : <CreditCard className="w-4 h-4" />}
+        <span>{isLoading ? t('actions.processing') : t('actions.payNow')}</span>
       </button>
     );
   }

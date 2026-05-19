@@ -6,6 +6,7 @@ export interface CtxhSource {
   similarityScore: number;
   content?: string;
   link?: string;
+  isRecruiting?: boolean;
 }
 
 /** Khớp với ChatResponseDto backend */

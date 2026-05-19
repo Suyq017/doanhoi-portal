@@ -234,7 +234,8 @@ export class SubmissionsService {
     } catch (error) {
       // Update submission with error
       submission.status = SubmissionStatus.FAILED;
-      submission.errorMessage = error.message;
+      submission.errorMessage =
+        error instanceof Error ? error.message : String(error);
       await this.submissionRepository.save(submission);
       throw error;
     }
@@ -271,8 +272,10 @@ export class SubmissionsService {
 
       return Buffer.concat(chunks);
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new InternalServerErrorException(
-        `Failed to download template: ${error.message}`,
+        `Failed to download template: ${errorMessage}`,
       );
     }
   }

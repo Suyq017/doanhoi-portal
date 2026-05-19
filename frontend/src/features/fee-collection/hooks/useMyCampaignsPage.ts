@@ -153,7 +153,7 @@ export const useMyCampaignsPage = (): UseMyCampaignsPageReturn => {
                 organizationId,
             });
 
-            if (paymentResponse.success && paymentResponse.data?.checkoutUrl) {
+            if (paymentResponse.success && paymentResponse.data?.checkoutUrl && paymentResponse.data?.orderCode) {
                 window.location.href = paymentResponse.data.checkoutUrl;
             } else {
                 throw new Error(paymentResponse.message || 'Không nhận được URL thanh toán từ server');

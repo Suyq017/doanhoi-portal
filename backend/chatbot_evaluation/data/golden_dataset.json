@@ -1,0 +1,762 @@
+[
+  {
+    "question": "Cho mình hỏi thông tin về hoạt động hỗ trợ kiểm định AQAS cho ngành Nhiệt với?",
+    "ground_truth": "Hoạt động HỖ TRỢ CÔNG TÁC KIỂM ĐỊNH AQAS CHO NGÀNH KỸ THUẬT NHIỆT do Liên chi đoàn Khoa Cơ khí tổ chức tại CS Lý Thường Kiệt từ 30/04/2026 đến 10/05/2026, tương đương 4.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ CÔNG TÁC KIỂM ĐỊNH AQAS CHO NGÀNH KỸ THUẬT NHIỆT",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "4.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Tháng 5 này Khoa Cơ khí có hoạt động nào thuộc danh mục hoạt động khác không?",
+    "ground_truth": "Tháng 5 Khoa Cơ khí có các hoạt động danh mục khác: HỖ TRỢ THƯỜNG TRỰC ĐOÀN-HỘI KHOA CƠ KHÍ (1.0 ngày), HỖ TRỢ HỘI NGHỊ SINH VIÊN KHOA CƠ KHÍ (1.0 ngày), THAM GIA TỔ CHỨC LỄ ĐÓN TÂN SINH VIÊN K2026 (4.0 ngày), TỔ CÔNG TÁC HỖ TRỢ TỔ CHỨC HỘI NGHỊ (1.0 ngày).",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ CÔNG TÁC KIỂM ĐỊNH AQAS CHO NGÀNH KỸ THUẬT NHIỆT",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở Lý Thường Kiệt, quận 10, Tp. Hồ Chí Minh",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "4.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Tìm hoạt động hỗ trợ đoàn khoa Kỹ thuật xây dựng trong tháng 12.",
+    "ground_truth": "Hoạt động '[XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 12/2025' diễn ra từ 30/04/2026 đến 10/05/2026 do Liên chi đoàn Khoa Kỹ Thuật Xây Dựng tổ chức.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "[XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 12/2025",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "XD"
+      },
+      "dia_diem": "Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "6.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Bên Khoa Xây dựng đang có những hoạt động CTXH nào vậy?",
+    "ground_truth": "Khoa Kỹ thuật Xây dựng đang có các hoạt động: [XD] HỖ TRỢ ĐOÀN KTXD THÁNG 11/2025 BỔ SUNG (6.0 ngày), THÁNG 09/2025 (5.0 ngày), THÁNG 11/2025 (6.0 ngày), THÁNG 12/2025 (6.0 ngày), THÁNG 10/2025 (6.0 ngày), tất cả tại cơ sở Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "[XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 12/2025",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "XD"
+      },
+      "dia_diem": "Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "6.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_list_all",
+    "use_case": "UC-S04",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hoạt động di dời phòng thí nghiệm ngày 5/5 của Khoa Cơ khí diễn ra ở đâu?",
+    "ground_truth": "Hoạt động 'HỖ TRỢ DI DỜI PHÒNG THÍ NGHIỆM NGÀY 5/5/2026' diễn ra tại xưởng C1, cơ sở 1, P. Diên Hồng, do LCĐ Khoa Cơ khí tổ chức, được 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ DI DỜI PHÒNG THÍ NGHIỆM NGÀY 5/5/2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Thông tin về việc di dời PTN ngày 5/5 như thế nào?",
+    "ground_truth": "Hoạt động HỖ TRỢ DI DỜI PHÒNG THÍ NGHIỆM NGÀY 5/5/2026 diễn ra tại xưởng C1, cơ sở 1, được 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ DI DỜI PHÒNG THÍ NGHIỆM NGÀY 5/5/2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Trong tháng 4 năm 2026 có hoạt động nào của Liên chi đoàn Khoa Cơ khí không?",
+    "ground_truth": "Trong tháng 4/2026, Khoa Cơ khí có hoạt động 'HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP THÁNG 4/2026' và các hoạt động hỗ trợ PTN khác bắt đầu từ 30/04.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP THÁNG 4/2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "3.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hoạt động hỗ trợ kiểm định AQAS cho ngành Kỹ thuật Nhiệt của Khoa Cơ khí được bao nhiêu ngày CTXH?",
+    "ground_truth": "Hoạt động 'HỖ TRỢ CÔNG TÁC KIỂM ĐỊNH AQAS CHO NGÀNH KỸ THUẬT NHIỆT' do LCĐ Khoa Cơ khí tổ chức tại CS Lý Thường Kiệt được 4.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP THÁNG 4/2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "3.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Có hoạt động dọn dẹp vệ sinh nào ở phòng 104C1 không?",
+    "ground_truth": "Có hoạt động 'Làm vệ sinh, sắp xếp, vận chuyển máy móc trang thiết bị PTN bộ môn Chế Tạo Máy' diễn ra tại 104C1, Cơ sở Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "LÀM VỆ SINH, SẮP XẾP, VẬN CHUYỂN MÁY MÓC TRANG THIẾT BỊ PTN BỘ MÔN CHẾ TẠO MÁY",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "104C1, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "2.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Tìm hoạt động dọn kho/phòng thí nghiệm mà được 2 ngày CTXH.",
+    "ground_truth": "Hoạt động 'Làm vệ sinh, sắp xếp, vận chuyển máy móc trang thiết bị PTN bộ môn Chế Tạo Máy' tại 104C1 đáp ứng yêu cầu của bạn.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "LÀM VỆ SINH, SẮP XẾP, VẬN CHUYỂN MÁY MÓC TRANG THIẾT BỊ PTN BỘ MÔN CHẾ TẠO MÁY",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "104C1, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "2.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Sắp tới có Job Fair nào của khoa Máy tính không admin?",
+    "ground_truth": "Có hoạt động '[MT] CTV HỖ TRỢ NGÀY HỘI VIỆC LÀM KHOA KH&KTMT - JOB FAIR' diễn ra từ 30/04/2026 đến 10/05/2026, được 4.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "[MT] CTV HỖ TRỢ NGÀY HỘI VIỆC LÀM KHOA KH&KTMT - JOB FAIR",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Khoa học và Kỹ thuật Máy tính",
+        "code": "MT"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "4.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Khoa Khoa học và Kỹ thuật Máy tính đang có những hoạt động CTXH nào thế?",
+    "ground_truth": "Khoa Khoa học và Kỹ thuật Máy tính đang có: Dọn dẹp văn phòng khoa máy tính (1.0 ngày, CS2), Dọn dẹp thư viện khoa máy tính (1.0 ngày, CS2), và [MT] CTV HỖ TRỢ NGÀY HỘI VIỆC LÀM KHOA KH&KTMT - JOB FAIR (4.0 ngày).",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "[MT] CTV HỖ TRỢ NGÀY HỘI VIỆC LÀM KHOA KH&KTMT - JOB FAIR",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Khoa học và Kỹ thuật Máy tính",
+        "code": "MT"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "4.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_list_all",
+    "use_case": "UC-S04",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hoạt động sắp xếp bàn ghế hành lang xưởng C1 tòa B11 ngày 5/5 do đơn vị nào tổ chức?",
+    "ground_truth": "Hoạt động 'SẮP XẾP BÀN, GHẾ KHU VỰC HÀNH LANG XƯỞNG C1, TÒA B11 NGÀY 5/5/2026' do Liên chi đoàn Khoa Cơ khí tổ chức tại cơ sở 1, được 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ XƯỞNG C1 NGÀY 5/5/2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hỗ trợ xưởng C1 ngày 5/5 thì được mấy ngày CTXH vậy ạ?",
+    "ground_truth": "Hoạt động HỖ TRỢ XƯỞNG C1 NGÀY 5/5/2026 do LCĐ Khoa Cơ khí tổ chức sẽ được cộng 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ XƯỞNG C1 NGÀY 5/5/2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Tìm hoạt động dọn vệ sinh phòng thí nghiệm của bộ môn Kỹ thuật Hệ thống Công nghiệp.",
+    "ground_truth": "Hoạt động 'Dọn vệ sinh PTN 201-C1 và 201X-C1' do bộ môn Kỹ thuật Hệ thống Công nghiệp (thuộc LCĐ Khoa Cơ khí) tổ chức vào ngày 5/5/2026.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "DỌN VỆ SINH PTN 201-C1 VÀ 201X-C1",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Dọn vệ sinh PTN 201-C1 là của đơn vị nào tổ chức vậy?",
+    "ground_truth": "Hoạt động này do bộ môn Kỹ thuật Hệ thống Công nghiệp phối hợp cùng Liên chi đoàn Khoa Cơ khí tổ chức.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "DỌN VỆ SINH PTN 201-C1 VÀ 201X-C1",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Có hoạt động nào sắp xếp bàn ghế ở tòa B11 không?",
+    "ground_truth": "Có hoạt động 'SẮP XẾP BÀN, GHẾ KHU VỰC HÀNH LANG XƯỞNG C1, TÒA B11 NGÀY 5/5/2026' tại cơ sở 1.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "SẮP XẾP BÀN, GHẾ KHU VỰC HÀNH LANG XƯỞNG C1, TÒA B11 NGÀY 5/5/2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hoạt động sắp xếp bàn ghế khu vực hành lang xưởng C1 tòa B11 được bao nhiêu ngày CTXH và diễn ra lúc mấy giờ?",
+    "ground_truth": "Hoạt động 'SẮP XẾP BÀN, GHẾ KHU VỰC HÀNH LANG XƯỞNG C1, TÒA B11 NGÀY 5/5/2026' do LCĐ Khoa Cơ khí tổ chức tại cơ sở 1 và được 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "SẮP XẾP BÀN, GHẾ KHU VỰC HÀNH LANG XƯỞNG C1, TÒA B11 NGÀY 5/5/2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Dọn vệ sinh PTN ở cơ sở Lý Thường Kiệt có hoạt động nào không?",
+    "ground_truth": "Tại cơ sở Lý Thường Kiệt có 2 hoạt động dọn vệ sinh PTN: 'Dọn vệ sinh PTN 201-C1 và 201X-C1' (1.0 ngày) và 'Làm vệ sinh, sắp xếp, vận chuyển máy móc trang thiết bị PTN bộ môn Chế Tạo Máy' (2.0 ngày, phòng 104C1).",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "DỌN VỆ SINH PTN 201-C1 VÀ 201X-C1",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "PTN 201-C1 và 201X-C1, cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Cuộc thi Mechanical Engineering Robot Contest 2026 vòng sơ loại do đơn vị nào tổ chức và được bao nhiêu ngày CTXH?",
+    "ground_truth": "Cuộc thi 'TỔ CHỨC CUỘC THI MECHANICAL ENGINEERING ROBOT CONTEST 2026 - VÒNG SƠ LOẠI' do LCĐ Khoa Cơ khí tổ chức tại cơ sở 2, P. Đông Hòa, được 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "DỌN VỆ SINH PTN 201-C1 VÀ 201X-C1",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "PTN 201-C1 và 201X-C1, cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Cho mình hỏi về việc đăng ký làm CTV tư vấn tuyển sinh ngày 5/5 với.",
+    "ground_truth": "Hoạt động 'CTV TVTS 5/5/2026' do LCĐ Trung tâm Đào tạo Bảo dưỡng Công nghiệp tổ chức tại ĐHBK, được 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "CTV TVTS 5/5/2026",
+      "organization": {
+        "name": "Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp",
+        "code": "BDCN"
+      },
+      "dia_diem": "DHBK",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Trung tâm Đào tạo Bảo dưỡng Công nghiệp có hoạt động ngày hội nào không?",
+    "ground_truth": "Trung tâm Đào tạo Bảo dưỡng Công nghiệp có hoạt động 'CTV TVTS 5/5/2026' thuộc danh mục Chương trình Hội trại, ngày hội.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "CTV TVTS 5/5/2026",
+      "organization": {
+        "name": "Liên chi đoàn Trung tâm Đào tạo Bảo dưỡng Công nghiệp",
+        "code": "BDCN"
+      },
+      "dia_diem": "DHBK",
+      "loai_hoat_dong": "Chương trình Hội trại, ngày hội",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Cuộc thi Robot Contest của khoa Cơ khí vòng sơ loại diễn ra ở đâu vậy admin?",
+    "ground_truth": "Vòng sơ loại TỔ CHỨC CUỘC THI MECHANICAL ENGINEERING ROBOT CONTEST 2026 do LCĐ Khoa Cơ khí tổ chức diễn ra tại cơ sở 2, P. Đông Hòa, được 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2026 - VÒNG SƠ LOẠI",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 2, P. Đông Hòa",
+      "loai_hoat_dong": "Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Tìm các cuộc thi học thuật đang tổ chức ở cơ sở 2 Dĩ An.",
+    "ground_truth": "Ở cơ sở 2, P. Đông Hòa đang có cuộc thi 'TỔ CHỨC CUỘC THI MECHANICAL ENGINEERING ROBOT CONTEST 2026 - VÒNG SƠ LOẠI' do LCĐ Khoa Cơ khí tổ chức, được 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "TỔ CHỨC CUỘC THI \"MECHANICAL ENGINEERING ROBOT CONTEST\" 2026 - VÒNG SƠ LOẠI",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 2, P. Đông Hòa",
+      "loai_hoat_dong": "Các cuộc thi học thuật (môi trường xanh, cơn lốc hóa học,…)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Tìm hoạt động dọn dẹp phòng thí nghiệm ở cơ sở 1 mà được 3 ngày CTXH.",
+    "ground_truth": "Tại cơ sở 1 có 2 hoạt động được 3.0 ngày CTXH: 'HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP THÁNG 4/2026' và 'HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP 22 - 24 -25/4/2026'.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP 22 - 24 -25/4/2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "3.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hoạt động hỗ trợ Bộ môn Kỹ thuật Hệ thống Công nghiệp trong tháng 4/2026 của Khoa Cơ khí được mấy ngày CTXH?",
+    "ground_truth": "Có 2 hoạt động: 'HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP THÁNG 4/2026' và 'HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP 22 - 24 -25/4/2026', cả hai đều do LCĐ Khoa Cơ khí tổ chức tại cơ sở 1 và được 3.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ BỘ MÔN KỸ THUẬT HỆ THỐNG CÔNG NGHIỆP 22 - 24 -25/4/2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "3.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Muốn hỗ trợ làm hồ sơ Sinh viên 5 tốt của khoa Điện thì xem ở đâu?",
+    "ground_truth": "Bạn có thể tham gia hoạt động '[FEEE] - HỖ TRỢ CÔNG TÁC HỒ SƠ PHÒNG TRÀO SINH VIÊN 5 TỐT' của LCĐ Khoa Điện Điện tử tại cơ sở Dĩ An, được 8.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "[FEEE] - HỖ TRỢ CÔNG TÁC HỒ SƠ PHÒNG TRÀO SINH VIÊN 5 TỐT CÁC CẤP NĂM HỌC 2025-2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Điện Điện tử",
+        "code": "DD"
+      },
+      "dia_diem": "Đại Học Bách Khoa TPHCM - Thành Phố Dĩ An, Tỉnh Bình Dương",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "8.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Có hoạt động nào của khoa Điện Điện tử ở cơ sở Dĩ An không?",
+    "ground_truth": "Khoa Điện Điện tử có 2 hoạt động tại cơ sở Dĩ An: [FEEE] - TRỌNG TÀI HỖ TRỢ HỘI THAO KHOA ĐIỆN - ĐIỆN TỬ 2025 (8.0 ngày) và [FEEE] - HỖ TRỢ CÔNG TÁC HỒ SƠ PHONG TRÀO SINH VIÊN 5 TỐT CÁC CẤP NĂM HỌC 2025-2026 (8.0 ngày).",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "[FEEE] - HỖ TRỢ CÔNG TÁC HỒ SƠ PHÒNG TRÀO SINH VIÊN 5 TỐT CÁC CẤP NĂM HỌC 2025-2026",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Điện Điện tử",
+        "code": "DD"
+      },
+      "dia_diem": "Đại Học Bách Khoa TPHCM - Thành Phố Dĩ An, Tỉnh Bình Dương",
+      "loai_hoat_dong": "Hoạt động khác",
+      "thoi_luong_ngay": "8.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Ngày 5/5 có hoạt động dọn dẹp PTN nào ở cơ sở 1 không nhỉ?",
+    "ground_truth": "Ngày 5/5 tại cơ sở 1 có các hoạt động dọn dẹp PTN: Dọn vệ sinh PTN 201-C1 và 201X-C1 (1.0 ngày, 8h-12h), Sắp xếp vận chuyển máy móc PTN bộ môn Chế Tạo Máy (1.0 ngày), Vệ sinh PTN công nghệ thiết kế và gia công tiên tiến Khoa Cơ khí (1.0 ngày, 13h-17h), HỖ TRỢ XƯỞNG C1 ngày 5/5/2026 (1.0 ngày).",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "VỆ SINH PTN CÔNG NGHỆ THIẾT KẾ VÀ GIA CÔNG TIÊN TIẾN KHOA CƠ KHÍ",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hoạt động vệ sinh PTN công nghệ thiết kế và gia công tiên tiến Khoa Cơ khí diễn ra vào khung giờ nào ngày 5/5?",
+    "ground_truth": "Hoạt động 'VỆ SINH PTN CÔNG NGHỆ THIẾT KẾ VÀ GIA CÔNG TIÊN TIẾN KHOA CƠ KHÍ' diễn ra vào 13h-17h ngày 5/5/2026 tại cơ sở 1, được 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "VỆ SINH PTN CÔNG NGHỆ THIẾT KẾ VÀ GIA CÔNG TIÊN TIẾN KHOA CƠ KHÍ",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Cơ khí",
+        "code": "CK"
+      },
+      "dia_diem": "cơ sở 1, P. Diên Hồng",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Mình muốn tìm thông tin hội thảo về điện toán đám mây và dữ liệu lớn tổ chức ở Bách khoa.",
+    "ground_truth": "Hoạt động 'THAM DỰ HỘI THẢO KHOA HỌC SINH VIÊN, LĨNH VỰC ĐIỆN TOÁN ĐÁM MÂY, ĐIỆN TOÁN LƯỢNG TỬ, DỮ LIỆU LỚN - 30/10/2025' diễn ra tại CS 1, do Đoàn Trường tổ chức và được 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "THAM DỰ HỘI THẢO KHOA HỌC SINH VIÊN, LĨNH VỰC ĐIỆN TOÁN ĐÁM MÂY, ĐIỆN TOÁN LƯỢNG TỬ, DỮ LIỆU LỚN - 30/10/2025",
+      "organization": {
+        "name": "Đoàn Trường",
+        "code": "DT"
+      },
+      "dia_diem": "CS 1",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Có hoạt động nào của Đoàn Trường tổ chức ở cơ sở 1 được 1 ngày CTXH không?",
+    "ground_truth": "Có hoạt động 'THAM DỰ HỘI THẢO KHOA HỌC SINH VIÊN, LĨNH VỰC ĐIỆN TOÁN ĐÁM MÂY, ĐIỆN TOÁN LƯỢNG TỬ, DỮ LIỆU LỚN - 30/10/2025' tại CS 1 đáp ứng yêu cầu của bạn.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "THAM DỰ HỘI THẢO KHOA HỌC SINH VIÊN, LĨNH VỰC ĐIỆN TOÁN ĐÁM MÂY, ĐIỆN TOÁN LƯỢNG TỬ, DỮ LIỆU LỚN - 30/10/2025",
+      "organization": {
+        "name": "Đoàn Trường",
+        "code": "DT"
+      },
+      "dia_diem": "CS 1",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hoạt động hỗ trợ đoàn khoa Xây dựng đợt bổ sung tháng 11 là làm gì vậy?",
+    "ground_truth": "Hoạt động '[XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 11/2025 BỔ SUNG' hỗ trợ các công tác của Đoàn khoa KTXD, diễn ra tại cơ sở Lý Thường Kiệt và được 6.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "[XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 11/2025 BỔ SUNG",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "XD"
+      },
+      "dia_diem": "Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "6.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hiện tại khoa Kỹ thuật Xây dựng có những hoạt động CTXH nào?",
+    "ground_truth": "Khoa Kỹ thuật Xây dựng hiện có 5 hoạt động: [XD] HỖ TRỢ ĐOÀN KTXD THÁNG 11/2025 BỔ SUNG (6.0 ngày), THÁNG 11/2025 (6.0 ngày), THÁNG 09/2025 (5.0 ngày), THÁNG 10/2025 (6.0 ngày), THÁNG 12/2025 (6.0 ngày), tất cả tại cơ sở Lý Thường Kiệt.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "[XD] HOẠT ĐỘNG HỖ TRỢ ĐOÀN KHOA KTXD THÁNG 11/2025 BỔ SUNG",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Kỹ Thuật Xây Dựng",
+        "code": "XD"
+      },
+      "dia_diem": "Trường Đại học Bách khoa - ĐHQG-HCM, Cơ sở Lý Thường Kiệt",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "6.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_list_all",
+    "use_case": "UC-S04",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Cho mình xin danh sách các hoạt động thuộc mục khen thưởng sinh viên đang diễn ra.",
+    "ground_truth": "Hiện có hoạt động 'HỖ TRỢ HỘI THẢO AI APPLICATION IN HEALTHCARE' do LCĐ Khoa Quản Lý Công Nghiệp tổ chức thuộc danh mục khen thưởng sinh viên.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ HỘI THẢO AI APPLICATION IN HEALTHCARE",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Quản Lý Công Nghiệp",
+        "code": "QL"
+      },
+      "dia_diem": "Hội trường C5 - CS1",
+      "loai_hoat_dong": "Các danh hiệu tuyên dương khen thưởng sinh viên",
+      "thoi_luong_ngay": "2.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hội thảo AI Application in Healthcare tổ chức ở đâu vậy?",
+    "ground_truth": "Hội thảo AI Application in Healthcare được tổ chức tại Hội trường C5 - Cơ sở 1.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "HỖ TRỢ HỘI THẢO AI APPLICATION IN HEALTHCARE",
+      "organization": {
+        "name": "Liên chi đoàn Khoa Quản Lý Công Nghiệp",
+        "code": "QL"
+      },
+      "dia_diem": "Hội trường C5 - CS1",
+      "loai_hoat_dong": "Các danh hiệu tuyên dương khen thưởng sinh viên",
+      "thoi_luong_ngay": "2.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_semantic",
+    "use_case": "UC-S02",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Tìm các hoạt động hiến máu tình nguyện trong đợt này.",
+    "ground_truth": "Hiện có hoạt động 'TNV THAM GIA HIẾN MÁU TÌNH NGUYỆN 10.2025' do Hội Sinh viên tổ chức tại ĐHBK, được 1.0 ngày CTXH.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "TNV THAM GIA HIẾN MÁU TÌNH NGUYỆN 10.2025",
+      "organization": {
+        "name": "Hội Sinh viên",
+        "code": "HSV"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hiến máu tình nguyện",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hoạt động hiến máu của Hội sinh viên được mấy ngày CTXH admin?",
+    "ground_truth": "Các hoạt động hiến máu tình nguyện của Hội Sinh viên đều được 1.0 ngày CTXH: TNV THAM GIA HIẾN MÁU TÌNH NGUYỆN 05.2026, 10.2025, và 01.2025 đều tại ĐHBK.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "TNV THAM GIA HIẾN MÁU TÌNH NGUYỆN 10.2025",
+      "organization": {
+        "name": "Hội Sinh viên",
+        "code": "HSV"
+      },
+      "dia_diem": "ĐHBK",
+      "loai_hoat_dong": "Hiến máu tình nguyện",
+      "thoi_luong_ngay": "1.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Hoạt động nào ở cơ sở 1 mà được cộng tận 4 ngày CTXH vậy ạ?",
+    "ground_truth": "Đó là hoạt động 'THAM GIA VÀ TỔ CHỨC HOẠT ĐỘNG OYU WORKSHOP 2026 - SẮC VIỆT' diễn ra tại cơ sở 1 do Đoàn Trường tổ chức.",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "THAM GIA VÀ TỔ CHỨC HOẠT ĐỘNG OYU WORKSHOP 2026 - \"SẮC VIỆT\"",
+      "organization": {
+        "name": "Đoàn Trường",
+        "code": "DT"
+      },
+      "dia_diem": "CS 1",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_filtered",
+    "use_case": "UC-S01",
+    "expected_action": "search_ctxh_activities"
+  },
+  {
+    "question": "Tổng hợp các hoạt động của Đoàn Trường đang có đi.",
+    "ground_truth": "Đoàn Trường đang có các hoạt động: TNV THAM GIA HỖ TRỢ CHƯƠNG TRÌNH GIẤC MƠ DU HỌC NĂM 2025 (1.0 ngày), BTC HOẠT ĐỘNG ƯỚC MƠ TUỔI THƠ MÙA 2 - 2025 (4.0 ngày, CS LTK), CTV HỖ TRỢ HẬU CẦN HOẠT ĐỘNG THĂM QUÂN MÙA HÈ XANH 2025 (4.0 ngày, CS LTK), THAM DỰ HỘI THẢO KHOA HỌC SINH VIÊN (ĐIỆN TOÁN ĐÁM MÂY, LƯỢNG TỬ, DỮ LIỆU LỚN) 30/10/2025 (1.0 ngày, CS1), TỔ CHỨC VÀ THAM GIA CHÀO ĐÓN TÂN SINH VIÊN M.O.V.E 2025 (4.0 ngày, CS1).",
+    "metadata": {
+      "ma_ctxh": "",
+      "ten_ctxh": "THAM GIA VÀ TỔ CHỨC HOẠT ĐỘNG OYU WORKSHOP 2026 - \"SẮC VIỆT\"",
+      "organization": {
+        "name": "Đoàn Trường",
+        "code": "DT"
+      },
+      "dia_diem": "CS 1",
+      "loai_hoat_dong": "Hoạt động công tác xã hội (dọn kho, phòng thí nghiệm, môi trường….)",
+      "thoi_luong_ngay": "4.0",
+      "thoi_gian_thuc_hien": "30-04-2026 -> 10-05-2026"
+    },
+    "intent": "search_list_all",
+    "use_case": "UC-S04",
+    "expected_action": "search_ctxh_activities"
+  }
+]

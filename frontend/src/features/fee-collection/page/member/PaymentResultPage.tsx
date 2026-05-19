@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -29,21 +29,33 @@ export const PaymentResultPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  const [pollsExhausted, setPollsExhausted] = useState(false);
+  const pollCountRef = useRef(0);
+  const MAX_POLLS = 3;
+  const POLL_INTERVAL_MS = 10_000;
 
+  // Kiểm tra trạng thái lần đầu khi trang load
   useEffect(() => {
     if (orderCode) {
       checkPaymentStatus();
-
-      // Auto-refresh every 5 seconds if status is pending
-      const interval = setInterval(() => {
-        if (paymentStatus?.status === 'PENDING') {
-          checkPaymentStatus();
-        }
-      }, 5000);
-
-      return () => clearInterval(interval);
     }
-  }, [orderCode, paymentStatus?.status]);
+  }, [orderCode]);
+
+  // Tự động poll khi trạng thái là PENDING (tối đa MAX_POLLS lần)
+  useEffect(() => {
+    if (paymentStatus?.status !== 'PENDING') return;
+    if (pollCountRef.current >= MAX_POLLS) {
+      setPollsExhausted(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      pollCountRef.current += 1;
+      checkPaymentStatus();
+    }, POLL_INTERVAL_MS);
+
+    return () => clearTimeout(timer);
+  }, [paymentStatus]);
 
   const checkPaymentStatus = async () => {
     if (!orderCode) return;
@@ -276,10 +288,26 @@ export const PaymentResultPage: React.FC = () => {
             {/* Auto-refresh indicator */}
             {paymentStatus.status === 'PENDING' && (
               <div className="flex items-center justify-center mb-6 space-x-2 no-print">
-                <RefreshCw className={`w-4 h-4 text-blue-500 ${checking ? 'animate-spin' : ''}`} />
-                <span className="text-sm text-gray-600">
-                  {checking ? t('autoRefresh.checking') : t('autoRefresh.interval')}
-                </span>
+                {pollsExhausted ? (
+                  <button
+                    onClick={() => {
+                      pollCountRef.current = 0;
+                      setPollsExhausted(false);
+                      checkPaymentStatus();
+                    }}
+                    className="flex items-center space-x-2 text-blue-600 hover:text-blue-800"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span className="text-sm">{t('autoRefresh.manualCheck')}</span>
+                  </button>
+                ) : (
+                  <>
+                    <RefreshCw className={`w-4 h-4 text-blue-500 ${checking ? 'animate-spin' : ''}`} />
+                    <span className="text-sm text-gray-600">
+                      {checking ? t('autoRefresh.checking') : t('autoRefresh.interval')}
+                    </span>
+                  </>
+                )}
               </div>
             )}
 

@@ -72,7 +72,7 @@ export class ActivitiesController {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition":
-        'attachment; filename="template-danh-sach-sinh-vien.xlsx"',
+        'attachment; filename="mau-danh-sach-sinh-vien.xlsx"',
     });
 
     res.send(buffer);
@@ -190,6 +190,7 @@ export class ActivitiesController {
       start_date: startDate,
       end_date: endDate,
       user_id: req.user.id, // Thêm user ID để filter theo organizations
+      user_type: req.user.userType,
     });
   }
 
@@ -207,8 +208,8 @@ export class ActivitiesController {
     description: "Hoạt động không tồn tại",
   })
   @RequirePermissions("ctxh.activities.view")
-  findOne(@Param("id") id: string) {
-    return this.activitiesService.findOne(id);
+  findOne(@Param("id") id: string, @Request() req) {
+    return this.activitiesService.findOne(id, req.user.userType);
   }
 
   @Patch(":id")

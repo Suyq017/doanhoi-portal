@@ -7,7 +7,7 @@ import {
   PaginatedResponse
 } from '../../../features/fee-collection/types';
 
-const API_BASE = '/payment/assignments';
+const API_BASE = '/api/payment/assignments';
 
 class PaymentAssignmentService {
   // CRUD Operations

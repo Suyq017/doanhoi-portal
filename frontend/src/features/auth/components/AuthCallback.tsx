@@ -45,9 +45,11 @@ const AuthCallback: React.FC = () => {
             const userData = await response.json();
             setUser(userData);
 
+            const redirectPath = userData?.userType === 'student' ? '/portal/student-reports' : '/portal';
+
             // Delay navigation to ensure state updates
             setTimeout(() => {
-              navigate('/portal');
+              navigate(redirectPath);
             }, 100);
           } else {
             throw new Error('Failed to get user profile');

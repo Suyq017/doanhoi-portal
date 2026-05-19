@@ -37,6 +37,9 @@ export class UserImportMonitoringService {
     this.intervalId = setInterval(() => {
       this.collectSystemMetrics();
     }, 5000);
+    if (typeof (this.intervalId as any).unref === "function") {
+      (this.intervalId as any).unref();
+    }
   }
 
   private collectSystemMetrics(): void {
