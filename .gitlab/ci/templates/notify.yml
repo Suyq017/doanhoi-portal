@@ -1,0 +1,28 @@
+.notify_success:
+  after_script:
+    - |
+      if [ -n "$SLACK_WEBHOOK_URL" ]; then
+        apk add --no-cache curl 2>/dev/null || true
+        curl -X POST "$SLACK_WEBHOOK_URL" \
+          -H 'Content-type: application/json' \
+          --data "{
+            \"text\": \"✅ Deploy ${ENVIRONMENT} thành công - ${CI_PROJECT_NAME} @ ${CI_COMMIT_SHORT_SHA}\",
+            \"blocks\": [{
+              \"type\": \"section\",
+              \"text\": {
+                \"type\": \"mrkdwn\",
+                \"text\": \"*Deploy ${ENVIRONMENT}*\n• Commit: \`${CI_COMMIT_SHORT_SHA}\`\n• Branch: \`${CI_COMMIT_BRANCH}\`\n• Pipeline: <${CI_PIPELINE_URL}|#${CI_PIPELINE_ID}>\"
+              }
+            }]
+          }"
+      fi
+
+.notify_failure:
+  after_script:
+    - |
+      if [ -n "$SLACK_WEBHOOK_URL" ]; then
+        apk add --no-cache curl 2>/dev/null || true
+        curl -X POST "$SLACK_WEBHOOK_URL" \
+          -H 'Content-type: application/json' \
+          --data "{\"text\": \"❌ Deploy ${ENVIRONMENT} THẤT BẠI - ${CI_PROJECT_NAME} @ ${CI_COMMIT_SHORT_SHA}\nPipeline: ${CI_PIPELINE_URL}\"}"
+      fi

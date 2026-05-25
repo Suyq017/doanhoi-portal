@@ -3,16 +3,20 @@ variables:
   BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
   FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/frontend
   
-  # Docker settings - QUAN TRỌNG cho Stage 4 & 6
+  # Docker settings
   DOCKER_BUILDKIT: "1"
   COMPOSE_DOCKER_CLI_BUILD: "1"
   DOCKER_DRIVER: overlay2
   
-  # Node settings - cho Stage 1
+  # Node settings
   NODE_VERSION: "20.17"
   NPM_CONFIG_CACHE: ".npm"
   
-  # Deployment settings - cho Stage 9
+  # Deployment settings
   DEPLOY_TIMEOUT: "300"
-  HEALTH_CHECK_RETRIES: "5"
-  HEALTH_CHECK_INTERVAL: "10"
+  HEALTH_CHECK_RETRIES: "10"
+  HEALTH_CHECK_INTERVAL: "15"
+
+  # Security scanning
+  SAST_EXCLUDED_PATHS: "node_modules,dist,coverage"
+  DS_EXCLUDED_PATHS: "node_modules"

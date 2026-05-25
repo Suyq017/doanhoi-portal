@@ -76,7 +76,7 @@ INSERT INTO ctxh_activity (
     'Hiến máu nhân đạo tháng 1/2026',
     'Chiến dịch hiến máu tình nguyện lần thứ nhất năm 2026 tại ĐHBK TP.HCM. '
     'Mỗi đơn vị máu có thể cứu sống 3 người bệnh. Hãy cùng chung tay vì cộng đồng!',
-    'a1000001-0000-0000-0000-000000000002'::uuid,
+    'cat-hiến-máu-000000000000000'::uuid,
     'b8d0e38a-419b-4408-b6ae-6246b87e99a3'::uuid,
     '2026-01-15 07:30:00', '2026-01-15 16:30:00', 1,
     'Hội trường B4, Cơ sở 1, 268 Lý Thường Kiệt, Q.10',
@@ -91,7 +91,7 @@ INSERT INTO ctxh_activity (
     'Tình nguyện dọn dẹp vệ sinh môi trường tại khu dân cư phường Linh Trung, '
     'Thủ Đức nhân dịp đầu năm mới 2026. Hoạt động do Hội Sinh viên trường phối hợp '
     'với UBND phường tổ chức.',
-    'a1000001-0000-0000-0000-000000000003'::uuid,
+    'cat-môi-trường-0000000000000'::uuid,
     'dfb380cc-41df-4173-a987-9400df49c1ca'::uuid,
     '2026-01-22 07:00:00', '2026-01-22 11:30:00', 0.5,
     'Phường Linh Trung, TP. Thủ Đức',
@@ -106,7 +106,7 @@ INSERT INTO ctxh_activity (
     'Sinh viên tình nguyện sơn sửa phòng học, tổng vệ sinh khuôn viên và '
     'tặng dụng cụ học tập cho học sinh khó khăn tại trường Tiểu học Linh Trung. '
     'Tổng giá trị quà tặng: 15 triệu đồng.',
-    'a1000001-0000-0000-0000-000000000004'::uuid,
+    'cat-cộng-đồng-00000000000000'::uuid,
     'b8d0e38a-419b-4408-b6ae-6246b87e99a3'::uuid,
     '2026-02-08 07:00:00', '2026-02-09 17:00:00', 2,
     'Trường Tiểu học Linh Trung, TP. Thủ Đức',
@@ -121,7 +121,7 @@ INSERT INTO ctxh_activity (
     'Chiến dịch trồng 200 cây xanh tại khuôn viên cơ sở 2 ĐHBK TP.HCM nhân '
     'Ngày Quốc tế Cây xanh. Mỗi sinh viên tham gia được nhận 1 cây con về nhà '
     'trồng tiếp.',
-    'a1000001-0000-0000-0000-000000000003'::uuid,
+    'cat-môi-trường-0000000000000'::uuid,
     'dfb380cc-41df-4173-a987-9400df49c1ca'::uuid,
     '2026-03-01 07:00:00', '2026-03-01 11:00:00', 0.5,
     'Khuôn viên Cơ sở 2, Đường N6, Khu Công nghệ cao, TP. Thủ Đức',
@@ -136,7 +136,7 @@ INSERT INTO ctxh_activity (
     'Đội ngũ tình nguyện viên hỗ trợ sinh viên năm nhất đăng ký học phần học kỳ 2 '
     'năm học 2023-2024, giải đáp thắc mắc về chương trình đào tạo và quy trình '
     'tại phòng Đào tạo.',
-    'a1000001-0000-0000-0000-000000000001'::uuid,
+    'cat-tình-nguyện-00000000000000'::uuid,
     'b8d0e38a-419b-4408-b6ae-6246b87e99a3'::uuid,
     '2026-03-10 08:00:00', '2026-03-14 17:00:00', 1,
     'Văn phòng Đoàn - Hội, Cơ sở 1, ĐHBK TP.HCM',
@@ -153,7 +153,7 @@ INSERT INTO ctxh_activity (
     'Chiến dịch hiến máu tình nguyện lần thứ hai năm 2026. Mục tiêu thu 300 đơn vị '
     'máu để cung cấp cho bệnh viện Chợ Rẫy và Bệnh viện Ung Bướu TP.HCM. '
     'Mỗi người hiến máu được khám sức khỏe miễn phí và nhận quà tặng.',
-    'a1000001-0000-0000-0000-000000000002'::uuid,
+    'cat-hiến-máu-000000000000000'::uuid,
     'b8d0e38a-419b-4408-b6ae-6246b87e99a3'::uuid,
     '2026-04-25 07:30:00', '2026-04-25 16:30:00', 1,
     'Hội trường A3, Cơ sở 1, 268 Lý Thường Kiệt, Q.10',
@@ -168,7 +168,7 @@ INSERT INTO ctxh_activity (
     'Sinh viên tình nguyện xuống các địa bàn khó khăn tại tỉnh Bình Phước để '
     'hỗ trợ xây dựng công trình, dạy học cho trẻ em, khám chữa bệnh miễn phí '
     'và tổ chức các hoạt động vui chơi. Thời gian: 10 ngày.',
-    'a1000001-0000-0000-0000-000000000001'::uuid,
+    'cat-tình-nguyện-00000000000000'::uuid,
     'dfb380cc-41df-4173-a987-9400df49c1ca'::uuid,
     '2026-04-20 06:00:00', '2026-04-30 20:00:00', 3,
     'Huyện Phú Riềng, tỉnh Bình Phước',
@@ -183,7 +183,7 @@ INSERT INTO ctxh_activity (
     'Chiến dịch thu gom rác thải ven biển tại khu du lịch Cần Giờ, kết hợp '
     'trồng thêm 100 cây ngập mặn để bảo vệ hệ sinh thái rừng ngập mặn. '
     'Di chuyển bằng xe buýt tập trung từ trường lúc 5:30.',
-    'a1000001-0000-0000-0000-000000000003'::uuid,
+    'cat-môi-trường-0000000000000'::uuid,
     'b8d0e38a-419b-4408-b6ae-6246b87e99a3'::uuid,
     '2026-04-26 05:30:00', '2026-04-26 18:00:00', 1,
     'Bãi biển Cần Giờ, Huyện Cần Giờ, TP.HCM',
@@ -198,7 +198,7 @@ INSERT INTO ctxh_activity (
     'Thăm hỏi, chăm sóc sức khỏe, tặng quà và tổ chức văn nghệ cho các cụ '
     'tại Trung tâm Bảo trợ người cao tuổi Thị Nghè nhân dịp tháng 4. '
     'Mang lại niềm vui và sự ấm áp cho các cụ neo đơn.',
-    'a1000001-0000-0000-0000-000000000004'::uuid,
+    'cat-cộng-đồng-00000000000000'::uuid,
     'dfb380cc-41df-4173-a987-9400df49c1ca'::uuid,
     '2026-04-27 08:00:00', '2026-04-27 15:00:00', 1,
     'Trung tâm Bảo trợ Người cao tuổi Thị Nghè, Q. Bình Thạnh',
@@ -213,7 +213,7 @@ INSERT INTO ctxh_activity (
     'Đêm nhạc do sinh viên ĐHBK biểu diễn, gây quỹ hỗ trợ học bổng cho '
     'sinh viên hoàn cảnh khó khăn. Dự kiến quyên góp 50 triệu đồng. '
     'Vé vào cửa: 50.000đ (toàn bộ dành cho quỹ học bổng).',
-    'a1000001-0000-0000-0000-000000000005'::uuid,
+    'cat-văn-hóa-tt-0000000000000'::uuid,
     'b8d0e38a-419b-4408-b6ae-6246b87e99a3'::uuid,
     '2026-04-29 18:00:00', '2026-04-29 21:30:00', 0.5,
     'Hội trường lớn, Cơ sở 1, ĐHBK TP.HCM',
@@ -228,7 +228,7 @@ INSERT INTO ctxh_activity (
     'Giải bóng đá mini 5 người dành cho sinh viên ĐHBK TP.HCM. '
     'Phí đăng ký 300.000đ/đội (toàn bộ dùng mua dụng cụ học tập tặng '
     'trẻ em khó khăn). Giải thưởng: Cúp + áo thi đấu.',
-    'a1000001-0000-0000-0000-000000000005'::uuid,
+    'cat-văn-hóa-tt-0000000000000'::uuid,
     'dfb380cc-41df-4173-a987-9400df49c1ca'::uuid,
     '2026-04-28 06:00:00', '2026-04-28 17:00:00', 1,
     'Sân bóng đá Cơ sở 2, ĐHBK TP.HCM',
@@ -243,7 +243,7 @@ INSERT INTO ctxh_activity (
     'Sinh viên tình nguyện dạy tin học cơ bản (Word, Excel, Internet) cho '
     '50 trẻ em từ 10-15 tuổi tại xã Phước Kiển, Nhà Bè. Mỗi buổi học 3 giờ, '
     'kéo dài trong 4 tuần (mỗi tuần 2 buổi cuối tuần).',
-    'a1000001-0000-0000-0000-000000000004'::uuid,
+    'cat-cộng-đồng-00000000000000'::uuid,
     'b8d0e38a-419b-4408-b6ae-6246b87e99a3'::uuid,
     '2026-04-05 08:00:00', '2026-04-30 11:00:00', 2,
     'Trường THCS Phước Kiển, Huyện Nhà Bè',
@@ -258,7 +258,7 @@ INSERT INTO ctxh_activity (
     'Phối hợp với Trung tâm Y tế Thủ Đức tổ chức khám sức khỏe miễn phí '
     '(đường huyết, huyết áp, thị lực, nha khoa) cho người dân lao động nghèo. '
     'Sinh viên y khoa tham gia hỗ trợ chuyên môn dưới sự giám sát bác sĩ.',
-    'a1000001-0000-0000-0000-000000000001'::uuid,
+    'cat-tình-nguyện-00000000000000'::uuid,
     'dfb380cc-41df-4173-a987-9400df49c1ca'::uuid,
     '2026-04-20 07:30:00', '2026-05-10 17:00:00', 1.5,
     'UBND Phường Linh Xuân, TP. Thủ Đức',
@@ -273,7 +273,7 @@ INSERT INTO ctxh_activity (
     'Sinh viên tình nguyện hỗ trợ công tác tổ chức Ngày hội Tuyển sinh ĐHBK TP.HCM '
     '2026: đón tiếp, hướng dẫn, tư vấn xét tuyển, hỗ trợ đăng ký và giải đáp thắc '
     'mắc cho học sinh phổ thông và phụ huynh.',
-    'a1000001-0000-0000-0000-000000000001'::uuid,
+    'cat-tình-nguyện-00000000000000'::uuid,
     'b8d0e38a-419b-4408-b6ae-6246b87e99a3'::uuid,
     '2026-04-30 06:30:00', '2026-04-30 17:30:00', 1,
     'Cơ sở 1 và Cơ sở 2, ĐHBK TP.HCM',
@@ -289,7 +289,7 @@ INSERT INTO ctxh_activity (
     'Hiến máu nhân đạo tháng 6/2026',
     'Chiến dịch hiến máu tình nguyện lần thứ ba năm 2026. Dự kiến thu 350 đơn vị '
     'máu, phối hợp với Viện Huyết học - Truyền máu Trung ương TP.HCM.',
-    'a1000001-0000-0000-0000-000000000002'::uuid,
+    'cat-hiến-máu-000000000000000'::uuid,
     'b8d0e38a-419b-4408-b6ae-6246b87e99a3'::uuid,
     '2026-06-14 07:30:00', '2026-06-14 16:30:00', 1,
     'Hội trường B4, Cơ sở 1, 268 Lý Thường Kiệt, Q.10',
@@ -304,7 +304,7 @@ INSERT INTO ctxh_activity (
     'Hoạt động thu gom rác trên mặt nước và hai bên bờ sông Sài Gòn đoạn qua '
     'quận Bình Thạnh, nhằm nâng cao ý thức bảo vệ nguồn nước và môi trường '
     'đô thị. Sử dụng thuyền kayak và lưới thu gom.',
-    'a1000001-0000-0000-0000-000000000003'::uuid,
+    'cat-môi-trường-0000000000000'::uuid,
     'dfb380cc-41df-4173-a987-9400df49c1ca'::uuid,
     '2026-05-17 06:00:00', '2026-05-17 12:00:00', 0.5,
     'Bến thuyền Bình Quới, Q. Bình Thạnh',
@@ -319,7 +319,7 @@ INSERT INTO ctxh_activity (
     'Đợt 2 chiến dịch Mùa hè Xanh tại tỉnh Trà Vinh. Nội dung: xây dựng '
     '5 cầu nông thôn, sửa chữa 20 nhà tình thương, tổ chức lớp học hè cho '
     '200 trẻ em. Thời gian: 15 ngày.',
-    'a1000001-0000-0000-0000-000000000001'::uuid,
+    'cat-tình-nguyện-00000000000000'::uuid,
     'dfb380cc-41df-4173-a987-9400df49c1ca'::uuid,
     '2026-06-28 06:00:00', '2026-07-12 20:00:00', 3,
     'Huyện Châu Thành, tỉnh Trà Vinh',
@@ -334,7 +334,7 @@ INSERT INTO ctxh_activity (
     'Ngày hội tập trung toàn bộ các CLB-Đội-Nhóm tình nguyện trong trường '
     'tổ chức các gian hàng hoạt động: khám bệnh miễn phí, dạy kỹ năng sống, '
     'phát quà từ thiện, biểu diễn nghệ thuật. Mở cửa tự do cho người dân khu vực.',
-    'a1000001-0000-0000-0000-000000000004'::uuid,
+    'cat-cộng-đồng-00000000000000'::uuid,
     'b8d0e38a-419b-4408-b6ae-6246b87e99a3'::uuid,
     '2026-05-25 07:00:00', '2026-05-25 17:00:00', 1,
     'Sân trung tâm, Cơ sở 2, ĐHBK TP.HCM',
@@ -349,7 +349,7 @@ INSERT INTO ctxh_activity (
     'Sinh viên khóa trên tổ chức các buổi ôn tập miễn phí cho sinh viên năm '
     'nhất và năm hai trước kỳ thi cuối kỳ. Các môn: Giải tích, Đại số, Vật lý, '
     'Lập trình cơ bản. Mỗi buổi 3 tiếng, tổ chức tại phòng học trống.',
-    'a1000001-0000-0000-0000-000000000001'::uuid,
+    'cat-tình-nguyện-00000000000000'::uuid,
     'dfb380cc-41df-4173-a987-9400df49c1ca'::uuid,
     '2026-05-18 17:00:00', '2026-06-07 20:00:00', 1,
     'Các phòng học, Cơ sở 1 và Cơ sở 2, ĐHBK TP.HCM',
@@ -365,7 +365,7 @@ INSERT INTO ctxh_activity (
     'dạy kỹ năng sống (giao tiếp, quản lý cảm xúc, định hướng nghề nghiệp) '
     'cho 30 trẻ em từ 12-18 tuổi tại mái ấm Thiên Ân, Q.12. '
     'Kết hợp tặng quà và tổ chức bữa tiệc sinh nhật chung.',
-    'a1000001-0000-0000-0000-000000000004'::uuid,
+    'cat-cộng-đồng-00000000000000'::uuid,
     'b8d0e38a-419b-4408-b6ae-6246b87e99a3'::uuid,
     '2026-05-10 08:00:00', '2026-05-10 16:00:00', 1,
     'Mái ấm Thiên Ân, 235 Tô Ký, P. Trung Mỹ Tây, Q.12',

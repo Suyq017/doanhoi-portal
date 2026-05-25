@@ -1,19 +1,19 @@
-include:
-  - local: '.gitlab/ci/templates/ssh-deploy.yml'
-
 deploy:production:
-  extends:                              
-    - .ssh_deploy_base                   
+  extends:
+    - .ssh_deploy_base
+    - .notify_success
   stage: deploy-prod
   needs:
     - build:backend
     - build:frontend
+    - job: security:audit
+      artifacts: false
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: manual
     - if: $CI_COMMIT_BRANCH == "dev"
       when: manual
-      allow_failure: true    # Cho phép skip trên dev
+      allow_failure: true
   variables:
     ENVIRONMENT: "production"
     COMPOSE_FILE: "docker-compose.prod.yml"
@@ -30,9 +30,8 @@ deploy:production:
         set -e
         cd ${DEPLOY_PATH}
         
-        # Backup current version
         echo "📦 Backing up current version..."
-        docker compose config | grep "image:" > .previous-images.txt || true
+        docker compose ps --format '{{.Image}}' > .previous-images.txt || true
         
         echo "🔐 Logging into Registry..."
         echo "${CI_REGISTRY_PASSWORD}" | docker login -u "${CI_REGISTRY_USER}" --password-stdin "${CI_REGISTRY}"
@@ -46,26 +45,44 @@ deploy:production:
         echo "🔄 Deploying..."
         docker compose -f docker-compose.yml up -d --remove-orphans
         
-        echo "⏳ Waiting for services to be healthy..."
-        sleep 20
+        echo "⏳ Running health check..."
+        HEALTHY=false
+        for i in \$(seq 1 10); do
+          HTTP_CODE=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:2681/api || echo "000")
+          if [ "\$HTTP_CODE" = "200" ] || [ "\$HTTP_CODE" = "301" ]; then
+            HEALTHY=true
+            echo "✅ Health check passed on attempt \$i"
+            break
+          fi
+          echo "⏳ Health check attempt \$i/10 failed (HTTP \$HTTP_CODE)"
+          sleep 15
+        done
+
+        if [ "\$HEALTHY" = "false" ]; then
+          echo "❌ Health check failed! Rolling back..."
+          if [ -f .previous-images.txt ]; then
+            echo "🔄 Pulling previous images..."
+            while IFS= read -r img; do
+              docker pull "\$img" 2>/dev/null || true
+            done < .previous-images.txt
+            docker compose -f docker-compose.yml up -d --remove-orphans
+            echo "🔄 Rollback completed"
+          fi
+          exit 1
+        fi
         
         echo "✅ Deployment completed"
         docker compose -f docker-compose.yml ps
         
         echo "🧹 Cleanup old Docker images..."
-        # Lấy danh sách image IDs đang được container sử dụng
         USED_IMAGES=\$(docker ps --format '{{.Image}}' | sort -u)
-        
-        # Xóa tất cả images từ registry mà KHÔNG được container nào đang dùng
         docker images --format '{{.ID}} {{.Repository}}:{{.Tag}}' | grep '${CI_REGISTRY_IMAGE}' | while read id repotag; do
           if ! echo "\$USED_IMAGES" | grep -q "\$repotag"; then
             echo "  Removing unused: \$repotag"
             docker rmi \$id 2>/dev/null || true
           fi
         done
-        # Xóa dangling images (không tag)
         docker image prune -f
-        # Xóa build cache cũ
         docker builder prune -f --filter "until=72h" 2>/dev/null || true
         
         echo "📊 Disk usage after cleanup:"

@@ -1,0 +1,29 @@
+lint:backend:
+  stage: lint
+  image: node:${NODE_VERSION}-alpine
+  extends:
+    - .rules_main_branches
+  needs:
+    - prepare:dependencies
+  script:
+    - cd backend
+    - npx eslint "{src,apps,libs,test}/**/*.ts" --format gitlab
+  artifacts:
+    reports:
+      codequality: backend/gl-codequality.json
+    when: always
+
+lint:frontend:
+  stage: lint
+  image: node:${NODE_VERSION}-alpine
+  extends:
+    - .rules_main_branches
+  needs:
+    - prepare:dependencies
+  script:
+    - cd frontend
+    - npx eslint . --ext ts,tsx --format gitlab
+  artifacts:
+    reports:
+      codequality: frontend/gl-codequality.json
+    when: always

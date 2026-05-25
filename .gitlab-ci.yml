@@ -2,14 +2,30 @@ include:
   - local: '.gitlab/ci/variables.yml'
   - local: '.gitlab/ci/cache.yml'
   - local: '.gitlab/ci/rules.yml'
-   
+  - local: '.gitlab/ci/templates/ssh-deploy.yml'
+  - local: '.gitlab/ci/templates/notify.yml'
+
   - local: '.gitlab/ci/stages/01-prepare.yml'
+  - local: '.gitlab/ci/stages/02-lint.yml'
+  - local: '.gitlab/ci/stages/03-test.yml'
   - local: '.gitlab/ci/stages/04-build.yml'
-  - local: '.gitlab/ci/stages/07-deploy-staging.yml'
+  - local: '.gitlab/ci/stages/05-security.yml'
+  # - local: '.gitlab/ci/stages/07-deploy-staging.yml'
+  # - local: '.gitlab/ci/stages/08-verify.yml'
+  # - local: '.gitlab/ci/stages/08b-evaluate.yml'
   - local: '.gitlab/ci/stages/09-deploy-prod.yml'
+
+  # GitLab SAST/Dependency Scan templates (miễn phí)
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
 
 stages:
   - prepare
+  - lint
+  - test
   - build
-  - deploy-staging
+  - security
+  # - deploy-staging
+  # - verify
+  # - evaluate
   - deploy-prod

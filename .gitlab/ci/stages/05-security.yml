@@ -1,0 +1,59 @@
+security:audit:
+  stage: security
+  image: node:${NODE_VERSION}-alpine
+  extends:
+    - .rules_main_branches
+  needs:
+    - prepare:dependencies
+  script:
+    - echo "=== Backend Dependency Audit ==="
+    - cd backend && npm audit --audit-level=high --json > ../backend-audit.json || true
+    - cd ..
+    - echo "=== Frontend Dependency Audit ==="
+    - cd frontend && npm audit --audit-level=high --json > ../frontend-audit.json || true
+    - cd ..
+    - |
+      echo "=== Audit Summary ==="
+      BE_HIGH=$(cat backend-audit.json | grep -c '"severity":"high"' || echo "0")
+      BE_CRITICAL=$(cat backend-audit.json | grep -c '"severity":"critical"' || echo "0")
+      FE_HIGH=$(cat frontend-audit.json | grep -c '"severity":"high"' || echo "0")
+      FE_CRITICAL=$(cat frontend-audit.json | grep -c '"severity":"critical"' || echo "0")
+      echo "Backend: ${BE_HIGH} high, ${BE_CRITICAL} critical"
+      echo "Frontend: ${FE_HIGH} high, ${FE_CRITICAL} critical"
+      TOTAL_CRITICAL=$((BE_CRITICAL + FE_CRITICAL))
+      if [ "$TOTAL_CRITICAL" -gt 0 ]; then
+        echo "❌ Critical vulnerabilities found!"
+        exit 1
+      fi
+  artifacts:
+    paths:
+      - backend-audit.json
+      - frontend-audit.json
+    expire_in: 7 days
+    when: always
+  allow_failure: false
+
+container_scanning:
+  stage: security
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  needs:
+    - build:backend
+    - build:frontend
+  variables:
+    TRIVY_SEVERITY: "HIGH,CRITICAL"
+  before_script:
+    - apk add --no-cache curl
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "🔍 Scanning backend image..."
+    - docker pull $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA
+    - trivy image --exit-code 0 --severity $TRIVY_SEVERITY --format table $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA
+    - echo "🔍 Scanning frontend image..."
+    - docker pull $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA
+    - trivy image --exit-code 0 --severity $TRIVY_SEVERITY --format table $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^(staging|main)$/
+  allow_failure: true

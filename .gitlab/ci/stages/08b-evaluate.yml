@@ -1,0 +1,80 @@
+# Chatbot AI Evaluation — chạy SAU khi deploy staging + verify thành công
+# Đánh giá chất lượng chatbot trên version mới vừa deploy
+
+evaluate:chatbot-student:
+  stage: evaluate
+  image: python:3.11-slim
+  needs:
+    - job: verify:staging
+  variables:
+    GEMINI_API_KEY: $GEMINI_API_KEY
+    BACKEND_URL: $STAGING_BACKEND_URL
+  before_script:
+    - pip install ragas langchain-google-genai requests pandas
+  script:
+    - cd backend/test/evaluation
+    - python evaluate.py --output results/student_eval_${CI_COMMIT_SHORT_SHA}.json
+    - |
+      echo "=== Chatbot Student Evaluation Results ==="
+      python -c "
+      import json
+      with open('results/student_eval_${CI_COMMIT_SHORT_SHA}.json') as f:
+          data = json.load(f)
+      relevancy = data.get('avg_answer_relevancy', 0)
+      print(f'Answer Relevancy: {relevancy:.4f}')
+      if relevancy < 0.55:
+          print('⚠️ WARNING: Answer Relevancy below threshold (0.55)')
+          exit(1)
+      else:
+          print('✅ Answer Relevancy within acceptable range')
+      "
+  artifacts:
+    paths:
+      - backend/test/evaluation/results/
+    expire_in: 30 days
+    when: always
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^(dev|staging)$/
+      when: on_success
+    - when: never
+
+evaluate:chatbot-staff:
+  stage: evaluate
+  image: python:3.11-slim
+  needs:
+    - job: verify:staging
+  variables:
+    GEMINI_API_KEY: $GEMINI_API_KEY
+    BACKEND_URL: $STAGING_BACKEND_URL
+  before_script:
+    - pip install requests pandas
+  script:
+    - cd backend/test/evaluation
+    - python evaluate_staff.py --output results/staff_eval_${CI_COMMIT_SHORT_SHA}.json
+    - |
+      echo "=== Chatbot Staff Evaluation Results ==="
+      python -c "
+      import json
+      with open('results/staff_eval_${CI_COMMIT_SHORT_SHA}.json') as f:
+          data = json.load(f)
+      trigger_rate = data.get('tool_trigger_rate', 0)
+      p50 = data.get('latency_p50', 0)
+      print(f'Tool Trigger Rate: {trigger_rate:.2%}')
+      print(f'Latency p50: {p50:.0f}ms')
+      if trigger_rate < 0.80:
+          print('⚠️ WARNING: Tool Trigger Rate below threshold (0.80)')
+          exit(1)
+      else:
+          print('✅ Tool Trigger Rate within acceptable range')
+      "
+  artifacts:
+    paths:
+      - backend/test/evaluation/results/
+    expire_in: 30 days
+    when: always
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^(dev|staging)$/
+      when: on_success
+    - when: never
