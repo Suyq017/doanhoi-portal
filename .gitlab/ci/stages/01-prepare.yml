@@ -5,8 +5,9 @@ prepare:dependencies:
     - .node_cache
     - .rules_main_branches
   script:
-    - echo "Installing dependencies..."
-    - cd backend && npm ci --cache ../ .npm --prefer-offline
+    - echo "Installing backend dependencies..."
+    - cd backend && npm ci --cache ../.npm --prefer-offline
+    - echo "Installing frontend dependencies..."
     - cd ../frontend && npm ci --cache ../.npm --prefer-offline
   artifacts:
     paths:

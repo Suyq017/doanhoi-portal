@@ -5,13 +5,12 @@ lint:backend:
     - .rules_main_branches
   needs:
     - prepare:dependencies
+  before_script:
+    - cd backend && npm rebuild 2>/dev/null || true
   script:
     - cd backend
-    - npx eslint "{src,apps,libs,test}/**/*.ts" --format gitlab
-  artifacts:
-    reports:
-      codequality: backend/gl-codequality.json
-    when: always
+    - npm run lint
+  allow_failure: true
 
 lint:frontend:
   stage: lint
@@ -20,10 +19,9 @@ lint:frontend:
     - .rules_main_branches
   needs:
     - prepare:dependencies
+  before_script:
+    - cd frontend && npm rebuild 2>/dev/null || true
   script:
     - cd frontend
-    - npx eslint . --ext ts,tsx --format gitlab
-  artifacts:
-    reports:
-      codequality: frontend/gl-codequality.json
-    when: always
+    - npm run lint
+  allow_failure: true

@@ -19,16 +19,13 @@ test:backend:
     DB_PASSWORD: test_password
     DB_NAME: doanhoi_test
     NODE_ENV: test
+  before_script:
+    - cd backend && npm rebuild 2>/dev/null || true
   script:
     - cd backend
-    - npm run test:cov -- --ci --reporters=default --reporters=jest-junit
+    - npm run test:cov -- --ci --forceExit
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
-    reports:
-      junit: backend/junit.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: backend/coverage/cobertura-coverage.xml
     paths:
       - backend/coverage/
     when: always
@@ -41,14 +38,13 @@ test:frontend:
     - .rules_main_branches
   needs:
     - prepare:dependencies
+  before_script:
+    - cd frontend && npm rebuild 2>/dev/null || true
   script:
     - cd frontend
-    - npx vitest run --reporter=junit --outputFile=junit.xml --coverage
+    - npm run test
   artifacts:
-    reports:
-      junit: frontend/junit.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: frontend/coverage/cobertura-coverage.xml
+    paths:
+      - frontend/coverage/
     when: always
     expire_in: 7 days
