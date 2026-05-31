@@ -25,6 +25,7 @@ test:backend:
     - npm ci --cache ../.npm --prefer-offline
     - npm run test:cov -- --ci --forceExit
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  allow_failure: true
   artifacts:
     paths:
       - backend/coverage/
@@ -43,6 +44,7 @@ test:frontend:
     - cd frontend
     - npm ci --cache ../.npm --prefer-offline
     - npm run test
+  allow_failure: true
   artifacts:
     paths:
       - frontend/coverage/

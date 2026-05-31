@@ -14,17 +14,17 @@ security:audit:
     - cd ..
     - |
       echo "=== Audit Summary ==="
-      BE_HIGH=$(cat backend-audit.json | grep -c '"severity":"high"' || echo "0")
-      BE_CRITICAL=$(cat backend-audit.json | grep -c '"severity":"critical"' || echo "0")
-      FE_HIGH=$(cat frontend-audit.json | grep -c '"severity":"high"' || echo "0")
-      FE_CRITICAL=$(cat frontend-audit.json | grep -c '"severity":"critical"' || echo "0")
-      echo "Backend: ${BE_HIGH} high, ${BE_CRITICAL} critical"
-      echo "Frontend: ${FE_HIGH} high, ${FE_CRITICAL} critical"
-      TOTAL_CRITICAL=$((BE_CRITICAL + FE_CRITICAL))
-      if [ "$TOTAL_CRITICAL" -gt 0 ]; then
+      BE_CRITICAL=$(grep -c '"severity":"critical"' backend-audit.json 2>/dev/null || true)
+      FE_CRITICAL=$(grep -c '"severity":"critical"' frontend-audit.json 2>/dev/null || true)
+      BE_CRITICAL=${BE_CRITICAL:-0}
+      FE_CRITICAL=${FE_CRITICAL:-0}
+      echo "Backend critical: ${BE_CRITICAL}"
+      echo "Frontend critical: ${FE_CRITICAL}"
+      if [ "${BE_CRITICAL}" -gt 0 ] 2>/dev/null || [ "${FE_CRITICAL}" -gt 0 ] 2>/dev/null; then
         echo "❌ Critical vulnerabilities found!"
         exit 1
       fi
+      echo "✅ No critical vulnerabilities"
   artifacts:
     paths:
       - backend-audit.json
