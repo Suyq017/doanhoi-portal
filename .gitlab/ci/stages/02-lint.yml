@@ -6,7 +6,7 @@ lint:backend:
   needs:
     - prepare:dependencies
   before_script:
-    - cd backend && npm rebuild 2>/dev/null || true
+    - (cd backend && npm rebuild 2>/dev/null || true)
   script:
     - cd backend
     - npm run lint
@@ -20,7 +20,7 @@ lint:frontend:
   needs:
     - prepare:dependencies
   before_script:
-    - cd frontend && npm rebuild 2>/dev/null || true
+    - (cd frontend && npm rebuild 2>/dev/null || true)
   script:
     - cd frontend
     - npm run lint

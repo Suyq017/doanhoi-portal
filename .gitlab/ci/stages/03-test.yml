@@ -20,7 +20,7 @@ test:backend:
     DB_NAME: doanhoi_test
     NODE_ENV: test
   before_script:
-    - cd backend && npm rebuild 2>/dev/null || true
+    - (cd backend && npm rebuild 2>/dev/null || true)
   script:
     - cd backend
     - npm run test:cov -- --ci --forceExit
@@ -39,7 +39,7 @@ test:frontend:
   needs:
     - prepare:dependencies
   before_script:
-    - cd frontend && npm rebuild 2>/dev/null || true
+    - (cd frontend && npm rebuild 2>/dev/null || true)
   script:
     - cd frontend
     - npm run test
