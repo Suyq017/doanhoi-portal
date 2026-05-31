@@ -5,12 +5,8 @@ prepare:dependencies:
     - .node_cache
     - .rules_main_branches
   script:
-    - echo "Installing backend dependencies..."
+    - echo "Warming npm cache for backend..."
     - cd backend && npm ci --cache ../.npm --prefer-offline
-    - echo "Installing frontend dependencies..."
+    - echo "Warming npm cache for frontend..."
     - cd ../frontend && npm ci --cache ../.npm --prefer-offline
-  artifacts:
-    paths:
-      - backend/node_modules/
-      - frontend/node_modules/
-    expire_in: 1 hour
+    - echo "npm cache warmed - downstream jobs will install from cache (offline)"
