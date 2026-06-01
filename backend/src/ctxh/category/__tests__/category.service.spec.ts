@@ -48,6 +48,36 @@ describe("CategoryService", () => {
     expect(result.data[0].activities_count).toBe(3);
   });
 
+  it("should return an empty result safely when no categories exist", async () => {
+    const queryBuilder = {
+      leftJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getCount: jest.fn(async () => 0),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getRawAndEntities: jest.fn(),
+    } as any;
+
+    categoryRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    const result = await service.findAll({ page: 1, limit: 10 });
+
+    expect(result).toEqual({
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPrevPage: false,
+    });
+    expect(queryBuilder.getRawAndEntities).not.toHaveBeenCalled();
+  });
+
   it("should throw not found when category detail is missing", async () => {
     categoryRepository.createQueryBuilder.mockReturnValue({
       leftJoin: jest.fn().mockReturnThis(),

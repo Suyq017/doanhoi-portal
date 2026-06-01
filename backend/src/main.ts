@@ -4,6 +4,7 @@ import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { MetricsInterceptor } from "./common/interceptors/metrics.interceptor";
 import { MetricsService } from "./metrics/metrics.service";
+import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import * as express from "express";
 
 async function bootstrap() {
@@ -30,6 +31,7 @@ async function bootstrap() {
 
   const metricsService = app.get(MetricsService);
   app.useGlobalInterceptors(new MetricsInterceptor(metricsService));
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Global validation pipe
   app.useGlobalPipes(

@@ -27,7 +27,7 @@
     "test:phase2:all": "npm run test:phase2:unit && npm run test:phase2:e2e && npm run test:phase2:perf",
     "typeorm": "typeorm-ts-node-commonjs",
     "db:create-schema": "ts-node src/database/create-schema.ts",
-    "db:reset": "ts-node src/database/reset-database.ts && npm run seed",
+    "db:reset": "ts-node -r tsconfig-paths/register src/database/reset-database.ts && npm run seed",
     "db:drop": "ts-node src/database/reset-database.ts",
     "seed": "ts-node src/database/seeds/index.ts",
     "seed:permissions": "ts-node -e \"import('./src/database/seeds/permissions.seed').then(m => m.seedPermissions(require('./src/database/seeds/dataSource')))\"",

@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Logger,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { RolesService } from "../../roles/roles.service";
@@ -10,6 +11,8 @@ import { PERMISSIONS_KEY } from "../decorators/permissions.decorator";
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
+  private readonly logger = new Logger(PermissionGuard.name);
+
   constructor(
     private reflector: Reflector,
     private rolesService: RolesService,
@@ -30,7 +33,14 @@ export class PermissionGuard implements CanActivate {
     const organizationId =
       request.params.organizationId || request.body.organizationId;
 
+    this.logger.log(
+      `Checking permissions for ${request.method} ${request.url} | user=${user?.id || "anonymous"} | org=${organizationId || "none"} | required=${requiredPermissions.join(", ")}`,
+    );
+
     if (!user) {
+      this.logger.warn(
+        `Rejecting unauthenticated request for ${request.method} ${request.url}`,
+      );
       throw new ForbiddenException("User not authenticated");
     }
 
@@ -39,27 +49,38 @@ export class PermissionGuard implements CanActivate {
     let hasAnyPermission = false;
     const missingPermissions = [];
 
-    for (const permission of requiredPermissions) {
-      const hasPermission = await this.rolesService.hasPermission(
-        user.id,
-        permission,
-        organizationId,
-      );
+    try {
+      for (const permission of requiredPermissions) {
+        const hasPermission = await this.rolesService.hasPermission(
+          user.id,
+          permission,
+          organizationId,
+        );
 
-      if (hasPermission) {
-        hasAnyPermission = true;
-        break; // Found one permission, grant access
-      } else {
-        missingPermissions.push(permission);
+        if (hasPermission) {
+          hasAnyPermission = true;
+          break; // Found one permission, grant access
+        } else {
+          missingPermissions.push(permission);
+        }
       }
-    }
 
-    if (!hasAnyPermission) {
-      throw new ForbiddenException(
-        `Permission denied. Requires one of: ${requiredPermissions.join(" OR ")}`,
+      if (!hasAnyPermission) {
+        this.logger.warn(
+          `Permission denied for user=${user.id} on ${request.method} ${request.url} | required=${requiredPermissions.join(" OR ")}`,
+        );
+        throw new ForbiddenException(
+          `Permission denied. Requires one of: ${requiredPermissions.join(" OR ")}`,
+        );
+      }
+
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `Permission check failed for ${request.method} ${request.url} | user=${user.id} | org=${organizationId || "none"} | required=${requiredPermissions.join(", ")}`,
+        error?.stack || error,
       );
+      throw error;
     }
-
-    return true;
   }
 }
