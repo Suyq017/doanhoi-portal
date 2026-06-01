@@ -17,49 +17,14 @@ import { Permission } from "../../entities/permission.entity";
 import { Role } from "../../entities/role.entity";
 import { UserRole } from "../../entities/user-role.entity";
 
-function getDatabaseHost(): string {
-  const envHost = process.env.DB_HOST;
-  if (envHost) return envHost;
-
-  const envPort = process.env.DB_PORT;
-  if (envPort === "2679") {
-    return "doanhoi-postgres-prod";
-  }
-
-  return "127.0.0.1";
-}
-
-function getDatabasePort(): number {
-  const envPort = process.env.DB_PORT;
-  if (envPort) {
-    if (envPort === "2679") {
-      return 5432;
-    }
-    return parseInt(envPort);
-  }
-
-  return 9000;
-}
-
-function getDatabasePassword(): string {
-  const envPassword = process.env.DB_PASSWORD;
-  if (envPassword) return envPassword;
-
-  if (process.env.NODE_ENV === "production") {
-    return "your_secure_password";
-  }
-
-  return "password";
-}
-
 const runSeeding = async () => {
   const dataSource = new DataSource({
     type: "postgres",
-    host: getDatabaseHost(),
-    port: getDatabasePort(),
+    host: process.env.DB_HOST || "localhost",
+    port: parseInt(process.env.DB_PORT) || 5432,
     username: process.env.DB_USERNAME || "postgres",
-    password: getDatabasePassword(),
-    database: process.env.DB_NAME || process.env.DB_DATABASE || "doanhoi",
+    password: process.env.DB_PASSWORD || "postgres",
+    database: process.env.DB_NAME || "doanhoi",
     entities: [
       User,
       Organization,
@@ -73,17 +38,8 @@ const runSeeding = async () => {
     synchronize: false,
   });
 
-  let isInitialized = false;
-
   try {
-    console.log("🔄 Connecting to database...");
-    console.log(`📡 Host: ${getDatabaseHost()}:${getDatabasePort()}`);
-    console.log(
-      `🗄️  Database: ${process.env.DB_NAME || process.env.DB_DATABASE || "doanhoi"}`,
-    );
-
     await dataSource.initialize();
-    isInitialized = true;
     console.log("Database connection established");
 
     // Run seeds in correct order
@@ -101,9 +57,7 @@ const runSeeding = async () => {
   } catch (error) {
     console.error("❌ Error during seeding:", error);
   } finally {
-    if (isInitialized) {
-      await dataSource.destroy();
-    }
+    await dataSource.destroy();
   }
 };
 

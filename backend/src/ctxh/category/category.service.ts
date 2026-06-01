@@ -40,55 +40,35 @@ export class CategoryService {
     const limit = Math.min(Math.max(1, queryParams?.limit || 10), 100); // Giới hạn max 100 items
     const skip = (page - 1) * limit;
 
-    const buildBaseQuery = () => this.categoryRepository
+    const queryBuilder = this.categoryRepository
       .createQueryBuilder("category")
       .leftJoin(
         "category.activities",
         "activities",
         "activities.deleted_at IS NULL",
       )
-      .where("category.deleted_at IS NULL");
-
-    const applyFilters = (queryBuilder: ReturnType<typeof buildBaseQuery>) => {
-      if (queryParams?.search) {
-        queryBuilder.andWhere(
-          "(category.name ILIKE :search OR category.description ILIKE :search)",
-          { search: `%${queryParams.search}%` },
-        );
-      }
-
-      if (queryParams?.user_type === 'student') {
-        queryBuilder.andWhere("activities.status IN (:...visibleStatuses)", {
-          visibleStatuses: STUDENT_VISIBLE_ACTIVITY_STATUSES,
-        });
-      }
-
-      return queryBuilder;
-    };
-
-    const countQueryBuilder = applyFilters(buildBaseQuery());
-
-    // Keep counting separate from the aggregate query so an empty dataset
-    // does not depend on grouped result handling.
-    const total = await countQueryBuilder.getCount();
-
-    if (total === 0) {
-      return {
-        data: [],
-        total: 0,
-        page,
-        limit,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPrevPage: page > 1,
-      };
-    }
-
-    const queryBuilder = applyFilters(buildBaseQuery())
       .addSelect("COUNT(activities.id)", "activities_count")
+      .where("category.deleted_at IS NULL")
       .groupBy("category.id");
 
+    // Add search functionality
+    if (queryParams?.search) {
+      queryBuilder.andWhere(
+        "(category.name ILIKE :search OR category.description ILIKE :search)",
+        { search: `%${queryParams.search}%` },
+      );
+    }
+
+    if (queryParams?.user_type === 'student') {
+      queryBuilder.andWhere("activities.status IN (:...visibleStatuses)", {
+        visibleStatuses: STUDENT_VISIBLE_ACTIVITY_STATUSES,
+      });
+    }
+
     queryBuilder.orderBy("category.created_at", "DESC");
+
+    // Get total count efficiently using getCount() instead of fetching all data
+    const total = await queryBuilder.getCount();
 
     // Apply pagination
     queryBuilder.skip(skip).take(limit);
@@ -99,7 +79,7 @@ export class CategoryService {
         excludeExtraneousValues: true,
       });
       dto.activities_count =
-        parseInt(rawResults.raw[index]?.activities_count) || 0;
+        parseInt(rawResults.raw[index].activities_count) || 0;
       return dto;
     });
 
