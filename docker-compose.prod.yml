@@ -78,9 +78,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      doanhoi-network:
-        aliases:
-          - doanhoi-backend
+      - doanhoi-network
 
   # Frontend React served by nginx
   frontend:

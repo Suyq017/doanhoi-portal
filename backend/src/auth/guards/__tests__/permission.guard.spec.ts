@@ -72,4 +72,20 @@ describe("PermissionGuard", () => {
     await expect(guard.canActivate(context)).rejects.toThrow("Permission denied");
     expect(rolesService.hasPermission).toHaveBeenCalledWith("u1", "perm.a", "org-2");
   });
+
+  it("should not throw when body is missing on GET requests", async () => {
+    reflector.getAllAndOverride.mockReturnValue(["perm.a"]);
+    rolesService.hasPermission.mockResolvedValue(false);
+
+    const context = {
+      getHandler: () => ({}),
+      getClass: () => ({}),
+      switchToHttp: () => ({
+        getRequest: () => ({ user: { id: "u1" }, method: "GET", params: {} }),
+      }),
+    } as any;
+
+    await expect(guard.canActivate(context)).rejects.toThrow("Permission denied");
+    expect(rolesService.hasPermission).toHaveBeenCalledWith("u1", "perm.a", undefined);
+  });
 });

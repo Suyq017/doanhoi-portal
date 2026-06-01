@@ -31,7 +31,7 @@ export class PermissionGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     const organizationId =
-      request.params.organizationId || request.body.organizationId;
+      request.params.organizationId || request.body?.organizationId;
 
     this.logger.log(
       `Checking permissions for ${request.method} ${request.url} | user=${user?.id || "anonymous"} | org=${organizationId || "none"} | required=${requiredPermissions.join(", ")}`,
