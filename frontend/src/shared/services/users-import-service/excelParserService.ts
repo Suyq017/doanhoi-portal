@@ -194,7 +194,7 @@ export class ExcelParserService {
       // Specific patterns first to avoid conflicts
       className: ['mã lớp','class name', 'MALOP'],
       familyName: ['họ và tên lót', 'họ tên lót','last name', 'họ', 'HOLOT'],
-      givenName: ['tên gọi', 'given name', 'first name', 'TEN'], // Removed 'tên' to avoid partial matching with TENLOP
+      givenName: ['tên', 'given name', 'first name', 'TEN'], // Removed 'tên' to avoid partial matching with TENLOP
       managementDepartment: ['mã đơn vị quản lý', 'management dept code', 'đơn vị quản lý', 'DVQLY'],
       trainingDepartment: ['mã khoa', 'training dept code', 'KHOA'],
       admissionYear: ['năm nhập học', 'admission year', 'năm vào học', 'năm vào', 'NAMVAO'],
