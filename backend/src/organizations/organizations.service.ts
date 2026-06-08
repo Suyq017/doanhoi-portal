@@ -1563,19 +1563,15 @@ export class OrganizationsService {
           ]);
         const organizationIds = accessibleOrganizations.map((row) => row.id);
 
-        if (organizationIds.length === 0) {
-          return {
-            data: [],
-            total: 0,
-            page,
-            limit,
-            totalPages: 0,
-            hasNextPage: false,
-            hasPrevPage: false,
-          };
+        if (organizationIds.length > 0) {
+          // If user has explicit ctxh.activities.view on some orgs, restrict to those
+          queryBuilder.andWhere("o.id IN (:...ids)", { ids: organizationIds });
+        } else {
+          // If user has no explicit ctxh.activities.view permission, allow viewing all Level 1 & 2 orgs
+          console.log(
+            `[OrganizationsService] User ${userId} has no specific ctxh.activities.view permissions; returning all Level 1 & 2 organizations`,
+          );
         }
-
-        queryBuilder.andWhere("o.id IN (:...ids)", { ids: organizationIds });
 
         // Add search filter if provided
         if (search && search.trim()) {
