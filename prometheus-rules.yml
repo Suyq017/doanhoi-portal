@@ -1,0 +1,134 @@
+groups:
+  - name: slo_alerts
+    rules:
+      # Error Budget Burn Rate - Critical (burning 14.4x faster = exhausts in 1 day)
+      - alert: ErrorBudgetBurnRateCritical
+        expr: |
+          (
+            rate(doanhoi_http_requests_total{status=~"5.."}[1h])
+            / rate(doanhoi_http_requests_total[1h])
+          ) > (14.4 * 0.005)
+        for: 5m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "Error budget burning 14.4x faster than normal"
+          description: "At current rate, entire monthly error budget will be exhausted in ~1 day. Current error rate: {{ $value | humanizePercentage }}"
+
+      # Error Budget Burn Rate - Warning (burning 6x faster = exhausts in 5 days)
+      - alert: ErrorBudgetBurnRateWarning
+        expr: |
+          (
+            rate(doanhoi_http_requests_total{status=~"5.."}[6h])
+            / rate(doanhoi_http_requests_total[6h])
+          ) > (6 * 0.005)
+        for: 30m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Error budget burning 6x faster than normal"
+          description: "At current rate, monthly error budget will be exhausted in ~5 days."
+
+  - name: sli_alerts
+    rules:
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(doanhoi_http_requests_total{status=~"5.."}[5m])
+            / rate(doanhoi_http_requests_total[5m])
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "Error rate > 1% for 5 minutes"
+          description: "API error rate is {{ $value | humanizePercentage }}. SLO target: < 0.5%"
+
+      # High Latency P99
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99, rate(doanhoi_http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "P99 latency > 2 seconds"
+          description: "99th percentile latency is {{ $value }}s. SLO target: < 2s"
+
+      # High Latency P95
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(0.95, rate(doanhoi_http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "P95 latency > 1 second"
+          description: "95th percentile latency is {{ $value }}s."
+
+  - name: infrastructure_alerts
+    rules:
+      # Disk Almost Full
+      - alert: DiskAlmostFull
+        expr: |
+          (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Disk usage > 85%"
+          description: "Root filesystem is {{ $value }}% full."
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Memory usage > 90%"
+          description: "Memory usage is {{ $value }}%."
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 10m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "CPU usage > 90% for 10 minutes"
+          description: "CPU usage is {{ $value }}%."
+
+      # Container Restart
+      - alert: ContainerRestarting
+        expr: |
+          rate(container_last_seen{name=~"doanhoi.*"}[5m]) == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Container {{ $labels.name }} not seen"
+          description: "Container may have stopped or is restarting repeatedly."
+
+      # DB Connection Pool Near Exhaustion
+      - alert: DBConnectionPoolHigh
+        expr: doanhoi_db_connections_active > 8
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "DB connection pool > 8 (default max: 10)"
+          description: "Connection pool at {{ $value }} connections. Risk of exhaustion."

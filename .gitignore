@@ -77,3 +77,14 @@ dist/
 # Docker
 .dockerignore
 /sample/
+
+# SSH deploy keys
+*.pem
+*.pem.pub
+
+# Personal documents (CV, cover letters, interview prep)
+mechanism/CV_SRE_INTERN.tex
+mechanism/COVER_LETTER_SRE.tex
+mechanism/NAB_APPLICATION_ANSWERS.md
+mechanism/SRE_KNOWLEDGE_GUIDE.md
+mechanism/SRE_PROJECT_ROADMAP.md

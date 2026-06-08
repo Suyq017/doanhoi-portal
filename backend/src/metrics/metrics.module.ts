@@ -6,6 +6,8 @@ import {
   makeGaugeProvider,
 } from "@willsoto/nestjs-prometheus";
 import { MetricsService } from "./metrics.service";
+import { MetricsController } from "./metrics.controller";
+import { TypeOrmMetricsCollector } from "./typeorm-metrics.subscriber";
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { MetricsService } from "./metrics.service";
           prefix: "doanhoi_",
         },
       },
+      // Dùng custom controller có MetricsGuard thay vì default (chặn truy cập từ Internet)
+      controller: MetricsController,
       path: "/metrics",
       defaultLabels: {
         app: "doanhoi-portal",
@@ -26,6 +30,7 @@ import { MetricsService } from "./metrics.service";
 
   providers: [
     MetricsService,
+    TypeOrmMetricsCollector,
 
     makeCounterProvider({
       name: "doanhoi_http_requests_total",
@@ -87,6 +92,6 @@ import { MetricsService } from "./metrics.service";
       labelNames: [],
     }),
   ],
-  exports: [MetricsService],
+  exports: [MetricsService, TypeOrmMetricsCollector],
 })
 export class MetricsModule {}

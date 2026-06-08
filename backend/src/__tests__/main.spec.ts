@@ -118,8 +118,8 @@ describe("bootstrap", () => {
     expect(appMock.enableCors).toHaveBeenCalledWith({
       origin: [
         "https://portal.example.com",
-        "https://doanhoi.hcmut.edu.vn/grafana",
-        "https://doanhoi.hcmut.edu.vn/prometheus",
+        "https://portal.tuoitrebachkhoa.com/grafana",
+        "https://portal.tuoitrebachkhoa.com/prometheus",
       ],
       credentials: true,
     });

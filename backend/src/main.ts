@@ -4,6 +4,7 @@ import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { MetricsInterceptor } from "./common/interceptors/metrics.interceptor";
 import { MetricsService } from "./metrics/metrics.service";
+import { setMetricsServiceForTypeOrm } from "./metrics/typeorm-metrics.logger";
 import * as express from "express";
 
 async function bootstrap() {
@@ -14,12 +15,13 @@ async function bootstrap() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // Enable CORS
+  const frontendUrl = process.env.FRONTEND_URL || "https://portal.tuoitrebachkhoa.com";
   const allowedOrigins =
     process.env.NODE_ENV === "production"
       ? [
-        process.env.FRONTEND_URL || "https://doanhoi.hcmut.edu.vn",
-        "https://doanhoi.hcmut.edu.vn/grafana",
-        "https://doanhoi.hcmut.edu.vn/prometheus",
+        frontendUrl,
+        `${frontendUrl}/grafana`,
+        `${frontendUrl}/prometheus`,
       ]
       : ["http://localhost:9100", "http://localhost:3000"];
 
@@ -30,6 +32,9 @@ async function bootstrap() {
 
   const metricsService = app.get(MetricsService);
   app.useGlobalInterceptors(new MetricsInterceptor(metricsService));
+
+  // Hook MetricsService vào TypeORM logger để record DB query metrics
+  setMetricsServiceForTypeOrm(metricsService);
 
   // Global validation pipe
   app.useGlobalPipes(

@@ -6,13 +6,13 @@ jest.mock("../../config/payos.config", () => ({
   validatePayOSConfig: jest.fn(),
 }));
 
-jest.mock("@payos/node", () => {
-  return jest.fn().mockImplementation((clientId, apiKey, checksumKey) => ({
-    clientId,
-    apiKey,
-    checksumKey,
-  }));
-});
+jest.mock("@payos/node", () => ({
+  PayOS: jest.fn().mockImplementation((opts) => ({
+    clientId: opts?.clientId,
+    apiKey: opts?.apiKey,
+    checksumKey: opts?.checksumKey,
+  })),
+}));
 
 describe("PaymentCampaignPayosConfigService", () => {
   const createRepositoryMock = () => ({

@@ -15,7 +15,7 @@ include:
   # - local: '.gitlab/ci/stages/08b-evaluate.yml'
   - local: '.gitlab/ci/stages/09-deploy-prod.yml'
 
-  # GitLab SAST/Dependency Scan templates (miễn phí
+  # GitLab SAST/Dependency Scan templates (miễn ph
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
 

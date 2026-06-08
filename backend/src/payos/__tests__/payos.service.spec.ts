@@ -1,14 +1,18 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { SimplePayosService } from "../payos.service";
 
-const mockPayOSInstance = {
-  createPaymentLink: jest.fn(),
-  getPaymentLinkInformation: jest.fn(),
+const mockPaymentRequests = {
+  create: jest.fn(),
+  get: jest.fn(),
 };
 
-jest.mock("@payos/node", () => {
-  return jest.fn().mockImplementation(() => mockPayOSInstance);
-});
+const mockPayOSInstance = {
+  paymentRequests: mockPaymentRequests,
+};
+
+jest.mock("@payos/node", () => ({
+  PayOS: jest.fn().mockImplementation(() => mockPayOSInstance),
+}));
 
 describe("SimplePayosService", () => {
   const createPayosConfigServiceMock = () => ({
@@ -48,12 +52,12 @@ describe("SimplePayosService", () => {
       apiKey: "api",
       checksumKey: "checksum",
     });
-    mockPayOSInstance.createPaymentLink.mockImplementation(async () => ({ checkoutUrl: "https://payos.test" }));
+    mockPaymentRequests.create.mockImplementation(async () => ({ checkoutUrl: "https://payos.test" }));
 
     const result = await service.createPaymentLink({ campaignId: "camp-1", amount: 1000 } as any);
 
     expect(result.checkoutUrl).toBe("https://payos.test");
-    expect(mockPayOSInstance.createPaymentLink).toHaveBeenCalledWith({ amount: 1000 });
+    expect(mockPaymentRequests.create).toHaveBeenCalledWith({ amount: 1000 });
   });
 
   it("should update payment history and assignment when link becomes paid", async () => {
@@ -62,7 +66,7 @@ describe("SimplePayosService", () => {
       apiKey: "api",
       checksumKey: "checksum",
     });
-    mockPayOSInstance.getPaymentLinkInformation.mockImplementation(async () => ({
+    mockPaymentRequests.get.mockImplementation(async () => ({
       status: "PAID",
       transactions: [{ transactionDateTime: "2026-04-27T10:00:00.000Z" }],
     }));
@@ -85,7 +89,7 @@ describe("SimplePayosService", () => {
       apiKey: "api",
       checksumKey: "checksum",
     });
-    mockPayOSInstance.getPaymentLinkInformation.mockImplementation(async () => ({ status: "PAID", transactions: [] }));
+    mockPaymentRequests.get.mockImplementation(async () => ({ status: "PAID", transactions: [] }));
     paymentHistoryService.findByOrderCode.mockResolvedValue(null);
 
     const result = await service.getPaymentLinkInformation(123456, "camp-1");

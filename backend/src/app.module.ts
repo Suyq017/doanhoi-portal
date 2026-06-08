@@ -19,6 +19,7 @@ import { CtxhModule } from "./ctxh/ctxh.module";
 import { CtxhChatModule } from "./ctxh-chat/ctxh-chat.module";
 import { CtxhMcpModule } from "./ctxh-mcp/ctxh-mcp.module";
 import { MetricsModule } from "./metrics/metrics.module";
+import { TypeOrmMetricsLogger } from "./metrics/typeorm-metrics.logger";
 import { AwsS3ConfigModule } from "./aws-config/aws-s3-config.module";
 import { TemplatesModule } from "./templates/templates.module";
 
@@ -57,7 +58,10 @@ import { TemplatesModule } from "./templates/templates.module";
         database: configService.get("DB_NAME"),
         entities: [__dirname + "/**/*.entity{.ts,.js}"],
         synchronize: true,
-        logging: configService.get("NODE_ENV") === "development",
+        // Custom logger để record DB query metrics vào Prometheus
+        logger: new TypeOrmMetricsLogger(configService.get("NODE_ENV") === "development"),
+        // maxQueryExecutionTime: 1 → TypeORM gọi logQuerySlow khi query > 1ms (gần như tất cả)
+        maxQueryExecutionTime: 1,
       }),
       inject: [ConfigService],
     }),

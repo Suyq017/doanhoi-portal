@@ -3,16 +3,16 @@ global:
   evaluation_interval: 5s
   scrape_timeout: 4s
 
-# Alertmanager configuration (optional)
+# Alertmanager configuration
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: []
-          # - 'alertmanager:9093'
+        - targets:
+          - 'alertmanager:9093'
 
 # Load rules once and periodically evaluate them
 rule_files:
-  # - "alerts.yml"
+  - "/etc/prometheus/prometheus-rules.yml"
 
 scrape_configs:
   # Prometheus self-monitoring
@@ -21,21 +21,35 @@ scrape_configs:
       - targets: ['localhost:9090']
         labels:
           service: 'prometheus'
-          environment: 'production'
+          environment: 'development'
 
   # Backend API monitoring
-  # Note: Use host.docker.internal for Windows/Mac when backend runs outside Docker
-  # Use backend:3001 if backend is inside docker-compose
   - job_name: 'doanhoi-backend'
     scrape_interval: 5s
     metrics_path: '/metrics'
     static_configs:
-      - targets: ['host.docker.internal:9200']  # Backend port 9200
+      - targets: ['host.docker.internal:9200']
         labels:
           service: 'backend'
           app: 'doanhoi-portal'
-          environment: 'production'
+          environment: 'development'
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
         replacement: 'doanhoi-backend'
+
+  - job_name: 'node-exporter'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+          environment: 'development'
+
+  - job_name: 'cadvisor'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'cadvisor'
+          environment: 'development'

@@ -69,6 +69,10 @@ services:
       PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY:-}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+      GEMINI_EMBEDDING_DIMENSION: ${GEMINI_EMBEDDING_DIMENSION:-1024}
     ports:
       - "2681:9200"   # expose backend ra port 2681
     depends_on:
@@ -99,57 +103,103 @@ services:
     networks:
       - doanhoi-network
 
-  # # Prometheus for metrics collection
-  # prometheus:
-  #   image: prom/prometheus:latest
-  #   container_name: doanhoi-prometheus-prod
-  #   command:
-  #     - '--config.file=/etc/prometheus/prometheus.yml'
-  #     - '--storage.tsdb.path=/prometheus'
-  #     - '--storage.tsdb.retention.time=30d'  # Keep data for 30 days
-  #     - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-  #     - '--web.console.templates=/usr/share/prometheus/consoles'
-  #     - '--web.enable-lifecycle'  # Allow reload via API
-  #     - '--web.route-prefix=/prometheus'  # Serve under /prometheus path
-  #   volumes:
-  #     - ./prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
-  #     - prometheus_data:/prometheus
-  #   ports:
-  #     - "9091:9090"  # Map host port 9091 to container port 9090 (avoid conflict with systemd)
-  #   restart: unless-stopped
-  #   networks:
-  #     - doanhoi-network
-  #   labels:
-  #     - "com.centurylinklabs.watchtower.enable=true"
+  # Node Exporter for host metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: doanhoi-node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - doanhoi-network
+    restart: unless-stopped
+
+  # cAdvisor for container metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: doanhoi-cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - doanhoi-network
+    restart: unless-stopped
+
+  # Alertmanager for alert routing
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: doanhoi-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
+    networks:
+      - doanhoi-network
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: doanhoi-prometheus-prod
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.route-prefix=/prometheus'
+      - '--web.external-url=https://portal.tuoitrebachkhoa.com/prometheus/'
+    volumes:
+      - ./prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-rules.yml:/etc/prometheus/prometheus-rules.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9091:9090"
+    restart: unless-stopped
+    networks:
+      - doanhoi-network
 
   # Grafana for visualization
-  # grafana:
-  #   image: grafana/grafana:latest
-  #   container_name: doanhoi-grafana-prod
-  #   environment:
-  #     - GF_SECURITY_ADMIN_USER=admin
-  #     - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}  # CHANGE THIS in .env.production!
-  #     - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3002}  # Update with your domain
-  #     - GF_SERVER_DOMAIN=${GRAFANA_DOMAIN:-localhost}
-  #     - GF_SERVER_SERVE_FROM_SUB_PATH=true  # Required for /grafana/ path
-  #     - GF_ANALYTICS_REPORTING_ENABLED=false
-  #     - GF_ANALYTICS_CHECK_FOR_UPDATES=false
-  #     - GF_USERS_ALLOW_SIGN_UP=false
-  #     - GF_USERS_ALLOW_ORG_CREATE=false
-  #     - GF_LOG_LEVEL=warn  # Reduce log verbosity in production
-  #     - GF_INSTALL_PLUGINS=  # Add plugins if needed
-  #   volumes:
-  #     - grafana_data:/var/lib/grafana
-  #     - ./grafana/provisioning:/etc/grafana/provisioning:ro
-  #   ports:
-  #     - "3002:3000"  # Expose Grafana (should be behind reverse proxy in production)
-  #   depends_on:
-  #     - prometheus
-  #   restart: unless-stopped
-  #   networks:
-  #     - doanhoi-network
-  #   labels:
-  #     - "com.centurylinklabs.watchtower.enable=true"
+  grafana:
+    image: grafana/grafana:latest
+    container_name: doanhoi-grafana-prod
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3002}
+      - GF_SERVER_DOMAIN=${GRAFANA_DOMAIN:-localhost}
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_ALLOW_ORG_CREATE=false
+      - GF_LOG_LEVEL=warn
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3002:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - doanhoi-network
 
 networks:
   doanhoi-network:

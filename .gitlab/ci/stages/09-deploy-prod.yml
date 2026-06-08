@@ -90,4 +90,4 @@ deploy:production:
       ENDSSH
   environment:
     name: production
-    url: https://doanhoi.hcmut.edu.vn
+    url: https://portal.tuoitrebachkhoa.com
