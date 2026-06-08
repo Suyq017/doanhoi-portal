@@ -1058,7 +1058,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                   disabled={loading}
                 >
                   <option value="true">{t('users:membershipStatus.active')}</option>
-                  <option value="false">{t('users:membershipStatus.inactive')}</option>
+                  <option value="false">{t('users:membershipStatus.graduated')}</option>
                 </select>
               </div>
             </div>
