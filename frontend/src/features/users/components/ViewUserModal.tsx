@@ -375,7 +375,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({
                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                           }`}>
-                          {displayUser.isActive ? 'Đang học' : 'Đã thôi học'}
+                          {displayUser.isActive ? 'Đang học' : 'Đã tốt nghiệp'}
                         </div>
                       </div>
                     )}
