@@ -11,8 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@assistant-ui/react": "^0.12.12",
-    "@assistant-ui/react-markdown": "^0.12.5",
+    "@assistant-ui/react": "latest",
+    "@assistant-ui/react-markdown": "latest",
     "@cyntler/react-doc-viewer": "^1.17.1",
     "@hookform/resolvers": "^3.3.2",
     "@payos/payos-checkout": "^1.0.8",
