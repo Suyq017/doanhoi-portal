@@ -50,6 +50,9 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      # Tăng libuv thread pool để native bcrypt chạy song song nhiều hơn
+      # (mặc định 4). Đặt ~ số vCPU của instance. Tinh chỉnh theo máy thực tế.
+      UV_THREADPOOL_SIZE: ${UV_THREADPOOL_SIZE:-4}
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USERNAME: postgres

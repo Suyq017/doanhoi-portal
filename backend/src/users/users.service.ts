@@ -12,7 +12,10 @@ import { QueryUserDto } from "./dto/query-user.dto";
 import { UserRoleAssignmentDto } from "./dto/user-role-assignment.dto";
 import { RolesService } from "../roles/roles.service";
 import { OrganizationsService } from "../organizations/organizations.service";
-import * as bcrypt from "bcryptjs";
+// Native bcrypt (C++): đẩy việc băm/so khớp sang libuv thread pool -> KHÔNG chặn
+// event loop, chạy song song nhiều request (khác bcryptjs thuần JS chặn main thread).
+// Hash bcrypt ($2a/$2b) tương thích nhau nên mật khẩu cũ vẫn verify được.
+import * as bcrypt from "bcrypt";
 
 @Injectable()
 export class UsersService {

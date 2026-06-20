@@ -12,7 +12,11 @@ COPY tsconfig*.json ./
 COPY nest-cli.json ./
 
 # Install all dependencies (including dev dependencies for build)
-RUN npm install && npm cache clean --force
+# Native modules (bcrypt) cần toolchain để compile trên Alpine -> cài tạm rồi xoá
+RUN apk add --no-cache --virtual .build-deps python3 make g++ \
+    && npm install \
+    && npm cache clean --force \
+    && apk del .build-deps
 
 # Copy source code
 COPY src ./src
@@ -31,8 +35,12 @@ RUN apk update && apk upgrade && \
     rm -rf /var/cache/apk/*
 
 # Copy package files and install production dependencies only
+# Native bcrypt cần compile -> cài toolchain tạm (virtual) rồi gỡ để image gọn
 COPY package*.json ./
-RUN npm install --omit=dev && npm cache clean --force
+RUN apk add --no-cache --virtual .build-deps python3 make g++ \
+    && npm install --omit=dev \
+    && npm cache clean --force \
+    && apk del .build-deps
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist

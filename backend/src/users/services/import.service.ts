@@ -5,7 +5,8 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, DataSource } from "typeorm";
-import * as bcrypt from "bcryptjs";
+// Native bcrypt (C++): băm chạy trên thread pool, không chặn event loop khi import hàng loạt
+import * as bcrypt from "bcrypt";
 import * as XLSX from "xlsx";
 import {
   User,

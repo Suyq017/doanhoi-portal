@@ -32,7 +32,8 @@ import {
   BatchResultDto,
   SessionSummaryDto,
 } from "../dto/batch-import-response.dto";
-import * as bcrypt from "bcryptjs";
+// Native bcrypt (C++): băm chạy trên thread pool, không chặn event loop khi import hàng loạt
+import * as bcrypt from "bcrypt";
 
 interface SessionData {
   sessionId: string;

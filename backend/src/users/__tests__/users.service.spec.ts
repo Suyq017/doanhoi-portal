@@ -37,7 +37,7 @@ describe("UsersService", () => {
 
   it("should create a user with hashed password and organization membership", async () => {
     usersRepository.findOne.mockResolvedValue(null);
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed-password" as any);
     usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-1" }));
 
@@ -57,7 +57,7 @@ describe("UsersService", () => {
   it("should continue user creation when organization assignment fails", async () => {
     usersRepository.findOne.mockResolvedValue(null);
     usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-1" }));
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed-password" as any);
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
     organizationsService.addMemberWithParents.mockRejectedValue(new Error("org add failed"));
@@ -76,7 +76,7 @@ describe("UsersService", () => {
   });
 
   it("should validate password and update refresh token", async () => {
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "compare").mockResolvedValue(true as any);
 
     await expect(service.validatePassword({ password: "$2a$10$test" } as any, "secret")).resolves.toBe(true);
@@ -86,7 +86,7 @@ describe("UsersService", () => {
   });
 
   it("should create a user with role assignments", async () => {
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed-password" as any);
     usersRepository.findOne.mockResolvedValue(null);
     usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-2" }));
@@ -109,7 +109,7 @@ describe("UsersService", () => {
   });
 
   it("should keep user creation successful when roleAssignments is an empty array", async () => {
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed-password" as any);
     usersRepository.findOne.mockResolvedValue(null);
     usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-empty-roles" }));
@@ -180,7 +180,7 @@ describe("UsersService", () => {
 
     await expect(service.findOne("missing")).rejects.toThrow("User not found");
 
-    jest.spyOn(require("bcryptjs"), "compare").mockResolvedValue(false as any);
+    jest.spyOn(require("bcrypt"), "compare").mockResolvedValue(false as any);
     await expect(service.validatePassword({ password: null } as any, "secret")).resolves.toBe(false);
 
     await service.updateRefreshToken("user-1", null);
@@ -205,7 +205,7 @@ describe("UsersService", () => {
   it("should create a user with generated default password when password is missing", async () => {
     usersRepository.findOne.mockResolvedValue(null);
     usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-3" }));
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed-generated" as any);
 
     const result = await service.create({
@@ -220,7 +220,7 @@ describe("UsersService", () => {
   it("should skip organization assignment when organizationId is blank", async () => {
     usersRepository.findOne.mockResolvedValue(null);
     usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-4" }));
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed-password" as any);
 
     await service.create({
@@ -304,7 +304,7 @@ describe("UsersService", () => {
   });
 
   it("should return email based password status list", async () => {
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "compare").mockResolvedValueOnce(true as any).mockResolvedValueOnce(false as any);
     usersRepository.find.mockResolvedValue([
       { id: "u-1", familyName: "A", givenName: "B", email: "ab@example.com", password: "hash1" },
@@ -338,7 +338,7 @@ describe("UsersService", () => {
 
   it("should reject duplicate role assignments during create", async () => {
     usersRepository.findOne.mockResolvedValue(null);
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed-password" as any);
     usersRepository.save.mockResolvedValue({ id: "user-dup" });
 
@@ -357,7 +357,7 @@ describe("UsersService", () => {
 
   it("should reject missing role during create roleAssignments validation", async () => {
     usersRepository.findOne.mockResolvedValue(null);
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed-password" as any);
     usersRepository.save.mockResolvedValue({ id: "user-role-missing" });
     rolesService.findOne.mockRejectedValue(new Error("not found"));
@@ -456,7 +456,7 @@ describe("UsersService", () => {
   it("should handle birthDate conversion during user creation", async () => {
     usersRepository.findOne.mockResolvedValue(null);
     usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-birthdate" }));
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed" as any);
 
     await service.create({
@@ -475,7 +475,7 @@ describe("UsersService", () => {
   it("should not set birthDate when not provided during creation", async () => {
     usersRepository.findOne.mockResolvedValue(null);
     usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-no-birthdate" }));
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed" as any);
 
     await service.create({
@@ -501,7 +501,7 @@ describe("UsersService", () => {
   it("should skip blank role ids during legacy role assignment in create", async () => {
     usersRepository.findOne.mockResolvedValue(null);
     usersRepository.save.mockImplementation(async (value: any) => ({ ...value, id: "user-blank-roles" }));
-    const bcrypt = require("bcryptjs");
+    const bcrypt = require("bcrypt");
     jest.spyOn(bcrypt, "hash").mockResolvedValue("hashed" as any);
 
     await service.create({

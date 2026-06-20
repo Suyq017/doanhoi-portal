@@ -884,7 +884,7 @@
       },
       "targets": [
         {
-          "expr": "1 - (rate(doanhoi_http_requests_total{status=~\"5..\"}[30d]) / rate(doanhoi_http_requests_total[30d]))",
+          "expr": "1 - (sum(rate(doanhoi_http_requests_total{status=~\"5..\"}[1h])) / sum(rate(doanhoi_http_requests_total[1h])))",
           "legendFormat": "Availability",
           "refId": "A"
         }
@@ -949,7 +949,7 @@
       },
       "targets": [
         {
-          "expr": "1 - ((1 - (1 - rate(doanhoi_http_requests_total{status=~\"5..\"}[30d]) / rate(doanhoi_http_requests_total[30d]))) / (1 - 0.995))",
+          "expr": "1 - ((sum(rate(doanhoi_http_requests_total{status=~\"5..\"}[1h])) / sum(rate(doanhoi_http_requests_total[1h]))) / (1 - 0.995))",
           "legendFormat": "Error Budget Remaining",
           "refId": "A"
         }
@@ -1014,7 +1014,7 @@
       },
       "targets": [
         {
-          "expr": "(rate(doanhoi_http_requests_total{status=~\"5..\"}[1h]) / rate(doanhoi_http_requests_total[1h])) / 0.005",
+          "expr": "(sum(rate(doanhoi_http_requests_total{status=~\"5..\"}[1h])) / sum(rate(doanhoi_http_requests_total[1h]))) / 0.005",
           "legendFormat": "Burn Rate (x)",
           "refId": "A"
         }
@@ -1083,7 +1083,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, rate(doanhoi_http_request_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, sum(rate(doanhoi_http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "P95 Latency",
           "refId": "A"
         }
@@ -1504,6 +1504,6 @@
   "timezone": "",
   "title": "Đoàn Hội Portal - Application Metrics",
   "uid": "doanhoi-portal-metrics",
-  "version": 2,
+  "version": 4,
   "weekStart": ""
 }
