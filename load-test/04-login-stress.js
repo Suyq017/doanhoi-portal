@@ -14,7 +14,7 @@
 //
 //   Lưu ý: nếu PROBE_EMAIL KHÔNG tồn tại trong DB thì bcrypt sẽ KHÔNG chạy
 //   (validateUser return sớm) -> bài test mất ý nghĩa. Hãy truyền 1 email thật:
-//     k6 run -e PROBE_EMAIL=real.user@hcmut.edu.vn 04-login-stress.js
+//     k6 run -e PROBE_EMAIL=admin@doanhoi.com 04-login-stress.js
 // ============================================================
 import http from 'k6/http';
 import { check } from 'k6';
