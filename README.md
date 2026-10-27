@@ -90,7 +90,6 @@ npm run build
 - [Architecture and system design](docs/architecture/)
 - [Feature documentation](docs/features/)
 - [Architecture diagrams](docs/diagrams/)
-- [Deployment guide](docs/deployment/DEPLOY_NEW_SERVER.md)
 - [Testing and API setup](docs/testing/)
 - [Thesis report and screenshots](report/LuanVan/)
 
